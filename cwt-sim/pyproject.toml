@@ -1,0 +1,5 @@
+[project]
+name = "cwt-sim"
+version = "0.0.0"
+description = "Placeholder package scaffolding for continuous wavelet transport simulations"
+requires-python = ">=3.11"
