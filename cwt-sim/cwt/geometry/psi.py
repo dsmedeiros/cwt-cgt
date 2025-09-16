@@ -44,7 +44,7 @@ def build_psi(pQ: np.ndarray, theta: np.ndarray) -> np.ndarray:
 
 
 def inner(z: np.ndarray, w: np.ndarray) -> complex:
-    """Return the complex inner product :math:`\langle z | w \rangle`.
+    r"""Return the complex inner product :math:`\langle z | w \rangle`.
 
     The first argument is conjugated, matching the physics bra-ket convention.
     """
