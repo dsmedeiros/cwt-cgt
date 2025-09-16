@@ -68,7 +68,7 @@ def wrap_angles(theta: np.ndarray) -> np.ndarray:
     """Wrap angles to the interval ``(-π, π]`` while preserving shape."""
 
     angles = np.asarray(theta, dtype=float)
-    wrapped = (angles + np.pi) % (2.0 * np.pi) - np.pi
+    wrapped = np.angle(np.exp(1j * angles))
     # Map the -π endpoint to +π to make the interval open on the left.
-    wrapped = np.where(wrapped <= -np.pi, wrapped + 2.0 * np.pi, wrapped)
+    wrapped = np.where(np.isclose(wrapped, -np.pi), np.pi, wrapped)
     return wrapped

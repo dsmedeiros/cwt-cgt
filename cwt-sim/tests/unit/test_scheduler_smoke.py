@@ -50,6 +50,7 @@ def test_run_parameter_loop_smoke() -> None:
     assert len(record.pQ_traj) == path.steps + 1
     assert len(record.theta_traj) == path.steps + 1
     assert len(record.psi_traj) == path.steps + 1
+    assert len(record.fs_steps) == path.steps
     assert len(record.clip_counts) == path.steps
 
     for vec in record.pQ_traj:

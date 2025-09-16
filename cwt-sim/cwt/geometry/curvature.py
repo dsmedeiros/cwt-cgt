@@ -40,7 +40,7 @@ def _parallel_transport_chain(states: Sequence[np.ndarray]) -> list[np.ndarray]:
         prev = aligned[idx - 1]
         current = states[idx]
         overlap = inner(prev, current)
-        magnitude = np.abs(overlap)
+        magnitude = float(np.clip(np.abs(overlap), 0.0, 1.0))
         if magnitude > _PT_EPS:
             phase = np.exp(-1j * np.angle(overlap))
             current = current * phase
@@ -122,7 +122,7 @@ def curvature_tile(
     total_phase = 0.0
 
     for label, overlap in _compute_loop_overlaps(states):
-        magnitude = float(np.abs(overlap))
+        magnitude = float(np.clip(np.abs(overlap), 0.0, 1.0))
         overlap_magnitudes[label] = magnitude
         phase = float(np.angle(overlap))
         phase_components[label] = phase

@@ -17,6 +17,7 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 
 from ..geometry.adapt_mesh import PlaquetteResult, curvature_anytime
+from ..geometry.fs_distance import fs_distance
 from ..geometry.metric import metric_tile
 from ..geometry.psi import build_psi
 from ..graph.kernels import build_transport_kernel
@@ -60,6 +61,7 @@ class RunRecord:
     pQ_traj: list[np.ndarray]
     theta_traj: list[np.ndarray]
     psi_traj: list[np.ndarray]
+    fs_steps: list[float]
     overlaps_min: list[float]
     g_tiles: list[dict[str, Any]]
     omega_tiles: list[dict[str, Any]]
@@ -162,13 +164,36 @@ def _psi_sampler_factory(
     direction_i: np.ndarray,
     direction_j: np.ndarray,
 ) -> callable:
+    Psi0_arr = np.asarray(Psi0, dtype=np.complex128)
+    direction_i_arr = np.asarray(direction_i, dtype=float)
+    direction_j_arr = np.asarray(direction_j, dtype=float)
+
+    cache_i: dict[float, np.ndarray] = {}
+    cache_j: dict[float, np.ndarray] = {}
+    sample_cache: dict[tuple[float, float], tuple[np.ndarray, ...]] = {}
+
+    def _quantize(delta: float) -> float:
+        return round(float(delta), 12)
+
     def sampler(delta_i: float, delta_j: float) -> Sequence[np.ndarray]:
-        factor_i = _phase_factor(direction_i, float(delta_i))
-        factor_j = _phase_factor(direction_j, float(delta_j))
-        Psi_i = Psi0 * factor_i
-        Psi_j = Psi0 * factor_j
-        Psi_ij = Psi0 * factor_i * factor_j
-        return (Psi0, Psi_i, Psi_ij, Psi_j)
+        key_i = _quantize(delta_i)
+        key_j = _quantize(delta_j)
+        cache_key = (key_i, key_j)
+
+        if key_i not in cache_i:
+            cache_i[key_i] = _phase_factor(direction_i_arr, float(delta_i))
+        if key_j not in cache_j:
+            cache_j[key_j] = _phase_factor(direction_j_arr, float(delta_j))
+
+        if cache_key not in sample_cache:
+            factor_i = cache_i[key_i]
+            factor_j = cache_j[key_j]
+            Psi_i = Psi0_arr * factor_i
+            Psi_j = Psi0_arr * factor_j
+            Psi_ij = Psi0_arr * factor_i * factor_j
+            sample_cache[cache_key] = (Psi0_arr, Psi_i, Psi_ij, Psi_j)
+
+        return sample_cache[cache_key]
 
     return sampler
 
@@ -222,6 +247,7 @@ def run_parameter_loop(
     pQ_traj: list[np.ndarray] = [pQ.copy()]
     theta_traj: list[np.ndarray] = [theta.copy()]
     psi_traj: list[np.ndarray] = [psi_current.copy()]
+    fs_steps: list[float] = []
     overlaps_min: list[float] = []
     g_tiles: list[dict[str, Any]] = []
     omega_tiles: list[dict[str, Any]] = []
@@ -399,6 +425,16 @@ def run_parameter_loop(
 
         psi_raw = build_psi(pQ, theta)
         psi_current, psi_ema = smooth_psi(psi_raw, psi_ema)
+
+        fs_step = float("nan")
+        prev_state = psi_traj[-1] if psi_traj else None
+        if prev_state is not None and prev_state.size and psi_current.size:
+            try:
+                fs_step = float(fs_distance(prev_state, psi_current))
+            except ValueError:
+                fs_step = float("nan")
+        fs_steps.append(fs_step)
+
         psi_traj.append(psi_current.copy())
 
         should_emit = False
@@ -418,6 +454,7 @@ def run_parameter_loop(
 
     meta: dict[str, Any] = {
         "seed": int(seed),
+        "rng": {"base": int(seed)},
         "steps": int(path.steps),
         "config": asdict(config),
         "substrate_size": int(N),
@@ -432,6 +469,7 @@ def run_parameter_loop(
         pQ_traj=pQ_traj,
         theta_traj=theta_traj,
         psi_traj=psi_traj,
+        fs_steps=fs_steps,
         overlaps_min=overlaps_min,
         g_tiles=g_tiles,
         omega_tiles=omega_tiles,
