@@ -1,21 +1,21 @@
-# Default configuration for the placeholder simulation tooling.
+# Configuration used for scripted grid sweeps.
 graph:
-  kind: ring3
-  weights: 1.0
-  delays: 1.0
+  kind: ring8
+  weights: 0.9
+  delays: 1.1
 params:
   knobs: [rho, tau]
   rho_center: 0.5
-  rho_extent: 0.25
-  tau_center: 0.4
-  tau_extent: 0.15
-  steps: 12
+  rho_extent: 0.1
+  tau_center: 0.45
+  tau_extent: 0.1
+  steps: 3
 geometry:
   delta_frac:
-    rho: 0.2
-    tau: 0.2
+    rho: 0.12
+    tau: 0.12
   s_min: 0.6
-  smooth_window: 5
+  smooth_window: 4
   compute_metric: true
   compute_curvature: true
   adapt_levels: 2
@@ -25,10 +25,10 @@ dynamics:
   zeta: 0.2
   omega_scale: 1.0
 geometric_coupling:
-  alpha: 0.2
+  alpha: 0.22
   beta: 1.0
   xi_kind:
-    type: static
+    type: uniform
   corner_area_mode: true
 readout:
   type: stochastic
@@ -39,5 +39,5 @@ noise:
   phase_std: 0.0
   amp_noise: 0.0
   delay_std: 0.0
-seed: 1234
-out_dir: runs/
+seed: 99
+out_dir: runs/grid_scan

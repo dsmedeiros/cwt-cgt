@@ -1,1 +1,44 @@
-# Small ring configuration placeholder for cwt-sim.
+# Configuration tuned for a small ring substrate.
+graph:
+  kind: ring6
+  weights: 0.8
+  delays: 1.2
+params:
+  knobs: [rho, tau]
+  rho_center: 0.45
+  rho_extent: 0.15
+  tau_center: 0.35
+  tau_extent: 0.1
+  steps: 6
+geometry:
+  delta_frac:
+    rho: 0.15
+    tau: 0.15
+  s_min: 0.55
+  smooth_window: 4
+  compute_metric: true
+  compute_curvature: true
+  adapt_levels: 2
+  ci_tol: 0.05
+dynamics:
+  eta_q: 0.3
+  zeta: 0.25
+  omega_scale: 1.0
+geometric_coupling:
+  alpha: 0.25
+  beta: 1.1
+  xi_kind:
+    type: static
+    mode: probability
+  corner_area_mode: true
+readout:
+  type: stochastic
+  T: 1.0
+  memory_form: current_coupled
+  params: {}
+noise:
+  phase_std: 0.01
+  amp_noise: 0.0
+  delay_std: 0.0
+seed: 1337
+out_dir: runs/small_ring
