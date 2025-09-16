@@ -104,3 +104,28 @@ def test_curvature_bias_orientation_flip_changes_sign() -> None:
 
     assert np.allclose(bias, Xi * scalar)
     assert bias.sum() == pytest.approx(scalar)
+
+
+def test_curvature_bias_total_matches_alpha_beta_omega_delta_area() -> None:
+    Xi = np.array([0.25, 0.5, 0.25])
+    Xi /= Xi.sum()
+
+    Omega_ij = {
+        ("rho", "tau"): 0.4,
+        ("tau", "kappa"): -0.15,
+        ("kappa", "rho"): 0.05,
+    }
+    delta_area = 0.35
+    alpha = 1.3
+    beta = 0.9
+
+    bias = curvature_bias(Xi, Omega_ij, delta_area, alpha, beta)
+
+    oriented_sum = 0.0
+    for (i, j), value in Omega_ij.items():
+        pair = tuple(sorted((i, j)))
+        sign = 1.0 if (i, j) == pair else -1.0
+        oriented_sum += sign * float(value)
+
+    expected_total = alpha * beta * delta_area * oriented_sum
+    assert bias.sum() == pytest.approx(expected_total)

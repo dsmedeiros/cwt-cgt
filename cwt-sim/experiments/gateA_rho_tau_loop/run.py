@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Mapping, Sequence
@@ -22,6 +23,7 @@ from cwt.layers.readouts import (
 )
 from cwt.layers.state import LayersState, wrap_angles
 from cwt.orchestrator.param_path import ParameterPath
+from ..report_helpers import fs_histogram, render_health_banner
 
 
 @dataclass
@@ -169,14 +171,33 @@ def _mean_ci(values: Sequence[float]) -> tuple[float, tuple[float, float]]:
     return mean, (mean - margin, mean + margin)
 
 
-def _fs_histogram(fs_steps: Sequence[float], bins: Sequence[float] | None = None) -> dict:
-    arr = np.asarray(list(fs_steps), dtype=float)
-    if arr.size == 0:
-        return {"bins": [], "counts": []}
-    if bins is None:
-        bins = np.linspace(0.0, 0.2, num=11)
-    counts, edges = np.histogram(arr, bins=bins)
-    return {"bins": [float(edge) for edge in edges], "counts": [int(x) for x in counts]}
+def _health_summary(results: ExperimentResults) -> tuple[float, dict, list[float]]:
+    total_tiles = 0
+    passing_tiles = 0
+    fs_all: list[float] = []
+    omega_widths: list[float] = []
+
+    for graph in results.graphs:
+        for extent in graph.extents:
+            tiles = extent.tiles
+            total_tiles += len(tiles)
+            passing_tiles += sum(
+                1 for tile in tiles if math.isfinite(tile.min_overlap) and tile.min_overlap >= extent.s_min
+            )
+            fs_all.extend(extent.fs_steps_all())
+            for tile in tiles:
+                width = getattr(tile, "omega_ci_width", None)
+                if width is None:
+                    continue
+                try:
+                    width_val = float(width)
+                except (TypeError, ValueError):
+                    continue
+                if math.isfinite(width_val) and width_val > 0.0:
+                    omega_widths.append(width_val)
+
+    pass_rate = passing_tiles / total_tiles if total_tiles else float("nan")
+    return pass_rate, fs_histogram(fs_all), omega_widths
 
 
 def _synthetic_state(S: GraphSubstrate, rho: float, tau: float) -> LayersState:
@@ -488,7 +509,7 @@ def _render_extent_section(extent: ExtentResult) -> list[str]:
     cw_mean, cw_ci = _mean_ci(extent.cw_bias())
     orient_mean, orient_ci = _mean_ci(extent.orientation_sums())
     clip_mean, clip_ci = _mean_ci(extent.clip_totals())
-    fs_hist = _fs_histogram(extent.fs_steps_all())
+    fs_hist = fs_histogram(extent.fs_steps_all())
     fs_mean, fs_ci = _mean_ci(extent.fs_steps_all())
 
     lines = [
@@ -516,6 +537,9 @@ def _render_report(results: ExperimentResults) -> str:
         f"Minimum overlap threshold s_min: {results.s_min}",
         "",
     ]
+
+    pass_rate, fs_hist_all, omega_widths = _health_summary(results)
+    lines.extend(render_health_banner(pass_rate, fs_hist_all, omega_widths))
 
     for graph in results.graphs:
         lines.extend([f"## Graph: {graph.name}", ""])

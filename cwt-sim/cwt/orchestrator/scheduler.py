@@ -9,7 +9,9 @@ that records all intermediate states in a :class:`RunRecord` data structure.
 from __future__ import annotations
 
 import math
+import warnings
 import zlib
+from collections import deque
 from dataclasses import asdict, dataclass, field
 from itertools import combinations
 from typing import Any, Callable, Mapping, Sequence
@@ -49,6 +51,7 @@ class RunConfig:
     xi_kind: dict[str, Any] = field(default_factory=dict)
     readout: dict[str, Any] = field(default_factory=dict)
     noise: dict[str, Any] = field(default_factory=dict)
+    fs_step_guard: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -391,6 +394,46 @@ def run_parameter_loop(
     clip_counts: list[int] = []
     readouts: list[dict[str, Any]] = []
 
+    guard_cfg = config.fs_step_guard or {}
+    try:
+        guard_threshold = float(guard_cfg.get("threshold", 0.1))
+    except (TypeError, ValueError):
+        guard_threshold = 0.1
+    try:
+        guard_fraction = float(guard_cfg.get("fraction", 0.25))
+    except (TypeError, ValueError):
+        guard_fraction = 0.25
+    try:
+        guard_window = int(guard_cfg.get("window", 32))
+    except (TypeError, ValueError):
+        guard_window = 32
+    guard_window = max(guard_window, 0)
+    try:
+        guard_cooldown = int(guard_cfg.get("cooldown", guard_window))
+    except (TypeError, ValueError):
+        guard_cooldown = guard_window
+    guard_cooldown = max(guard_cooldown, 0)
+    guard_action = str(guard_cfg.get("action", "warn")).lower()
+    if guard_action not in {"warn", "slow", "none"}:
+        guard_action = "warn"
+
+    guard_enabled = (
+        math.isfinite(guard_threshold)
+        and guard_threshold > 0.0
+        and math.isfinite(guard_fraction)
+        and guard_fraction > 0.0
+        and guard_window > 0
+    )
+    if guard_enabled:
+        guard_fraction = min(guard_fraction, 1.0)
+        fs_guard_history: deque[bool] | None = deque(maxlen=guard_window)
+    else:
+        fs_guard_history = None
+    guard_exceedances = 0
+    guard_events: list[dict[str, float]] = []
+    guard_last_trigger = -math.inf
+    guard_peak_ratio = 0.0
+
     direction_cache: dict[str, np.ndarray] = {}
     phase_cache: dict[tuple[str, float], np.ndarray] = {}
 
@@ -617,6 +660,29 @@ def run_parameter_loop(
                 fs_step = float("nan")
         fs_steps.append(fs_step)
 
+        if guard_enabled and fs_guard_history is not None:
+            exceeds = math.isfinite(fs_step) and fs_step > guard_threshold
+            fs_guard_history.append(exceeds)
+            if exceeds:
+                guard_exceedances += 1
+            if fs_guard_history.maxlen and len(fs_guard_history) == fs_guard_history.maxlen:
+                ratio = sum(1 for flag in fs_guard_history if flag) / fs_guard_history.maxlen
+                guard_peak_ratio = max(guard_peak_ratio, ratio)
+                if ratio >= guard_fraction and (s + 1) - guard_last_trigger >= guard_cooldown:
+                    guard_last_trigger = s + 1
+                    guard_events.append({"step": int(s + 1), "ratio": float(ratio)})
+                    if guard_action in {"warn", "slow"}:
+                        warnings.warn(
+                            (
+                                f"FS step exceeded {guard_threshold:.3f} rad in "
+                                f"{ratio:.0%} of the last {fs_guard_history.maxlen} steps; "
+                                "consider reducing step sizes or enabling additional smoothing."
+                            ),
+                            RuntimeWarning,
+                            stacklevel=2,
+                        )
+                    fs_guard_history.clear()
+
         psi_traj.append(psi_current.copy())
 
         should_emit = False
@@ -634,6 +700,23 @@ def run_parameter_loop(
         final_clip = clip_counts[-1] if clip_counts else 0
         readouts.append(_collect_readout(path.steps, final_lambda, pQ, theta, final_clip))
 
+    if guard_enabled and fs_guard_history is not None and path.steps > 0:
+        overall_fraction = guard_exceedances / float(path.steps)
+    else:
+        overall_fraction = 0.0
+    guard_meta = {
+        "enabled": bool(guard_enabled),
+        "threshold": float(guard_threshold),
+        "fraction": float(guard_fraction),
+        "window": int(fs_guard_history.maxlen if fs_guard_history is not None else guard_window),
+        "cooldown": int(guard_cooldown),
+        "action": guard_action,
+        "total_exceedances": int(guard_exceedances),
+        "overall_fraction": float(overall_fraction),
+        "trigger_steps": guard_events,
+        "peak_ratio": float(guard_peak_ratio),
+    }
+
     meta: dict[str, Any] = {
         "seed": int(seed),
         "rng": {"base": int(seed)},
@@ -642,6 +725,8 @@ def run_parameter_loop(
         "substrate_size": int(N),
         "path": {"kind": path.kind, "steps": path.steps},
     }
+
+    meta["fs_step_guard"] = guard_meta
 
     return RunRecord(
         meta=meta,

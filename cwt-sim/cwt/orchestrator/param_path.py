@@ -107,7 +107,7 @@ class ParameterPath:
         lambda_steps: list[dict[str, float]] = []
         delta_steps: list[dict[str, float]] = []
         area_steps: list[float] = []
-        corner_area = abs(self._extents[axes[0]]) * abs(self._extents[axes[1]]) / 2.0
+        corner_area = abs(self._extents[axes[0]]) * abs(self._extents[axes[1]])
 
         for edge_idx in range(4):
             count = steps_per_edge[edge_idx]
