@@ -94,7 +94,7 @@ Use the `--dry-run` switch on the CLI to validate configurations without writing
 All CLIs live in `cwt-sim/scripts/` and expose a Typer-powered `--help` page. You can invoke them either via `python -m scripts.<name>` from the `cwt-sim/` directory or through the entry points installed by `pip install -e .`.
 
 ### Run a single loop (`scripts/run_loop.py`)
-Validate a configuration and optionally persist a placeholder run record.
+Validate a configuration and run a short simulation, persisting the resulting run bundle under the configured `out_dir` (default `runs/`).
 
 ```bash
 cd cwt-sim
@@ -106,14 +106,15 @@ python -m scripts.run_loop --config configs/default.yaml
 - `--out PATH`: Override the `out_dir` defined in the config.
 - `--seed INTEGER`: Override the configuration’s random seed.
 - `--dry-run`: Print the resolved configuration and exit without writing outputs.
+- `--simulate/--fabricate`: Toggle between executing the real loop (default) and emitting a lightweight placeholder record.
 
 **Outputs**
 - With `--dry-run`, the command prints the final configuration as JSON and exits with status 0.
-- Without `--dry-run`, the CLI fabricates a `RunRecord`, persists it via [`save_run`](cwt-sim/cwt/io/registry.py), and prints a one-line JSON payload such as:
+- Without `--dry-run`, the CLI executes the loop (or fabricates a placeholder when `--fabricate` is supplied), persists the resulting [`RunRecord`](cwt-sim/cwt/orchestrator/scheduler.py) via [`save_run`](cwt-sim/cwt/io/registry.py), and prints a one-line JSON payload such as:
   ```json
   {"run_id": "6bb7c7f2f53c46a3a4b7b0f4f3444b12", "out_dir": "runs/6bb7c7f2f53c46a3a4b7b0f4f3444b12"}
   ```
-  The run directory contains `meta.json` plus any NumPy arrays referenced by the record.
+  Each run directory contains `meta.json` plus any NumPy arrays referenced by the record; downstream tooling (`eval_report`, notebooks, etc.) consumes these artefacts directly.
 
 ### Sweep a parameter grid (`scripts/sweep_grid.py`)
 Generate multiple placeholder runs that traverse a grid defined by the configuration’s `params` section.
@@ -167,6 +168,24 @@ python -m scripts.eval_report runs --format markdown --report reports/summary.md
   }
   ```
 - Markdown mode prints a table with loop orientation, flux, bias, and curvature statistics. When both clockwise and counter-clockwise loops are present, the footer reports whether the curvature sign flips as expected.
+
+### Stage-0 analytic validation (`experiments/stage0_analytic/run.py`)
+Run the closed-form sanity checks for the CGT estimators. The command generates JSON summaries, tabular outputs, and optional figures.
+
+```bash
+cd cwt-sim
+python -m experiments.stage0_analytic.run --output-dir experiments/stage0_analytic/output
+```
+
+**Key options**
+- `--output-dir PATH`: Directory that receives the JSON summary, tables, and figures.
+- `--format {parquet,csv}`: Storage format for the tabular data. Parquet is used when `pyarrow` is available; otherwise the script automatically falls back to CSV.
+- `--no-figures`: Skip plotting when running in headless environments.
+
+**Outputs**
+- `records.json` consolidates the analytic metrics.
+- The `tables/` subdirectory contains either Parquet or CSV files depending on the selected format and `pyarrow` availability.
+- `figures/` includes the validation plots unless `--no-figures` is provided.
 
 ## Outputs and run records
 Every CLI workflow produces or consumes a [`RunRecord`](cwt-sim/cwt/orchestrator/scheduler.py) – a dataclass capturing time-series trajectories (`pQ_traj`, `theta_traj`, `psi_traj`), geometric tiles (`g_tiles`, `omega_tiles`), curvature-derived biases, and readout snapshots. The `save_run` helper serialises these structures to disk by writing `meta.json` alongside any NumPy arrays required for reconstruction. The `eval_report` command deserialises the bundles, computes [`LoopSummary`](cwt-sim/cwt/metrics/eval_curves.py) metrics (flux, curvature bias, orientation, minimum overlaps, Fubini–Study statistics), and enforces optional sign-flip checks between clockwise and counter-clockwise runs.

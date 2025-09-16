@@ -12,7 +12,7 @@ import math
 import zlib
 from dataclasses import asdict, dataclass, field
 from itertools import combinations
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 import numpy as np
 
@@ -44,6 +44,7 @@ class RunConfig:
     ci_tol: float = 0.05
     alpha: float = 1.0
     beta: float = 1.0
+    geometry: dict[str, Any] = field(default_factory=dict)
     delta_frac: dict[str, float] = field(default_factory=dict)
     xi_kind: dict[str, Any] = field(default_factory=dict)
     readout: dict[str, Any] = field(default_factory=dict)
@@ -108,6 +109,12 @@ def _phase_factor(direction: np.ndarray, delta: float) -> np.ndarray:
     return np.exp(1j * direction * float(delta))
 
 
+def _quantize_delta(delta: float) -> float:
+    """Return a rounded representation for caching keyed by ``delta``."""
+
+    return round(float(delta), 12)
+
+
 def _xi_initial(pQ: np.ndarray, xi_cfg: Mapping[str, Any]) -> tuple[np.ndarray, bool]:
     """Return the initial susceptibility and whether it should track the run."""
 
@@ -134,13 +141,20 @@ def _xi_initial(pQ: np.ndarray, xi_cfg: Mapping[str, Any]) -> tuple[np.ndarray, 
     return Xi, dynamic
 
 
-def _noise_sigma(noise_cfg: Mapping[str, Any], key: str) -> float:
-    value = noise_cfg.get(key, noise_cfg.get(f"{key}_std", 0.0))
-    value = noise_cfg.get(f"{key}_sigma", value)
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return 0.0
+def _noise_sigma(noise_cfg: Mapping[str, Any], key: str, *, aliases: Sequence[str] = ()) -> float:
+    keys = [key, f"{key}_std", f"{key}_sigma"]
+    for alias in aliases:
+        alias_str = str(alias)
+        keys.extend([alias_str, f"{alias_str}_std", f"{alias_str}_sigma"])
+
+    for name in keys:
+        if name in noise_cfg:
+            value = noise_cfg[name]
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                continue
+    return 0.0
 
 
 def _collect_readout(
@@ -159,7 +173,7 @@ def _collect_readout(
     }
 
 
-def _psi_sampler_factory(
+def _psi_sampler_factory_phase(
     Psi0: np.ndarray,
     direction_i: np.ndarray,
     direction_j: np.ndarray,
@@ -172,12 +186,9 @@ def _psi_sampler_factory(
     cache_j: dict[float, np.ndarray] = {}
     sample_cache: dict[tuple[float, float], tuple[np.ndarray, ...]] = {}
 
-    def _quantize(delta: float) -> float:
-        return round(float(delta), 12)
-
     def sampler(delta_i: float, delta_j: float) -> Sequence[np.ndarray]:
-        key_i = _quantize(delta_i)
-        key_j = _quantize(delta_j)
+        key_i = _quantize_delta(delta_i)
+        key_j = _quantize_delta(delta_j)
         cache_key = (key_i, key_j)
 
         if key_i not in cache_i:
@@ -191,6 +202,119 @@ def _psi_sampler_factory(
             Psi_i = Psi0_arr * factor_i
             Psi_j = Psi0_arr * factor_j
             Psi_ij = Psi0_arr * factor_i * factor_j
+            sample_cache[cache_key] = (Psi0_arr, Psi_i, Psi_ij, Psi_j)
+
+        return sample_cache[cache_key]
+
+    return sampler
+
+
+def _direct_neighbor_state_factory(
+    S: GraphSubstrate,
+    lambda_state: Mapping[str, float],
+    pQ: np.ndarray,
+    theta: np.ndarray,
+    config: RunConfig,
+    *,
+    J: np.ndarray,
+    neighbor_steps: int = 1,
+) -> Callable[[Mapping[str, float]], np.ndarray]:
+    """Return a callable that synthesises neighbour states via direct stepping."""
+
+    lam0 = {str(k): float(v) for k, v in lambda_state.items()}
+    base_prob = np.asarray(pQ, dtype=float)
+    base_theta = np.asarray(theta, dtype=float)
+    steps = max(int(neighbor_steps), 1)
+    eta_q = float(config.eta_q)
+
+    defaults = {
+        "rho": float(lam0.get("rho", 0.0)),
+        "tau": float(lam0.get("tau", lam0.get("tau_scale", 1.0))),
+        "kappa": float(lam0.get("kappa", 1.0)),
+        "omega_scale": float(lam0.get("omega_scale", config.omega_scale)),
+    }
+    if defaults["tau"] <= 0.0:
+        defaults["tau"] = 1.0
+
+    def _base_value(knob: str) -> float:
+        if knob in lam0:
+            return lam0[knob]
+        if knob in defaults:
+            return defaults[knob]
+        if knob == "tau_scale":
+            return defaults["tau"]
+        return 0.0
+
+    def _resolve_params(lam: Mapping[str, float]) -> tuple[float, float, float, float]:
+        rho_val = float(lam.get("rho", defaults["rho"]))
+        tau_val = float(lam.get("tau", lam.get("tau_scale", defaults["tau"])))
+        if tau_val <= 0.0:
+            tau_val = 1.0
+        kappa_val = float(lam.get("kappa", defaults["kappa"]))
+        omega_scale_val = float(lam.get("omega_scale", defaults["omega_scale"]))
+        return rho_val, tau_val, kappa_val, omega_scale_val
+
+    def _propagate_once(lam: Mapping[str, float]) -> np.ndarray:
+        rho_val, tau_val, kappa_val, omega_scale_val = _resolve_params(lam)
+        K = build_transport_kernel(S, rho=rho_val, tau_scale=tau_val, kappa=kappa_val)
+        omega = omega_from_delays(S, rho=rho_val, tau_scale=tau_val, omega_scale=omega_scale_val)
+
+        p_state = base_prob.copy()
+        theta_state = base_theta.copy()
+        for _ in range(steps):
+            theta_state = theta_step(theta_state, omega, J, phase_kick=None)
+            p_state, _ = q_step(p_state, K, eta_q, geom_bias=None, clip_floor=0.0)
+        return build_psi(p_state, theta_state)
+
+    state_cache: dict[tuple[tuple[str, float], ...], np.ndarray] = {}
+
+    def _cache_key(overrides: Mapping[str, float]) -> tuple[tuple[str, float], ...]:
+        key_items: list[tuple[str, float]] = []
+        for knob, delta in overrides.items():
+            quant = _quantize_delta(delta)
+            if quant == 0.0:
+                continue
+            key_items.append((str(knob), quant))
+        key_items.sort()
+        return tuple(key_items)
+
+    def state_for(overrides: Mapping[str, float]) -> np.ndarray:
+        key = _cache_key(overrides)
+        if key in state_cache:
+            return state_cache[key]
+
+        lam = lam0.copy()
+        for knob, delta in overrides.items():
+            base_val = _base_value(str(knob))
+            lam[str(knob)] = base_val + float(delta)
+
+        state = _propagate_once(lam)
+        state_cache[key] = state
+        return state
+
+    return state_for
+
+
+def _psi_sampler_factory_direct(
+    Psi0: np.ndarray,
+    knob_i: str,
+    knob_j: str,
+    state_for: Callable[[Mapping[str, float]], np.ndarray],
+) -> Callable[[float, float], Sequence[np.ndarray]]:
+    """Return a sampler that queries direct-step neighbour states."""
+
+    Psi0_arr = np.asarray(Psi0, dtype=np.complex128)
+    sample_cache: dict[tuple[float, float], tuple[np.ndarray, ...]] = {}
+
+    def sampler(delta_i: float, delta_j: float) -> Sequence[np.ndarray]:
+        key_i = _quantize_delta(delta_i)
+        key_j = _quantize_delta(delta_j)
+        cache_key = (key_i, key_j)
+
+        if cache_key not in sample_cache:
+            Psi_i = state_for({knob_i: float(delta_i)})
+            Psi_j = state_for({knob_j: float(delta_j)})
+            Psi_ij = state_for({knob_i: float(delta_i), knob_j: float(delta_j)})
             sample_cache[cache_key] = (Psi0_arr, Psi_i, Psi_ij, Psi_j)
 
         return sample_cache[cache_key]
@@ -241,6 +365,17 @@ def run_parameter_loop(
     psi_raw = build_psi(pQ, theta)
     psi_current, psi_ema = smooth_psi(psi_raw, None)
 
+    geometry_cfg = config.geometry or {}
+    sample_mode = str(geometry_cfg.get("sample_mode", "direct")).lower()
+    if sample_mode not in {"direct", "phase_factor"}:
+        sample_mode = "direct"
+
+    neighbor_steps_raw = geometry_cfg.get("neighbor_steps", 1)
+    try:
+        neighbor_steps = max(int(neighbor_steps_raw), 1)
+    except (TypeError, ValueError):
+        neighbor_steps = 1
+
     lambda_path: list[dict[str, float]] = []
     delta_lambda_log: list[dict[str, float]] = []
     delta_area_log: list[float] = []
@@ -275,8 +410,9 @@ def run_parameter_loop(
     J = build_J_from_W(S, zeta=float(config.zeta))
 
     noise_cfg = config.noise or {}
-    theta_sigma = _noise_sigma(noise_cfg, "theta")
-    prob_sigma = _noise_sigma(noise_cfg, "prob")
+    theta_sigma = _noise_sigma(noise_cfg, "theta", aliases=("phase",))
+    prob_sigma = _noise_sigma(noise_cfg, "prob", aliases=("amp", "amp_noise"))
+    delay_sigma = _noise_sigma(noise_cfg, "delay", aliases=("tau",))
     clip_floor = float(noise_cfg.get("clip_floor", 0.0)) if noise_cfg else 0.0
 
     readout_cfg = config.readout or {}
@@ -305,8 +441,16 @@ def run_parameter_loop(
         if tau_scale <= 0.0:
             tau_scale = 1.0
 
-        K = build_transport_kernel(S, rho=rho, tau_scale=tau_scale, kappa=kappa)
-        omega_n = omega_from_delays(S, rho=rho, tau_scale=tau_scale, omega_scale=float(config.omega_scale))
+        if delay_sigma > 0.0:
+            tau_jitter = rng.normal(0.0, delay_sigma)
+            tau_scale_eff = max(tau_scale + tau_jitter, 1e-6)
+        else:
+            tau_scale_eff = tau_scale
+
+        K = build_transport_kernel(S, rho=rho, tau_scale=tau_scale_eff, kappa=kappa)
+        omega_n = omega_from_delays(
+            S, rho=rho, tau_scale=tau_scale_eff, omega_scale=float(config.omega_scale)
+        )
 
         Psi0 = psi_current
         geometry_knobs = set(config.delta_frac.keys()) | set(delta_lambda.keys())
@@ -314,6 +458,18 @@ def run_parameter_loop(
         knob_deltas: dict[str, float] = {}
         neighbor_states: dict[str, np.ndarray] = {}
         A_per_knob: dict[str, np.ndarray] = {}
+
+        direct_state_for: Callable[[Mapping[str, float]], np.ndarray] | None = None
+        if sample_mode == "direct" and geometry_knobs:
+            direct_state_for = _direct_neighbor_state_factory(
+                S,
+                lambda_state,
+                pQ,
+                theta,
+                config,
+                J=J,
+                neighbor_steps=neighbor_steps,
+            )
 
         for knob in sorted(geometry_knobs):
             scale = abs(lambda_state.get(knob, 1.0))
@@ -328,8 +484,21 @@ def run_parameter_loop(
                 continue
 
             knob_deltas[knob] = float(delta_candidate)
-            factor = phase_factor(knob, delta_candidate)
-            Psi_i = Psi0 * factor
+            if sample_mode == "phase_factor":
+                factor = phase_factor(knob, delta_candidate)
+                Psi_i = Psi0 * factor
+            else:
+                if direct_state_for is None:
+                    direct_state_for = _direct_neighbor_state_factory(
+                        S,
+                        lambda_state,
+                        pQ,
+                        theta,
+                        config,
+                        J=J,
+                        neighbor_steps=neighbor_steps,
+                    )
+                Psi_i = direct_state_for({knob: float(delta_candidate)})
             neighbor_states[knob] = Psi_i
             A_per_knob[knob] = nodewise_connection_a_i(Psi0, Psi_i, delta_candidate)
 
@@ -361,7 +530,20 @@ def run_parameter_loop(
             for knob_i, knob_j in combinations(sorted(knob_deltas), 2):
                 delta_i = knob_deltas[knob_i]
                 delta_j = knob_deltas[knob_j]
-                sampler = _psi_sampler_factory(Psi0, direction_for(knob_i), direction_for(knob_j))
+                if sample_mode == "phase_factor":
+                    sampler = _psi_sampler_factory_phase(Psi0, direction_for(knob_i), direction_for(knob_j))
+                else:
+                    if direct_state_for is None:
+                        direct_state_for = _direct_neighbor_state_factory(
+                            S,
+                            lambda_state,
+                            pQ,
+                            theta,
+                            config,
+                            J=J,
+                            neighbor_steps=neighbor_steps,
+                        )
+                    sampler = _psi_sampler_factory_direct(Psi0, knob_i, knob_j, direct_state_for)
                 plaquette = curvature_anytime(
                     sampler,
                     delta_i,

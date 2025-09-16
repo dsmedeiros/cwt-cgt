@@ -5,9 +5,9 @@ from experiments.gateC_topology_robust import run
 
 def test_gateC_noise_robustness_and_decay():
     results = run.run_experiment(
-        sigma_phase_values=[0.0, 0.05, 0.1, 0.2, 0.35],
-        sigma_amp=0.02,
-        sigma_tau=0.02,
+        phase_std_values=[0.0, 0.05, 0.1, 0.2, 0.35],
+        amp_noise=0.02,
+        delay_std=0.02,
         num_trials=3,
         loop_steps=60,
         grid_size=6,

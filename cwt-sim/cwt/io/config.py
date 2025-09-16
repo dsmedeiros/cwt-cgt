@@ -44,6 +44,8 @@ class GeometryConfig(BaseModel):
     compute_curvature: bool = True
     adapt_levels: int = 2
     ci_tol: float = 0.05
+    sample_mode: str = "direct"
+    neighbor_steps: int = 1
 
 
 class DynamicsConfig(BaseModel):
