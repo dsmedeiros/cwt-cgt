@@ -1,0 +1,7 @@
+# Minimal dependencies required to execute the test suite
+numpy>=1.24
+scipy>=1.10
+networkx>=3.1
+pandas>=2.0
+matplotlib>=3.7
+pytest>=7.4
