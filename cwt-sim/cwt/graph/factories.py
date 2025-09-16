@@ -42,9 +42,19 @@ def ring3(weight: float = 1.0, delay: float = 1.0) -> GraphSubstrate:
 
 
 def random_regular_digraph(
-    N: int, out_degree: int, weight: float = 1.0, delay: float = 1.0, seed: int = 1
+    N: int,
+    out_degree: int,
+    weight: float = 1.0,
+    delay: float = 1.0,
+    seed: int = 1,
+    alpha: float = 1.0,
 ) -> GraphSubstrate:
-    """Generate a random k-out regular directed graph and build its substrate."""
+    """Generate a random k-out regular directed graph and build its substrate.
+
+    The ``alpha`` parameter controls the probability of selecting a new target
+    during the construction and defaults to ``1.0`` which matches the behaviour
+    of older NetworkX releases.
+    """
 
     if N < 0:
         raise ValueError("N must be non-negative")
@@ -58,7 +68,7 @@ def random_regular_digraph(
         raise ValueError("out_degree must be less than number of nodes for simple digraph")
 
     rng = nx.utils.create_random_state(seed)
-    G = nx.random_k_out_graph(N, out_degree, self_loops=False, with_replacement=False, seed=rng)
+    G = nx.random_k_out_graph(N, out_degree, alpha, self_loops=False, seed=rng)
     G = nx.DiGraph(G)
     for source, target in G.edges():
         G[source][target]["weight"] = float(weight)

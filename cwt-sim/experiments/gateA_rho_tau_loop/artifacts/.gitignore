@@ -1,0 +1,2 @@
+# Ignore generated JSON records for Gate A experiments
+*.json
