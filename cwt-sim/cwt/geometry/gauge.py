@@ -35,7 +35,7 @@ def parallel_transport_rephase(Psi0: np.ndarray, Psis: Mapping[str, np.ndarray])
     for key, psi in Psis.items():
         psi_arr = np.asarray(psi, dtype=np.complex128)
         overlap = inner(psi0, psi_arr)
-        magnitude = np.abs(overlap)
+        magnitude = float(np.clip(np.abs(overlap), 0.0, 1.0))
 
         if magnitude <= 1e-15:
             phase = 1.0 + 0.0j

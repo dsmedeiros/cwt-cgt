@@ -34,6 +34,7 @@ def fabricate_record(
         "config": config.model_dump(mode="json"),
         "label": label,
         "seed": int(seed),
+        "rng": {"base": int(seed)},
         "step": int(step_index),
     }
 
@@ -45,6 +46,7 @@ def fabricate_record(
         pQ_traj=[pQ],
         theta_traj=[theta],
         psi_traj=[psi],
+        fs_steps=[0.0],
         overlaps_min=[0.0],
         g_tiles=[{}],
         omega_tiles=[{}],
