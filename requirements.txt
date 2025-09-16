@@ -1,0 +1,7 @@
+# Core scientific computing dependencies for the CGT simulation tooling
+numpy>=1.24
+scipy>=1.10
+networkx>=3.1
+pandas>=2.0
+matplotlib>=3.7
+pyarrow>=14.0
