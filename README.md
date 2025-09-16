@@ -26,4 +26,11 @@ After installing the test dependencies, execute the unit and regression suites f
 pytest cwt-sim/tests
 ```
 
+## Continuous integration
+
+Automated test runs are configured through the [GitHub Actions workflow](.github/workflows/tests.yml). The workflow provisions
+Python 3.12, installs the lightweight test requirements, and runs `pytest cwt-sim/tests` for every pull request and for pushes
+to the active branches. This keeps the regression and unit suites in sync with continuous development activity without manual
+setup.
+
 Additional experiment scripts and notebooks live under `cwt-sim/experiments` and `cwt-sim/notebooks` respectively.
