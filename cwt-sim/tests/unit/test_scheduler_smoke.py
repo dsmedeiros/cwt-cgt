@@ -64,4 +64,8 @@ def test_run_parameter_loop_smoke() -> None:
     assert record.meta["seed"] == 42
     assert record.meta["steps"] == path.steps
     assert record.meta["substrate_size"] == substrate.N
+    guard_meta = record.meta.get("fs_step_guard")
+    assert isinstance(guard_meta, dict)
+    assert "threshold" in guard_meta
+    assert "overall_fraction" in guard_meta
     assert record.readouts  # interval + final

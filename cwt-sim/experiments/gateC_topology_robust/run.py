@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
@@ -12,12 +13,14 @@ import numpy as np
 import scipy.sparse as sp
 
 from cwt.geometry.curvature import curvature_tile
+from cwt.geometry.fs_distance import fs_distance
 from cwt.geometry.psi import build_psi, inner
 from cwt.graph.factories import random_regular_digraph, ring3
 from cwt.graph.substrate import GraphSubstrate
 from cwt.layers.readouts import memory_current_coupled, readout_stochastic
 from cwt.layers.state import LayersState, wrap_angles
 from cwt.orchestrator.param_path import ParameterPath
+from ..report_helpers import fs_histogram, render_health_banner
 
 
 @dataclass
@@ -28,6 +31,8 @@ class TrialResult:
     R_gamma: float
     s_bar: float
     overlap_avg: float
+    min_overlap: float
+    fs_steps: list[float]
 
 
 @dataclass
@@ -129,6 +134,24 @@ def _mean_ci(values: Iterable[float]) -> tuple[float, tuple[float, float]]:
     std = float(arr.std(ddof=1))
     margin = 1.96 * std / np.sqrt(arr.size)
     return mean, (mean - margin, mean + margin)
+
+
+def _health_metrics(results: ExperimentResults) -> tuple[float, dict, list[float]]:
+    total_trials = 0
+    passing_trials = 0
+    fs_all: list[float] = []
+
+    for graph in results.graphs:
+        threshold = graph.overlap_threshold
+        for level in graph.noise_levels:
+            for trial in level.trials:
+                total_trials += 1
+                if math.isfinite(trial.min_overlap) and trial.min_overlap >= threshold:
+                    passing_trials += 1
+                fs_all.extend(trial.fs_steps)
+
+    pass_rate = passing_trials / total_trials if total_trials else float("nan")
+    return pass_rate, fs_histogram(fs_all), []
 
 
 def _synthetic_state(S: GraphSubstrate, rho: float, tau: float) -> LayersState:
@@ -330,15 +353,21 @@ def _coherence_factor(
     return float(np.mean(local_vals))
 
 
-def _overlap_average(traj: Sequence[np.ndarray]) -> float:
+def _overlap_stats(traj: Sequence[np.ndarray]) -> tuple[float, float]:
     if not traj:
-        return float("nan")
-    overlaps: list[float] = []
+        return float("nan"), float("nan")
+
     loop = list(traj)
-    loop.append(traj[0])
-    for psi_a, psi_b in zip(loop, loop[1:]):
-        overlaps.append(float(abs(inner(psi_a, psi_b))))
-    return float(np.mean(overlaps))
+    if not loop:
+        return float("nan"), float("nan")
+
+    loop.append(loop[0])
+    overlaps = [float(abs(inner(psi_a, psi_b))) for psi_a, psi_b in zip(loop, loop[1:])]
+    if not overlaps:
+        return float("nan"), float("nan")
+
+    arr = np.asarray(overlaps, dtype=float)
+    return float(arr.mean()), float(arr.min())
 
 
 def _run_noise_trial(
@@ -386,7 +415,17 @@ def _run_noise_trial(
 
         psi_traj.append(build_psi(p_final, theta_final))
 
-    overlap_avg = _overlap_average(psi_traj)
+    fs_steps: list[float] = []
+    if psi_traj:
+        loop_states = list(psi_traj)
+        loop_states.append(psi_traj[0])
+        for psi_a, psi_b in zip(loop_states, loop_states[1:]):
+            try:
+                fs_steps.append(float(fs_distance(psi_a, psi_b)))
+            except ValueError:
+                fs_steps.append(float("nan"))
+
+    overlap_avg, min_overlap = _overlap_stats(psi_traj)
     s_bar = _coherence_factor(S, theta_final, W_csc)
 
     decay = float(np.clip(s_bar, 0.0, 1.0)) * float(np.clip(overlap_avg, 0.0, 1.0))
@@ -400,7 +439,14 @@ def _run_noise_trial(
     noise_scale = 0.02 * abs(base_bias) * max(1.0 - decay, 1e-3)
     bias += float(rng.normal(0.0, noise_scale))
 
-    return TrialResult(seed=int(seed_value), R_gamma=bias, s_bar=s_bar, overlap_avg=overlap_avg)
+    return TrialResult(
+        seed=int(seed_value),
+        R_gamma=bias,
+        s_bar=s_bar,
+        overlap_avg=overlap_avg,
+        min_overlap=min_overlap,
+        fs_steps=fs_steps,
+    )
 
 
 def _run_noise_level(
@@ -605,6 +651,9 @@ def _render_report(results: ExperimentResults) -> str:
         ),
         "",
     ]
+
+    pass_rate, fs_hist_all, omega_widths = _health_metrics(results)
+    lines.extend(render_health_banner(pass_rate, fs_hist_all, omega_widths))
 
     for graph in results.graphs:
         lines.extend([f"## Graph: {graph.name}", ""])
