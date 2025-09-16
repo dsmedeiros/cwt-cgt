@@ -1,0 +1,2 @@
+# Ignore generated figure outputs (binary PNG files)
+*.png

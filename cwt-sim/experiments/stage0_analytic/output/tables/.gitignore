@@ -1,0 +1,2 @@
+# Ignore generated Parquet tables from the stage-0 analytic experiment
+*.parquet
