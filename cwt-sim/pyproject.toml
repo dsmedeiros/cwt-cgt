@@ -1,5 +1,49 @@
+[build-system]
+requires = ["setuptools>=67", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "cwt-sim"
 version = "0.0.0"
 description = "Placeholder package scaffolding for continuous wavelet transport simulations"
 requires-python = ">=3.11"
+
+[tool.black]
+line-length = 110
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+src = ["cwt", "experiments", "tests"]
+extend-exclude = ["configs", "notebooks", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E203"]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+known-first-party = ["cwt", "experiments"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+mypy_path = ["cwt-sim"]
+files = [
+    "cwt/geometry/adapt_mesh.py",
+    "cwt/geometry/fs_distance.py",
+    "cwt/geometry/thermometer.py",
+]
+follow_imports = "silent"
+ignore_missing_imports = true
+exclude = ["notebooks", "scripts"]
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+markers = [
+    "unit: fast, deterministic unit tests for the simulation toolkit.",
+    "regression: deterministic regression tests over small graph ensembles.",
+]

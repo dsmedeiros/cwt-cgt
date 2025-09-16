@@ -16,15 +16,9 @@ app = typer.Typer(help="Generate a series of placeholder runs for a parameter gr
 
 @app.command()
 def main(
-    config: Path = typer.Option(
-        ..., "--config", "-c", help="Path to the YAML configuration file."
-    ),
-    out: Path | None = typer.Option(
-        None, "--out", help="Output directory for run bundles."
-    ),
-    limit: int | None = typer.Option(
-        None, "--limit", help="Restrict the number of generated runs."
-    ),
+    config: Path = typer.Option(..., "--config", "-c", help="Path to the YAML configuration file."),
+    out: Path | None = typer.Option(None, "--out", help="Output directory for run bundles."),
+    limit: int | None = typer.Option(None, "--limit", help="Restrict the number of generated runs."),
 ) -> None:
     """Load ``config`` and persist multiple placeholder runs."""
 

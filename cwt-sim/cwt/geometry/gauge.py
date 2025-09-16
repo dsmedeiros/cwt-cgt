@@ -9,9 +9,7 @@ import numpy as np
 from .psi import inner
 
 
-def parallel_transport_rephase(
-    Psi0: np.ndarray, Psis: Mapping[str, np.ndarray]
-) -> dict[str, np.ndarray]:
+def parallel_transport_rephase(Psi0: np.ndarray, Psis: Mapping[str, np.ndarray]) -> dict[str, np.ndarray]:
     r"""Return phase-aligned neighbours under the parallel transport gauge.
 
     Parameters

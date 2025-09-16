@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import logging
-from typing import Tuple
+from dataclasses import dataclass
 
 import networkx as nx
 import numpy as np
@@ -93,13 +92,16 @@ def to_sorted_index(G: nx.DiGraph) -> dict[int, int]:
 
     if any(not isinstance(label, int) or label != idx for idx, label in enumerate(sorted_nodes)):
         logger.warning(
-            "Graph nodes are not labelled consecutively from 0..N-1; using canonical index mapping to contiguous integers."
+            "Graph nodes are not labelled consecutively from 0..N-1; "
+            "using canonical index mapping to contiguous integers."
         )
 
     return {label: idx for idx, label in enumerate(sorted_nodes)}
 
 
-def graph_arrays(G: nx.DiGraph, node_index: dict[int, int]) -> Tuple[sp.csr_matrix, sp.csr_matrix, np.ndarray]:
+def graph_arrays(
+    G: nx.DiGraph, node_index: dict[int, int]
+) -> tuple[sp.csr_matrix, sp.csr_matrix, np.ndarray]:
     """Create sparse weight and delay matrices aligned with ``node_index``."""
 
     N = len(node_index)

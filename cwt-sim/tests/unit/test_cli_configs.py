@@ -8,10 +8,10 @@ from pathlib import Path
 import pytest
 import yaml
 from pydantic import ValidationError
+from scripts import eval_report, run_loop, sweep_grid
 from typer.testing import CliRunner
 
 from cwt.io.config import AppConfig, load_config
-from scripts import eval_report, run_loop, sweep_grid
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 RUNNER = CliRunner()

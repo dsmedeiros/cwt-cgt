@@ -16,18 +16,10 @@ app = typer.Typer(help="Validate configuration files and persist dummy run recor
 
 @app.command()
 def main(
-    config: Path = typer.Option(
-        ..., "--config", "-c", help="Path to the YAML configuration file."
-    ),
-    out: Path | None = typer.Option(
-        None, "--out", help="Output directory for run bundles."
-    ),
-    seed: int | None = typer.Option(
-        None, "--seed", help="Override the configuration seed."
-    ),
-    dry_run: bool = typer.Option(
-        False, "--dry-run", help="Validate configuration without writing outputs."
-    ),
+    config: Path = typer.Option(..., "--config", "-c", help="Path to the YAML configuration file."),
+    out: Path | None = typer.Option(None, "--out", help="Output directory for run bundles."),
+    seed: int | None = typer.Option(None, "--seed", help="Override the configuration seed."),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Validate configuration without writing outputs."),
 ) -> None:
     """Load ``config`` and optionally persist a placeholder run record."""
 
@@ -43,11 +35,7 @@ def main(
 
     record = fabricate_record(app_config, label=config.stem, seed=app_config.seed)
     run_id = save_run(record, app_config.out_dir)
-    typer.echo(
-        json.dumps(
-            {"run_id": run_id, "out_dir": str(Path(app_config.out_dir) / run_id)}
-        )
-    )
+    typer.echo(json.dumps({"run_id": run_id, "out_dir": str(Path(app_config.out_dir) / run_id)}))
 
 
 def entrypoint() -> None:

@@ -9,8 +9,8 @@ permissions:
   contents: read
 
 jobs:
-  pytest:
-    name: Run test suite
+  hygiene:
+    name: Lint, type-check, and test
     runs-on: ubuntu-latest
 
     steps:
@@ -27,5 +27,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.test.txt
 
-      - name: Run pytest
-        run: pytest cwt-sim/tests
+      - name: Ruff lint
+        working-directory: cwt-sim
+        run: ruff check .
+
+      - name: Black formatting
+        working-directory: cwt-sim
+        run: black --check .
+
+      - name: Mypy type checking
+        working-directory: cwt-sim
+        run: mypy
+
+      - name: Pytest (unit)
+        working-directory: cwt-sim
+        run: pytest -m unit -q
+
+      - name: Pytest (regression)
+        working-directory: cwt-sim
+        run: pytest -m regression -q

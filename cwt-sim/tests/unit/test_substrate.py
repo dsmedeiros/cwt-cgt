@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
+import networkx as nx
 import numpy as np
 import pytest
-
-import networkx as nx
 
 from cwt.graph import factories
 from cwt.graph.substrate import build_substrate

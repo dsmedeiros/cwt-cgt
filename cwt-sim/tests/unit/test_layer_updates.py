@@ -13,7 +13,6 @@ from cwt.layers.q_update import q_step
 from cwt.layers.state import normalize_prob, wrap_angles
 from cwt.layers.theta_update import build_J_from_W, omega_from_delays, theta_step
 
-
 nx = pytest.importorskip("networkx")
 
 
@@ -68,11 +67,13 @@ def simple_substrate() -> GraphSubstrate:
 def test_omega_from_delays_averages_outgoing_delays() -> None:
     S = simple_substrate()
     omega = omega_from_delays(S, rho=1.0, tau_scale=2.0, omega_scale=1.0)
-    expected = np.array([
-        1.0 / (1.0 + 1.0 / 2.0),
-        1.0 / (1.0 + 3.0 / 2.0),
-        1.0 / (1.0 + 2.0 / 2.0),
-    ])
+    expected = np.array(
+        [
+            1.0 / (1.0 + 1.0 / 2.0),
+            1.0 / (1.0 + 3.0 / 2.0),
+            1.0 / (1.0 + 2.0 / 2.0),
+        ]
+    )
     assert omega == pytest.approx(expected)
 
 

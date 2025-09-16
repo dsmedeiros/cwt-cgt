@@ -15,7 +15,7 @@ def thermometer_directional(
     deltas: Mapping[str, float],
     weights: Mapping[str, float] | None = None,
 ) -> float:
-    """Estimate the geometric thermometer from directional perturbations.
+    r"""Estimate the geometric thermometer from directional perturbations.
 
     Parameters
     ----------
@@ -60,7 +60,7 @@ def thermometer_directional(
             weight = float(weights.get(direction, 1.0))
 
         distance = fs_distance(Psi0_arr, np.asarray(Psi_i, dtype=np.complex128))
-        total += weight * (distance ** 2) / (delta ** 2)
+        total += weight * (distance**2) / (delta**2)
 
     return float(total)
 

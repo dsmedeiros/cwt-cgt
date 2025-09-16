@@ -3,21 +3,20 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Mapping, Sequence
+from typing import Mapping, Sequence
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 from cwt.geometry.adapt_mesh import curvature_anytime
 from cwt.geometry.curvature import curvature_tile
 from cwt.geometry.fs_distance import fs_distance
 from cwt.geometry.metric import metric_tile
 from cwt.geometry.psi import build_psi
-
 
 # ---------------------------------------------------------------------------
 # Dataclasses describing the structured results returned by the analytic runs.
@@ -81,12 +80,16 @@ class Ring3Result:
     min_overlap_reverse: float
 
     def orientation_flip_holds(self) -> bool:
-        return bool(np.isfinite(self.omega_forward) and np.isfinite(self.omega_reverse) and np.isclose(
-            self.omega_reverse,
-            -self.omega_forward,
-            rtol=1e-9,
-            atol=1e-12,
-        ))
+        return bool(
+            np.isfinite(self.omega_forward)
+            and np.isfinite(self.omega_reverse)
+            and np.isclose(
+                self.omega_reverse,
+                -self.omega_forward,
+                rtol=1e-9,
+                atol=1e-12,
+            )
+        )
 
 
 @dataclass(frozen=True)
@@ -111,7 +114,11 @@ def _dimer_state(theta: float) -> np.ndarray:
     return build_psi(probs, phases)
 
 
-def _dimer_curvature(theta0: float, delta_i: float, delta_j: float) -> tuple[float, dict[str, Mapping[str, float]]]:
+def _dimer_curvature(
+    theta0: float,
+    delta_i: float,
+    delta_j: float,
+) -> tuple[float, dict[str, Mapping[str, float]]]:
     """Evaluate the Wilson loop curvature on the dimer using real amplitudes."""
 
     Psi0 = _dimer_state(theta0)
@@ -119,7 +126,13 @@ def _dimer_curvature(theta0: float, delta_i: float, delta_j: float) -> tuple[flo
     Psi_j = _dimer_state(theta0 + delta_j)
     Psi_ij = _dimer_state(theta0 + delta_i + delta_j)
     omega, stats = curvature_tile(Psi0, Psi_i, Psi_ij, Psi_j, delta_i, delta_j)
-    return float(omega), {"overlaps": {k: float(v) for k, v in stats["overlaps"].items()}, "min_overlap": float(stats["min_overlap"]) }
+    return (
+        float(omega),
+        {
+            "overlaps": {k: float(v) for k, v in stats["overlaps"].items()},
+            "min_overlap": float(stats["min_overlap"]),
+        },
+    )
 
 
 _LINE3_BASE_PROBS = np.array([0.52, 0.33, 0.15], dtype=float)
@@ -179,21 +192,48 @@ def _ring3_apply_direction(
     return probs_new, phases_new
 
 
-def _ring3_states(delta_i: float, delta_j: float) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def _ring3_states(
+    delta_i: float,
+    delta_j: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Construct the states required for the ring3 plaquette evaluation."""
 
     Psi0 = build_psi(_RING3_BASE_PROBS, _RING3_BASE_PHASES)
 
-    probs_i, phases_i = _ring3_apply_direction(_RING3_BASE_PROBS, _RING3_BASE_PHASES, delta_i, idx=1, cross_idx=2)
+    probs_i, phases_i = _ring3_apply_direction(
+        _RING3_BASE_PROBS,
+        _RING3_BASE_PHASES,
+        delta_i,
+        idx=1,
+        cross_idx=2,
+    )
     Psi_i = build_psi(probs_i, phases_i)
 
-    probs_j, phases_j = _ring3_apply_direction(_RING3_BASE_PROBS, _RING3_BASE_PHASES, delta_j, idx=2, cross_idx=0)
+    probs_j, phases_j = _ring3_apply_direction(
+        _RING3_BASE_PROBS,
+        _RING3_BASE_PHASES,
+        delta_j,
+        idx=2,
+        cross_idx=0,
+    )
     Psi_j = build_psi(probs_j, phases_j)
 
-    probs_ij, phases_ij = _ring3_apply_direction(probs_i, phases_i, delta_j, idx=2, cross_idx=0)
+    probs_ij, phases_ij = _ring3_apply_direction(
+        probs_i,
+        phases_i,
+        delta_j,
+        idx=2,
+        cross_idx=0,
+    )
     Psi_ij = build_psi(probs_ij, phases_ij)
 
-    probs_ji, phases_ji = _ring3_apply_direction(probs_j, phases_j, delta_i, idx=1, cross_idx=2)
+    probs_ji, phases_ji = _ring3_apply_direction(
+        probs_j,
+        phases_j,
+        delta_i,
+        idx=1,
+        cross_idx=2,
+    )
     Psi_ji = build_psi(probs_ji, phases_ji)
 
     return Psi0, Psi_i, Psi_j, Psi_ij, Psi_ji
@@ -278,7 +318,14 @@ def run_line3_experiment(
     Psi_i = _line3_state(float(curvature_steps[0]), 0.0)
     Psi_j = _line3_state(0.0, float(curvature_steps[1]))
     Psi_ij = _line3_state(float(curvature_steps[0]), float(curvature_steps[1]))
-    omega, stats = curvature_tile(Psi0, Psi_i, Psi_ij, Psi_j, float(curvature_steps[0]), float(curvature_steps[1]))
+    omega, stats = curvature_tile(
+        Psi0,
+        Psi_i,
+        Psi_ij,
+        Psi_j,
+        float(curvature_steps[0]),
+        float(curvature_steps[1]),
+    )
 
     return Line3Result(
         sweep=sweep_arr,
@@ -411,8 +458,19 @@ def _write_tables(results: Stage0Results, directory: Path) -> None:
 
 def _plot_dimer_fs(results: Stage0Results, path: Path) -> None:
     fig, ax = plt.subplots(figsize=(6, 4))
-    ax.plot(results.dimer.delta, results.dimer.fs_distance, label="FS distance", linewidth=2.0)
-    ax.plot(results.dimer.delta, results.dimer.fs_expected, label="|δ| expectation", linestyle="--", linewidth=1.6)
+    ax.plot(
+        results.dimer.delta,
+        results.dimer.fs_distance,
+        label="FS distance",
+        linewidth=2.0,
+    )
+    ax.plot(
+        results.dimer.delta,
+        results.dimer.fs_expected,
+        label="|δ| expectation",
+        linestyle="--",
+        linewidth=1.6,
+    )
     ax.set_xlabel("δ (radians)")
     ax.set_ylabel("Fubini-Study distance")
     ax.set_title("Dimer Fubini-Study sweep")
@@ -483,7 +541,11 @@ def _write_results_markdown(results: Stage0Results, path: Path) -> None:
         "| δ | d_FS | |δ| |",
         "| --- | --- | --- |",
     ]
-    for delta, fs_val, fs_exp in zip(results.dimer.delta, results.dimer.fs_distance, results.dimer.fs_expected):
+    for delta, fs_val, fs_exp in zip(
+        results.dimer.delta,
+        results.dimer.fs_distance,
+        results.dimer.fs_expected,
+    ):
         lines.append(f"| {delta:.3f} | {fs_val:.6f} | {fs_exp:.6f} |")
     lines.extend(
         [
@@ -493,7 +555,11 @@ def _write_results_markdown(results: Stage0Results, path: Path) -> None:
             "## Line3 metric and curvature",
             "",
             f"Metric samples computed with δ = {results.line3.metric_delta:.3f}.",
-            f"Curvature estimate Ω̄ = {results.line3.curvature_mean:.3e} with CI {results.line3.curvature_ci[0]:.3e} … {results.line3.curvature_ci[1]:.3e}.",
+            (
+                "Curvature estimate Ω̄ = "
+                f"{results.line3.curvature_mean:.3e} with CI "
+                f"{results.line3.curvature_ci[0]:.3e} … {results.line3.curvature_ci[1]:.3e}."
+            ),
             f"Minimum loop overlap magnitude: {results.line3.min_overlap:.6f}.",
             "",
             "## Ring3 orientation study",
