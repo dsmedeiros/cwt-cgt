@@ -1,4 +1,4 @@
-"""Fubini-Study distance estimators for CGT."""
+r"""Fubini-Study distance estimators for CGT."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from .psi import inner
 
 
 def fs_distance(Psi_a: np.ndarray, Psi_b: np.ndarray, clamp: bool = True) -> float:
-    """Compute the Fubini-Study distance between two state vectors.
+    r"""Compute the Fubini-Study distance between two state vectors.
 
     Parameters
     ----------
@@ -48,9 +48,7 @@ def fs_distance(Psi_a: np.ndarray, Psi_b: np.ndarray, clamp: bool = True) -> flo
     else:
         tol = 1e-12
         if cos_arg_raw < -tol or cos_arg_raw > 1.0 + tol:
-            raise ValueError(
-                "Fubini-Study argument must lie in [0, 1] when clamp is False."
-            )
+            raise ValueError("Fubini-Study argument must lie in [0, 1] when clamp is False.")
         # Ensure tiny numerical excursions do not trigger domain errors.
         cos_arg = min(max(cos_arg_raw, 0.0), 1.0)
 

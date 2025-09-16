@@ -25,10 +25,7 @@ def test_gateC_noise_robustness_and_decay():
             quantized_mask.append(level.quantized)
 
             if not level.quantized:
-                assert (
-                    level.s_bar_mean < coherence_threshold
-                    or level.overlap_mean < overlap_threshold
-                )
+                assert level.s_bar_mean < coherence_threshold or level.overlap_mean < overlap_threshold
 
         # Check sign persistence while quantized
         quantized_means = [val for val, q in zip(mean_values, quantized_mask) if q]

@@ -7,7 +7,7 @@ import json
 import math
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Mapping, Sequence
+from typing import Mapping, Sequence
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -121,9 +121,7 @@ def _initial_state(S: GraphSubstrate, rng: np.random.Generator) -> LayersState:
 
     N = S.N
     if N == 0:
-        return LayersState(
-            pQ=np.zeros((0,), dtype=float), theta=np.zeros((0,), dtype=float)
-        )
+        return LayersState(pQ=np.zeros((0,), dtype=float), theta=np.zeros((0,), dtype=float))
 
     pQ = np.full(N, 1.0 / N, dtype=float)
     base_angles = np.linspace(-np.pi, np.pi, num=N, endpoint=False)
@@ -156,9 +154,7 @@ def markov_spectral_gap(K) -> float:
             return float("nan")
 
         try:
-            eigenvalues = eigs(
-                K.T, k=k, which="LM", maxiter=10_000, return_eigenvectors=False
-            )
+            eigenvalues = eigs(K.T, k=k, which="LM", maxiter=10_000, return_eigenvectors=False)
         except ArpackNoConvergence as exc:  # pragma: no cover - defensive
             eigenvalues = exc.eigenvalues
             if eigenvalues.size == 0:
@@ -206,12 +202,8 @@ def simulate_state(
 
     K = build_transport_kernel(S, rho=rho, tau_scale=tau_scale)
     gap = markov_spectral_gap(K)
-    omega = omega_from_delays(
-        S, rho=rho, tau_scale=tau_scale, omega_scale=config.omega_scale
-    )
-    zeta_eff = (
-        config.zeta * math.exp(-0.5 * float(rho)) / (1.0 + 0.5 * float(tau_scale))
-    )
+    omega = omega_from_delays(S, rho=rho, tau_scale=tau_scale, omega_scale=config.omega_scale)
+    zeta_eff = config.zeta * math.exp(-0.5 * float(rho)) / (1.0 + 0.5 * float(tau_scale))
     J = build_J_from_W(S, zeta=zeta_eff)
 
     p = np.asarray(state.pQ, dtype=float).copy()
@@ -221,17 +213,13 @@ def simulate_state(
     for step in range(config.total_steps()):
         theta = theta_step(theta, omega, J)
         if config.theta_noise > 0.0 and theta.size:
-            theta = wrap_angles(
-                theta + rng.normal(0.0, config.theta_noise, size=theta.shape)
-            )
+            theta = wrap_angles(theta + rng.normal(0.0, config.theta_noise, size=theta.shape))
         p, _ = q_step(p, K, eta=config.eta_q)
         if step >= config.transient_steps:
             r_series.append(kuramoto_order_parameter(theta))
 
     theta_final = wrap_angles(theta)
-    state = LayersState(
-        pQ=p, theta=theta_final, last_lambda={"rho": rho, "tau": tau_scale}
-    )
+    state = LayersState(pQ=p, theta=theta_final, last_lambda={"rho": rho, "tau": tau_scale})
     r_arr = np.asarray(r_series, dtype=float)
     r_mean = _smooth_average(r_arr, config.average_window)
     return state, r_arr, float(r_mean), gap
@@ -295,18 +283,14 @@ def compute_metric_and_curvature(
                 delta_r = float(rho_values[i + 1] - rho_values[i])
                 delta_t = float(tau_values[j + 1] - tau_values[j])
                 if delta_r != 0.0 and delta_t != 0.0:
-                    omega, _ = curvature_tile(
-                        psi0, psi_r, psi_rt, psi_t, delta_r, delta_t
-                    )
+                    omega, _ = curvature_tile(psi0, psi_r, psi_rt, psi_t, delta_r, delta_t)
                     curvature_abs[i, j] = abs(float(omega))
 
     trace_g = g_rr + g_tt
     return trace_g, g_rr, g_tt, curvature_abs
 
 
-def gradient_magnitude(
-    field: np.ndarray, rho: Sequence[float], tau: Sequence[float]
-) -> np.ndarray:
+def gradient_magnitude(field: np.ndarray, rho: Sequence[float], tau: Sequence[float]) -> np.ndarray:
     """Return ||grad field|| using central differences along the grid."""
 
     grad_rho, grad_tau = np.gradient(field, rho, tau, edge_order=2)
@@ -339,9 +323,7 @@ def compute_auc(scores: np.ndarray, labels: np.ndarray) -> float:
     return float(auc)
 
 
-def roc_curve_points(
-    scores: np.ndarray, labels: np.ndarray
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def roc_curve_points(scores: np.ndarray, labels: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Return FPR/TPR pairs along with the evaluated thresholds."""
 
     unique_thresholds = np.unique(scores)[::-1]
@@ -431,19 +413,11 @@ def detection_from_trace(
     labels_gap = gap_flat <= gap_threshold
     labels_grad = grad_flat >= grad_threshold
 
-    gap_span = (
-        float(np.nanmax(gap_flat) - np.nanmin(gap_flat)) if gap_flat.size else 0.0
-    )
-    grad_span = (
-        float(np.nanmax(grad_flat) - np.nanmin(grad_flat)) if grad_flat.size else 0.0
-    )
+    gap_span = float(np.nanmax(gap_flat) - np.nanmin(gap_flat)) if gap_flat.size else 0.0
+    grad_span = float(np.nanmax(grad_flat) - np.nanmin(grad_flat)) if grad_flat.size else 0.0
 
-    has_gap_variation = (
-        gap_span > 1e-8 and 0 < int(np.count_nonzero(labels_gap)) < labels_gap.size
-    )
-    has_grad_variation = (
-        grad_span > 1e-8 and 0 < int(np.count_nonzero(labels_grad)) < labels_grad.size
-    )
+    has_gap_variation = gap_span > 1e-8 and 0 < int(np.count_nonzero(labels_gap)) < labels_gap.size
+    has_grad_variation = grad_span > 1e-8 and 0 < int(np.count_nonzero(labels_grad)) < labels_grad.size
 
     if has_gap_variation and has_grad_variation:
         labels = (labels_gap | labels_grad).astype(int)
@@ -579,9 +553,7 @@ def scan_graph(
         warm_row: LayersState | None = None
         for j, tau in enumerate(tau_values):
             warm = warm_row if warm_row is not None else warm_column[j]
-            state, r_series, r_mean, gap = simulate_state(
-                substrate, float(rho), float(tau), config, warm
-            )
+            state, r_series, r_mean, gap = simulate_state(substrate, float(rho), float(tau), config, warm)
             states[i][j] = state
             psi_grid[i][j] = build_wavefunction(state)
             spectral_gap[i, j] = gap
@@ -589,13 +561,9 @@ def scan_graph(
             warm_row = state
         warm_column = [states[i][j] for j in range(n_tau)]
 
-    trace_g, g_rr, g_tt, curvature_abs = compute_metric_and_curvature(
-        psi_grid, rho_values, tau_values
-    )
+    trace_g, g_rr, g_tt, curvature_abs = compute_metric_and_curvature(psi_grid, rho_values, tau_values)
     r_gradient = gradient_magnitude(kuramoto_r, rho_values, tau_values)
-    detection = detection_from_trace(
-        trace_g, spectral_gap, r_gradient, bootstrap_samples, detection_seed
-    )
+    detection = detection_from_trace(trace_g, spectral_gap, r_gradient, bootstrap_samples, detection_seed)
 
     return GraphScanResult(
         name=name,
@@ -697,15 +665,9 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         default=(0.5, 3.0),
         help="Range of tau values to scan",
     )
-    parser.add_argument(
-        "--bootstrap", type=int, default=256, help="Bootstrap replicates for the AUC CI"
-    )
-    parser.add_argument(
-        "--seed", type=int, default=7, help="Base seed controlling RNG usage"
-    )
-    parser.add_argument(
-        "--output-dir", type=Path, default=Path(__file__).resolve().parent / "artifacts"
-    )
+    parser.add_argument("--bootstrap", type=int, default=256, help="Bootstrap replicates for the AUC CI")
+    parser.add_argument("--seed", type=int, default=7, help="Base seed controlling RNG usage")
+    parser.add_argument("--output-dir", type=Path, default=Path(__file__).resolve().parent / "artifacts")
     parser.add_argument(
         "--transient-steps",
         type=int,
@@ -724,9 +686,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         default=0.6,
         help="Mixing coefficient for the Q-layer update",
     )
-    parser.add_argument(
-        "--zeta", type=float, default=1.2, help="Theta coupling strength"
-    )
+    parser.add_argument("--zeta", type=float, default=1.2, help="Theta coupling strength")
     parser.add_argument(
         "--theta-noise",
         type=float,
@@ -777,9 +737,9 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     for result in results:
         print(f"Graph: {result.name}")
-        print(
-            f"  AUC: {result.detection.auc:.3f} (95% CI {result.detection.auc_ci[0]:.3f}, {result.detection.auc_ci[1]:.3f})"
-        )
+        auc = result.detection.auc
+        ci_low, ci_high = result.detection.auc_ci
+        print(f"  AUC: {auc:.3f} (95% CI {ci_low:.3f}, {ci_high:.3f})")
         print(f"  corr(trace, gap): {result.detection.corr_trace_gap:.3f}")
         print(f"  corr(trace, |grad r|): {result.detection.corr_trace_delta_r:.3f}")
 

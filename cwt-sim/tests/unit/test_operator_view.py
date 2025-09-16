@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import numpy as np
 
+from cwt.operator.biorth_geom import biorth_connection, biorth_curvature
 from cwt.operator.L_map import (
     qp1_eigenvalues,
     qp1_state,
     qp1_state_derivatives,
     qp1_step_operator,
 )
-from cwt.operator.biorth_geom import biorth_connection, biorth_curvature
 
 
 def _metric_component(u: np.ndarray, du_a: np.ndarray, du_b: np.ndarray) -> float:

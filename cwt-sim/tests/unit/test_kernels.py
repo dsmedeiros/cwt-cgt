@@ -1,4 +1,5 @@
 """Tests for graph transport kernels."""
+
 from __future__ import annotations
 
 import numpy as np

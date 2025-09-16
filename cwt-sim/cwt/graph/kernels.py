@@ -1,4 +1,5 @@
 """Kernel definitions for propagation across the graph substrate."""
+
 from __future__ import annotations
 
 from typing import Callable

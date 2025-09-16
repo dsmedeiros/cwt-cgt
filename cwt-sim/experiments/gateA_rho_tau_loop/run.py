@@ -294,7 +294,11 @@ def _run_orientation(
     psi_traj: list[np.ndarray] = []
     for step_index in range(path.steps):
         lambda_state, _, _ = path.step(step_index)
-        state = _synthetic_state(S, lambda_state.get("rho", center_params.get("rho", 0.0)), lambda_state.get("tau", center_params.get("tau", 0.0)))
+        state = _synthetic_state(
+            S,
+            lambda_state.get("rho", center_params.get("rho", 0.0)),
+            lambda_state.get("tau", center_params.get("tau", 0.0)),
+        )
         psi_traj.append(_psi_from_state(state))
 
     if psi_traj:
@@ -525,9 +529,7 @@ def _render_report(results: ExperimentResults) -> str:
 
         if 0.02 in slope_means and 0.04 in slope_means:
             ratio = slope_means[0.04] / slope_means[0.02] if slope_means[0.02] != 0 else float("nan")
-            lines.append(
-                f"κ₁ ratio (4% / 2%): {ratio:.3f} (deviation {(ratio - 1.0):+.3f})"
-            )
+            lines.append(f"κ₁ ratio (4% / 2%): {ratio:.3f} (deviation {(ratio - 1.0):+.3f})")
             lines.append("")
 
     return "\n".join(lines)

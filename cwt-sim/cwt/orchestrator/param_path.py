@@ -1,4 +1,5 @@
 """Parameter path utilities for orchestrating simulations."""
+
 from __future__ import annotations
 
 import math
@@ -94,9 +95,9 @@ class ParameterPath:
 
         corners = [
             (-1.0, -1.0),  # bottom-left
-            (1.0, -1.0),   # bottom-right
-            (1.0, 1.0),    # top-right
-            (-1.0, 1.0),   # top-left
+            (1.0, -1.0),  # bottom-right
+            (1.0, 1.0),  # top-right
+            (-1.0, 1.0),  # top-left
         ]
         if self._orientation_sign > 0:
             order = [0, 1, 2, 3]
@@ -112,9 +113,7 @@ class ParameterPath:
             count = steps_per_edge[edge_idx]
             start_corner = corners[order[edge_idx]]
             end_corner = corners[order[(edge_idx + 1) % 4]]
-            delta_norm = [
-                (end_corner[i] - start_corner[i]) / count for i in range(2)
-            ]
+            delta_norm = [(end_corner[i] - start_corner[i]) / count for i in range(2)]
             current_norm = [start_corner[0], start_corner[1]]
 
             for step_in_edge in range(count):
@@ -122,17 +121,13 @@ class ParameterPath:
                 delta_state = {k: 0.0 for k in self._knobs}
                 for axis_i, axis_name in enumerate(axes):
                     extent = self._extents[axis_name]
-                    lambda_state[axis_name] = (
-                        self._center[axis_name] + extent * current_norm[axis_i]
-                    )
+                    lambda_state[axis_name] = self._center[axis_name] + extent * current_norm[axis_i]
                     delta_state[axis_name] = extent * delta_norm[axis_i]
 
                 if self.corner_area_mode and step_in_edge == 0:
                     area_steps.append(self._orientation_sign * corner_area)
                 else:
-                    area_steps.append(
-                        delta_state[axes[0]] * delta_state[axes[1]]
-                    )
+                    area_steps.append(delta_state[axes[0]] * delta_state[axes[1]])
 
                 lambda_steps.append(lambda_state)
                 delta_steps.append(delta_state)
@@ -175,9 +170,7 @@ class ParameterPath:
                     continue
                 omega = axis_index + 1
                 phase = axis_index * (math.pi / 2.0)
-                lambda_state[axis_name] = (
-                    self._center[axis_name] + amplitude * math.sin(omega * t + phase)
-                )
+                lambda_state[axis_name] = self._center[axis_name] + amplitude * math.sin(omega * t + phase)
             lambda_steps.append(lambda_state)
 
         delta_steps = self._make_deltas(lambda_steps)
@@ -200,9 +193,7 @@ class ParameterPath:
                     continue
                 omega = axis_index + 1
                 phase = axis_index * (math.pi / 2.0)
-                raw_state[axis_name] = (
-                    self._center[axis_name] + amplitude * math.sin(omega * t + phase)
-                )
+                raw_state[axis_name] = self._center[axis_name] + amplitude * math.sin(omega * t + phase)
             raw_steps.append(raw_state)
 
             wrapped_state = raw_state.copy()

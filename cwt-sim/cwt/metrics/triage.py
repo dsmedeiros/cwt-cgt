@@ -195,12 +195,7 @@ def xi_dynamic(
         local = np.exp(1j * theta_arr[neighbours])
         s[idx] = float(np.abs(np.mean(local)))
 
-    raw = (
-        float(g1) * amp_sq
-        + float(g2) * g_theta
-        + float(g3) * g_p
-        + float(g4) * s
-    )
+    raw = float(g1) * amp_sq + float(g2) * g_theta + float(g3) * g_p + float(g4) * s
 
     raw = np.clip(raw, 0.0, None)
 

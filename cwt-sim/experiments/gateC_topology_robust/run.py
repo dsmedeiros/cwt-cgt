@@ -374,9 +374,7 @@ def _run_noise_trial(
             theta_noise += rng.normal(0.0, sigma_phase, size=S.N)
         theta_actual = wrap_angles(state.theta + theta_noise)
 
-        p_actual, p_noise = _apply_amplitude_noise(
-            state.pQ, p_noise, pairs, rng, sigma_amp
-        )
+        p_actual, p_noise = _apply_amplitude_noise(state.pQ, p_noise, pairs, rng, sigma_amp)
         p_final = p_actual.copy()
         theta_final = theta_actual.copy()
 
@@ -402,9 +400,7 @@ def _run_noise_trial(
     noise_scale = 0.02 * abs(base_bias) * max(1.0 - decay, 1e-3)
     bias += float(rng.normal(0.0, noise_scale))
 
-    return TrialResult(
-        seed=int(seed_value), R_gamma=bias, s_bar=s_bar, overlap_avg=overlap_avg
-    )
+    return TrialResult(seed=int(seed_value), R_gamma=bias, s_bar=s_bar, overlap_avg=overlap_avg)
 
 
 def _run_noise_level(
@@ -514,9 +510,7 @@ def run_experiment(
         base_center = _synthetic_state(substrate, center["rho"], center["tau"])
         pairs = _neighbor_pairs(substrate)
         W_csc = substrate.W.tocsc()
-        base_currents = _edge_currents_with_delay(
-            substrate, base_center.pQ, base_center.theta, None
-        )
+        base_currents = _edge_currents_with_delay(substrate, base_center.pQ, base_center.theta, None)
         np.random.seed(0)
         _, base_weights = readout_stochastic(
             base_center.pQ,
@@ -584,9 +578,7 @@ def _render_noise_level(level: NoiseLevelResult) -> list[str]:
     o_mean, o_ci = _mean_ci(level.overlap_samples())
 
     R_ci_arr = np.asarray(R_ci, dtype=float)
-    ci_width = (
-        R_ci_arr[1] - R_ci_arr[0] if np.all(np.isfinite(R_ci_arr)) else float("nan")
-    )
+    ci_width = R_ci_arr[1] - R_ci_arr[0] if np.all(np.isfinite(R_ci_arr)) else float("nan")
 
     lines = [
         f"- σ_phase = {level.sigma_phase:.3f} (σ_amp={level.sigma_amp:.3f}, σ_tau={level.sigma_tau:.3f})",
@@ -607,7 +599,10 @@ def _render_report(results: ExperimentResults) -> str:
         f"Delay jitter σ_tau: {results.sigma_tau:.3f}",
         f"Trials per noise level: {results.num_trials}",
         f"Loop steps: {results.loop_steps}",
-        f"Thresholds — overlap: {results.overlap_threshold:.2f}, coherence: {results.coherence_threshold:.2f}",
+        (
+            "Thresholds — overlap: "
+            f"{results.overlap_threshold:.2f}, coherence: {results.coherence_threshold:.2f}"
+        ),
         "",
     ]
 
@@ -620,7 +615,8 @@ def _render_report(results: ExperimentResults) -> str:
         lines.append("")
 
     lines.append(
-        "When either threshold is violated we switch to the mixed-state fallback and report robustness trends only."
+        "When either threshold is violated we switch to the mixed-state fallback "
+        "and report robustness trends only."
     )
     return "\n".join(lines)
 
@@ -631,9 +627,7 @@ def _render_report(results: ExperimentResults) -> str:
 
 
 def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Run the Gate C topology robustness experiment"
-    )
+    parser = argparse.ArgumentParser(description="Run the Gate C topology robustness experiment")
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -652,9 +646,7 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         default=200,
         help="Number of steps used to trace the loop.",
     )
-    parser.add_argument(
-        "--grid-size", type=int, default=8, help="Tile grid size for flux estimation."
-    )
+    parser.add_argument("--grid-size", type=int, default=8, help="Tile grid size for flux estimation.")
     parser.add_argument(
         "--sigma-amp",
         type=float,

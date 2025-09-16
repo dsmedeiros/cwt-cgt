@@ -6,8 +6,8 @@ from typing import Any
 
 import numpy as np
 
-from .config import AppConfig
 from ..orchestrator.scheduler import RunRecord
+from .config import AppConfig
 
 
 def fabricate_record(

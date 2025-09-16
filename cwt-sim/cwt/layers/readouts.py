@@ -76,9 +76,7 @@ def memory_direction_locked(
             direction = grad * float(t_vec)
         else:
             if grad.shape[-1] != t_vec.shape[0]:
-                raise ValueError(
-                    "Last axis of grad_theta must match the length of t_loop."
-                )
+                raise ValueError("Last axis of grad_theta must match the length of t_loop.")
             direction = np.tensordot(grad, t_vec, axes=([-1], [0]))
 
     direction = np.asarray(direction, dtype=float)
@@ -86,9 +84,7 @@ def memory_direction_locked(
         try:
             direction = np.broadcast_to(direction, s_arr.shape)
         except ValueError as exc:  # pragma: no cover - defensive programming
-            raise ValueError(
-                "Shapes of coherence weights and directional gradients do not align."
-            ) from exc
+            raise ValueError("Shapes of coherence weights and directional gradients do not align.") from exc
 
     return float(Phi) * s_arr * direction
 
@@ -212,9 +208,7 @@ def readout_percolation(
         else:
             undirected = graph
 
-        active_nodes = [
-            node for node, idx in node_to_index.items() if active_mask[int(idx)]
-        ]
+        active_nodes = [node for node, idx in node_to_index.items() if active_mask[int(idx)]]
 
         if not active_nodes:
             largest = 0
@@ -349,4 +343,3 @@ __all__ = [
     "readout_spiking",
     "edge_currents",
 ]
-

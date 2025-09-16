@@ -20,9 +20,7 @@ def biorth_connection(uL: np.ndarray, duR: np.ndarray) -> complex:
     left = _as_complex_vector(uL)
     right_deriv = _as_complex_vector(duR)
     if left.shape != right_deriv.shape:
-        raise ValueError(
-            "Left eigenvector and derivative must share the same dimensionality."
-        )
+        raise ValueError("Left eigenvector and derivative must share the same dimensionality.")
 
     overlap = np.vdot(left, right_deriv)
     return 1j * overlap

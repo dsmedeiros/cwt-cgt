@@ -8,11 +8,11 @@ that records all intermediate states in a :class:`RunRecord` data structure.
 
 from __future__ import annotations
 
+import math
+import zlib
 from dataclasses import asdict, dataclass, field
 from itertools import combinations
-import math
 from typing import Any, Mapping, Sequence
-import zlib
 
 import numpy as np
 

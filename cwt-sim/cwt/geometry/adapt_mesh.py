@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Callable, Sequence
 
-import math
+import numpy as np
 
 from .curvature import curvature_tile
+
+PlaquetteSample = tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
 
 
 @dataclass(slots=True)
@@ -22,7 +25,7 @@ class PlaquetteResult:
 
 
 def micro_plaquettes(
-    Psi_sampler: Callable[[float, float], Sequence[object]],
+    Psi_sampler: Callable[[float, float], PlaquetteSample],
     delta_i: float,
     delta_j: float,
     levels: int,
@@ -71,7 +74,7 @@ def _ci_width(interval: tuple[float, float]) -> float:
 
 
 def curvature_anytime(
-    Psi_sampler: Callable[[float, float], Sequence[object]],
+    Psi_sampler: Callable[[float, float], PlaquetteSample],
     delta_i: float,
     delta_j: float,
     s_min: float = 0.6,

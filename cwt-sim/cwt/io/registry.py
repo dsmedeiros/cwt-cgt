@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import json
+import uuid
 from dataclasses import fields, is_dataclass
 from pathlib import Path
 from typing import Any, Mapping
-import uuid
 
 import numpy as np
 
@@ -27,10 +27,7 @@ class _ArrayWriter:
         self._counters: dict[str, int] = {}
 
     def save(self, array: np.ndarray, prefix: str) -> str:
-        key = (
-            "".join(ch if ch.isalnum() or ch in {"-", "_"} else "_" for ch in prefix)
-            or "array"
-        )
+        key = "".join(ch if ch.isalnum() or ch in {"-", "_"} else "_" for ch in prefix) or "array"
         index = self._counters.get(key, 0)
         suffix = f"_{index}" if index else ""
         filename = f"{key}{suffix}.npy"
@@ -43,19 +40,12 @@ def _serialise(value: Any, writer: _ArrayWriter, prefix: str) -> Any:
     if isinstance(value, np.ndarray):
         return writer.save(value, prefix)
     if isinstance(value, Mapping):
-        return {
-            str(k): _serialise(v, writer, f"{prefix}_{k}") for k, v in value.items()
-        }
+        return {str(k): _serialise(v, writer, f"{prefix}_{k}") for k, v in value.items()}
     if isinstance(value, (list, tuple)):
-        return [
-            _serialise(item, writer, f"{prefix}_{index}")
-            for index, item in enumerate(value)
-        ]
+        return [_serialise(item, writer, f"{prefix}_{index}") for index, item in enumerate(value)]
     if is_dataclass(value):
         return {
-            field.name: _serialise(
-                getattr(value, field.name), writer, f"{prefix}_{field.name}"
-            )
+            field.name: _serialise(getattr(value, field.name), writer, f"{prefix}_{field.name}")
             for field in fields(value)
         }
     if hasattr(value, "model_dump"):

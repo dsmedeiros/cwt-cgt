@@ -6,7 +6,6 @@ from typing import Callable, Mapping
 
 import numpy as np
 
-
 ParameterMap = Mapping[str, float]
 
 
@@ -42,14 +41,11 @@ class StepOperator:
         matrix = np.asarray(self._builder(lam), dtype=complex)
         if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
             raise ValueError(
-                "Step operator builder must return a square matrix; "
-                f"received shape {matrix.shape}."
+                "Step operator builder must return a square matrix; " f"received shape {matrix.shape}."
             )
         return matrix
 
-    def eigenpairs(
-        self, lam: ParameterMap, k: int = 2
-    ) -> tuple[np.ndarray, np.ndarray]:
+    def eigenpairs(self, lam: ParameterMap, k: int = 2) -> tuple[np.ndarray, np.ndarray]:
         """Return the ``k`` eigenpairs of ``L(λ)`` with largest spectral magnitude."""
 
         matrix = self.L(lam)
