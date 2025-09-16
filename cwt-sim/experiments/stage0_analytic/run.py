@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping, Sequence
@@ -412,10 +414,22 @@ def _write_json(results: Stage0Results, path: Path) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True))
 
 
-def _write_tables(results: Stage0Results, directory: Path) -> None:
-    """Persist detailed records as Parquet tables (F3 schema)."""
+def _pyarrow_available() -> bool:
+    """Return ``True`` if the optional ``pyarrow`` dependency is importable."""
+
+    return importlib.util.find_spec("pyarrow") is not None
+
+
+def _write_tables(results: Stage0Results, directory: Path, *, file_format: str = "parquet") -> None:
+    """Persist detailed records as tabular files using the requested format."""
 
     directory.mkdir(parents=True, exist_ok=True)
+
+    def _write_table(df: pd.DataFrame, stem: str) -> None:
+        if file_format == "parquet":
+            df.to_parquet(directory / f"{stem}.parquet", index=False)
+        else:
+            df.to_csv(directory / f"{stem}.csv", index=False)
 
     dimer_df = pd.DataFrame(
         {
@@ -425,7 +439,7 @@ def _write_tables(results: Stage0Results, directory: Path) -> None:
             "abs_error": np.abs(results.dimer.fs_distance - results.dimer.fs_expected),
         }
     )
-    dimer_df.to_parquet(directory / "dimer_sweep.parquet", index=False)
+    _write_table(dimer_df, "dimer_sweep")
 
     line_metric_df = pd.DataFrame(
         {
@@ -433,7 +447,7 @@ def _write_tables(results: Stage0Results, directory: Path) -> None:
             "metric": results.line3.metric_values,
         }
     )
-    line_metric_df.to_parquet(directory / "line3_metric.parquet", index=False)
+    _write_table(line_metric_df, "line3_metric")
 
     line_curvature_df = pd.DataFrame(
         {
@@ -445,7 +459,7 @@ def _write_tables(results: Stage0Results, directory: Path) -> None:
             "min_overlap": [results.line3.min_overlap],
         }
     )
-    line_curvature_df.to_parquet(directory / "line3_curvature.parquet", index=False)
+    _write_table(line_curvature_df, "line3_curvature")
 
     ring_df = pd.DataFrame(
         {
@@ -453,7 +467,7 @@ def _write_tables(results: Stage0Results, directory: Path) -> None:
             "omega": [results.ring3.omega_forward, results.ring3.omega_reverse],
         }
     )
-    ring_df.to_parquet(directory / "ring3_orientation.parquet", index=False)
+    _write_table(ring_df, "ring3_orientation")
 
 
 def _plot_dimer_fs(results: Stage0Results, path: Path) -> None:
@@ -583,7 +597,13 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--output-dir",
         type=Path,
         default=Path(__file__).resolve().parent / "artifacts",
-        help="Directory where figures, Parquet tables, and RESULTS.md are written.",
+        help="Directory where figures, tables, and RESULTS.md are written.",
+    )
+    parser.add_argument(
+        "--format",
+        choices=("parquet", "csv"),
+        default="parquet",
+        help="Format for tabular outputs (defaults to Parquet).",
     )
     parser.add_argument(
         "--no-figures",
@@ -602,7 +622,12 @@ def main(argv: Sequence[str] | None = None) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     _write_json(results, output_dir / "records.json")
-    _write_tables(results, output_dir / "tables")
+    requested_format = args.format.lower()
+    table_format = requested_format
+    if requested_format == "parquet" and not _pyarrow_available():
+        print("pyarrow not available, falling back to CSV tables.", file=sys.stderr)
+        table_format = "csv"
+    _write_tables(results, output_dir / "tables", file_format=table_format)
     if not args.no_figures:
         _write_figures(results, output_dir / "figures")
     _write_results_markdown(results, output_dir / "RESULTS.md")

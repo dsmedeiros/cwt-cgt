@@ -1,0 +1,11 @@
+# Runtime artifacts
+runs/**/*
+**/*.parquet
+**/*.npy
+**/*.png
+**/*.pdf
+# Notebooks caches
+**/.ipynb_checkpoints
+# Python
+__pycache__/
+*.pyc

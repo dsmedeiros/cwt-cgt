@@ -34,9 +34,9 @@ class TrialResult:
 class NoiseLevelResult:
     """Aggregate measurements for a fixed noise strength."""
 
-    sigma_phase: float
-    sigma_amp: float
-    sigma_tau: float
+    phase_std: float
+    amp_noise: float
+    delay_std: float
     trials: list[TrialResult]
     s_bar_mean: float
     overlap_mean: float
@@ -71,9 +71,9 @@ class ExperimentResults:
     """Container for the Gate C noise-robustness study."""
 
     graphs: list[GraphResult]
-    sigma_phase_values: list[float]
-    sigma_amp: float
-    sigma_tau: float
+    phase_std_values: list[float]
+    amp_noise: float
+    delay_std: float
     num_trials: int
     loop_steps: int
     overlap_threshold: float
@@ -81,9 +81,9 @@ class ExperimentResults:
 
     def to_dict(self) -> dict:
         return {
-            "sigma_phase_values": list(self.sigma_phase_values),
-            "sigma_amp": float(self.sigma_amp),
-            "sigma_tau": float(self.sigma_tau),
+            "phase_std_values": list(self.phase_std_values),
+            "amp_noise": float(self.amp_noise),
+            "delay_std": float(self.delay_std),
             "num_trials": int(self.num_trials),
             "loop_steps": int(self.loop_steps),
             "overlap_threshold": float(self.overlap_threshold),
@@ -98,9 +98,9 @@ class ExperimentResults:
                     "coherence_threshold": float(graph.coherence_threshold),
                     "noise_levels": [
                         {
-                            "sigma_phase": lvl.sigma_phase,
-                            "sigma_amp": lvl.sigma_amp,
-                            "sigma_tau": lvl.sigma_tau,
+                            "phase_std": lvl.phase_std,
+                            "amp_noise": lvl.amp_noise,
+                            "delay_std": lvl.delay_std,
                             "s_bar_mean": lvl.s_bar_mean,
                             "overlap_mean": lvl.overlap_mean,
                             "quantized": lvl.quantized,
@@ -231,7 +231,7 @@ def _apply_amplitude_noise(
     noise_dev: np.ndarray,
     pairs: Sequence[tuple[int, int]],
     rng: np.random.Generator,
-    sigma_amp: float,
+    amp_noise: float,
     mixing: float = 0.25,
 ) -> tuple[np.ndarray, np.ndarray]:
     if base.size == 0:
@@ -250,12 +250,12 @@ def _apply_amplitude_noise(
         actual = np.clip(actual, 1e-12, None)
         actual /= float(actual.sum())
 
-    if sigma_amp > 0.0 and pairs:
+    if amp_noise > 0.0 and pairs:
         for a, b in pairs:
             max_transfer = min(actual[a], actual[b])
             if max_transfer <= 0.0:
                 continue
-            step_scale = sigma_amp * max_transfer
+            step_scale = amp_noise * max_transfer
             delta = float(rng.normal(0.0, step_scale))
             delta = max(-actual[b], min(delta, actual[a]))
             actual[a] -= delta
@@ -345,9 +345,9 @@ def _run_noise_trial(
     S: GraphSubstrate,
     path: ParameterPath,
     base_center: LayersState,
-    sigma_phase: float,
-    sigma_amp: float,
-    sigma_tau: float,
+    phase_std: float,
+    amp_noise: float,
+    delay_std: float,
     rng: np.random.Generator,
     seed_value: int,
     pairs: Sequence[tuple[int, int]],
@@ -370,16 +370,16 @@ def _run_noise_trial(
             tau=lambda_state.get("tau", 0.0),
         )
 
-        if sigma_phase > 0.0 and S.N:
-            theta_noise += rng.normal(0.0, sigma_phase, size=S.N)
+        if phase_std > 0.0 and S.N:
+            theta_noise += rng.normal(0.0, phase_std, size=S.N)
         theta_actual = wrap_angles(state.theta + theta_noise)
 
-        p_actual, p_noise = _apply_amplitude_noise(state.pQ, p_noise, pairs, rng, sigma_amp)
+        p_actual, p_noise = _apply_amplitude_noise(state.pQ, p_noise, pairs, rng, amp_noise)
         p_final = p_actual.copy()
         theta_final = theta_actual.copy()
 
-        if sigma_tau > 0.0 and S.Tau.nnz > 0:
-            tau_scale_last = 1.0 + rng.normal(0.0, sigma_tau, size=S.Tau.nnz)
+        if delay_std > 0.0 and S.Tau.nnz > 0:
+            tau_scale_last = 1.0 + rng.normal(0.0, delay_std, size=S.Tau.nnz)
             tau_scale_last = np.clip(tau_scale_last, 1e-3, None)
         else:
             tau_scale_last = None
@@ -407,9 +407,9 @@ def _run_noise_level(
     S: GraphSubstrate,
     path: ParameterPath,
     base_center: LayersState,
-    sigma_phase: float,
-    sigma_amp: float,
-    sigma_tau: float,
+    phase_std: float,
+    amp_noise: float,
+    delay_std: float,
     seeds: Sequence[int],
     pairs: Sequence[tuple[int, int]],
     W_csc: sp.csc_matrix,
@@ -424,9 +424,9 @@ def _run_noise_level(
             S,
             path,
             base_center,
-            sigma_phase,
-            sigma_amp,
-            sigma_tau,
+            phase_std,
+            amp_noise,
+            delay_std,
             rng,
             seed_value=int(seed),
             pairs=pairs,
@@ -440,9 +440,9 @@ def _run_noise_level(
     quantized = s_mean >= coherence_threshold and o_mean >= overlap_threshold
 
     return NoiseLevelResult(
-        sigma_phase=float(sigma_phase),
-        sigma_amp=float(sigma_amp),
-        sigma_tau=float(sigma_tau),
+        phase_std=float(phase_std),
+        amp_noise=float(amp_noise),
+        delay_std=float(delay_std),
         trials=trials,
         s_bar_mean=float(s_mean),
         overlap_mean=float(o_mean),
@@ -452,9 +452,9 @@ def _run_noise_level(
 
 def run_experiment(
     *,
-    sigma_phase_values: Sequence[float] | None = None,
-    sigma_amp: float = 0.02,
-    sigma_tau: float = 0.02,
+    phase_std_values: Sequence[float] | None = None,
+    amp_noise: float = 0.02,
+    delay_std: float = 0.02,
     num_trials: int = 6,
     loop_steps: int = 200,
     seeds: Sequence[int] | None = None,
@@ -462,11 +462,11 @@ def run_experiment(
     overlap_threshold: float = 0.9,
     coherence_threshold: float = 0.5,
 ) -> ExperimentResults:
-    if sigma_phase_values is None:
-        sigma_phase_values = [0.0, 0.05, 0.1, 0.2, 0.35]
-    sigma_phase_values = [float(val) for val in sigma_phase_values]
-    if any(val < 0.0 for val in sigma_phase_values):
-        raise ValueError("sigma_phase values must be non-negative")
+    if phase_std_values is None:
+        phase_std_values = [0.0, 0.05, 0.1, 0.2, 0.35]
+    phase_std_values = [float(val) for val in phase_std_values]
+    if any(val < 0.0 for val in phase_std_values):
+        raise ValueError("phase_std values must be non-negative")
 
     if num_trials <= 0:
         raise ValueError("num_trials must be positive")
@@ -521,14 +521,14 @@ def run_experiment(
         base_bias = float(np.dot(base_weights - base_center.pQ, base_currents))
 
         noise_levels: list[NoiseLevelResult] = []
-        for sigma_phase in sigma_phase_values:
+        for phase_std in phase_std_values:
             level = _run_noise_level(
                 substrate,
                 path,
                 base_center,
-                sigma_phase=float(sigma_phase),
-                sigma_amp=float(sigma_amp),
-                sigma_tau=float(sigma_tau),
+                phase_std=float(phase_std),
+                amp_noise=float(amp_noise),
+                delay_std=float(delay_std),
                 seeds=seeds,
                 pairs=pairs,
                 W_csc=W_csc,
@@ -553,9 +553,9 @@ def run_experiment(
 
     return ExperimentResults(
         graphs=graph_results,
-        sigma_phase_values=sigma_phase_values,
-        sigma_amp=float(sigma_amp),
-        sigma_tau=float(sigma_tau),
+        phase_std_values=phase_std_values,
+        amp_noise=float(amp_noise),
+        delay_std=float(delay_std),
         num_trials=num_trials,
         loop_steps=loop_steps,
         overlap_threshold=float(overlap_threshold),
@@ -581,7 +581,7 @@ def _render_noise_level(level: NoiseLevelResult) -> list[str]:
     ci_width = R_ci_arr[1] - R_ci_arr[0] if np.all(np.isfinite(R_ci_arr)) else float("nan")
 
     lines = [
-        f"- σ_phase = {level.sigma_phase:.3f} (σ_amp={level.sigma_amp:.3f}, σ_tau={level.sigma_tau:.3f})",
+        f"- σ_phase = {level.phase_std:.3f} (σ_amp={level.amp_noise:.3f}, σ_tau={level.delay_std:.3f})",
         f"  - R_γ mean: {R_mean:.3e} with CI {_format_ci(R_ci)} (width {ci_width:.3e})",
         f"  - ⟨s̄⟩: {s_mean:.3f} with CI {_format_ci(s_ci)}",
         f"  - ⟨overlap⟩: {o_mean:.3f} with CI {_format_ci(o_ci)}",
@@ -594,9 +594,9 @@ def _render_report(results: ExperimentResults) -> str:
     lines = [
         "# Gate C: topology robustness under noise",
         "",
-        f"Phase noise sweep: {', '.join(f'{val:.3f}' for val in results.sigma_phase_values)}",
-        f"Amplitude noise σ_amp: {results.sigma_amp:.3f}",
-        f"Delay jitter σ_tau: {results.sigma_tau:.3f}",
+        f"Phase noise sweep: {', '.join(f'{val:.3f}' for val in results.phase_std_values)}",
+        f"Amplitude noise σ_amp: {results.amp_noise:.3f}",
+        f"Delay jitter σ_tau: {results.delay_std:.3f}",
         f"Trials per noise level: {results.num_trials}",
         f"Loop steps: {results.loop_steps}",
         (
@@ -648,22 +648,28 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--grid-size", type=int, default=8, help="Tile grid size for flux estimation.")
     parser.add_argument(
+        "--amp-noise",
         "--sigma-amp",
         type=float,
         default=0.02,
+        dest="amp_noise",
         help="Amplitude noise scale (mass shuffles).",
     )
     parser.add_argument(
+        "--delay-std",
         "--sigma-tau",
         type=float,
         default=0.02,
+        dest="delay_std",
         help="Delay jitter scale applied to edge delays.",
     )
     parser.add_argument(
+        "--phase-std",
         "--sigma-phase",
         type=float,
         nargs="*",
         default=None,
+        dest="phase_std",
         help="Optional list of phase-noise magnitudes to sweep.",
     )
     return parser.parse_args(argv)
@@ -672,9 +678,9 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> None:
     args = _parse_args(argv)
     results = run_experiment(
-        sigma_phase_values=args.sigma_phase,
-        sigma_amp=args.sigma_amp,
-        sigma_tau=args.sigma_tau,
+        phase_std_values=args.phase_std,
+        amp_noise=args.amp_noise,
+        delay_std=args.delay_std,
         num_trials=args.num_trials,
         loop_steps=args.loop_steps,
         grid_size=args.grid_size,
