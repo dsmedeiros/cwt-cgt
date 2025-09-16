@@ -1,1 +1,43 @@
-# Stage 0 dimer configuration placeholder for cwt-sim.
+# Configuration mimicking a two-node dimer experiment.
+graph:
+  kind: dimer
+  weights: 1.5
+  delays: 0.9
+params:
+  knobs: [rho, tau]
+  rho_center: 0.6
+  rho_extent: 0.2
+  tau_center: 0.5
+  tau_extent: 0.2
+  steps: 4
+geometry:
+  delta_frac:
+    rho: 0.1
+    tau: 0.1
+  s_min: 0.5
+  smooth_window: 3
+  compute_metric: true
+  compute_curvature: true
+  adapt_levels: 1
+  ci_tol: 0.05
+dynamics:
+  eta_q: 0.35
+  zeta: 0.15
+  omega_scale: 1.2
+geometric_coupling:
+  alpha: 0.3
+  beta: 0.9
+  xi_kind:
+    type: dynamic
+  corner_area_mode: false
+readout:
+  type: stochastic
+  T: 1.0
+  memory_form: current_coupled
+  params: {}
+noise:
+  phase_std: 0.02
+  amp_noise: 0.01
+  delay_std: 0.005
+seed: 2024
+out_dir: runs/stage0

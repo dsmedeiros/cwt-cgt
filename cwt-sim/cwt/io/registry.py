@@ -1,118 +1,99 @@
-"""In-memory registry utilities for simulation runs."""
+"""Utilities for persisting run records to disk."""
 
 from __future__ import annotations
 
-from collections import OrderedDict
-from dataclasses import asdict, is_dataclass
-import hashlib
 import json
-from typing import Any, Mapping, TYPE_CHECKING
+from dataclasses import fields, is_dataclass
+from pathlib import Path
+from typing import Any, Mapping
+import uuid
 
 import numpy as np
 
-if TYPE_CHECKING:  # pragma: no cover - import cycle guard
-    from ..orchestrator.scheduler import RunConfig, RunRecord
-else:  # pragma: no cover - typing fallback
-    RunConfig = Any
-    RunRecord = Any
+from ..orchestrator.scheduler import RunRecord
 
 
-def _to_serialisable(obj: Any) -> Any:
-    if is_dataclass(obj):
-        obj = asdict(obj)
-    if isinstance(obj, np.ndarray):
-        return obj.tolist()
-    if isinstance(obj, (np.floating, float)):
-        return float(obj)
-    if isinstance(obj, (np.integer, int)):
-        return int(obj)
-    if isinstance(obj, (list, tuple)):
-        return [_to_serialisable(item) for item in obj]
-    if isinstance(obj, Mapping):
-        return {str(k): _to_serialisable(v) for k, v in sorted(obj.items(), key=lambda item: str(item[0]))}
-    return obj
+def _normalise_scalar(value: Any) -> Any:
+    if isinstance(value, np.generic):
+        return value.item()
+    if isinstance(value, Path):
+        return str(value)
+    return value
 
 
-def make_run_id(config: Mapping[str, Any] | RunConfig, seed: int) -> str:
-    """Return a deterministic digest derived from ``config`` and ``seed``."""
+class _ArrayWriter:
+    def __init__(self, run_dir: Path) -> None:
+        self._run_dir = run_dir
+        self._counters: dict[str, int] = {}
 
-    payload = {"config": _to_serialisable(config), "seed": int(seed)}
-    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf8")
-    digest = hashlib.sha256(encoded).hexdigest()
-    return digest[:16]
+    def save(self, array: np.ndarray, prefix: str) -> str:
+        key = (
+            "".join(ch if ch.isalnum() or ch in {"-", "_"} else "_" for ch in prefix)
+            or "array"
+        )
+        index = self._counters.get(key, 0)
+        suffix = f"_{index}" if index else ""
+        filename = f"{key}{suffix}.npy"
+        self._counters[key] = index + 1
+        np.save(self._run_dir / filename, array, allow_pickle=False)
+        return filename
 
 
-class RunRegistry:
-    """Simple append-only registry storing :class:`RunRecord` instances."""
-
-    def __init__(self) -> None:
-        self._records: "OrderedDict[str, RunRecord]" = OrderedDict()
-        self._meta: dict[str, dict[str, Any]] = {}
-
-    def add(self, run_id: str, record: RunRecord, *, meta: Mapping[str, Any] | None = None, overwrite: bool = False) -> None:
-        if not overwrite and run_id in self._records:
-            raise KeyError(f"Run id '{run_id}' already present; pass overwrite=True to replace it.")
-        self._records[run_id] = record
-        self._meta[run_id] = dict(meta or {})
-
-    def get(self, run_id: str) -> RunRecord:
-        try:
-            return self._records[run_id]
-        except KeyError as exc:  # pragma: no cover - delegated to caller
-            raise KeyError(f"Unknown run id '{run_id}'.") from exc
-
-    def meta(self, run_id: str) -> dict[str, Any]:
-        return dict(self._meta.get(run_id, {}))
-
-    def latest(self) -> tuple[str, RunRecord]:
-        if not self._records:
-            raise KeyError("Registry is empty.")
-        run_id = next(reversed(self._records))
-        return run_id, self._records[run_id]
-
-    def ids(self) -> list[str]:
-        return list(self._records.keys())
-
-    def __contains__(self, run_id: object) -> bool:
-        return run_id in self._records
-
-    def __len__(self) -> int:
-        return len(self._records)
-
-    def summary(self) -> list[dict[str, Any]]:
-        items: list[dict[str, Any]] = []
-        for run_id, record in self._records.items():
-            meta = self._meta.get(run_id, {})
-            record_meta = getattr(record, "meta", {})
-            items.append(
-                {
-                    "run_id": run_id,
-                    "steps": int(record_meta.get("steps", len(getattr(record, "lambda_path", [])))),
-                    "seed": record_meta.get("seed"),
-                    "meta": {**record_meta, **meta},
-                }
+def _serialise(value: Any, writer: _ArrayWriter, prefix: str) -> Any:
+    if isinstance(value, np.ndarray):
+        return writer.save(value, prefix)
+    if isinstance(value, Mapping):
+        return {
+            str(k): _serialise(v, writer, f"{prefix}_{k}") for k, v in value.items()
+        }
+    if isinstance(value, (list, tuple)):
+        return [
+            _serialise(item, writer, f"{prefix}_{index}")
+            for index, item in enumerate(value)
+        ]
+    if is_dataclass(value):
+        return {
+            field.name: _serialise(
+                getattr(value, field.name), writer, f"{prefix}_{field.name}"
             )
-        return items
+            for field in fields(value)
+        }
+    if hasattr(value, "model_dump"):
+        return _serialise(value.model_dump(), writer, prefix)
+    return _normalise_scalar(value)
 
 
-DEFAULT_REGISTRY = RunRegistry()
+def _record_to_mapping(record: RunRecord | Mapping[str, Any]) -> Mapping[str, Any]:
+    if is_dataclass(record):
+        return {field.name: getattr(record, field.name) for field in fields(record)}
+    if isinstance(record, Mapping):
+        return record
+    raise TypeError("record must be a dataclass or mapping")
 
 
-def register_run(
-    record: RunRecord,
-    config: Mapping[str, Any] | RunConfig,
-    *,
-    seed: int,
-    registry: RunRegistry | None = None,
-    meta: Mapping[str, Any] | None = None,
-    overwrite: bool = False,
-) -> str:
-    """Register ``record`` and return the generated run identifier."""
+def save_run(record: RunRecord | Mapping[str, Any], out_dir: str | Path) -> str:
+    """Persist ``record`` to ``out_dir`` and return a UUID identifier."""
 
-    registry_obj = registry or DEFAULT_REGISTRY
-    run_id = make_run_id(config, seed)
-    registry_obj.add(run_id, record, meta=meta, overwrite=overwrite)
+    base_dir = Path(out_dir)
+    base_dir.mkdir(parents=True, exist_ok=True)
+
+    run_id = uuid.uuid4().hex
+    run_dir = base_dir / run_id
+    run_dir.mkdir(parents=True, exist_ok=False)
+
+    writer = _ArrayWriter(run_dir)
+    record_mapping = _record_to_mapping(record)
+
+    metadata: dict[str, Any] = {}
+    for key, value in record_mapping.items():
+        metadata[key] = _serialise(value, writer, key)
+    metadata["run_id"] = run_id
+
+    meta_path = run_dir / "meta.json"
+    with meta_path.open("w", encoding="utf8") as handle:
+        json.dump(metadata, handle, indent=2, sort_keys=True)
+
     return run_id
 
 
-__all__ = ["RunRegistry", "DEFAULT_REGISTRY", "make_run_id", "register_run"]
+__all__ = ["save_run"]
