@@ -1,0 +1,2 @@
+# Ignore generated JSON record dumps from Stage-0 analytic experiment
+*.json
