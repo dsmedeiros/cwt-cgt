@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Mapping
 import numpy as np
 import typer
 
@@ -24,7 +25,11 @@ def _build_substrate(app_config: AppConfig) -> GraphSubstrate:
 
     kind = app_config.graph.kind
     weight = float(app_config.graph.weights)
-    delay = float(app_config.graph.delays)
+    delay_spec = app_config.graph.delays
+    if isinstance(delay_spec, (list, tuple)):
+        delay_values = [float(value) for value in delay_spec]
+    else:
+        delay_values = float(delay_spec)
 
     try:
         factory = getattr(factories, kind)
@@ -34,14 +39,24 @@ def _build_substrate(app_config: AppConfig) -> GraphSubstrate:
             if size <= 0:
                 raise typer.BadParameter("Ring graphs must contain at least one node.") from exc
             G = nx.DiGraph()
+            if isinstance(delay_values, list):
+                base_delay = delay_values[0]
+            else:
+                base_delay = delay_values
             for node in range(size):
                 nxt = (node + 1) % size
-                G.add_edge(node, nxt, weight=weight, delay=delay)
+                G.add_edge(node, nxt, weight=weight, delay=float(base_delay))
             return build_substrate(G)
         raise typer.BadParameter(f"Unknown graph kind '{kind}'.") from exc
 
+    kwargs = {"weight": weight}
+    if isinstance(delay_values, list):
+        kwargs["delays"] = delay_values
+    else:
+        kwargs["delay"] = delay_values
+
     try:
-        return factory(weight=weight, delay=delay)
+        return factory(**kwargs)
     except TypeError as exc:  # pragma: no cover - defensive guard
         raise typer.BadParameter(f"Graph factory '{kind}' does not accept the provided arguments.") from exc
 
@@ -63,14 +78,50 @@ def _build_parameter_path(config: AppConfig) -> ParameterPath:
     params = config.params
     centers: dict[str, float] = {}
     extents: dict[str, float] = {}
+    extras = getattr(params, "model_extra", {}) or {}
     for knob in params.knobs:
         center_attr = f"{knob}_center"
         extent_attr = f"{knob}_extent"
-        centers[knob] = float(getattr(params, center_attr, 0.0))
-        extents[knob] = float(getattr(params, extent_attr, 0.0))
+        center_val: float | None = None
+        extent_val: float | None = None
+
+        knob_payload = extras.get(knob)
+        if isinstance(knob_payload, Mapping):
+            if "center" in knob_payload:
+                try:
+                    center_val = float(knob_payload["center"])
+                except (TypeError, ValueError):
+                    center_val = None
+            if "extent" in knob_payload:
+                try:
+                    extent_val = float(knob_payload["extent"])
+                except (TypeError, ValueError):
+                    extent_val = None
+
+        if center_val is None and hasattr(params, center_attr):
+            center_val = float(getattr(params, center_attr, 0.0))
+        if extent_val is None and hasattr(params, extent_attr):
+            extent_val = float(getattr(params, extent_attr, 0.0))
+
+        centers[knob] = float(center_val if center_val is not None else 0.0)
+        extents[knob] = float(extent_val if extent_val is not None else 0.0)
 
     varying = sum(1 for value in extents.values() if abs(value) > 0.0)
     path_kind = "rectangle" if varying >= 2 else "line"
+
+    axis_candidates: list[str] = []
+    for knob in params.knobs:
+        if knob not in axis_candidates and knob in centers:
+            axis_candidates.append(knob)
+    for knob in centers:
+        if knob not in axis_candidates:
+            axis_candidates.append(knob)
+    if len(axis_candidates) >= 2:
+        axes = (axis_candidates[0], axis_candidates[1])
+    elif axis_candidates:
+        axes = (axis_candidates[0], axis_candidates[0])
+    else:
+        axes = ("rho", "tau")
 
     return ParameterPath(
         kind=path_kind,
@@ -78,6 +129,7 @@ def _build_parameter_path(config: AppConfig) -> ParameterPath:
         extents=extents,
         steps=max(int(params.steps), 1),
         corner_area_mode=bool(config.geometric_coupling.corner_area_mode),
+        axes=axes,
     )
 
 
@@ -91,6 +143,7 @@ def _build_run_config(config: AppConfig) -> RunConfig:
     geometry_settings = {
         "sample_mode": geometry.sample_mode,
         "neighbor_steps": geometry.neighbor_steps,
+        "neighbor_settle_steps": geometry.neighbor_settle_steps,
     }
 
     return RunConfig(
@@ -105,6 +158,7 @@ def _build_run_config(config: AppConfig) -> RunConfig:
         ci_tol=geometry.ci_tol,
         alpha=coupling.alpha,
         beta=coupling.beta,
+        neighbor_settle_steps=geometry.neighbor_settle_steps,
         geometry=geometry_settings,
         delta_frac=dict(geometry.delta_frac),
         xi_kind=dict(coupling.xi_kind),

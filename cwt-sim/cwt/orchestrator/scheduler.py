@@ -47,6 +47,7 @@ class RunConfig:
     ci_tol: float = 0.05
     alpha: float = 1.0
     beta: float = 1.0
+    neighbor_settle_steps: int = 20
     geometry: dict[str, Any] = field(default_factory=dict)
     delta_frac: dict[str, float] = field(default_factory=dict)
     xi_kind: dict[str, Any] = field(default_factory=dict)
@@ -321,14 +322,23 @@ def _direct_neighbor_state_factory(
     config: RunConfig,
     *,
     neighbor_steps: int = 1,
+    settle_steps: int | None = None,
 ) -> Callable[[Mapping[str, float]], np.ndarray]:
     """Return a callable that synthesises neighbour states via direct stepping."""
 
     lam0 = {str(k): float(v) for k, v in lambda_state.items()}
     base_prob = np.asarray(pQ, dtype=float)
     base_theta = np.asarray(theta, dtype=float)
-    settle_steps = max(int(neighbor_steps), 1)
-    settle_steps = max(settle_steps, 20)
+    try:
+        settle_cfg = int(settle_steps if settle_steps is not None else config.neighbor_settle_steps)
+    except (TypeError, ValueError):
+        settle_cfg = 20
+    try:
+        base_steps = int(neighbor_steps)
+    except (TypeError, ValueError):
+        base_steps = 1
+    base_steps = max(base_steps, 1)
+    settle_steps = max(base_steps, settle_cfg)
 
     tau_default = float(lam0.get("tau", lam0.get("tau_scale", 1.0)))
     if tau_default <= 0.0:
@@ -573,6 +583,9 @@ def run_parameter_loop(
         delta_lambda = {key: float(val) for key, val in delta_lambda_raw.items()}
         delta_area = float(delta_area_val)
 
+        if "zeta" not in lambda_state:
+            lambda_state["zeta"] = float(config.zeta)
+
         lambda_path.append(lambda_state)
         delta_lambda_log.append(delta_lambda)
         delta_area_log.append(delta_area)
@@ -581,7 +594,7 @@ def run_parameter_loop(
         tau_scale = float(lambda_state.get("tau", 1.0)) or 1.0
         kappa = float(lambda_state.get("kappa", 1.0))
         omega_scale_val = float(lambda_state.get("omega_scale", config.omega_scale))
-        zeta = float(lambda_state.get("zeta", config.zeta))
+        zeta_eff = float(lambda_state.get("zeta", config.zeta))
         phi_edge = _phi_edge_for_substrate(S, lambda_state)
 
         if tau_scale <= 0.0:
@@ -595,7 +608,7 @@ def run_parameter_loop(
 
         K = build_transport_kernel(S, rho=rho, tau_scale=tau_scale_eff, kappa=kappa)
         omega_n = omega_from_delays(S, rho=rho, tau_scale=tau_scale_eff, omega_scale=omega_scale_val)
-        J = build_J_from_W(S, zeta=zeta)
+        J = build_J_from_W(S, zeta=zeta_eff)
 
         Psi0 = psi_current
         geometry_knobs = set(config.delta_frac.keys()) | set(delta_lambda.keys())
@@ -613,6 +626,7 @@ def run_parameter_loop(
                 theta,
                 config,
                 neighbor_steps=neighbor_steps,
+                settle_steps=config.neighbor_settle_steps,
             )
 
         for knob in sorted(geometry_knobs):
@@ -640,6 +654,7 @@ def run_parameter_loop(
                         theta,
                         config,
                         neighbor_steps=neighbor_steps,
+                        settle_steps=config.neighbor_settle_steps,
                     )
                 Psi_i = direct_state_for({knob: float(delta_candidate)})
             neighbor_states[knob] = Psi_i
@@ -684,6 +699,7 @@ def run_parameter_loop(
                             theta,
                             config,
                             neighbor_steps=neighbor_steps,
+                            settle_steps=config.neighbor_settle_steps,
                         )
                     sampler = _psi_sampler_factory_direct(Psi0, knob_i, knob_j, direct_state_for)
                 plaquette = curvature_anytime(

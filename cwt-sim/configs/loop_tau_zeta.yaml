@@ -1,0 +1,49 @@
+graph:
+  kind: ring3
+  weights: 1.0
+  delays: [1.0, 1.5, 2.2]
+params:
+  knobs: [tau, zeta]
+  tau:
+    center: 0.80
+    extent: 0.02
+  zeta:
+    center: 0.00
+    extent: 0.02
+  steps: 200
+geometry:
+  delta_frac:
+    tau: 0.02
+    zeta: 0.02
+  s_min: 0.6
+  smooth_window: 5
+  compute_metric: true
+  compute_curvature: true
+  adapt_levels: 1
+  ci_tol: 0.05
+  sample_mode: direct
+  neighbor_steps: 1
+  neighbor_settle_steps: 20
+dynamics:
+  eta_q: 0.3
+  zeta: 0.0
+  omega_scale: 1.0
+geometric_coupling:
+  alpha: 0.3
+  beta: 1.0
+  xi_kind:
+    type: static
+  corner_area_mode: true
+readout:
+  type: stochastic
+  T: 1.0
+  memory_form: uniform_charge
+  params:
+    mode: one_hot
+    target: 0
+noise:
+  phase_std: 0.0
+  amp_noise: 0.0
+  delay_std: 0.0
+seed: 1234
+out_dir: runs/

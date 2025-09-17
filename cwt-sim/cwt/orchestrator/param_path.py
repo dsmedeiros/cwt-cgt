@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Tuple
 
 
 @dataclass
@@ -23,6 +23,7 @@ class ParameterPath:
     orientation: Literal["CW", "CCW"] = "CCW"
     periodic: dict[str, bool] | None = None
     corner_area_mode: bool = True
+    axes: Tuple[str, str] = ("rho", "tau")
 
     def __post_init__(self) -> None:
         if self.steps <= 0:
@@ -45,7 +46,26 @@ class ParameterPath:
         else:
             self._periodic = {k: False for k in self._knobs}
 
-        self._varying = [k for k in self._knobs if abs(self._extents[k]) > 0.0]
+        if len(self.axes) != 2:
+            raise ValueError("axes must contain exactly two entries")
+        ax_i, ax_j = (str(axis) for axis in self.axes)
+        if ax_i == ax_j and self.kind != "line":
+            raise ValueError("axes must refer to two distinct knobs for multi-axis paths")
+        for axis in (ax_i, ax_j):
+            if axis not in self._center or axis not in self._extents:
+                raise ValueError(f"axis '{axis}' must be provided in center and extents")
+
+        self._axes = (ax_i, ax_j)
+
+        self._varying: list[str] = []
+        for axis in self._axes:
+            if axis not in self._varying and abs(self._extents[axis]) > 0.0:
+                self._varying.append(axis)
+        for knob in self._knobs:
+            if knob in self._axes:
+                continue
+            if abs(self._extents[knob]) > 0.0:
+                self._varying.append(knob)
 
         builders = {
             "rectangle": self._build_rectangle_path,
@@ -88,7 +108,11 @@ class ParameterPath:
         if self.steps < 4:
             raise ValueError("rectangle path requires at least four steps")
 
-        axes = self._varying[:2]
+        axis_i, axis_j = self._axes
+        if abs(self._extents[axis_i]) == 0.0 or abs(self._extents[axis_j]) == 0.0:
+            raise ValueError("rectangle path requires non-zero extents for both axes")
+
+        axes = [axis_i, axis_j]
         steps_per_edge = self._split_steps(self.steps, 4)
         if min(steps_per_edge) <= 0:
             raise ValueError("insufficient steps to cover rectangle edges")
@@ -138,11 +162,10 @@ class ParameterPath:
         return lambda_steps, delta_steps, area_steps
 
     def _build_line_path(self) -> tuple[list[dict[str, float]], list[dict[str, float]], list[float]]:
-        axes = self._varying[:1] if self._varying else []
-        if not axes:
-            axes = [self._knobs[0]]
-
-        axis = axes[0]
+        if self._varying:
+            axis = self._varying[0]
+        else:
+            axis = self._axes[0]
         lambda_steps: list[dict[str, float]] = []
         for step_index in range(self.steps):
             u = ((self._orientation_sign * step_index) / self.steps) % 1.0
@@ -174,7 +197,7 @@ class ParameterPath:
             lambda_steps.append(lambda_state)
 
         delta_steps = self._make_deltas(lambda_steps)
-        area_steps = self._compute_area_from_deltas(delta_steps, self._varying)
+        area_steps = self._compute_area_from_deltas(delta_steps, self._axes)
         return lambda_steps, delta_steps, area_steps
 
     def _build_torus_loop_path(self) -> tuple[list[dict[str, float]], list[dict[str, float]], list[float]]:
@@ -206,7 +229,7 @@ class ParameterPath:
             wrapped_steps.append(wrapped_state)
 
         delta_steps = self._make_deltas(raw_steps, apply_periodic=True)
-        area_steps = self._compute_area_from_deltas(delta_steps, self._varying)
+        area_steps = self._compute_area_from_deltas(delta_steps, self._axes)
         return wrapped_steps, delta_steps, area_steps
 
     # ------------------------------------------------------------------
@@ -236,7 +259,7 @@ class ParameterPath:
     @staticmethod
     def _compute_area_from_deltas(
         deltas: list[dict[str, float]],
-        axes: list[str],
+        axes: tuple[str, str] | list[str],
     ) -> list[float]:
         if len(axes) < 2:
             return [0.0 for _ in deltas]

@@ -16,19 +16,19 @@ class GraphConfig(BaseModel):
 
     kind: str = "ring3"
     weights: float = 1.0
-    delays: float = 1.0
+    delays: float | list[float] = 1.0
 
 
 class ParamsConfig(BaseModel):
     """Parameter sweep definition."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="allow")
 
     knobs: list[str] = Field(default_factory=lambda: ["rho", "tau"])
-    rho_center: float
-    rho_extent: float
-    tau_center: float
-    tau_extent: float
+    rho_center: float = 0.0
+    rho_extent: float = 0.0
+    tau_center: float = 0.0
+    tau_extent: float = 0.0
     steps: int = 200
 
 
@@ -46,6 +46,7 @@ class GeometryConfig(BaseModel):
     ci_tol: float = 0.05
     sample_mode: str = "direct"
     neighbor_steps: int = 1
+    neighbor_settle_steps: int = 20
 
 
 class DynamicsConfig(BaseModel):

@@ -19,6 +19,7 @@ def test_rectangle_area_matches_geometry_and_orientation() -> None:
         extents=extents,
         steps=12,
         orientation="CCW",
+        axes=("x", "y"),
     )
     width = 2.0 * abs(extents["x"])
     height = 2.0 * abs(extents["y"])
@@ -33,6 +34,7 @@ def test_rectangle_area_matches_geometry_and_orientation() -> None:
         extents=extents,
         steps=12,
         orientation="CW",
+        axes=("x", "y"),
     )
     total_cw = _total_area(path_cw)
     assert math.isclose(total_cw, -expected_area, rel_tol=1e-9, abs_tol=1e-9)
