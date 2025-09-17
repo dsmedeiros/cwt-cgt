@@ -9,3 +9,5 @@ runs/**/*
 # Python
 __pycache__/
 *.pyc
+/cwt-sim/networkx
+/cwt-sim/runs
