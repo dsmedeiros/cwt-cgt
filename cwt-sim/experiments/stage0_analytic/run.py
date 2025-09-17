@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import math
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,8 +14,6 @@ from typing import Mapping, Sequence
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-import math
 
 from cwt.geometry.adapt_mesh import curvature_anytime
 from cwt.geometry.curvature import curvature_tile

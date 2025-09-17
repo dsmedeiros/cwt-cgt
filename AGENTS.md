@@ -5,3 +5,4 @@
 - Run black or a similar tool to format code for readability.
 - Keep README updated, organized, clean, and readable.
 - Install dependencies from `requirements.test.txt` before running tests.
+- Run `ruff check .` and ensure it passes before submitting changes.

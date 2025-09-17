@@ -20,6 +20,7 @@ from cwt.graph.kernels import build_transport_kernel
 from cwt.graph.substrate import GraphSubstrate
 from cwt.layers.readouts import memory_current_coupled, readout_stochastic
 from cwt.layers.state import LayersState, wrap_angles
+from cwt.metrics.eval_curves import spectral_gap
 from cwt.orchestrator.param_path import ParameterPath
 
 from ..report_helpers import (
@@ -28,7 +29,6 @@ from ..report_helpers import (
     render_health_banner,
     render_report_header,
 )
-from cwt.metrics.eval_curves import spectral_gap
 
 
 @dataclass

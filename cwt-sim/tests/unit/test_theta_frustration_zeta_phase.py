@@ -5,8 +5,8 @@ import pytest
 
 from cwt.graph.factories import ring3
 from cwt.layers.state import LayersState
-from cwt.orchestrator.param_path import ParameterPath
 from cwt.orchestrator import scheduler
+from cwt.orchestrator.param_path import ParameterPath
 from cwt.orchestrator.scheduler import RunConfig, run_parameter_loop
 
 
