@@ -40,7 +40,12 @@ def test_run_parameter_loop_smoke() -> None:
         beta=1.0,
         delta_frac={"rho": 0.05, "tau": 0.05},
         xi_kind={"type": "static"},
-        readout={"interval": 3, "final": True},
+        readout={
+            "interval": 3,
+            "final": True,
+            "memory_form": "uniform_charge",
+            "params": {"mode": "psi_amp"},
+        },
         noise={"theta_sigma": 0.0, "prob_sigma": 0.0},
     )
 
@@ -69,3 +74,8 @@ def test_run_parameter_loop_smoke() -> None:
     assert "threshold" in guard_meta
     assert "overall_fraction" in guard_meta
     assert record.readouts  # interval + final
+    final_readout = record.readouts[-1]
+    if final_readout.get("step") == path.steps:
+        assert "phi_flux" in final_readout
+        assert "memory" in final_readout
+        assert len(final_readout["memory"]) == substrate.N

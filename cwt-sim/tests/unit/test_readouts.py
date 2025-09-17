@@ -30,6 +30,32 @@ def test_memory_uniform_charge_scales_weights() -> None:
     np.testing.assert_allclose(memory, Phi * chi)
 
 
+def test_memory_uniform_charge_psi_amp_uses_amplitude_distribution() -> None:
+    Phi = 2.0
+    psi = np.array([1.0 + 0.0j, 0.0 + 0.0j, 2.0 + 0.0j])
+    memory = readouts.memory_uniform_charge(Phi, mode="psi_amp", pQ=psi)
+    amplitudes = np.abs(psi) ** 2
+    expected = Phi * amplitudes / amplitudes.sum()
+    np.testing.assert_allclose(memory, expected)
+
+
+def test_memory_uniform_charge_centrality_mode_normalises() -> None:
+    Phi = 3.0
+    centrality = np.array([1.0, 3.0, 2.0])
+    memory = readouts.memory_uniform_charge(Phi, mode="centrality", centrality=centrality)
+    expected = Phi * centrality / centrality.sum()
+    np.testing.assert_allclose(memory, expected)
+
+
+def test_memory_uniform_charge_one_hot_targets_index() -> None:
+    Phi = 0.75
+    probs = np.array([0.1, 0.2, 0.7])
+    memory = readouts.memory_uniform_charge(Phi, mode="one_hot", target=2, pQ=probs)
+    expected = np.zeros_like(probs)
+    expected[2] = Phi
+    np.testing.assert_allclose(memory, expected)
+
+
 def test_memory_direction_locked_scalar_gradient() -> None:
     Phi = 0.5
     s = np.array([0.2, 0.4, 0.6])
