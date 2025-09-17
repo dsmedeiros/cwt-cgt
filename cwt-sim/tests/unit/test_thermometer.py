@@ -25,10 +25,9 @@ def test_thermometer_directional_matches_weighted_fs_distance() -> None:
 
     result = thermometer_directional(Psi0, neighbors, deltas, weights)
 
-    expected = (
-        weights["x"] * (fs_distance(Psi0, Psi_x) ** 2) / (delta**2)
-        + weights["y"] * (fs_distance(Psi0, Psi_y) ** 2) / (delta**2)
-    )
+    expected = weights["x"] * (fs_distance(Psi0, Psi_x) ** 2) / (delta**2) + weights["y"] * (
+        fs_distance(Psi0, Psi_y) ** 2
+    ) / (delta**2)
     assert result == pytest.approx(expected)
 
 

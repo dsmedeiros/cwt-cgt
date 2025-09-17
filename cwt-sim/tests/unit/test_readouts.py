@@ -108,9 +108,7 @@ def test_readout_stochastic_temperature_limits() -> None:
 
     np.random.seed(0)
     _, weights_high_T = readouts.readout_stochastic(probs, memory, T=1e6, eta=0.0)
-    np.testing.assert_allclose(
-        weights_high_T, np.full_like(probs, 1.0 / probs.size), atol=1e-6
-    )
+    np.testing.assert_allclose(weights_high_T, np.full_like(probs, 1.0 / probs.size), atol=1e-6)
 
 
 def test_readout_stochastic_incorporates_memory_bias() -> None:
