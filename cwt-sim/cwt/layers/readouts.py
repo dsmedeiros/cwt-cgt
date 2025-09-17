@@ -10,24 +10,82 @@ import numpy as np
 from ..graph.substrate import GraphSubstrate
 
 
-def memory_uniform_charge(Phi: float, chi: np.ndarray | Sequence[float]) -> np.ndarray:
-    r"""Uniform geometric charge memory.
+def _normalise_susceptibility(vec: np.ndarray) -> np.ndarray:
+    """Return a normalised susceptibility vector, guarding against zeros."""
 
-    Parameters
-    ----------
-    Phi:
-        Oriented loop flux :math:`\Phi_\gamma`.
-    chi:
-        Node-wise susceptibility weights ``\chi_n``.
+    arr = np.asarray(vec, dtype=float)
+    if arr.size == 0:
+        return arr.astype(float, copy=True)
+    total = float(arr.sum())
+    if not np.isfinite(total) or total <= 0.0:
+        return np.zeros_like(arr, dtype=float)
+    return arr / total
 
-    Returns
-    -------
-    numpy.ndarray
-        ``Phi * chi`` broadcast to an array.
-    """
 
-    chi_arr = np.asarray(chi, dtype=float)
-    return float(Phi) * chi_arr
+def memory_uniform_charge(
+    Phi: float,
+    chi: np.ndarray | Sequence[float] | None = None,
+    *,
+    mode: str = "psi_amp",
+    target: int | None = None,
+    centrality: np.ndarray | Sequence[float] | Mapping[int, float] | None = None,
+    pQ: np.ndarray | Sequence[float] | None = None,
+) -> np.ndarray:
+    r"""Uniform geometric charge memory with configurable susceptibilities."""
+
+    if chi is not None:
+        chi_vec = np.asarray(chi, dtype=float)
+    else:
+        mode_key = mode.lower()
+        if mode_key == "one_hot":
+            if pQ is None:
+                raise ValueError("pQ must be provided for one_hot mode.")
+            basis = np.asarray(pQ)
+            size = basis.size
+            chi_vec = np.zeros(size, dtype=float)
+            if size == 0:
+                return chi_vec
+            if target is None:
+                raise ValueError("target must be supplied for one_hot mode.")
+            if not 0 <= int(target) < size:
+                raise ValueError("target index is out of range for one_hot mode.")
+            chi_vec[int(target)] = 1.0
+        elif mode_key == "psi_amp":
+            if pQ is None:
+                raise ValueError("pQ must be provided for psi_amp mode.")
+            basis = np.asarray(pQ)
+            chi_vec = _normalise_susceptibility(np.abs(basis) ** 2)
+        elif mode_key == "centrality":
+            if centrality is None:
+                raise ValueError("centrality must be provided for centrality mode.")
+            cent = centrality
+            if isinstance(cent, Mapping):
+                if pQ is None:
+                    raise ValueError("pQ must be provided to infer size for centrality mapping.")
+                basis = np.asarray(pQ)
+                chi_vec = np.zeros(basis.size, dtype=float)
+                for node, value in cent.items():
+                    idx = int(node)
+                    if 0 <= idx < chi_vec.size:
+                        chi_vec[idx] = float(value)
+            else:
+                chi_vec = np.asarray(cent, dtype=float)
+            chi_vec = _normalise_susceptibility(chi_vec)
+        else:
+            inferred = None
+            if pQ is not None:
+                inferred = np.asarray(pQ)
+            elif centrality is not None and not isinstance(centrality, Mapping):
+                inferred = np.asarray(centrality)
+            if inferred is None:
+                raise ValueError("Unable to infer susceptibility size; provide chi, pQ, or centrality.")
+            size = inferred.size
+            if size == 0:
+                chi_vec = np.zeros(0, dtype=float)
+            else:
+                chi_vec = np.full(size, 1.0 / size, dtype=float)
+
+    return float(Phi) * np.asarray(chi_vec, dtype=float)
 
 
 def memory_direction_locked(
