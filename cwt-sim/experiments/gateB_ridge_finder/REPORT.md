@@ -18,6 +18,19 @@ Independent markers were computed per tile as follows:
 - **Kuramoto order parameter** $r(\lambda)$ from the last ten samples of the
   short Θ evolution. We report the gradient magnitude $\|\nabla r\|$ as a change
   indicator.
+
+## Universal diagnostics
+
+Health — min overlap: n/a, mean overlap: n/a, tiles ≥ s_min: n/a, FS step mean: n/a,
+p95: n/a, Ω CI mean width: n/a
+
+Geometry — |Ω| mean/median: n/a / n/a, tr(g) mean/min/max: n/a / n/a / n/a
+
+Loop — Φ: n/a, area: n/a, extents: ρ∈[0.000, 0.500], τ∈[0.500, 0.800], steps: n/a
+
+Readout — R_CW: n/a, R_CCW: n/a, flip error: n/a, κ₁: n/a (CI n/a)
+
+Markers — spectral gap(P): n/a, |∇r|: n/a
 - **Hotspot detection** treats $\mathrm{tr}\,g$ as the score and defines
   positives via the union of low-gap and high-$\|\nabla r\|$ tiles, with automatic
   fallback to $\|\nabla r\|$ alone when the gap lacks dynamic range. ROC curves and

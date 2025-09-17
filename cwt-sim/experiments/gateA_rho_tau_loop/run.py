@@ -1,4 +1,5 @@
 """Gate A experiment: density–delay loops and readout bias calibration."""
+
 from __future__ import annotations
 
 import argparse
@@ -14,6 +15,7 @@ from cwt.geometry.curvature import curvature_tile
 from cwt.geometry.fs_distance import fs_distance
 from cwt.geometry.psi import build_psi
 from cwt.graph.factories import random_regular_digraph, ring3
+from cwt.graph.kernels import build_transport_kernel
 from cwt.graph.substrate import GraphSubstrate
 from cwt.layers.readouts import (
     edge_currents,
@@ -23,7 +25,13 @@ from cwt.layers.readouts import (
 from cwt.layers.state import LayersState, wrap_angles
 from cwt.orchestrator.param_path import ParameterPath
 
-from ..report_helpers import fs_histogram, render_health_banner
+from ..report_helpers import (
+    ReportHeaderMetrics,
+    fs_histogram,
+    render_health_banner,
+    render_report_header,
+)
+from cwt.metrics.eval_curves import spectral_gap
 
 
 @dataclass
@@ -198,6 +206,125 @@ def _health_summary(results: ExperimentResults) -> tuple[float, dict, list[float
 
     pass_rate = passing_tiles / total_tiles if total_tiles else float("nan")
     return pass_rate, fs_histogram(fs_all), omega_widths
+
+
+def _gateA_header_metrics(results: ExperimentResults) -> ReportHeaderMetrics:
+    """Aggregate universal metrics across all Gate A graph extents."""
+
+    tiles: list[TileStat] = []
+    overlaps: list[float] = []
+    omega_values: list[float] = []
+    tile_areas: list[float] = []
+    fs_steps: list[float] = []
+    slope_samples: list[float] = []
+    cw_bias: list[float] = []
+    ccw_bias: list[float] = []
+    flip_terms: list[float] = []
+    gradient_terms: list[float] = []
+    path_lengths: list[int] = []
+
+    for graph in results.graphs:
+        for extent in graph.extents:
+            tiles.extend(extent.tiles)
+            overlaps.extend(tile.min_overlap for tile in extent.tiles)
+            omega_values.extend(abs(tile.omega) for tile in extent.tiles)
+            tile_areas.extend(tile.area for tile in extent.tiles)
+            fs_steps.extend(extent.fs_steps_all())
+            slope_samples.extend(extent.slope_samples())
+            cw_bias.extend(extent.cw_bias())
+            ccw_bias.extend(extent.ccw_bias())
+            flip_terms.extend(extent.orientation_sums())
+            for sample in extent.samples:
+                gradient_terms.append(sample.ccw.R_gamma - sample.cw.R_gamma)
+                path_lengths.append(len(sample.ccw.fs_steps))
+
+    overlaps = [float(val) for val in overlaps if math.isfinite(float(val))]
+    min_overlap = min(overlaps) if overlaps else float("nan")
+    mean_overlap = float(np.mean(overlaps)) if overlaps else float("nan")
+
+    total_tiles = len(overlaps)
+    pass_tiles = sum(1 for val in overlaps if val >= results.s_min)
+    pass_rate = pass_tiles / total_tiles if total_tiles else float("nan")
+
+    fs_steps_arr = np.asarray(fs_steps, dtype=float)
+    fs_steps_finite = fs_steps_arr[np.isfinite(fs_steps_arr)]
+    fs_mean = float(fs_steps_finite.mean()) if fs_steps_finite.size else float("nan")
+    fs_p95 = float(np.percentile(fs_steps_finite, 95)) if fs_steps_finite.size else float("nan")
+
+    _, _, omega_widths = _health_summary(results)
+    omega_ci_mean = float(np.mean(omega_widths)) if omega_widths else float("nan")
+
+    omega_abs = np.asarray(omega_values, dtype=float)
+    omega_abs = omega_abs[np.isfinite(omega_abs)]
+    omega_abs_mean = float(omega_abs.mean()) if omega_abs.size else float("nan")
+    omega_abs_median = float(np.median(omega_abs)) if omega_abs.size else float("nan")
+
+    phi_flux = sum(extent.flux for graph in results.graphs for extent in graph.extents)
+    geom_area = float(np.sum(tile_areas)) if tile_areas else float("nan")
+
+    extent_labels = sorted(
+        {f"±{extent.extent_fraction * 100:.1f}%" for graph in results.graphs for extent in graph.extents}
+    )
+
+    slope_arr = np.asarray(slope_samples, dtype=float)
+    slope_arr = slope_arr[np.isfinite(slope_arr)]
+    kappa_mean = float(slope_arr.mean()) if slope_arr.size else float("nan")
+    kappa_ci = None
+    if slope_arr.size:
+        mean_val, ci_val = _mean_ci(slope_arr)
+        kappa_mean = mean_val
+        kappa_ci = ci_val
+
+    cw_arr = np.asarray(cw_bias, dtype=float)
+    cw_arr = cw_arr[np.isfinite(cw_arr)]
+    ccw_arr = np.asarray(ccw_bias, dtype=float)
+    ccw_arr = ccw_arr[np.isfinite(ccw_arr)]
+    flip_arr = np.asarray(flip_terms, dtype=float)
+    flip_arr = flip_arr[np.isfinite(flip_arr)]
+    grad_arr = np.asarray(gradient_terms, dtype=float)
+    grad_arr = grad_arr[np.isfinite(grad_arr)]
+
+    steps_mean = float(np.mean(path_lengths)) if path_lengths else float("nan")
+
+    gap_values: list[float] = []
+    for graph in results.graphs:
+        center = graph.center
+        try:
+            K = build_transport_kernel(
+                graph.substrate,
+                rho=float(center.get("rho", 0.0)),
+                tau_scale=float(center.get("tau", center.get("tau_scale", 1.0))),
+            )
+        except Exception:  # pragma: no cover - defensive
+            continue
+        try:
+            gap_values.append(spectral_gap(K))
+        except Exception:  # pragma: no cover - defensive
+            continue
+
+    spectral_gap_mean = float(np.mean(gap_values)) if gap_values else float("nan")
+
+    return ReportHeaderMetrics(
+        min_overlap=min_overlap,
+        mean_overlap=mean_overlap,
+        pass_rate=pass_rate,
+        fs_mean=fs_mean,
+        fs_p95=fs_p95,
+        omega_ci_mean=omega_ci_mean,
+        omega_abs_mean=omega_abs_mean,
+        omega_abs_median=omega_abs_median,
+        phi_flux=phi_flux,
+        geom_area=geom_area,
+        extents=extent_labels,
+        steps=steps_mean,
+        R_cw=float(cw_arr.mean()) if cw_arr.size else float("nan"),
+        R_ccw=float(ccw_arr.mean()) if ccw_arr.size else float("nan"),
+        flip_error=float(np.mean(np.abs(flip_arr))) if flip_arr.size else float("nan"),
+        kappa1_mean=kappa_mean,
+        kappa1_ci=kappa_ci,
+        spectral_gap=spectral_gap_mean,
+        grad_r=float(np.mean(np.abs(grad_arr))) if grad_arr.size else float("nan"),
+    )
 
 
 def _synthetic_state(S: GraphSubstrate, rho: float, tau: float) -> LayersState:
@@ -529,6 +656,8 @@ def _render_extent_section(extent: ExtentResult) -> list[str]:
 
 
 def _render_report(results: ExperimentResults) -> str:
+    header_metrics = _gateA_header_metrics(results)
+
     lines = [
         "# Gate A: density–delay loop",
         "",
@@ -537,6 +666,8 @@ def _render_report(results: ExperimentResults) -> str:
         f"Minimum overlap threshold s_min: {results.s_min}",
         "",
     ]
+
+    lines.extend(render_report_header(header_metrics))
 
     pass_rate, fs_hist_all, omega_widths = _health_summary(results)
     lines.extend(render_health_banner(pass_rate, fs_hist_all, omega_widths))
