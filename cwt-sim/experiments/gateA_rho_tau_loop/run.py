@@ -1,5 +1,4 @@
 """Gate A experiment: density–delay loops and readout bias calibration."""
-
 from __future__ import annotations
 
 import argparse
@@ -23,6 +22,7 @@ from cwt.layers.readouts import (
 )
 from cwt.layers.state import LayersState, wrap_angles
 from cwt.orchestrator.param_path import ParameterPath
+
 from ..report_helpers import fs_histogram, render_health_banner
 
 

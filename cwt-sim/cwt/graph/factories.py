@@ -34,11 +34,26 @@ def line3(weight: float = 1.0, delay: float = 1.0, bidir: bool = False) -> Graph
     return build_substrate(_prepare_graph(edges, weight, delay))
 
 
-def ring3(weight: float = 1.0, delay: float = 1.0) -> GraphSubstrate:
+def ring3(
+    weight: float = 1.0,
+    delay: float = 1.0,
+    delays: Iterable[float] | None = None,
+) -> GraphSubstrate:
     """Three-node directed ring 0→1→2→0."""
 
     edges = [(0, 1), (1, 2), (2, 0)]
-    return build_substrate(_prepare_graph(edges, weight, delay))
+    if delays is None:
+        base = float(delay)
+        delay_values = [base, 1.5 * base, 2.25 * base]
+    else:
+        delay_values = [float(value) for value in delays]
+    if len(delay_values) != len(edges):
+        raise ValueError("delays must provide exactly three values for ring3.")
+
+    G = nx.DiGraph()
+    for (source, target), edge_delay in zip(edges, delay_values):
+        G.add_edge(source, target, weight=float(weight), delay=float(edge_delay))
+    return build_substrate(G)
 
 
 def random_regular_digraph(

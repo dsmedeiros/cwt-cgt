@@ -65,3 +65,18 @@ def test_transport_kernel_ring3_deterministic_flow() -> None:
 
     expected = sp.eye(S.N, format="csr")[:, [1, 2, 0]]
     np.testing.assert_allclose(K.toarray(), expected.toarray())
+
+
+def test_ring3_factory_assigns_heterogeneous_delays() -> None:
+    """The canonical ring carries distinct delays on each oriented edge."""
+
+    S = ring3(weight=1.0, delay=2.0)
+    tau = S.Tau.toarray()
+    expected = np.array(
+        [
+            [0.0, 0.0, 4.5],
+            [2.0, 0.0, 0.0],
+            [0.0, 3.0, 0.0],
+        ]
+    )
+    np.testing.assert_allclose(tau, expected)

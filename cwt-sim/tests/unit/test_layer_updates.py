@@ -106,3 +106,20 @@ def test_theta_step_with_coupling_remains_finite() -> None:
     assert np.all(np.isfinite(theta_next))
     assert np.all(theta_next > -math.pi)
     assert np.all(theta_next <= math.pi)
+
+
+def test_theta_step_respects_phi_edge_offsets() -> None:
+    theta = np.array([0.2, -0.3])
+    omega = np.zeros(2)
+    J = np.array([[0.0, 0.5], [0.3, 0.0]])
+    phi_edge = np.array([[0.0, 0.4], [-0.1, 0.0]])
+
+    base = theta_step(theta, omega, J)
+    frustrated = theta_step(theta, omega, J, phi_edge=phi_edge)
+
+    theta_diff = theta[np.newaxis, :] - theta[:, np.newaxis] - phi_edge
+    coupling_expected = np.sum(J * np.sin(theta_diff), axis=1)
+    expected = wrap_angles(theta + coupling_expected)
+
+    assert frustrated == pytest.approx(expected)
+    assert not np.allclose(base, frustrated)
