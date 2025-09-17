@@ -1,5 +1,4 @@
 """Gate C experiment: topology robustness under noise perturbations."""
-
 from __future__ import annotations
 
 import argparse
@@ -20,6 +19,7 @@ from cwt.graph.substrate import GraphSubstrate
 from cwt.layers.readouts import memory_current_coupled, readout_stochastic
 from cwt.layers.state import LayersState, wrap_angles
 from cwt.orchestrator.param_path import ParameterPath
+
 from ..report_helpers import fs_histogram, render_health_banner
 
 

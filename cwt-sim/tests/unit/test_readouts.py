@@ -174,7 +174,18 @@ def test_readout_spiking_uses_supplied_rng() -> None:
     assert result == {"fired": True, "spikes_total": 13}
 
     with pytest.raises(TypeError):
-        readouts.readout_spiking(probs, signal, memory, r0=1.0, c1=1.0, c2=1.0, c3=1.0, window=1.0, thresh=1, rng=_BadRNG())
+        readouts.readout_spiking(
+            probs,
+            signal,
+            memory,
+            r0=1.0,
+            c1=1.0,
+            c2=1.0,
+            c3=1.0,
+            window=1.0,
+            thresh=1,
+            rng=_BadRNG(),
+        )
 
 
 def test_edge_currents_balances_flux() -> None:
