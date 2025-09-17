@@ -112,3 +112,13 @@ def curvature_bias(
     scalar = float(alpha) * float(beta) * float(delta_area) * oriented_sum
 
     return Xi_arr * scalar
+
+
+def make_phi_edge_ring3(zeta_phase: float) -> np.ndarray:
+    """Return frustrated edge phase offsets for the three-node ring."""
+
+    phi = np.zeros((3, 3), dtype=float)
+    phi[1, 0] = float(zeta_phase)
+    phi[2, 1] = float(zeta_phase)
+    phi[0, 2] = float(-2.0 * zeta_phase)
+    return phi

@@ -88,6 +88,8 @@ def theta_step(
     omega_n: np.ndarray,
     J: np.ndarray,
     phase_kick: np.ndarray | None = None,
+    *,
+    phi_edge: np.ndarray | None = None,
 ) -> np.ndarray:
     """Advance the Θ-layer phases with Kuramoto-like coupling."""
 
@@ -110,6 +112,13 @@ def theta_step(
         kick = 0.0
 
     theta_diff = theta_arr[np.newaxis, :] - theta_arr[:, np.newaxis]
+
+    if phi_edge is not None:
+        phi_arr = np.asarray(phi_edge, dtype=float)
+        if phi_arr.shape != (N, N):
+            raise ValueError("phi_edge must be a square (N, N) matrix aligned with theta.")
+        theta_diff = theta_diff - phi_arr
+
     coupling = np.sum(J_arr * np.sin(theta_diff), axis=1)
 
     theta_next = theta_arr + omega_arr + coupling + kick

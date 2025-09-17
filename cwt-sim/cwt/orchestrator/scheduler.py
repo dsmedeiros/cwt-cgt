@@ -29,7 +29,7 @@ from ..layers.readouts import memory_uniform_charge
 from ..layers.state import LayersState, normalize_prob, wrap_angles
 from ..layers.theta_update import build_J_from_W, omega_from_delays, theta_step
 from ..orchestrator.param_path import ParameterPath
-from .with_geom import curvature_bias, nodewise_connection_a_i, phase_kick
+from .with_geom import curvature_bias, make_phi_edge_ring3, nodewise_connection_a_i, phase_kick
 
 
 @dataclass(slots=True)
@@ -117,6 +117,65 @@ def _quantize_delta(delta: float) -> float:
     """Return a rounded representation for caching keyed by ``delta``."""
 
     return round(float(delta), 12)
+
+
+def _phi_edge_for_substrate(S: GraphSubstrate, lam: Mapping[str, float]) -> np.ndarray | None:
+    """Return edge phase offsets derived from ``lam`` for the substrate."""
+
+    zeta_phase = float(lam.get("zeta_phase", 0.0))
+    if zeta_phase == 0.0:
+        return None
+
+    if S.N == 0:
+        return np.zeros((0, 0), dtype=float)
+
+    if S.N == 3 and S.G.number_of_edges() == 3:
+        return make_phi_edge_ring3(zeta_phase)
+
+    phi = np.zeros((S.N, S.N), dtype=float)
+    index = S.node_index
+    for source, target in S.G.edges():
+        if source not in index or target not in index:
+            continue
+        row = index[target]
+        col = index[source]
+        phi[row, col] = float(zeta_phase)
+    return phi
+
+
+def _psi_at(
+    S: GraphSubstrate,
+    lam: Mapping[str, float],
+    pQ0: np.ndarray,
+    th0: np.ndarray,
+    cfg: RunConfig,
+    *,
+    steps: int = 20,
+) -> np.ndarray:
+    """Return the wavefunction after relaxing towards ``lam`` for ``steps`` updates."""
+
+    p = np.asarray(pQ0, dtype=float).copy()
+    theta = np.asarray(th0, dtype=float).copy()
+
+    rho = float(lam.get("rho", 0.0))
+    tau_val = float(lam.get("tau", lam.get("tau_scale", 1.0)))
+    if tau_val <= 0.0:
+        tau_val = 1.0
+    kappa = float(lam.get("kappa", 1.0))
+    omega_scale = float(lam.get("omega_scale", cfg.omega_scale))
+    zeta = float(lam.get("zeta", cfg.zeta))
+
+    phi_edge = _phi_edge_for_substrate(S, lam)
+
+    K = build_transport_kernel(S, rho=rho, tau_scale=tau_val, kappa=kappa)
+    omega = omega_from_delays(S, rho=rho, tau_scale=tau_val, omega_scale=omega_scale)
+    J = build_J_from_W(S, zeta=zeta)
+
+    for _ in range(max(int(steps), 1)):
+        theta = theta_step(theta, omega, J, phase_kick=None, phi_edge=phi_edge)
+        p, _ = q_step(p, K, cfg.eta_q, geom_bias=None)
+
+    return build_psi(p, theta)
 
 
 def _xi_initial(pQ: np.ndarray, xi_cfg: Mapping[str, Any]) -> tuple[np.ndarray, bool]:
@@ -261,7 +320,6 @@ def _direct_neighbor_state_factory(
     theta: np.ndarray,
     config: RunConfig,
     *,
-    J: np.ndarray,
     neighbor_steps: int = 1,
 ) -> Callable[[Mapping[str, float]], np.ndarray]:
     """Return a callable that synthesises neighbour states via direct stepping."""
@@ -269,47 +327,53 @@ def _direct_neighbor_state_factory(
     lam0 = {str(k): float(v) for k, v in lambda_state.items()}
     base_prob = np.asarray(pQ, dtype=float)
     base_theta = np.asarray(theta, dtype=float)
-    steps = max(int(neighbor_steps), 1)
-    eta_q = float(config.eta_q)
+    settle_steps = max(int(neighbor_steps), 1)
+    settle_steps = max(settle_steps, 20)
+
+    tau_default = float(lam0.get("tau", lam0.get("tau_scale", 1.0)))
+    if tau_default <= 0.0:
+        tau_default = 1.0
 
     defaults = {
         "rho": float(lam0.get("rho", 0.0)),
-        "tau": float(lam0.get("tau", lam0.get("tau_scale", 1.0))),
+        "tau": tau_default,
+        "tau_scale": float(lam0.get("tau_scale", tau_default)),
         "kappa": float(lam0.get("kappa", 1.0)),
         "omega_scale": float(lam0.get("omega_scale", config.omega_scale)),
+        "zeta": float(lam0.get("zeta", config.zeta)),
+        "zeta_phase": float(lam0.get("zeta_phase", 0.0)),
     }
-    if defaults["tau"] <= 0.0:
-        defaults["tau"] = 1.0
+
+    lam_base = defaults.copy()
+    lam_base.update(lam0)
+
+    tau_val = float(lam_base.get("tau", defaults["tau"]))
+    if tau_val <= 0.0:
+        tau_val = defaults["tau"]
+    tau_scale_val = float(lam_base.get("tau_scale", tau_val))
+    if tau_scale_val <= 0.0:
+        tau_scale_val = tau_val
+    lam_base["tau"] = tau_val
+    lam_base["tau_scale"] = tau_scale_val
 
     def _base_value(knob: str) -> float:
-        if knob in lam0:
-            return lam0[knob]
-        if knob in defaults:
-            return defaults[knob]
-        if knob == "tau_scale":
-            return defaults["tau"]
-        return 0.0
+        return float(lam_base.get(knob, 0.0))
 
-    def _resolve_params(lam: Mapping[str, float]) -> tuple[float, float, float, float]:
-        rho_val = float(lam.get("rho", defaults["rho"]))
-        tau_val = float(lam.get("tau", lam.get("tau_scale", defaults["tau"])))
-        if tau_val <= 0.0:
-            tau_val = 1.0
-        kappa_val = float(lam.get("kappa", defaults["kappa"]))
-        omega_scale_val = float(lam.get("omega_scale", defaults["omega_scale"]))
-        return rho_val, tau_val, kappa_val, omega_scale_val
+    def _prepare_lambda(overrides: Mapping[str, float]) -> dict[str, float]:
+        lam = {k: float(v) for k, v in lam_base.items()}
+        for knob, delta in overrides.items():
+            base_val = _base_value(str(knob))
+            lam[str(knob)] = base_val + float(delta)
 
-    def _propagate_once(lam: Mapping[str, float]) -> np.ndarray:
-        rho_val, tau_val, kappa_val, omega_scale_val = _resolve_params(lam)
-        K = build_transport_kernel(S, rho=rho_val, tau_scale=tau_val, kappa=kappa_val)
-        omega = omega_from_delays(S, rho=rho_val, tau_scale=tau_val, omega_scale=omega_scale_val)
-
-        p_state = base_prob.copy()
-        theta_state = base_theta.copy()
-        for _ in range(steps):
-            theta_state = theta_step(theta_state, omega, J, phase_kick=None)
-            p_state, _ = q_step(p_state, K, eta_q, geom_bias=None, clip_floor=0.0)
-        return build_psi(p_state, theta_state)
+        if "tau" in lam and lam["tau"] <= 0.0:
+            lam["tau"] = 1.0
+        if "tau_scale" not in overrides and "tau" in overrides:
+            lam["tau_scale"] = lam["tau"]
+        if "tau_scale" in overrides and "tau" not in overrides:
+            lam["tau"] = lam["tau_scale"]
+        if lam.get("tau_scale", 0.0) <= 0.0:
+            lam["tau_scale"] = lam.get("tau", 1.0) if lam.get("tau", 1.0) > 0.0 else 1.0
+        return lam
 
     state_cache: dict[tuple[tuple[str, float], ...], np.ndarray] = {}
 
@@ -328,12 +392,8 @@ def _direct_neighbor_state_factory(
         if key in state_cache:
             return state_cache[key]
 
-        lam = lam0.copy()
-        for knob, delta in overrides.items():
-            base_val = _base_value(str(knob))
-            lam[str(knob)] = base_val + float(delta)
-
-        state = _propagate_once(lam)
+        lam = _prepare_lambda(overrides)
+        state = _psi_at(S, lam, base_prob, base_theta, config, steps=settle_steps)
         state_cache[key] = state
         return state
 
@@ -492,8 +552,6 @@ def run_parameter_loop(
 
     Xi, dynamic_xi = _xi_initial(pQ, config.xi_kind)
 
-    J = build_J_from_W(S, zeta=float(config.zeta))
-
     noise_cfg = config.noise or {}
     theta_sigma = _noise_sigma(noise_cfg, "theta", aliases=("phase",))
     prob_sigma = _noise_sigma(noise_cfg, "prob", aliases=("amp", "amp_noise"))
@@ -522,6 +580,9 @@ def run_parameter_loop(
         rho = float(lambda_state.get("rho", 0.0))
         tau_scale = float(lambda_state.get("tau", 1.0)) or 1.0
         kappa = float(lambda_state.get("kappa", 1.0))
+        omega_scale_val = float(lambda_state.get("omega_scale", config.omega_scale))
+        zeta = float(lambda_state.get("zeta", config.zeta))
+        phi_edge = _phi_edge_for_substrate(S, lambda_state)
 
         if tau_scale <= 0.0:
             tau_scale = 1.0
@@ -533,9 +594,8 @@ def run_parameter_loop(
             tau_scale_eff = tau_scale
 
         K = build_transport_kernel(S, rho=rho, tau_scale=tau_scale_eff, kappa=kappa)
-        omega_n = omega_from_delays(
-            S, rho=rho, tau_scale=tau_scale_eff, omega_scale=float(config.omega_scale)
-        )
+        omega_n = omega_from_delays(S, rho=rho, tau_scale=tau_scale_eff, omega_scale=omega_scale_val)
+        J = build_J_from_W(S, zeta=zeta)
 
         Psi0 = psi_current
         geometry_knobs = set(config.delta_frac.keys()) | set(delta_lambda.keys())
@@ -552,7 +612,6 @@ def run_parameter_loop(
                 pQ,
                 theta,
                 config,
-                J=J,
                 neighbor_steps=neighbor_steps,
             )
 
@@ -580,7 +639,6 @@ def run_parameter_loop(
                         pQ,
                         theta,
                         config,
-                        J=J,
                         neighbor_steps=neighbor_steps,
                     )
                 Psi_i = direct_state_for({knob: float(delta_candidate)})
@@ -625,7 +683,6 @@ def run_parameter_loop(
                             pQ,
                             theta,
                             config,
-                            J=J,
                             neighbor_steps=neighbor_steps,
                         )
                     sampler = _psi_sampler_factory_direct(Psi0, knob_i, knob_j, direct_state_for)
@@ -672,7 +729,7 @@ def run_parameter_loop(
         delta_theta_geom = phase_kick(theta, A_per_knob, delta_lambda)
         phase_kicks.append(np.asarray(delta_theta_geom, dtype=float).copy())
 
-        theta_next = theta_step(theta, omega_n, J, delta_theta_geom)
+        theta_next = theta_step(theta, omega_n, J, delta_theta_geom, phi_edge=phi_edge)
 
         pQ_next, stats = q_step(pQ, K, float(config.eta_q), geom_bias=Gamma, clip_floor=float(clip_floor))
 
