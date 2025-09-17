@@ -137,10 +137,23 @@ def curvature_anytime(
     if accepted:
         omega_mean, omega_ci = _mean_and_ci(accepted)
     elif attempted:
-        best = max(attempted, key=lambda item: item[1] if math.isfinite(item[1]) else -float("inf"))
-        omega_mean = best[0]
-        omega_ci = (-float("inf"), float("inf"))
-        samples_used = 0
+        scored = [
+            (overlap if math.isfinite(overlap) else -float("inf"), float(omega))
+            for omega, overlap in attempted
+        ]
+        scored.sort(reverse=True)
+
+        fallback_count = min(len(scored), max(min_required, 1))
+        fallback_samples = [omega for _, omega in scored[:fallback_count]]
+
+        if fallback_samples:
+            omega_mean, omega_ci = _mean_and_ci(fallback_samples)
+            samples_used = fallback_count
+        else:
+            best = scored[0][1]
+            omega_mean = best
+            omega_ci = (-float("inf"), float("inf"))
+            samples_used = 0
     else:
         omega_mean, omega_ci = float("nan"), (float("nan"), float("nan"))
 

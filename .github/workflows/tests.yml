@@ -27,18 +27,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.test.txt
 
-      - name: Ruff lint
-        working-directory: cwt-sim
-        run: ruff check .
-
-      - name: Black formatting
-        working-directory: cwt-sim
-        run: black --check .
-
-      - name: Mypy type checking
-        working-directory: cwt-sim
-        run: mypy
-
       - name: Pytest (unit)
         working-directory: cwt-sim
         run: pytest -m unit -q
@@ -46,3 +34,15 @@ jobs:
       - name: Pytest (regression)
         working-directory: cwt-sim
         run: pytest -m regression -q
+
+      - name: Mypy type checking
+        working-directory: cwt-sim
+        run: mypy
+
+      - name: Ruff lint
+        working-directory: cwt-sim
+        run: ruff check .
+
+      - name: Black formatting
+        working-directory: cwt-sim
+        run: black --check .
