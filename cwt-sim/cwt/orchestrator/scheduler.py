@@ -25,6 +25,7 @@ from ..geometry.psi import build_psi
 from ..graph.kernels import build_transport_kernel
 from ..graph.substrate import GraphSubstrate
 from ..layers.q_update import q_step
+from ..layers.readouts import memory_uniform_charge
 from ..layers.state import LayersState, normalize_prob, wrap_angles
 from ..layers.theta_update import build_J_from_W, omega_from_delays, theta_step
 from ..orchestrator.param_path import ParameterPath
@@ -174,6 +175,47 @@ def _collect_readout(
         "theta_mean": float(theta.mean()) if theta.size else 0.0,
         "clip_count": int(clip_count),
     }
+
+
+def _centrality_vector(S: GraphSubstrate, spec: Any) -> np.ndarray | None:
+    """Return a centrality vector derived from ``spec`` if possible."""
+
+    if spec is None:
+        return None
+
+    N = S.N
+    if N == 0:
+        return np.zeros((0,), dtype=float)
+
+    ordered_nodes = [node for node, _ in sorted(S.node_index.items(), key=lambda item: item[1])]
+
+    try:
+        if isinstance(spec, str):
+            key = spec.lower()
+            if key in {"out_degree", "outdegree"}:
+                return S.out_deg.astype(float, copy=True)
+            if key in {"in_degree", "indegree"}:
+                return np.asarray([S.G.in_degree(node) for node in ordered_nodes], dtype=float)
+            if key in {"degree", "undirected_degree"}:
+                degree_map = dict(S.G.to_undirected().degree(ordered_nodes))
+                return np.asarray([float(degree_map.get(node, 0.0)) for node in ordered_nodes], dtype=float)
+            return None
+
+        if isinstance(spec, Mapping):
+            arr = np.zeros(N, dtype=float)
+            for node, value in spec.items():
+                if node in S.node_index:
+                    arr[S.node_index[node]] = float(value)
+            return arr
+
+        arr = np.asarray(spec, dtype=float)
+        if arr.ndim != 1:
+            arr = arr.reshape(-1)
+        if arr.size != N:
+            return None
+        return arr.astype(float, copy=True)
+    except (TypeError, ValueError):  # pragma: no cover - defensive guard
+        return None
 
 
 def _psi_sampler_factory_phase(
@@ -602,6 +644,7 @@ def run_parameter_loop(
                         "lambda0": lambda_state.copy(),
                         "knobs": (knob_i, knob_j),
                         "omega": float(plaquette.omega_mean),
+                        "tile_area": float(abs(delta_i * delta_j)),
                         "ci": tuple(float(x) for x in plaquette.omega_ci),
                         "min_overlap": float(plaquette.min_overlap),
                         "samples_used": int(plaquette.samples_used),
@@ -716,6 +759,61 @@ def run_parameter_loop(
         "trigger_steps": guard_events,
         "peak_ratio": float(guard_peak_ratio),
     }
+
+    phi_flux_total = 0.0
+    if omega_tiles:
+        for tile in omega_tiles:
+            if not isinstance(tile, dict):
+                continue
+            try:
+                omega_val = float(tile.get("omega", 0.0))
+                area_val = float(tile.get("tile_area", 0.0))
+            except (TypeError, ValueError):  # pragma: no cover - defensive guard
+                continue
+            if math.isfinite(omega_val) and math.isfinite(area_val):
+                phi_flux_total += omega_val * area_val
+
+    if readouts:
+        final_entry = readouts[-1]
+        if isinstance(final_entry, dict) and final_entry.get("step") == path.steps:
+            final_entry["phi_flux"] = float(phi_flux_total)
+            memory_form_cfg = str(readout_cfg.get("memory_form", "")).lower()
+            readout_params = readout_cfg.get("params") or {}
+            if memory_form_cfg == "uniform_charge":
+                chi_param = readout_params.get("chi")
+                chi_vec = None
+                if chi_param is not None:
+                    try:
+                        chi_vec = np.asarray(chi_param, dtype=float)
+                    except (TypeError, ValueError):  # pragma: no cover - defensive guard
+                        chi_vec = None
+
+                centrality_spec = readout_params.get("centrality")
+                centrality_vec = _centrality_vector(S, centrality_spec)
+
+                mode = str(readout_params.get("mode", "psi_amp")).lower()
+                target = readout_params.get("target")
+                try:
+                    target_index = None if target is None else int(target)
+                except (TypeError, ValueError):  # pragma: no cover - defensive guard
+                    target_index = None
+
+                source = str(readout_params.get("pQ_source", "psi")).lower()
+                if source == "probability":
+                    susceptibility_basis = pQ
+                else:
+                    susceptibility_basis = psi_current
+
+                memory_vec = memory_uniform_charge(
+                    phi_flux_total,
+                    chi=chi_vec,
+                    mode=mode,
+                    target=target_index,
+                    centrality=centrality_vec,
+                    pQ=susceptibility_basis,
+                )
+                final_entry["memory_form"] = "uniform_charge"
+                final_entry["memory"] = np.asarray(memory_vec, dtype=float).tolist()
 
     meta: dict[str, Any] = {
         "seed": int(seed),

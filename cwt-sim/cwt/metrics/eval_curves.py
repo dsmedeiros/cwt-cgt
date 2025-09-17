@@ -130,11 +130,19 @@ def summarize_loop(record: RunRecord) -> LoopSummary:
         raise TypeError("record must be a RunRecord instance")
 
     phi_flux = 0.0
-    if record.delta_area:
-        try:
-            phi_flux = float(np.sum(np.asarray(record.delta_area, dtype=float)))
-        except (TypeError, ValueError):  # pragma: no cover - defensive
-            phi_flux = 0.0
+    if record.omega_tiles:
+        total_flux = 0.0
+        for tile in record.omega_tiles:
+            if not isinstance(tile, dict):
+                continue
+            try:
+                omega = float(tile.get("omega", 0.0))
+                area = float(tile.get("tile_area", 0.0))
+            except (TypeError, ValueError):  # pragma: no cover - defensive
+                continue
+            if math.isfinite(omega) and math.isfinite(area):
+                total_flux += omega * area
+        phi_flux = total_flux
 
     R_bias = _aggregate_bias(record.curvature_biases)
     overlaps_min = _min_overlap(record.overlaps_min)
