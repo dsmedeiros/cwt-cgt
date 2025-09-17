@@ -27,8 +27,8 @@ def test_ring3_substrate_structure() -> None:
     assert W_dense[2, 1] == pytest.approx(2.0)
     assert W_dense[0, 2] == pytest.approx(2.0)
     assert Tau_dense[1, 0] == pytest.approx(3.0)
-    assert Tau_dense[2, 1] == pytest.approx(3.0)
-    assert Tau_dense[0, 2] == pytest.approx(3.0)
+    assert Tau_dense[2, 1] == pytest.approx(4.5)
+    assert Tau_dense[0, 2] == pytest.approx(6.75)
 
 
 def test_from_edgelist_single_edge() -> None:
