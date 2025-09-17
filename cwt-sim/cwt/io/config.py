@@ -29,6 +29,8 @@ class ParamsConfig(BaseModel):
     rho_extent: float = 0.0
     tau_center: float = 0.0
     tau_extent: float = 0.0
+    zeta_phase_center: float = 0.0
+    zeta_phase_extent: float = 0.0
     steps: int = 200
 
 

@@ -12,10 +12,11 @@ A research sandbox for exploring **Continuous Wavelet Transport (CWT)** dynamics
    * [Run a single loop](#run-a-single-loop-scriptsrun_looppy)
    * [Sweep a parameter grid](#sweep-a-parameter-grid-scriptssweep_gridpy)
    * [Summarise saved runs](#summarise-saved-runs-scriptseval_reportpy)
-7. [Outputs and run records](#outputs-and-run-records)
-8. [Testing and quality](#testing-and-quality)
-9. [Further resources](#further-resources)
-10. [License and citation](#license-and-citation)
+7. [Non-trivial loops](#non-trivial-loops)
+8. [Outputs and run records](#outputs-and-run-records)
+9. [Testing and quality](#testing-and-quality)
+10. [Further resources](#further-resources)
+11. [License and citation](#license-and-citation)
 
 ## Project overview
 Continuous Wavelet Transport treats macroscopic dynamics as emerging from local propagation on a graph substrate with density-dependent delays. Three interacting layers – probabilistic mass flow (`Q`), phase (`Θ`), and classical readout (`C`) – evolve under a geometry imposed on the control-parameter manifold. That geometry is captured by the CWT Geometric Tensor whose real part behaves as a sensitivity metric and whose imaginary part induces Berry-like curvature effects. The high-level theory is documented in [`theory.md`](theory.md), while this repository provides executable scaffolding for experiments and regression tests.
@@ -75,7 +76,7 @@ Simulation runs are driven by YAML configuration files that map directly onto th
 | Section | Purpose | Notable fields |
 | ------- | ------- | -------------- |
 | `graph` | Graph substrate used to build transport kernels. | `kind`, `weights`, `delays` |
-| `params` | Parameter sweep definition and step count. | `knobs`, `rho_center`, `tau_center`, `steps` |
+| `params` | Parameter sweep definition and step count. | `knobs`, `rho_center`, `tau_center`, `zeta_phase_center`, `steps` |
 | `geometry` | Settings for metric tiles and curvature sampling. | `delta_frac`, `compute_metric`, `compute_curvature`, `adapt_levels` |
 | `dynamics` | Layer coupling coefficients. | `eta_q`, `zeta`, `omega_scale` |
 | `geometric_coupling` | Controls curvature-to-bias conversion. | `alpha`, `beta`, `xi_kind`, `corner_area_mode` |
@@ -87,6 +88,22 @@ Starter files are available under `cwt-sim/configs/`:
 - `default.yaml` – dense configuration with metric and curvature estimation enabled.
 - `grid_scan.yaml` – tuned for scripted grid sweeps with a custom output directory.
 - `small_ring.yaml`, `stage0_dimer.yaml` – additional templates for experiments.
+- `loop_tau_zeta.yaml`, `loop_tau_zeta_phase.yaml` – ready-made hetero-ring loops over Θ-coupling magnitude and phase.
+
+Quickly tailor a loop by listing the axes in `params.knobs` and supplying per-knob centres and extents:
+
+```yaml
+params:
+  knobs: [tau, zeta_phase]
+  tau:
+    center: 0.80
+    extent: 0.02
+  zeta_phase:
+    center: 0.00
+    extent: 0.02
+```
+
+`ParamsConfig` accepts matching `*_center`/`*_extent` pairs (for example `zeta_phase_center` and `zeta_phase_extent`) so scripted tooling can synthesise loops without verbose nested mappings.
 
 Use the `--dry-run` switch on the CLI to validate configurations without writing to disk. Typer will emit a prettified JSON representation of the resolved configuration, making it easy to spot mistakes.
 
@@ -186,6 +203,25 @@ python -m experiments.stage0_analytic.run --output-dir experiments/stage0_analyt
 - `records.json` consolidates the analytic metrics.
 - The `tables/` subdirectory contains either Parquet or CSV files depending on the selected format and `pyarrow` availability.
 - `figures/` includes the validation plots unless `--no-figures` is provided.
+
+## Non-trivial loops
+
+Two hetero-ring templates in `cwt-sim/configs/` showcase Θ-coupling effects that go beyond trivial rectangular sweeps:
+
+- **(τ, ζ)** – `loop_tau_zeta.yaml` keeps the Θ-coupling phase locked while varying its magnitude. Running
+  ```bash
+  cd cwt-sim
+  python -m scripts.run_loop --config configs/loop_tau_zeta.yaml
+  ```
+  yields a non-zero Berry-like `phi_flux` despite the flux being small compared with the raw loop area, and flipping the loop orientation inverts the reported curvature sign.
+- **(τ, ζ_phase)** – `loop_tau_zeta_phase.yaml` treats the Θ-coupling phase as a primary knob. Execute
+  ```bash
+  cd cwt-sim
+  python -m scripts.run_loop --config configs/loop_tau_zeta_phase.yaml
+  ```
+  to induce controlled Θ-frustration: the fabricated run records a `phi_flux` magnitude that stays well below the geometric area while the orientation flag `R` changes sign between clockwise and counter-clockwise traversals.
+
+Both recipes use uniform-charge, one-hot readouts so the curvature signatures remain easy to inspect directly in the saved `meta.json` payloads.
 
 ## Outputs and run records
 Every CLI workflow produces or consumes a [`RunRecord`](cwt-sim/cwt/orchestrator/scheduler.py) – a dataclass capturing time-series trajectories (`pQ_traj`, `theta_traj`, `psi_traj`), geometric tiles (`g_tiles`, `omega_tiles`), curvature-derived biases, and readout snapshots. The `save_run` helper serialises these structures to disk by writing `meta.json` alongside any NumPy arrays required for reconstruction. The `eval_report` command deserialises the bundles, computes [`LoopSummary`](cwt-sim/cwt/metrics/eval_curves.py) metrics (flux, curvature bias, orientation, minimum overlaps, Fubini–Study statistics), and enforces optional sign-flip checks between clockwise and counter-clockwise runs.
