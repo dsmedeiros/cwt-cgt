@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Mapping, Sequence
+from typing import Any, Mapping, Sequence
 
 import networkx as nx
 import numpy as np
@@ -176,16 +176,43 @@ def memory_current_coupled(Phi: float, J_net: np.ndarray | Sequence[float]) -> n
     return float(Phi) * normalised
 
 
+def _rng_choice(
+    size: int,
+    *,
+    p: np.ndarray,
+    rng: np.random.Generator | np.random.RandomState | int | None,
+) -> int:
+    """Return a single index sampled from ``p`` using ``rng`` when provided."""
+
+    if rng is None:
+        chooser: Any = np.random
+    elif isinstance(rng, (np.random.Generator, np.random.RandomState)):
+        chooser = rng
+    else:
+        chooser = np.random.default_rng(rng)
+
+    choice = chooser.choice(size, p=p)
+    return int(choice)
+
+
 def readout_stochastic(
     pQ: np.ndarray | Sequence[float],
     M_n: np.ndarray | Sequence[float],
     T: float,
     eta: float,
+    *,
+    rng: np.random.Generator | np.random.RandomState | int | None = None,
 ) -> tuple[int, np.ndarray]:
     """Stochastic sampling readout.
 
     Draw an outcome according to ``P ∝ exp((log pQ + eta * M_n) / T)``.
     Deterministic in the ``T → 0`` limit and uniform as ``T → ∞``.
+
+    Parameters
+    ----------
+    rng:
+        Optional random number generator. When provided the sampling uses the
+        supplied generator rather than the module-level ``numpy.random`` state.
     """
 
     probs = np.asarray(pQ, dtype=float)
@@ -204,7 +231,7 @@ def readout_stochastic(
     finite_mask = np.isfinite(field)
     if not finite_mask.any():
         weights = np.full(probs.shape, 1.0 / probs.size, dtype=float)
-        choice = int(np.random.choice(probs.size, p=weights))
+        choice = _rng_choice(probs.size, p=weights, rng=rng)
         return choice, weights
 
     if T <= 0.0:
@@ -228,7 +255,7 @@ def readout_stochastic(
     else:
         weights = exp_logits / total
 
-    choice = int(np.random.choice(probs.size, p=weights))
+    choice = _rng_choice(probs.size, p=weights, rng=rng)
     return choice, weights
 
 

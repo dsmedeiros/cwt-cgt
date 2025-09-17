@@ -129,6 +129,28 @@ def test_readout_stochastic_incorporates_memory_bias() -> None:
     np.testing.assert_allclose(weights, expected)
 
 
+def test_readout_stochastic_accepts_rng_without_touching_global_state() -> None:
+    probs = np.array([0.2, 0.5, 0.3])
+    memory = np.zeros_like(probs)
+
+    seed = 17
+    rng1 = np.random.default_rng(seed)
+    choice1, weights1 = readouts.readout_stochastic(probs, memory, T=1.0, eta=0.0, rng=rng1)
+
+    rng2 = np.random.default_rng(seed)
+    choice2, weights2 = readouts.readout_stochastic(probs, memory, T=1.0, eta=0.0, rng=rng2)
+
+    assert choice1 == choice2
+    np.testing.assert_allclose(weights1, weights2)
+
+    np.random.seed(123)
+    readouts.readout_stochastic(probs, memory, T=1.0, eta=0.0, rng=np.random.default_rng(5))
+    after = np.random.rand()
+    np.random.seed(123)
+    control = np.random.rand()
+    assert after == control
+
+
 def test_readout_percolation_without_graph_counts_active() -> None:
     probs = np.array([0.9, 0.1, 0.8])
     result = readouts.readout_percolation(probs, p_crit=0.5, theta_perc=0.4)

@@ -641,12 +641,13 @@ def run_experiment(
         pairs = _neighbor_pairs(substrate)
         W_csc = substrate.W.tocsc()
         base_currents = _edge_currents_with_delay(substrate, base_center.pQ, base_center.theta, None)
-        np.random.seed(0)
+        readout_rng = np.random.default_rng(0)
         _, base_weights = readout_stochastic(
             base_center.pQ,
             memory_current_coupled(float(flux), base_currents),
             T=1.0,
             eta=1.0,
+            rng=readout_rng,
         )
         base_bias = float(np.dot(base_weights - base_center.pQ, base_currents))
 

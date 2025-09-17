@@ -459,8 +459,8 @@ def _run_orientation(
     currents = edge_currents(S, pQ_final, theta_final)
     memory = memory_current_coupled(flux_signed, currents)
 
-    np.random.seed(readout_seed)
-    _, weights = readout_stochastic(pQ_final, memory, T=1.0, eta=1.0)
+    readout_rng = np.random.default_rng(readout_seed)
+    _, weights = readout_stochastic(pQ_final, memory, T=1.0, eta=1.0, rng=readout_rng)
 
     bias = float(np.dot(weights - pQ_final, currents))
     rng = np.random.default_rng(seed)
