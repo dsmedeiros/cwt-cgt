@@ -3,6 +3,14 @@
 This document is generated automatically by ``run.py`` and captures the key
 diagnostics from the dimer, line3, and ring3 analytic probes.
 
+## Universal diagnostics
+
+Health — min overlap: 9.988e-01, mean overlap: 9.995e-01, tiles ≥ s_min: 100.000%, FS step mean: 3.000e-01, p95: 5.700e-01, Ω CI mean width: 0.000e+00
+Geometry — |Ω| mean/median: 0.000e+00 / 0.000e+00, tr(g) mean/min/max: 1.250e+00 / 1.185e+00 / 1.357e+00
+Loop — Φ: 6.481e-05, area: 3.000e-03, extents: δᵢ=+0.050, δⱼ=-0.060, steps: 25
+Readout — R_CW: n/a, R_CCW: n/a, flip error: n/a, κ₁: 0.000e+00 (CI [0.000e+00, 0.000e+00])
+Markers — spectral gap(P): n/a, |∇r|: n/a
+
 ## Summary
 
 - Dimer FS sweep monotone: yes

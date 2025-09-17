@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import math
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -19,6 +20,8 @@ from cwt.geometry.curvature import curvature_tile
 from cwt.geometry.fs_distance import fs_distance
 from cwt.geometry.metric import metric_tile
 from cwt.geometry.psi import build_psi
+
+from ..report_helpers import ReportHeaderMetrics, render_report_header
 
 # ---------------------------------------------------------------------------
 # Dataclasses describing the structured results returned by the analytic runs.
@@ -101,6 +104,69 @@ class Stage0Results:
     dimer: DimerSweepResult
     line3: Line3Result
     ring3: Ring3Result
+
+
+def _stage0_header_metrics(results: Stage0Results) -> ReportHeaderMetrics:
+    """Return :class:`ReportHeaderMetrics` populated from analytic probes."""
+
+    overlaps: list[float] = []
+    overlaps.extend(float(x) for x in np.ravel(results.dimer.overlap_magnitudes))
+    overlaps.append(float(results.line3.min_overlap))
+    overlaps.append(float(results.ring3.min_overlap_forward))
+    overlaps.append(float(results.ring3.min_overlap_reverse))
+
+    overlaps = [value for value in overlaps if math.isfinite(value)]
+    min_overlap = min(overlaps) if overlaps else float("nan")
+    mean_overlap = float(np.mean(overlaps)) if overlaps else float("nan")
+
+    threshold = 0.95
+    pass_count = sum(1 for value in overlaps if value >= threshold)
+    pass_rate = pass_count / len(overlaps) if overlaps else float("nan")
+
+    fs_steps = np.asarray(results.dimer.fs_distance, dtype=float)
+    fs_finite = fs_steps[np.isfinite(fs_steps)]
+    fs_mean = float(fs_finite.mean()) if fs_finite.size else float("nan")
+    fs_p95 = float(np.percentile(fs_finite, 95)) if fs_finite.size else float("nan")
+
+    omega_ci_mean = results.line3.ci_width()
+    omega_abs = np.abs(np.asarray(results.dimer.curvature_omegas, dtype=float))
+    omega_abs_finite = omega_abs[np.isfinite(omega_abs)]
+    omega_abs_mean = float(omega_abs_finite.mean()) if omega_abs_finite.size else float("nan")
+    omega_abs_median = float(np.median(omega_abs_finite)) if omega_abs_finite.size else float("nan")
+
+    metric_vals = np.asarray(results.line3.metric_values, dtype=float)
+    metric_finite = metric_vals[np.isfinite(metric_vals)]
+    trace_mean = float(metric_finite.mean()) if metric_finite.size else float("nan")
+    trace_min = float(metric_finite.min()) if metric_finite.size else float("nan")
+    trace_max = float(metric_finite.max()) if metric_finite.size else float("nan")
+
+    area = abs(results.ring3.delta_i * results.ring3.delta_j)
+    phi_flux = results.ring3.omega_forward * area
+
+    steps = fs_finite.size
+
+    return ReportHeaderMetrics(
+        min_overlap=min_overlap,
+        mean_overlap=mean_overlap,
+        pass_rate=pass_rate,
+        fs_mean=fs_mean,
+        fs_p95=fs_p95,
+        omega_ci_mean=omega_ci_mean,
+        omega_abs_mean=omega_abs_mean,
+        omega_abs_median=omega_abs_median,
+        trace_mean=trace_mean,
+        trace_min=trace_min,
+        trace_max=trace_max,
+        phi_flux=phi_flux,
+        geom_area=area,
+        extents=(
+            f"δᵢ={results.ring3.delta_i:+.3f}",
+            f"δⱼ={results.ring3.delta_j:+.3f}",
+        ),
+        steps=steps,
+        kappa1_mean=results.line3.curvature_mean,
+        kappa1_ci=results.line3.curvature_ci,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -536,25 +602,32 @@ def _write_results_markdown(results: Stage0Results, path: Path) -> None:
     line3_width = results.line3.ci_width()
     orientation_ok = results.ring3.orientation_flip_holds()
 
+    header_metrics = _stage0_header_metrics(results)
+
     lines = [
         "# Stage-0 Analytic Validation",
         "",
         "This document is generated automatically by ``run.py`` and captures the key",
         "diagnostics from the dimer, line3, and ring3 analytic probes.",
         "",
-        "## Summary",
-        "",
-        f"- Dimer FS sweep monotone: {'yes' if results.dimer.is_monotone() else 'no'}",
-        f"- Dimer FS bounded by π/2: {'yes' if results.dimer.is_bounded() else 'no'}",
-        f"- Line3 curvature CI width: {line3_width:.3e} (target < {results.line3.ci_tol:.3e})",
-        f"- Line3 curvature mean within CI of zero: {'yes' if results.line3.contains_zero() else 'no'}",
-        f"- Ring3 orientation flip holds: {'yes' if orientation_ok else 'no'}",
-        "",
-        "## Dimer Fubini-Study sweep",
-        "",
-        "| δ | d_FS | |δ| |",
-        "| --- | --- | --- |",
     ]
+    lines.extend(render_report_header(header_metrics))
+    lines.extend(
+        [
+            "## Summary",
+            "",
+            f"- Dimer FS sweep monotone: {'yes' if results.dimer.is_monotone() else 'no'}",
+            f"- Dimer FS bounded by π/2: {'yes' if results.dimer.is_bounded() else 'no'}",
+            f"- Line3 curvature CI width: {line3_width:.3e} (target < {results.line3.ci_tol:.3e})",
+            f"- Line3 curvature mean within CI of zero: {'yes' if results.line3.contains_zero() else 'no'}",
+            f"- Ring3 orientation flip holds: {'yes' if orientation_ok else 'no'}",
+            "",
+            "## Dimer Fubini-Study sweep",
+            "",
+            "| δ | d_FS | |δ| |",
+            "| --- | --- | --- |",
+        ]
+    )
     for delta, fs_val, fs_exp in zip(
         results.dimer.delta,
         results.dimer.fs_distance,

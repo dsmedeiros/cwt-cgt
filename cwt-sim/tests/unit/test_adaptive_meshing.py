@@ -89,3 +89,38 @@ def test_curvature_anytime_refines_on_low_overlap(monkeypatch):
     assert upper - lower <= 0.05
     assert result.omega_mean == pytest.approx(0.10)
     assert call_count == 8
+
+
+def test_curvature_anytime_fallback_prefers_consistent_sign(monkeypatch):
+    samples = [
+        (10.0, 0.40),
+        (-9.0, 0.39),
+        (11.0, 0.38),
+        (-12.0, 0.37),
+    ]
+    responses = iter(samples)
+
+    def stub_curvature(*args):
+        try:
+            omega, overlap = next(responses)
+        except StopIteration as exc:  # pragma: no cover - defensive
+            raise AssertionError("Too many curvature evaluations") from exc
+        return omega, {"min_overlap": overlap}
+
+    monkeypatch.setattr("cwt.geometry.adapt_mesh.curvature_tile", stub_curvature)
+
+    call_count = 0
+
+    def sampler(delta_i, delta_j):
+        nonlocal call_count
+        call_count += 1
+        return (None, None, None, None)
+
+    result = curvature_anytime(sampler, 1.0, 1.0, s_min=0.6, ci_tol=0.05, max_levels=1)
+
+    assert call_count == 4
+    assert result.samples_used == 2
+    assert result.omega_mean == pytest.approx(10.5)
+    lower, upper = result.omega_ci
+    assert lower < result.omega_mean < upper
+    assert result.min_overlap == pytest.approx(0.37)

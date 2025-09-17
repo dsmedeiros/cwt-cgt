@@ -26,6 +26,8 @@ from cwt.layers.q_update import q_step
 from cwt.layers.state import LayersState, wrap_angles
 from cwt.layers.theta_update import build_J_from_W, omega_from_delays, theta_step
 
+from ..report_helpers import ReportHeaderMetrics, render_report_header
+
 
 @dataclass(frozen=True)
 class SimulationConfig:
@@ -182,6 +184,95 @@ def _smooth_average(series: Sequence[float], window: int) -> float:
     win = max(int(window), 1)
     win = min(win, arr.size)
     return float(np.mean(arr[-win:]))
+
+
+def _gateB_header_metrics(
+    results: Sequence[GraphScanResult],
+    sim_config: SimulationConfig,
+) -> ReportHeaderMetrics:
+    """Aggregate diagnostic metrics for the universal report header."""
+
+    curvature_values: list[np.ndarray] = []
+    trace_values: list[np.ndarray] = []
+    spectral_values: list[np.ndarray] = []
+    grad_values: list[np.ndarray] = []
+    rho_bounds: list[tuple[float, float]] = []
+    tau_bounds: list[tuple[float, float]] = []
+    flux_estimate = 0.0
+
+    for result in results:
+        curvature_values.append(np.asarray(result.curvature_abs, dtype=float))
+        trace_values.append(np.asarray(result.trace_g, dtype=float))
+        spectral_values.append(np.asarray(result.spectral_gap, dtype=float))
+        grad_values.append(np.asarray(result.r_gradient, dtype=float))
+
+        rho = np.asarray(result.rho_values, dtype=float)
+        tau = np.asarray(result.tau_values, dtype=float)
+        if rho.size:
+            rho_bounds.append((float(np.min(rho)), float(np.max(rho))))
+        if tau.size:
+            tau_bounds.append((float(np.min(tau)), float(np.max(tau))))
+
+        if rho.size > 1 and tau.size > 1:
+            dr = float(np.abs(rho[1] - rho[0]))
+            dt = float(np.abs(tau[1] - tau[0]))
+            cell_area = dr * dt
+            if cell_area > 0.0:
+                flux_estimate += float(np.nansum(result.curvature_abs) * cell_area)
+
+    def _flatten_clean(values: list[np.ndarray]) -> np.ndarray:
+        if not values:
+            return np.asarray([], dtype=float)
+        arr = np.concatenate([val.ravel() for val in values])
+        mask = np.isfinite(arr)
+        return arr[mask]
+
+    curvature_flat = _flatten_clean(curvature_values)
+    trace_flat = _flatten_clean(trace_values)
+    spectral_flat = _flatten_clean(spectral_values)
+    grad_flat = _flatten_clean(grad_values)
+
+    if rho_bounds:
+        rho_min = min(bound[0] for bound in rho_bounds)
+        rho_max = max(bound[1] for bound in rho_bounds)
+    else:
+        rho_min = rho_max = float("nan")
+
+    if tau_bounds:
+        tau_min = min(bound[0] for bound in tau_bounds)
+        tau_max = max(bound[1] for bound in tau_bounds)
+    else:
+        tau_min = tau_max = float("nan")
+
+    if (
+        math.isfinite(rho_min)
+        and math.isfinite(rho_max)
+        and math.isfinite(tau_min)
+        and math.isfinite(tau_max)
+    ):
+        geom_area = (rho_max - rho_min) * (tau_max - tau_min)
+    else:
+        geom_area = float("nan")
+
+    extent_label = (
+        f"ρ∈[{rho_min:.3f}, {rho_max:.3f}], τ∈[{tau_min:.3f}, {tau_max:.3f}]"
+        if math.isfinite(rho_min) and math.isfinite(rho_max)
+        else ""
+    )
+
+    return ReportHeaderMetrics(
+        omega_abs_mean=float(curvature_flat.mean()) if curvature_flat.size else float("nan"),
+        omega_abs_median=float(np.median(curvature_flat)) if curvature_flat.size else float("nan"),
+        trace_mean=float(trace_flat.mean()) if trace_flat.size else float("nan"),
+        trace_min=float(trace_flat.min()) if trace_flat.size else float("nan"),
+        trace_max=float(trace_flat.max()) if trace_flat.size else float("nan"),
+        phi_flux=flux_estimate if flux_estimate else float("nan"),
+        geom_area=geom_area,
+        extents=(extent_label,) if extent_label else (),
+        steps=sim_config.total_steps(),
+        spectral_gap=float(spectral_flat.mean()) if spectral_flat.size else float("nan"),
+        grad_r=float(np.mean(np.abs(grad_flat))) if grad_flat.size else float("nan"),
+    )
 
 
 def simulate_state(
@@ -643,6 +734,74 @@ def run_experiment(
     return results
 
 
+def _render_graph_section(result: GraphScanResult) -> list[str]:
+    curvature = np.asarray(result.curvature_abs, dtype=float)
+    trace_g = np.asarray(result.trace_g, dtype=float)
+    spectral = np.asarray(result.spectral_gap, dtype=float)
+    grad_r = np.asarray(result.r_gradient, dtype=float)
+
+    curvature_mean = float(np.nanmean(curvature)) if curvature.size else float("nan")
+    trace_mean = float(np.nanmean(trace_g)) if trace_g.size else float("nan")
+    spectral_mean = float(np.nanmean(spectral)) if spectral.size else float("nan")
+    grad_mean = float(np.nanmean(np.abs(grad_r))) if grad_r.size else float("nan")
+
+    detection = result.detection
+    auc = detection.auc
+    auc_ci = detection.auc_ci
+
+    lines = [
+        f"## Graph: {result.name}",
+        "",
+        f"- Mean |Ω|: {curvature_mean:.3e}",
+        f"- Mean tr(g): {trace_mean:.3e}",
+        f"- Spectral gap mean: {spectral_mean:.3e}",
+        f"- |∇r| mean: {grad_mean:.3e}",
+        f"- Hotspot AUC: {auc:.3f} (CI [{auc_ci[0]:.3f}, {auc_ci[1]:.3f}])",
+        f"- corr(trace, gap): {detection.corr_trace_gap:.3f}",
+        f"- corr(trace, |∇r|): {detection.corr_trace_delta_r:.3f}",
+        "",
+    ]
+    return lines
+
+
+def _render_report(
+    results: Sequence[GraphScanResult],
+    sim_config: SimulationConfig,
+    bootstrap_samples: int,
+) -> str:
+    header_metrics = _gateB_header_metrics(results, sim_config)
+
+    grid_shape = "n/a"
+    rho_range_text = "ρ range: n/a"
+    tau_range_text = "τ range: n/a"
+    if results:
+        grid_shape = f"{len(results[0].rho_values)} × {len(results[0].tau_values)}"
+        rho_vals = np.asarray(results[0].rho_values, dtype=float)
+        tau_vals = np.asarray(results[0].tau_values, dtype=float)
+        if rho_vals.size:
+            rho_range_text = f"ρ range: {float(rho_vals.min()):.3f} … {float(rho_vals.max()):.3f}"
+        if tau_vals.size:
+            tau_range_text = f"τ range: {float(tau_vals.min()):.3f} … {float(tau_vals.max()):.3f}"
+
+    lines = [
+        "# Gate B — Critical Ridge Finder",
+        "",
+        f"Grid size: {grid_shape}",
+        rho_range_text,
+        tau_range_text,
+        f"Transient/sample steps: {sim_config.transient_steps} / {sim_config.sample_steps}",
+        f"Bootstrap replicates: {bootstrap_samples}",
+        "",
+    ]
+
+    lines.extend(render_report_header(header_metrics))
+
+    for result in results:
+        lines.extend(_render_graph_section(result))
+
+    return "\n".join(lines)
+
+
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Gate B critical ridge finder")
     parser.add_argument(
@@ -734,6 +893,9 @@ def main(argv: Sequence[str] | None = None) -> None:
             fh,
             indent=2,
         )
+
+    report_path = output_dir / "REPORT.md"
+    report_path.write_text(_render_report(results, sim_config, args.bootstrap))
 
     for result in results:
         print(f"Graph: {result.name}")

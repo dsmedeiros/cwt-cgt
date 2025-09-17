@@ -137,10 +137,46 @@ def curvature_anytime(
     if accepted:
         omega_mean, omega_ci = _mean_and_ci(accepted)
     elif attempted:
-        best = max(attempted, key=lambda item: item[1] if math.isfinite(item[1]) else -float("inf"))
-        omega_mean = best[0]
-        omega_ci = (-float("inf"), float("inf"))
-        samples_used = 0
+        scored = [
+            (overlap if math.isfinite(overlap) else -float("inf"), float(omega))
+            for omega, overlap in attempted
+        ]
+        scored.sort(reverse=True)
+
+        fallback_count = min(len(scored), max(min_required, 1))
+
+        grouped: dict[int, list[tuple[float, float]]] = {1: [], -1: [], 0: []}
+        for overlap, omega in scored:
+            if not math.isfinite(omega) or omega == 0.0:
+                sign = 0
+            elif omega > 0.0:
+                sign = 1
+            else:
+                sign = -1
+            grouped[sign].append((overlap, omega))
+
+        def _group_score(items: list[tuple[float, float]], sign: int) -> tuple[float, int, bool]:
+            if not items:
+                return (-float("inf"), 0, sign == 1)
+            weight = sum(max(overlap, 0.0) for overlap, _ in items)
+            return (weight, len(items), sign == 1)
+
+        best_sign = max(grouped, key=lambda s: _group_score(grouped[s], s))
+        best_items = grouped[best_sign]
+
+        fallback_samples: list[float] = []
+        if best_items:
+            best_items.sort(key=lambda item: item[0], reverse=True)
+            fallback_samples = [omega for _, omega in best_items[:fallback_count]]
+
+        if fallback_samples:
+            omega_mean, omega_ci = _mean_and_ci(fallback_samples)
+            samples_used = len(fallback_samples)
+        else:
+            best = scored[0][1]
+            omega_mean = best
+            omega_ci = (-float("inf"), float("inf"))
+            samples_used = 0
     else:
         omega_mean, omega_ci = float("nan"), (float("nan"), float("nan"))
 

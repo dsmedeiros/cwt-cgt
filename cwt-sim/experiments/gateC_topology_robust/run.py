@@ -1,4 +1,5 @@
 """Gate C experiment: topology robustness under noise perturbations."""
+
 from __future__ import annotations
 
 import argparse
@@ -15,12 +16,19 @@ from cwt.geometry.curvature import curvature_tile
 from cwt.geometry.fs_distance import fs_distance
 from cwt.geometry.psi import build_psi, inner
 from cwt.graph.factories import random_regular_digraph, ring3
+from cwt.graph.kernels import build_transport_kernel
 from cwt.graph.substrate import GraphSubstrate
 from cwt.layers.readouts import memory_current_coupled, readout_stochastic
 from cwt.layers.state import LayersState, wrap_angles
+from cwt.metrics.eval_curves import spectral_gap
 from cwt.orchestrator.param_path import ParameterPath
 
-from ..report_helpers import fs_histogram, render_health_banner
+from ..report_helpers import (
+    ReportHeaderMetrics,
+    fs_histogram,
+    render_health_banner,
+    render_report_header,
+)
 
 
 @dataclass
@@ -152,6 +160,82 @@ def _health_metrics(results: ExperimentResults) -> tuple[float, dict, list[float
 
     pass_rate = passing_trials / total_trials if total_trials else float("nan")
     return pass_rate, fs_histogram(fs_all), []
+
+
+def _gateC_header_metrics(results: ExperimentResults) -> ReportHeaderMetrics:
+    """Return universal diagnostics for the Gate C experiment."""
+
+    overlaps: list[float] = []
+    fs_steps: list[float] = []
+    readouts: list[float] = []
+
+    for graph in results.graphs:
+        for level in graph.noise_levels:
+            for trial in level.trials:
+                overlaps.append(trial.min_overlap)
+                fs_steps.extend(trial.fs_steps)
+                readouts.append(trial.R_gamma)
+
+    overlap_vals = np.asarray(overlaps, dtype=float)
+    overlap_vals = overlap_vals[np.isfinite(overlap_vals)]
+    min_overlap = float(overlap_vals.min()) if overlap_vals.size else float("nan")
+    mean_overlap = float(overlap_vals.mean()) if overlap_vals.size else float("nan")
+
+    fs_arr = np.asarray(fs_steps, dtype=float)
+    fs_arr = fs_arr[np.isfinite(fs_arr)]
+    fs_mean = float(fs_arr.mean()) if fs_arr.size else float("nan")
+    fs_p95 = float(np.percentile(fs_arr, 95)) if fs_arr.size else float("nan")
+
+    phi_flux = sum(graph.flux for graph in results.graphs)
+    geom_area = float(
+        np.sum(
+            4.0 * abs(graph.extents.get("rho", 0.0)) * abs(graph.extents.get("tau", 0.0))
+            for graph in results.graphs
+        )
+    )
+
+    extent_labels = [
+        f"ρ±{graph.extents.get('rho', 0.0):.2f}, τ±{graph.extents.get('tau', 0.0):.2f}"
+        for graph in results.graphs
+    ]
+
+    readout_arr = np.asarray(readouts, dtype=float)
+    readout_arr = readout_arr[np.isfinite(readout_arr)]
+
+    pass_rate, _, _ = _health_metrics(results)
+
+    gap_values: list[float] = []
+    for graph in results.graphs:
+        center = graph.center
+        try:
+            K = build_transport_kernel(
+                graph.substrate,
+                rho=float(center.get("rho", 0.0)),
+                tau_scale=float(center.get("tau", center.get("tau_scale", 1.0))),
+            )
+        except Exception:  # pragma: no cover - defensive
+            continue
+        try:
+            gap_values.append(spectral_gap(K))
+        except Exception:  # pragma: no cover - defensive
+            continue
+
+    spectral_gap_mean = float(np.mean(gap_values)) if gap_values else float("nan")
+
+    return ReportHeaderMetrics(
+        min_overlap=min_overlap,
+        mean_overlap=mean_overlap,
+        pass_rate=pass_rate,
+        fs_mean=fs_mean,
+        fs_p95=fs_p95,
+        phi_flux=phi_flux,
+        geom_area=geom_area,
+        extents=extent_labels,
+        steps=results.loop_steps,
+        R_ccw=float(readout_arr.mean()) if readout_arr.size else float("nan"),
+        grad_r=float(np.mean(np.abs(readout_arr))) if readout_arr.size else float("nan"),
+        spectral_gap=spectral_gap_mean,
+    )
 
 
 def _synthetic_state(S: GraphSubstrate, rho: float, tau: float) -> LayersState:
@@ -557,12 +641,13 @@ def run_experiment(
         pairs = _neighbor_pairs(substrate)
         W_csc = substrate.W.tocsc()
         base_currents = _edge_currents_with_delay(substrate, base_center.pQ, base_center.theta, None)
-        np.random.seed(0)
+        readout_rng = np.random.default_rng(0)
         _, base_weights = readout_stochastic(
             base_center.pQ,
             memory_current_coupled(float(flux), base_currents),
             T=1.0,
             eta=1.0,
+            rng=readout_rng,
         )
         base_bias = float(np.dot(base_weights - base_center.pQ, base_currents))
 
@@ -637,6 +722,8 @@ def _render_noise_level(level: NoiseLevelResult) -> list[str]:
 
 
 def _render_report(results: ExperimentResults) -> str:
+    header_metrics = _gateC_header_metrics(results)
+
     lines = [
         "# Gate C: topology robustness under noise",
         "",
@@ -651,6 +738,8 @@ def _render_report(results: ExperimentResults) -> str:
         ),
         "",
     ]
+
+    lines.extend(render_report_header(header_metrics))
 
     pass_rate, fs_hist_all, omega_widths = _health_metrics(results)
     lines.extend(render_health_banner(pass_rate, fs_hist_all, omega_widths))

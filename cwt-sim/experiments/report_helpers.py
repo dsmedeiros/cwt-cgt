@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 from typing import Sequence
 
 import numpy as np
@@ -64,4 +65,110 @@ def render_health_banner(
     return lines
 
 
-__all__ = ["fs_histogram", "render_health_banner"]
+@dataclass(frozen=True)
+class ReportHeaderMetrics:
+    """Aggregate metrics rendered in the universal report header."""
+
+    min_overlap: float | None = None
+    mean_overlap: float | None = None
+    pass_rate: float | None = None
+    fs_mean: float | None = None
+    fs_p95: float | None = None
+    omega_ci_mean: float | None = None
+    omega_abs_mean: float | None = None
+    omega_abs_median: float | None = None
+    trace_mean: float | None = None
+    trace_min: float | None = None
+    trace_max: float | None = None
+    phi_flux: float | None = None
+    geom_area: float | None = None
+    extents: Sequence[str] | None = None
+    steps: float | None = None
+    R_cw: float | None = None
+    R_ccw: float | None = None
+    flip_error: float | None = None
+    kappa1_mean: float | None = None
+    kappa1_ci: tuple[float, float] | None = None
+    spectral_gap: float | None = None
+    grad_r: float | None = None
+
+
+def _format_value(value: float | None, *, precision: str = ".3e") -> str:
+    if value is None:
+        return "n/a"
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return "n/a"
+    if not math.isfinite(number):
+        return "n/a"
+    if precision == "percent":
+        return f"{number:.3%}"
+    if precision == "integer":
+        return f"{int(round(number))}"
+    return f"{number:{precision}}"
+
+
+def _format_ci(ci: tuple[float, float] | None) -> str:
+    if not ci:
+        return "n/a"
+    lower, upper = ci
+    lower_text = _format_value(lower)
+    upper_text = _format_value(upper)
+    return f"[{lower_text}, {upper_text}]"
+
+
+def render_report_header(metrics: ReportHeaderMetrics) -> list[str]:
+    """Render the universal diagnostics header for experiment reports."""
+
+    extent_text = "n/a"
+    if metrics.extents:
+        extent_text = ", ".join(str(item) for item in metrics.extents if str(item).strip())
+        if not extent_text:
+            extent_text = "n/a"
+
+    lines = [
+        "## Universal diagnostics",
+        "",
+        (
+            "Health — min overlap: "
+            f"{_format_value(metrics.min_overlap)}, "
+            f"mean overlap: {_format_value(metrics.mean_overlap)}, "
+            f"tiles ≥ s_min: {_format_value(metrics.pass_rate, precision='percent')}, "
+            f"FS step mean: {_format_value(metrics.fs_mean)}, "
+            f"p95: {_format_value(metrics.fs_p95)}, "
+            f"Ω CI mean width: {_format_value(metrics.omega_ci_mean)}"
+        ),
+        (
+            "Geometry — |Ω| mean/median: "
+            f"{_format_value(metrics.omega_abs_mean)} / {_format_value(metrics.omega_abs_median)}, "
+            "tr(g) mean/min/max: "
+            f"{_format_value(metrics.trace_mean)} / {_format_value(metrics.trace_min)} / "
+            f"{_format_value(metrics.trace_max)}"
+        ),
+        (
+            "Loop — Φ: "
+            f"{_format_value(metrics.phi_flux)}, area: {_format_value(metrics.geom_area)}, "
+            f"extents: {extent_text}, steps: {_format_value(metrics.steps, precision='integer')}"
+        ),
+        (
+            "Readout — R_CW: "
+            f"{_format_value(metrics.R_cw)}, R_CCW: {_format_value(metrics.R_ccw)}, "
+            f"flip error: {_format_value(metrics.flip_error)}, "
+            f"κ₁: {_format_value(metrics.kappa1_mean)} (CI {_format_ci(metrics.kappa1_ci)})"
+        ),
+        (
+            "Markers — spectral gap(P): "
+            f"{_format_value(metrics.spectral_gap)}, |∇r|: {_format_value(metrics.grad_r)}"
+        ),
+        "",
+    ]
+    return lines
+
+
+__all__ = [
+    "fs_histogram",
+    "render_health_banner",
+    "ReportHeaderMetrics",
+    "render_report_header",
+]
