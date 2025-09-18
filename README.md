@@ -44,6 +44,9 @@ Although the shipped implementations fabricate placeholder data, they mirror the
 - **Python**: 3.11 or newer (the package targets Python 3.12 in CI).
 - **Operating system**: Linux, macOS, or Windows. The toolkit is CPU-only.
 - **Optional**: SciPy (enables sparse-matrix utilities used by some metrics). The core CLI workflows run without it.
+- **NetworkX**: 3.1 or newer. Several helpers rely on 3.x-only features (for example the ``alpha`` argument on
+  ``random_regular_digraph`` and updated centrality routines), so attempting to run on a 2.x release can yield
+  confusing metric outputs. Installing via ``requirements.txt`` ensures a compatible version.
 
 ## Installation
 1. Clone the repository and create an isolated environment.
