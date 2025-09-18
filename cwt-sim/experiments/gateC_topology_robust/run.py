@@ -82,6 +82,12 @@ class GraphResult:
     base_sign: int
     axes: tuple[str, str]
 
+    @property
+    def noise_levels(self) -> list[NoisePointResult]:
+        """Backward-compatible alias for the noise sweep results."""
+
+        return self.noise_points
+
 
 @dataclass
 class ExperimentResults:
@@ -630,6 +636,8 @@ def run_experiment(
     phase_std_values: Sequence[float] | None = None,
     amp_std_values: Sequence[float] | None = None,
     delay_std_values: Sequence[float] | None = None,
+    amp_noise: float | None = None,
+    delay_std: float | None = None,
     num_trials: int = 6,
     loop_steps: int = 200,
     seeds: Sequence[int] | None = None,
@@ -644,12 +652,22 @@ def run_experiment(
     if any(val < 0.0 for val in phase_std_values):
         raise ValueError("phase_std values must be non-negative")
 
+    if amp_noise is not None and amp_std_values is not None:
+        raise TypeError("Provide either amp_std_values or amp_noise (deprecated), not both.")
+
+    if amp_noise is not None:
+        amp_std_values = [float(amp_noise)]
     if amp_std_values is None:
         amp_std_values = [0.0, 0.02, 0.05]
     amp_std_values = [float(val) for val in amp_std_values]
     if any(val < 0.0 for val in amp_std_values):
         raise ValueError("amp_std values must be non-negative")
 
+    if delay_std is not None and delay_std_values is not None:
+        raise TypeError("Provide either delay_std_values or delay_std (deprecated), not both.")
+
+    if delay_std is not None:
+        delay_std_values = [float(delay_std)]
     if delay_std_values is None:
         delay_std_values = [0.0, 0.02, 0.05]
     delay_std_values = [float(val) for val in delay_std_values]
@@ -717,7 +735,7 @@ def run_experiment(
         noise_points: list[NoisePointResult] = []
         for phase_std in phase_std_values:
             for amp_std in amp_std_values:
-                for delay_std in delay_std_values:
+                for delay_sigma in delay_std_values:
                     level = _run_noise_point(
                         substrate,
                         path,
@@ -725,7 +743,7 @@ def run_experiment(
                         center,
                         phase_std=float(phase_std),
                         amp_noise=float(amp_std),
-                        delay_std=float(delay_std),
+                        delay_std=float(delay_sigma),
                         seeds=seeds,
                         pairs=pairs,
                         W_csc=W_csc,
