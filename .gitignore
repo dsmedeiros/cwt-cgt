@@ -11,3 +11,4 @@ __pycache__/
 *.pyc
 /cwt-sim/networkx
 /cwt-sim/runs
+/cwt-sim/.venv
