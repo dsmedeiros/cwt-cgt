@@ -30,6 +30,65 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+function Get-RelativePath {
+    param(
+        [Parameter(Mandatory)]
+        [string]$BasePath,
+        [Parameter(Mandatory)]
+        [string]$TargetPath
+    )
+
+    $baseFull = [System.IO.Path]::GetFullPath($BasePath)
+    $targetFull = [System.IO.Path]::GetFullPath($TargetPath)
+
+    $method = [System.IO.Path].GetMethod('GetRelativePath', [Type[]]@([string], [string]))
+    if ($method) {
+        return [System.IO.Path]::GetRelativePath($baseFull, $targetFull)
+    }
+
+    $comparison = if ([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)) {
+        [System.StringComparison]::OrdinalIgnoreCase
+    } else {
+        [System.StringComparison]::Ordinal
+    }
+
+    $baseRoot = [System.IO.Path]::GetPathRoot($baseFull)
+    $targetRoot = [System.IO.Path]::GetPathRoot($targetFull)
+    if ($baseRoot -and $targetRoot -and ($baseRoot.Equals($targetRoot, $comparison) -eq $false)) {
+        return $targetFull
+    }
+
+    $separatorList = @([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) | Where-Object { $_ }
+    [char[]]$separators = $separatorList
+    $baseParts = $baseFull.TrimEnd($separators).Split($separators, [System.StringSplitOptions]::RemoveEmptyEntries)
+    $targetParts = $targetFull.TrimEnd($separators).Split($separators, [System.StringSplitOptions]::RemoveEmptyEntries)
+
+    $length = [Math]::Min($baseParts.Length, $targetParts.Length)
+    $commonLength = 0
+    for ($i = 0; $i -lt $length; $i++) {
+        if ($baseParts[$i].Equals($targetParts[$i], $comparison)) {
+            $commonLength += 1
+        } else {
+            break
+        }
+    }
+
+    $relativeParts = New-Object System.Collections.Generic.List[string]
+    for ($i = $commonLength; $i -lt $baseParts.Length; $i++) {
+        $relativeParts.Add('..') | Out-Null
+    }
+
+    for ($i = $commonLength; $i -lt $targetParts.Length; $i++) {
+        $relativeParts.Add($targetParts[$i]) | Out-Null
+    }
+
+    if ($relativeParts.Count -eq 0) {
+        return '.'
+    }
+
+    return [System.String]::Join([System.IO.Path]::DirectorySeparatorChar, $relativeParts)
+}
+
 function Resolve-PythonInterpreter {
     param(
         [string]$Preferred
@@ -92,9 +151,9 @@ function Invoke-Stage {
         started = $startTime.ToString('o')
         duration_seconds = [Math]::Round($duration.TotalSeconds, 3)
         output_dir = $outputFull
-        output_relative = [System.IO.Path]::GetRelativePath($RepoRoot, $outputFull)
+        output_relative = Get-RelativePath -BasePath $RepoRoot -TargetPath $outputFull
         log = $logFull
-        log_relative = [System.IO.Path]::GetRelativePath($RepoRoot, $logFull)
+        log_relative = Get-RelativePath -BasePath $RepoRoot -TargetPath $logFull
     }
 
     if ($Context) {
@@ -117,7 +176,7 @@ function Invoke-Stage {
     Set-Content -LiteralPath $reportPath -Value $reportJson -Encoding UTF8
 
     $reportFull = Convert-Path -LiteralPath $reportPath
-    $reportRelative = [System.IO.Path]::GetRelativePath($RepoRoot, $reportFull)
+    $reportRelative = Get-RelativePath -BasePath $RepoRoot -TargetPath $reportFull
 
     return [pscustomobject]@{
         Name = $Name
@@ -210,7 +269,7 @@ try {
                 $artifacts = @()
                 $summaryPath = Join-Path $OutputDir 'summary.json'
                 if (Test-Path -LiteralPath $summaryPath) {
-                    $artifacts += [System.IO.Path]::GetRelativePath($RepoRoot, (Convert-Path -LiteralPath $summaryPath))
+                    $artifacts += Get-RelativePath -BasePath $RepoRoot -TargetPath (Convert-Path -LiteralPath $summaryPath)
                     try {
                         $summaryContent = Get-Content -LiteralPath $summaryPath -Raw | ConvertFrom-Json
                         $result.summary = $summaryContent
@@ -221,7 +280,7 @@ try {
                 $tiles = Get-ChildItem -Path $OutputDir -Filter 'top_omega_tiles.json' -File -Recurse -ErrorAction SilentlyContinue
                 if ($tiles) {
                     $artifacts += $tiles | ForEach-Object {
-                        [System.IO.Path]::GetRelativePath($RepoRoot, (Convert-Path -LiteralPath $_.FullName))
+                        Get-RelativePath -BasePath $RepoRoot -TargetPath (Convert-Path -LiteralPath $_.FullName)
                     }
                 }
                 $artifacts = $artifacts | Where-Object { $_ }
@@ -253,7 +312,7 @@ try {
                 $artifacts = @()
                 $summaryPath = Join-Path $OutputDir 'summary.json'
                 if (Test-Path -LiteralPath $summaryPath) {
-                    $artifacts += [System.IO.Path]::GetRelativePath($RepoRoot, (Convert-Path -LiteralPath $summaryPath))
+                    $artifacts += Get-RelativePath -BasePath $RepoRoot -TargetPath (Convert-Path -LiteralPath $summaryPath)
                     try {
                         $result.summary = Get-Content -LiteralPath $summaryPath -Raw | ConvertFrom-Json
                     } catch {
@@ -263,7 +322,7 @@ try {
                 $tiles = Get-ChildItem -Path $OutputDir -Filter 'top_omega_tiles.json' -File -Recurse -ErrorAction SilentlyContinue
                 if ($tiles) {
                     $artifacts += $tiles | ForEach-Object {
-                        [System.IO.Path]::GetRelativePath($RepoRoot, (Convert-Path -LiteralPath $_.FullName))
+                        Get-RelativePath -BasePath $RepoRoot -TargetPath (Convert-Path -LiteralPath $_.FullName)
                     }
                 }
                 $artifacts = $artifacts | Where-Object { $_ }
@@ -291,7 +350,7 @@ try {
                 '--limit', '4'
             )
             Context = @{
-                hotspots_relative = [System.IO.Path]::GetRelativePath($repoRoot, $hotspotSource)
+                hotspots_relative = Get-RelativePath -BasePath $repoRoot -TargetPath $hotspotSource
                 hotspots_absolute = $hotspotSource
                 extents = @(0.02, 0.05, 0.08)
                 axes = @('tau', 'zeta')
@@ -302,7 +361,7 @@ try {
                 $result = @{}
                 $artifacts = @()
                 if ($Context -and $Context.hotspots_absolute -and (Test-Path -LiteralPath $Context.hotspots_absolute)) {
-                    $artifacts += [System.IO.Path]::GetRelativePath($RepoRoot, (Convert-Path -LiteralPath $Context.hotspots_absolute))
+                    $artifacts += Get-RelativePath -BasePath $RepoRoot -TargetPath (Convert-Path -LiteralPath $Context.hotspots_absolute)
                 }
                 if ($artifacts) {
                     $result.artifacts = $artifacts
@@ -346,7 +405,7 @@ try {
                 foreach ($name in @('kappa_surface.csv', 'fs_histograms.json', 'boundary.csv')) {
                     $path = Join-Path $OutputDir $name
                     if (Test-Path -LiteralPath $path) {
-                        $artifacts += [System.IO.Path]::GetRelativePath($RepoRoot, (Convert-Path -LiteralPath $path))
+                        $artifacts += Get-RelativePath -BasePath $RepoRoot -TargetPath (Convert-Path -LiteralPath $path)
                     }
                 }
                 if ($artifacts) {
