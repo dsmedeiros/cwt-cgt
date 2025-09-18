@@ -7,5 +7,7 @@ __all__ = [
     "gateB_ridge_finder",
     "gateC_topology_robust",
     "gateD_chsh_optional",
+    "inverse_design",
     "stage0_analytic",
+    "torus_plateau",
 ]
