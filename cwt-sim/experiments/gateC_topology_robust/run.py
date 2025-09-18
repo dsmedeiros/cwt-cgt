@@ -9,6 +9,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
 
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy.sparse as sp
 
@@ -44,16 +45,17 @@ class TrialResult:
 
 
 @dataclass
-class NoiseLevelResult:
-    """Aggregate measurements for a fixed noise strength."""
+class NoisePointResult:
+    """Aggregate measurements for a fixed noise strength triple."""
 
     phase_std: float
-    amp_noise: float
+    amp_std: float
     delay_std: float
     trials: list[TrialResult]
     s_bar_mean: float
     overlap_mean: float
     quantized: bool
+    sign_persistence: float
 
     def R_gamma_samples(self) -> list[float]:
         return [trial.R_gamma for trial in self.trials]
@@ -67,16 +69,18 @@ class NoiseLevelResult:
 
 @dataclass
 class GraphResult:
-    """Results for a single substrate across the phase-noise sweep."""
+    """Results for a single substrate across the noise sweeps."""
 
     name: str
     substrate: GraphSubstrate
     center: Mapping[str, float]
     extents: Mapping[str, float]
     flux: float
-    noise_levels: list[NoiseLevelResult]
+    noise_points: list[NoisePointResult]
     overlap_threshold: float
     coherence_threshold: float
+    base_sign: int
+    axes: tuple[str, str]
 
 
 @dataclass
@@ -85,8 +89,8 @@ class ExperimentResults:
 
     graphs: list[GraphResult]
     phase_std_values: list[float]
-    amp_noise: float
-    delay_std: float
+    amp_std_values: list[float]
+    delay_std_values: list[float]
     num_trials: int
     loop_steps: int
     overlap_threshold: float
@@ -95,8 +99,8 @@ class ExperimentResults:
     def to_dict(self) -> dict:
         return {
             "phase_std_values": list(self.phase_std_values),
-            "amp_noise": float(self.amp_noise),
-            "delay_std": float(self.delay_std),
+            "amp_std_values": list(self.amp_std_values),
+            "delay_std_values": list(self.delay_std_values),
             "num_trials": int(self.num_trials),
             "loop_steps": int(self.loop_steps),
             "overlap_threshold": float(self.overlap_threshold),
@@ -109,17 +113,20 @@ class ExperimentResults:
                     "flux": float(graph.flux),
                     "overlap_threshold": float(graph.overlap_threshold),
                     "coherence_threshold": float(graph.coherence_threshold),
-                    "noise_levels": [
+                    "base_sign": int(graph.base_sign),
+                    "axes": [str(ax) for ax in graph.axes],
+                    "noise_points": [
                         {
                             "phase_std": lvl.phase_std,
-                            "amp_noise": lvl.amp_noise,
+                            "amp_std": lvl.amp_std,
                             "delay_std": lvl.delay_std,
                             "s_bar_mean": lvl.s_bar_mean,
                             "overlap_mean": lvl.overlap_mean,
                             "quantized": lvl.quantized,
+                            "sign_persistence": lvl.sign_persistence,
                             "trials": [asdict(trial) for trial in lvl.trials],
                         }
-                        for lvl in graph.noise_levels
+                        for lvl in graph.noise_points
                     ],
                 }
                 for graph in self.graphs
@@ -151,7 +158,7 @@ def _health_metrics(results: ExperimentResults) -> tuple[float, dict, list[float
 
     for graph in results.graphs:
         threshold = graph.overlap_threshold
-        for level in graph.noise_levels:
+        for level in graph.noise_points:
             for trial in level.trials:
                 total_trials += 1
                 if math.isfinite(trial.min_overlap) and trial.min_overlap >= threshold:
@@ -170,7 +177,7 @@ def _gateC_header_metrics(results: ExperimentResults) -> ReportHeaderMetrics:
     readouts: list[float] = []
 
     for graph in results.graphs:
-        for level in graph.noise_levels:
+        for level in graph.noise_points:
             for trial in level.trials:
                 overlaps.append(trial.min_overlap)
                 fs_steps.extend(trial.fs_steps)
@@ -188,16 +195,18 @@ def _gateC_header_metrics(results: ExperimentResults) -> ReportHeaderMetrics:
 
     phi_flux = sum(graph.flux for graph in results.graphs)
     geom_area = float(
-        np.sum(
-            4.0 * abs(graph.extents.get("rho", 0.0)) * abs(graph.extents.get("tau", 0.0))
+        sum(
+            4.0 * abs(graph.extents.get(graph.axes[0], 0.0)) * abs(graph.extents.get(graph.axes[1], 0.0))
             for graph in results.graphs
         )
     )
 
-    extent_labels = [
-        f"ρ±{graph.extents.get('rho', 0.0):.2f}, τ±{graph.extents.get('tau', 0.0):.2f}"
-        for graph in results.graphs
-    ]
+    extent_labels = []
+    for graph in results.graphs:
+        axis_i, axis_j = graph.axes
+        extent_labels.append(
+            f"{axis_i}±{graph.extents.get(axis_i, 0.0):.2f}, {axis_j}±{graph.extents.get(axis_j, 0.0):.2f}"
+        )
 
     readout_arr = np.asarray(readouts, dtype=float)
     readout_arr = readout_arr[np.isfinite(readout_arr)]
@@ -238,8 +247,8 @@ def _gateC_header_metrics(results: ExperimentResults) -> ReportHeaderMetrics:
     )
 
 
-def _synthetic_state(S: GraphSubstrate, rho: float, tau: float) -> LayersState:
-    """Return a smooth state over the substrate parameterised by ``rho`` and ``tau``."""
+def _synthetic_state(S: GraphSubstrate, rho: float, tau: float, *, zeta: float | None = None) -> LayersState:
+    """Return a smooth state over the substrate parameterised by ``rho``, ``tau`` and ``ζ``."""
 
     N = S.N
     if N == 0:
@@ -255,11 +264,17 @@ def _synthetic_state(S: GraphSubstrate, rho: float, tau: float) -> LayersState:
 
     rho_term = np.sin(0.6 * rho * (idx + 1))
     tau_term = np.cos(0.4 * tau * (idx + 0.5))
-    base = 1.0 + 0.35 * rho_term + 0.25 * tau_term
+    zeta_val = float(zeta) if zeta is not None else 0.0
+    zeta_term = np.sin(0.3 * zeta_val * (idx + 0.3))
+    base = 1.0 + 0.35 * rho_term + 0.25 * tau_term + 0.18 * zeta_term
     base = np.clip(base, 0.05, None)
     pQ = base / float(base.sum())
 
-    theta = 0.45 * tau * (idx / max(N - 1, 1)) + 0.3 * rho * deg_norm
+    theta = (
+        0.45 * tau * (idx / max(N - 1, 1))
+        + 0.3 * rho * deg_norm
+        + 0.22 * zeta_val * np.cos(0.6 * (idx + 0.2))
+    )
     theta = wrap_angles(theta)
 
     return LayersState(pQ=pQ, theta=theta)
@@ -267,6 +282,20 @@ def _synthetic_state(S: GraphSubstrate, rho: float, tau: float) -> LayersState:
 
 def _psi_from_state(state: LayersState) -> np.ndarray:
     return build_psi(state.pQ, state.theta)
+
+
+def _state_from_params(
+    S: GraphSubstrate,
+    params: Mapping[str, float],
+    *,
+    defaults: Mapping[str, float],
+) -> LayersState:
+    payload = dict(defaults)
+    payload.update({str(k): float(v) for k, v in params.items()})
+    rho_val = float(payload.get("rho", 0.0))
+    tau_val = float(payload.get("tau", payload.get("tau_scale", 0.0)))
+    zeta_val = float(payload.get("zeta", 0.0))
+    return _synthetic_state(S, rho_val, tau_val, zeta=zeta_val)
 
 
 def _grid_edges(center: float, extent: float, grid_size: int) -> np.ndarray:
@@ -285,20 +314,22 @@ def _compute_flux(
     extent: Mapping[str, float],
     *,
     grid_size: int,
+    axes: Sequence[str],
 ) -> float:
-    rho_edges = _grid_edges(center["rho"], extent["rho"], grid_size)
-    tau_edges = _grid_edges(center["tau"], extent["tau"], grid_size)
+    if len(axes) != 2:
+        raise ValueError("axes must contain exactly two entries for flux computation")
+    axis_i, axis_j = (str(axes[0]), str(axes[1]))
+
+    rho_edges = _grid_edges(center[axis_i], extent[axis_i], grid_size)
+    tau_edges = _grid_edges(center[axis_j], extent[axis_j], grid_size)
 
     psi_cache: dict[tuple[int, int], np.ndarray] = {}
 
     def psi_at(i: int, j: int) -> np.ndarray:
         key = (i, j)
         if key not in psi_cache:
-            state = _synthetic_state(
-                S,
-                rho=float(rho_edges[i]),
-                tau=float(tau_edges[j]),
-            )
+            overrides = {axis_i: float(rho_edges[i]), axis_j: float(tau_edges[j])}
+            state = _state_from_params(S, overrides, defaults=center)
             psi_cache[key] = _psi_from_state(state)
         return psi_cache[key]
 
@@ -458,6 +489,7 @@ def _run_noise_trial(
     S: GraphSubstrate,
     path: ParameterPath,
     base_center: LayersState,
+    center_params: Mapping[str, float],
     phase_std: float,
     amp_noise: float,
     delay_std: float,
@@ -477,11 +509,7 @@ def _run_noise_trial(
 
     for step in range(path.steps):
         lambda_state, _, _ = path.step(step)
-        state = _synthetic_state(
-            S,
-            rho=lambda_state.get("rho", 0.0),
-            tau=lambda_state.get("tau", 0.0),
-        )
+        state = _state_from_params(S, lambda_state, defaults=center_params)
 
         if phase_std > 0.0 and S.N:
             theta_noise += rng.normal(0.0, phase_std, size=S.N)
@@ -533,10 +561,11 @@ def _run_noise_trial(
     )
 
 
-def _run_noise_level(
+def _run_noise_point(
     S: GraphSubstrate,
     path: ParameterPath,
     base_center: LayersState,
+    center_params: Mapping[str, float],
     phase_std: float,
     amp_noise: float,
     delay_std: float,
@@ -546,7 +575,8 @@ def _run_noise_level(
     overlap_threshold: float,
     coherence_threshold: float,
     base_bias: float,
-) -> NoiseLevelResult:
+    base_sign: float,
+) -> NoisePointResult:
     trials: list[TrialResult] = []
     for idx, seed in enumerate(seeds):
         rng = np.random.default_rng(int(seed))
@@ -554,6 +584,7 @@ def _run_noise_level(
             S,
             path,
             base_center,
+            center_params,
             phase_std,
             amp_noise,
             delay_std,
@@ -569,34 +600,65 @@ def _run_noise_level(
     o_mean, _ = _mean_ci(trial.overlap_avg for trial in trials)
     quantized = s_mean >= coherence_threshold and o_mean >= overlap_threshold
 
-    return NoiseLevelResult(
+    expected_sign = 1.0 if base_sign >= 0.0 else -1.0
+
+    return NoisePointResult(
         phase_std=float(phase_std),
-        amp_noise=float(amp_noise),
+        amp_std=float(amp_noise),
         delay_std=float(delay_std),
         trials=trials,
         s_bar_mean=float(s_mean),
         overlap_mean=float(o_mean),
         quantized=bool(quantized),
+        sign_persistence=float(
+            np.mean(
+                [
+                    (
+                        1.0
+                        if trial.R_gamma == 0.0
+                        else 1.0 if math.copysign(1.0, trial.R_gamma) == expected_sign else 0.0
+                    )
+                    for trial in trials
+                ]
+            )
+        ),
     )
 
 
 def run_experiment(
     *,
     phase_std_values: Sequence[float] | None = None,
-    amp_noise: float = 0.02,
-    delay_std: float = 0.02,
+    amp_std_values: Sequence[float] | None = None,
+    delay_std_values: Sequence[float] | None = None,
     num_trials: int = 6,
     loop_steps: int = 200,
     seeds: Sequence[int] | None = None,
     grid_size: int = 8,
     overlap_threshold: float = 0.9,
     coherence_threshold: float = 0.5,
+    axes: Sequence[str] | None = None,
 ) -> ExperimentResults:
     if phase_std_values is None:
         phase_std_values = [0.0, 0.05, 0.1, 0.2, 0.35]
     phase_std_values = [float(val) for val in phase_std_values]
     if any(val < 0.0 for val in phase_std_values):
         raise ValueError("phase_std values must be non-negative")
+
+    if amp_std_values is None:
+        amp_std_values = [0.0, 0.02, 0.05]
+    amp_std_values = [float(val) for val in amp_std_values]
+    if any(val < 0.0 for val in amp_std_values):
+        raise ValueError("amp_std values must be non-negative")
+
+    if delay_std_values is None:
+        delay_std_values = [0.0, 0.02, 0.05]
+    delay_std_values = [float(val) for val in delay_std_values]
+    if any(val < 0.0 for val in delay_std_values):
+        raise ValueError("delay_std values must be non-negative")
+
+    axes_tuple = tuple(str(ax) for ax in (axes or ("rho", "tau")))
+    if len(axes_tuple) != 2:
+        raise ValueError("axes must contain exactly two entries")
 
     if num_trials <= 0:
         raise ValueError("num_trials must be positive")
@@ -615,14 +677,14 @@ def run_experiment(
         (
             "ring3",
             ring3(weight=1.0, delay=1.0),
-            {"rho": 0.85, "tau": 0.95},
-            {"rho": 0.75, "tau": 0.85},
+            {"rho": 0.85, "tau": 0.95, "zeta": 0.0},
+            {"rho": 0.75, "tau": 0.85, "zeta": 0.45},
         ),
         (
             "rr8",
             random_regular_digraph(N=8, out_degree=2, weight=1.0, delay=1.0, seed=13),
-            {"rho": 0.8, "tau": 1.4},
-            {"rho": 0.6, "tau": 1.2},
+            {"rho": 0.8, "tau": 1.4, "zeta": 0.0},
+            {"rho": 0.6, "tau": 1.2, "zeta": 0.4},
         ),
     ]
 
@@ -635,9 +697,10 @@ def run_experiment(
             extents=extents,
             steps=loop_steps,
             orientation="CCW",
+            axes=axes_tuple,
         )
-        flux = _compute_flux(substrate, center, extents, grid_size=grid_size)
-        base_center = _synthetic_state(substrate, center["rho"], center["tau"])
+        flux = _compute_flux(substrate, center, extents, grid_size=grid_size, axes=axes_tuple)
+        base_center = _state_from_params(substrate, {}, defaults=center)
         pairs = _neighbor_pairs(substrate)
         W_csc = substrate.W.tocsc()
         base_currents = _edge_currents_with_delay(substrate, base_center.pQ, base_center.theta, None)
@@ -651,23 +714,27 @@ def run_experiment(
         )
         base_bias = float(np.dot(base_weights - base_center.pQ, base_currents))
 
-        noise_levels: list[NoiseLevelResult] = []
+        noise_points: list[NoisePointResult] = []
         for phase_std in phase_std_values:
-            level = _run_noise_level(
-                substrate,
-                path,
-                base_center,
-                phase_std=float(phase_std),
-                amp_noise=float(amp_noise),
-                delay_std=float(delay_std),
-                seeds=seeds,
-                pairs=pairs,
-                W_csc=W_csc,
-                overlap_threshold=overlap_threshold,
-                coherence_threshold=coherence_threshold,
-                base_bias=base_bias,
-            )
-            noise_levels.append(level)
+            for amp_std in amp_std_values:
+                for delay_std in delay_std_values:
+                    level = _run_noise_point(
+                        substrate,
+                        path,
+                        base_center,
+                        center,
+                        phase_std=float(phase_std),
+                        amp_noise=float(amp_std),
+                        delay_std=float(delay_std),
+                        seeds=seeds,
+                        pairs=pairs,
+                        W_csc=W_csc,
+                        overlap_threshold=overlap_threshold,
+                        coherence_threshold=coherence_threshold,
+                        base_bias=base_bias,
+                        base_sign=base_bias,
+                    )
+                    noise_points.append(level)
 
         graph_results.append(
             GraphResult(
@@ -676,17 +743,19 @@ def run_experiment(
                 center=center,
                 extents=extents,
                 flux=float(abs(flux)),
-                noise_levels=noise_levels,
+                noise_points=noise_points,
                 overlap_threshold=float(overlap_threshold),
                 coherence_threshold=float(coherence_threshold),
+                base_sign=1 if base_bias >= 0.0 else -1,
+                axes=axes_tuple,
             )
         )
 
     return ExperimentResults(
         graphs=graph_results,
         phase_std_values=phase_std_values,
-        amp_noise=float(amp_noise),
-        delay_std=float(delay_std),
+        amp_std_values=amp_std_values,
+        delay_std_values=delay_std_values,
         num_trials=num_trials,
         loop_steps=loop_steps,
         overlap_threshold=float(overlap_threshold),
@@ -703,7 +772,7 @@ def _format_ci(ci: tuple[float, float]) -> str:
     return f"[{ci[0]:.3e}, {ci[1]:.3e}]"
 
 
-def _render_noise_level(level: NoiseLevelResult) -> list[str]:
+def _render_noise_level(level: NoisePointResult) -> list[str]:
     R_mean, R_ci = _mean_ci(level.R_gamma_samples())
     s_mean, s_ci = _mean_ci(level.coherence_samples())
     o_mean, o_ci = _mean_ci(level.overlap_samples())
@@ -712,10 +781,11 @@ def _render_noise_level(level: NoiseLevelResult) -> list[str]:
     ci_width = R_ci_arr[1] - R_ci_arr[0] if np.all(np.isfinite(R_ci_arr)) else float("nan")
 
     lines = [
-        f"- σ_phase = {level.phase_std:.3f} (σ_amp={level.amp_noise:.3f}, σ_tau={level.delay_std:.3f})",
+        f"- σ_phase = {level.phase_std:.3f} (σ_amp={level.amp_std:.3f}, σ_tau={level.delay_std:.3f})",
         f"  - R_γ mean: {R_mean:.3e} with CI {_format_ci(R_ci)} (width {ci_width:.3e})",
         f"  - ⟨s̄⟩: {s_mean:.3f} with CI {_format_ci(s_ci)}",
         f"  - ⟨overlap⟩: {o_mean:.3f} with CI {_format_ci(o_ci)}",
+        f"  - Sign persistence: {level.sign_persistence:.2f}",
         f"  - Quantization claim: {'yes' if level.quantized else 'no (tracking robustness only)'}",
     ]
     return lines
@@ -728,8 +798,8 @@ def _render_report(results: ExperimentResults) -> str:
         "# Gate C: topology robustness under noise",
         "",
         f"Phase noise sweep: {', '.join(f'{val:.3f}' for val in results.phase_std_values)}",
-        f"Amplitude noise σ_amp: {results.amp_noise:.3f}",
-        f"Delay jitter σ_tau: {results.delay_std:.3f}",
+        "Amplitude noise σ_amp sweep: " f"{', '.join(f'{val:.3f}' for val in results.amp_std_values)}",
+        "Delay jitter σ_tau sweep: " f"{', '.join(f'{val:.3f}' for val in results.delay_std_values)}",
         f"Trials per noise level: {results.num_trials}",
         f"Loop steps: {results.loop_steps}",
         (
@@ -748,7 +818,7 @@ def _render_report(results: ExperimentResults) -> str:
         lines.extend([f"## Graph: {graph.name}", ""])
         lines.append(f"Loop flux magnitude: {graph.flux:.3e}")
         lines.append("")
-        for level in graph.noise_levels:
+        for level in graph.noise_points:
             lines.extend(_render_noise_level(level))
         lines.append("")
 
@@ -757,6 +827,112 @@ def _render_report(results: ExperimentResults) -> str:
         "and report robustness trends only."
     )
     return "\n".join(lines)
+
+
+def _noise_point_lookup(graph: GraphResult) -> dict[tuple[float, float, float], NoisePointResult]:
+    lookup: dict[tuple[float, float, float], NoisePointResult] = {}
+    for point in graph.noise_points:
+        key = (
+            round(point.phase_std, 6),
+            round(point.amp_std, 6),
+            round(point.delay_std, 6),
+        )
+        lookup[key] = point
+    return lookup
+
+
+def _metric_grid(
+    graph: GraphResult,
+    phase: float,
+    amp_values: Sequence[float],
+    delay_values: Sequence[float],
+    metric: str,
+) -> np.ndarray:
+    lookup = _noise_point_lookup(graph)
+    grid = np.full((len(amp_values), len(delay_values)), np.nan, dtype=float)
+    phase_key = round(float(phase), 6)
+    for i, amp in enumerate(amp_values):
+        amp_key = round(float(amp), 6)
+        for j, delay in enumerate(delay_values):
+            delay_key = round(float(delay), 6)
+            point = lookup.get((phase_key, amp_key, delay_key))
+            if point is None:
+                continue
+            value = getattr(point, metric, float("nan"))
+            grid[i, j] = float(value)
+    return grid
+
+
+def _save_heatmap(
+    data: np.ndarray,
+    amp_values: Sequence[float],
+    delay_values: Sequence[float],
+    *,
+    title: str,
+    output_path: Path,
+    vmin: float | None = None,
+    vmax: float | None = None,
+) -> None:
+    if data.size == 0:
+        return
+    fig, ax = plt.subplots(figsize=(6.0, 4.0))
+    im = ax.imshow(
+        data,
+        origin="lower",
+        aspect="auto",
+        cmap="viridis",
+        vmin=vmin,
+        vmax=vmax,
+    )
+    ax.set_xticks(range(len(delay_values)))
+    ax.set_xticklabels([f"{val:.2f}" for val in delay_values])
+    ax.set_yticks(range(len(amp_values)))
+    ax.set_yticklabels([f"{val:.2f}" for val in amp_values])
+    ax.set_xlabel("σ_delay")
+    ax.set_ylabel("σ_amp")
+    ax.set_title(title)
+    fig.colorbar(im, ax=ax, shrink=0.8)
+    fig.tight_layout()
+    fig.savefig(output_path, bbox_inches="tight")
+    plt.close(fig)
+
+
+def _render_phase_slices(
+    results: ExperimentResults,
+    output_dir: Path,
+) -> None:
+    amp_values = list(results.amp_std_values)
+    delay_values = list(results.delay_std_values)
+    if not amp_values or not delay_values:
+        return
+
+    for graph in results.graphs:
+        for idx, phase in enumerate(results.phase_std_values):
+            grid_sign = _metric_grid(graph, phase, amp_values, delay_values, "sign_persistence")
+            grid_coh = _metric_grid(graph, phase, amp_values, delay_values, "s_bar_mean")
+            title_suffix = f"σ_phase={phase:.2f}"
+
+            sign_path = output_dir / f"{graph.name}_phase{idx:02d}_sign.png"
+            _save_heatmap(
+                grid_sign,
+                amp_values,
+                delay_values,
+                title=f"{graph.name} sign persistence ({title_suffix})",
+                output_path=sign_path,
+                vmin=0.0,
+                vmax=1.0,
+            )
+
+            coh_path = output_dir / f"{graph.name}_phase{idx:02d}_coherence.png"
+            _save_heatmap(
+                grid_coh,
+                amp_values,
+                delay_values,
+                title=f"{graph.name} ⟨s̄⟩ ({title_suffix})",
+                output_path=coh_path,
+                vmin=0.0,
+                vmax=1.0,
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -786,20 +962,23 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--grid-size", type=int, default=8, help="Tile grid size for flux estimation.")
     parser.add_argument(
+        "--amp-std",
         "--amp-noise",
         "--sigma-amp",
         type=float,
-        default=0.02,
-        dest="amp_noise",
-        help="Amplitude noise scale (mass shuffles).",
+        nargs="*",
+        default=None,
+        dest="amp_std",
+        help="Amplitude noise magnitudes (mass shuffles).",
     )
     parser.add_argument(
         "--delay-std",
         "--sigma-tau",
         type=float,
-        default=0.02,
+        nargs="*",
+        default=None,
         dest="delay_std",
-        help="Delay jitter scale applied to edge delays.",
+        help="Delay jitter magnitudes applied to edge delays.",
     )
     parser.add_argument(
         "--phase-std",
@@ -810,6 +989,13 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         dest="phase_std",
         help="Optional list of phase-noise magnitudes to sweep.",
     )
+    parser.add_argument(
+        "--axes",
+        type=str,
+        nargs=2,
+        default=("rho", "tau"),
+        help="Control axes used for the loop (default: rho tau).",
+    )
     return parser.parse_args(argv)
 
 
@@ -817,11 +1003,12 @@ def main(argv: Sequence[str] | None = None) -> None:
     args = _parse_args(argv)
     results = run_experiment(
         phase_std_values=args.phase_std,
-        amp_noise=args.amp_noise,
-        delay_std=args.delay_std,
+        amp_std_values=args.amp_std,
+        delay_std_values=args.delay_std,
         num_trials=args.num_trials,
         loop_steps=args.loop_steps,
         grid_size=args.grid_size,
+        axes=args.axes,
     )
 
     output_dir = args.output_dir
@@ -832,6 +1019,8 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     records_path.write_text(json.dumps(results.to_dict(), indent=2))
     report_path.write_text(_render_report(results))
+
+    _render_phase_slices(results, output_dir)
 
 
 if __name__ == "__main__":
