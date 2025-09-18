@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from cwt.metrics.eval_curves import summarize_loop
 from cwt.orchestrator.scheduler import RunRecord
@@ -51,3 +52,31 @@ def test_summarize_loop_flux_defaults_to_zero_without_tiles() -> None:
     summary = summarize_loop(record)
 
     assert summary.phi_flux == 0.0
+
+
+def test_summarize_loop_bias_integrates_across_steps() -> None:
+    record = _blank_record(
+        curvature_biases=[
+            np.array([0.1, -0.05]),
+            np.array([0.0, 0.05]),
+        ],
+    )
+
+    summary = summarize_loop(record)
+
+    assert summary.R_bias == pytest.approx(0.1)
+
+
+def test_summarize_loop_bias_uses_memory_weighting_when_available() -> None:
+    record = _blank_record(
+        curvature_biases=[
+            np.array([0.2, 0.0]),
+            np.array([0.1, 0.05]),
+        ],
+        readouts=[{"step": 1, "memory_form": "uniform_charge", "memory": [0.25, 0.75]}],
+    )
+
+    summary = summarize_loop(record)
+
+    expected = np.dot(np.array([0.3, 0.05]), np.array([0.25, 0.75]))
+    assert summary.R_bias == pytest.approx(expected)

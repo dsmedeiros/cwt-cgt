@@ -533,6 +533,20 @@ def run_parameter_loop(
     if guard_action not in {"warn", "slow", "none"}:
         guard_action = "warn"
 
+    try:
+        guard_boundary = float(guard_cfg.get("boundary", 0.1))
+    except (TypeError, ValueError):
+        guard_boundary = 0.1
+    if not math.isfinite(guard_boundary) or guard_boundary <= 0.0:
+        guard_boundary = 0.1
+
+    try:
+        guard_throttle = float(guard_cfg.get("throttle_scale", 0.5))
+    except (TypeError, ValueError):
+        guard_throttle = 0.5
+    if not math.isfinite(guard_throttle) or not (0.0 < guard_throttle < 1.0):
+        guard_throttle = 0.5
+
     guard_enabled = (
         math.isfinite(guard_threshold)
         and guard_threshold > 0.0
@@ -552,6 +566,10 @@ def run_parameter_loop(
 
     direction_cache: dict[str, np.ndarray] = {}
     phase_cache: dict[tuple[str, float], np.ndarray] = {}
+
+    delta_frac_base = {key: float(val) for key, val in (config.delta_frac or {}).items()}
+    delta_frac_scale = 1.0
+    throttle_pending = False
 
     def direction_for(knob: str) -> np.ndarray:
         if knob not in direction_cache:
@@ -582,6 +600,10 @@ def run_parameter_loop(
     collect_final = bool(readout_cfg.get("final", False))
 
     for s in range(path.steps):
+        if throttle_pending and delta_frac_base:
+            delta_frac_scale = max(delta_frac_scale * guard_throttle, 1e-6)
+            throttle_pending = False
+
         lambda_state_raw, delta_lambda_raw, delta_area_val = path.step(s)
         lambda_state = {key: float(val) for key, val in lambda_state_raw.items()}
         delta_lambda = {key: float(val) for key, val in delta_lambda_raw.items()}
@@ -615,7 +637,7 @@ def run_parameter_loop(
         J = build_J_from_W(S, zeta=zeta_eff)
 
         Psi0 = psi_current
-        geometry_knobs = set(config.delta_frac.keys()) | set(delta_lambda.keys())
+        geometry_knobs = set(delta_frac_base.keys()) | set(delta_lambda.keys())
 
         knob_deltas: dict[str, float] = {}
         neighbor_states: dict[str, np.ndarray] = {}
@@ -637,7 +659,7 @@ def run_parameter_loop(
             scale = abs(lambda_state.get(knob, 1.0))
             if scale == 0.0:
                 scale = 1.0
-            base_frac = float(config.delta_frac.get(knob, 0.0))
+            base_frac = float(delta_frac_base.get(knob, 0.0)) * delta_frac_scale
             delta_candidate = base_frac * scale
             if delta_candidate == 0.0 and knob in delta_lambda:
                 delta_candidate = float(delta_lambda[knob])
@@ -803,6 +825,9 @@ def run_parameter_loop(
                         )
                     fs_guard_history.clear()
 
+        if delta_frac_base and math.isfinite(fs_step) and fs_step > guard_boundary:
+            throttle_pending = True
+
         psi_traj.append(psi_current.copy())
 
         should_emit = False
@@ -827,8 +852,8 @@ def run_parameter_loop(
 
     fs_steps_arr = np.asarray([step for step in fs_steps if math.isfinite(step)], dtype=float)
     fs_p95 = float(np.percentile(fs_steps_arr, 95)) if fs_steps_arr.size else float("nan")
-    fs_boundary = 0.1
-    fs_boundary_exceeded = fs_steps_arr.size and fs_p95 > fs_boundary
+    fs_boundary = guard_boundary
+    fs_boundary_exceeded = bool(fs_steps_arr.size and fs_p95 > fs_boundary)
     if fs_boundary_exceeded:
         warnings.warn(
             (
@@ -845,6 +870,7 @@ def run_parameter_loop(
         "window": int(fs_guard_history.maxlen if fs_guard_history is not None else guard_window),
         "cooldown": int(guard_cooldown),
         "action": guard_action,
+        "throttle_scale": float(guard_throttle),
         "total_exceedances": int(guard_exceedances),
         "overall_fraction": float(overall_fraction),
         "trigger_steps": guard_events,

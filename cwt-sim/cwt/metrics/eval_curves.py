@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 
 import numpy as np
 
@@ -65,17 +65,37 @@ def _infer_orientation(meta: Any, phi_flux: float) -> str:
     return "UNKNOWN"
 
 
-def _aggregate_bias(curvature_biases: Iterable[np.ndarray]) -> float:
-    arrays = [np.asarray(bias, dtype=float) for bias in curvature_biases]
+def _aggregate_bias(
+    curvature_biases: Iterable[np.ndarray],
+    final_readout: Mapping[str, Any] | None = None,
+) -> float:
+    arrays = [np.asarray(bias, dtype=float) for bias in curvature_biases if np.size(bias)]
     if not arrays:
         return 0.0
-    last = arrays[-1]
-    if last.size == 0:
+
+    total = np.sum(arrays, axis=0, dtype=float)
+    total = np.asarray(total, dtype=float)
+    if total.size == 0:
         return 0.0
-    mean = float(np.mean(last))
-    if not math.isfinite(mean):
+
+    if not np.all(np.isfinite(total)):
+        total = np.where(np.isfinite(total), total, 0.0)
+
+    if final_readout and isinstance(final_readout, Mapping):
+        memory = final_readout.get("memory")
+        if memory is not None:
+            chi = np.asarray(memory, dtype=float)
+            if chi.shape == total.shape and chi.size:
+                if not np.all(np.isfinite(chi)):
+                    chi = np.where(np.isfinite(chi), chi, 0.0)
+                weighted = float(np.dot(total, chi))
+                if math.isfinite(weighted):
+                    return weighted
+
+    scalar = float(np.sum(total))
+    if not math.isfinite(scalar):
         return 0.0
-    return mean
+    return scalar
 
 
 def _fs_statistics(psi_traj: Iterable[np.ndarray]) -> dict[str, float]:
@@ -144,7 +164,8 @@ def summarize_loop(record: RunRecord) -> LoopSummary:
                 total_flux += omega * area
         phi_flux = total_flux
 
-    R_bias = _aggregate_bias(record.curvature_biases)
+    final_readout = record.readouts[-1] if record.readouts else None
+    R_bias = _aggregate_bias(record.curvature_biases, final_readout)
     overlaps_min = _min_overlap(record.overlaps_min)
     fs_stats = _fs_statistics(record.psi_traj)
     orientation = _infer_orientation(record.meta, phi_flux)
