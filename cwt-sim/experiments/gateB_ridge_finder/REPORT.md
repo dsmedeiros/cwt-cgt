@@ -19,6 +19,15 @@ Independent markers were computed per tile as follows:
   short Θ evolution. We report the gradient magnitude $\|\nabla r\|$ as a change
   indicator.
 
+To explore anisotropy along the $(\tau, \kappa)$ axes, run:
+
+```
+python -m experiments.gateB_ridge_finder.run \
+  --axes tau kappa --grid-size 21 \
+  --tau-range 0.8 1.5 --kappa-range 0.5 1.5 \
+  --output-dir runs/atlas_tau_kappa
+```
+
 ## Universal diagnostics
 
 Health — min overlap: n/a, mean overlap: n/a, tiles ≥ s_min: n/a, FS step mean: n/a,

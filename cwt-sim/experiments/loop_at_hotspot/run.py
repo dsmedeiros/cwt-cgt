@@ -11,11 +11,18 @@ from typing import Any, Mapping, Sequence
 
 import numpy as np
 
+from cwt.geometry.adapt_mesh import curvature_anytime
 from cwt.graph import factories
 from cwt.graph.substrate import GraphSubstrate
 from cwt.layers.state import LayersState
 from cwt.orchestrator.param_path import ParameterPath
-from cwt.orchestrator.scheduler import RunConfig, _psi_at, run_parameter_loop
+from cwt.orchestrator.scheduler import (
+    RunConfig,
+    _direct_neighbor_state_factory,
+    _psi_at,
+    _psi_sampler_factory_direct,
+    run_parameter_loop,
+)
 
 
 @dataclass
@@ -39,6 +46,8 @@ class OrientationRun:
     phi_missing: bool
     kappa: float
     memory: list[float]
+    fs_p95: float
+    fs_guard_exceeded: bool
 
 
 @dataclass
@@ -207,17 +216,174 @@ def _build_substrate(name: str) -> GraphSubstrate:
 
 def _initial_state(
     substrate: GraphSubstrate, center: Mapping[str, float], config: RunConfig
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     N = substrate.N
     if N <= 0:
-        return np.zeros(0, dtype=float), np.zeros(0, dtype=float)
+        empty = np.zeros(0, dtype=float)
+        return empty, empty, np.zeros(0, dtype=np.complex128)
     base_prob = np.full(N, 1.0 / N, dtype=float)
     base_theta = np.zeros(N, dtype=float)
     settle_steps = max(int(getattr(config, "neighbor_settle_steps", 20)), 1)
     psi_center = _psi_at(substrate, center, base_prob, base_theta, config, steps=settle_steps)
     prob = np.square(np.abs(psi_center)).astype(float, copy=False)
     theta = np.angle(psi_center).astype(float, copy=False)
-    return prob, theta
+    return prob, theta, psi_center
+
+
+def _curvature_probe(
+    substrate: GraphSubstrate,
+    config: RunConfig,
+    center: Mapping[str, float],
+    axes: tuple[str, str],
+    base_prob: np.ndarray,
+    base_theta: np.ndarray,
+    psi_center: np.ndarray,
+    *,
+    delta: float,
+) -> float:
+    geometry_cfg = config.geometry or {}
+    neighbor_steps_raw = geometry_cfg.get("neighbor_steps", 1)
+    try:
+        neighbor_steps_cfg = max(int(neighbor_steps_raw), 1)
+    except (TypeError, ValueError):
+        neighbor_steps_cfg = 1
+    settle_steps = max(int(getattr(config, "neighbor_settle_steps", 20)), 1)
+    state_for = _direct_neighbor_state_factory(
+        substrate,
+        center,
+        base_prob,
+        base_theta,
+        config,
+        neighbor_steps=neighbor_steps_cfg,
+        settle_steps=max(neighbor_steps_cfg, settle_steps),
+    )
+    sampler = _psi_sampler_factory_direct(
+        psi_center,
+        str(axes[0]),
+        str(axes[1]),
+        state_for,
+    )
+    plaquette = curvature_anytime(
+        sampler,
+        float(delta),
+        float(delta),
+        s_min=float(config.s_min),
+        ci_tol=float(config.ci_tol),
+        max_levels=max(int(config.adapt_levels), 1),
+    )
+    return float(plaquette.omega_mean)
+
+
+def _micro_scan_candidates(
+    substrate: GraphSubstrate,
+    config: RunConfig,
+    center: Mapping[str, float],
+    axes: tuple[str, str],
+    *,
+    delta: float,
+    grid: int = 5,
+) -> tuple[dict[str, float], tuple[np.ndarray, np.ndarray], dict[str, Any]]:
+    axis_i, axis_j = axes
+    offsets = [float((index - grid // 2) * delta) for index in range(grid)]
+    results: dict[tuple[int, int], dict[str, Any]] = {}
+
+    for idx_i, offset_i in enumerate(offsets):
+        for idx_j, offset_j in enumerate(offsets):
+            candidate = dict(center)
+            candidate[axis_i] = float(center[axis_i] + offset_i)
+            candidate[axis_j] = float(center[axis_j] + offset_j)
+            base_prob, base_theta, psi_center = _initial_state(substrate, candidate, config)
+            omega_val = _curvature_probe(
+                substrate,
+                config,
+                candidate,
+                axes,
+                base_prob,
+                base_theta,
+                psi_center,
+                delta=delta,
+            )
+            results[(idx_i, idx_j)] = {
+                "center": candidate,
+                "omega": omega_val,
+                "state": (base_prob, base_theta),
+            }
+
+    def gradient_and_consistency(index_i: int, index_j: int, omega_value: float) -> tuple[float, float]:
+        neighbors: list[float] = []
+        signs: list[int] = []
+        base_sign = 0
+        if math.isfinite(omega_value):
+            if omega_value > 1e-9:
+                base_sign = 1
+            elif omega_value < -1e-9:
+                base_sign = -1
+        for delta_i, delta_j in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+            key = (index_i + delta_i, index_j + delta_j)
+            if key not in results:
+                continue
+            neighbor_omega = float(results[key]["omega"])
+            if math.isfinite(omega_value) and math.isfinite(neighbor_omega):
+                neighbors.append(abs(omega_value - neighbor_omega))
+            if math.isfinite(neighbor_omega):
+                if neighbor_omega > 1e-9:
+                    signs.append(1)
+                elif neighbor_omega < -1e-9:
+                    signs.append(-1)
+                else:
+                    signs.append(0)
+        if neighbors:
+            grad = float(sum(neighbors) / len(neighbors))
+        else:
+            grad = 0.0
+        if not signs:
+            return grad, 1.0
+        if base_sign == 0:
+            consistency = sum(1 for sign in signs if sign == 0) / len(signs)
+        else:
+            consistency = sum(1 for sign in signs if sign == base_sign or sign == 0) / len(signs)
+        return grad, float(consistency)
+
+    best_key = None
+    best_score = -float("inf")
+    best_entry: dict[str, Any] | None = None
+    for (idx_i, idx_j), entry in results.items():
+        omega_value = float(entry["omega"])
+        if not math.isfinite(omega_value):
+            continue
+        grad, consistency = gradient_and_consistency(idx_i, idx_j, omega_value)
+        score = abs(omega_value) * consistency / (1.0 + grad)
+        entry["gradient"] = grad
+        entry["consistency"] = consistency
+        entry["score"] = score
+        if score > best_score:
+            best_score = score
+            best_key = (idx_i, idx_j)
+            best_entry = entry
+
+    if best_entry is None or best_key is None:
+        # Fall back to the supplied centre if no finite candidates were available.
+        fallback_prob, fallback_theta, _ = _initial_state(substrate, center, config)
+        return (
+            dict(center),
+            (fallback_prob, fallback_theta),
+            {
+                "selected": dict(center),
+                "omega": float("nan"),
+                "score": float("nan"),
+            },
+        )
+
+    selected_center = dict(best_entry["center"])
+    base_prob_arr, base_theta_arr = best_entry["state"]
+    scan_meta = {
+        "selected": selected_center,
+        "omega": float(best_entry["omega"]),
+        "score": float(best_entry.get("score", float("nan"))),
+        "gradient": float(best_entry.get("gradient", float("nan"))),
+        "consistency": float(best_entry.get("consistency", float("nan"))),
+    }
+    return selected_center, (base_prob_arr, base_theta_arr), scan_meta
 
 
 def _loop_steps_for_extent(extent: float, base_steps: int = 2048) -> int:
@@ -293,6 +459,15 @@ def _run_loop(
     else:
         kappa = float("nan")
 
+    guard_meta = {}
+    if isinstance(record.meta, Mapping):
+        guard_meta = record.meta.get("fs_step_guard", {}) or {}
+    try:
+        fs_p95 = float(guard_meta.get("p95", float("nan")))
+    except (TypeError, ValueError):
+        fs_p95 = float("nan")
+    guard_exceeded = bool(guard_meta.get("boundary_exceeded", False))
+
     return OrientationRun(
         orientation=orientation,
         extent=float(extent),
@@ -302,6 +477,8 @@ def _run_loop(
         phi_missing=phi_missing,
         kappa=kappa,
         memory=memory,
+        fs_p95=fs_p95,
+        fs_guard_exceeded=guard_exceeded,
     )
 
 
@@ -314,8 +491,24 @@ def evaluate_hotspot(
     axes: tuple[str, str],
     extents: Sequence[float],
     seed: int,
+    micro_scan: bool,
 ) -> HotspotSummary:
-    base_prob, base_theta = _initial_state(substrate, spec.center, config)
+    center = dict(spec.center)
+    if micro_scan:
+        center, state_pair, scan_meta = _micro_scan_candidates(
+            substrate,
+            config,
+            center,
+            axes,
+            delta=0.01,
+        )
+        spec.center = center
+        meta = spec.metadata.setdefault("micro_scan", {})
+        meta.update(scan_meta)
+        base_prob, base_theta = state_pair
+    else:
+        base_prob, base_theta, _ = _initial_state(substrate, center, config)
+        spec.center = center
     summaries: list[ExtentSummary] = []
     for extent in extents:
         ccw = _run_loop(substrate, config, base_prob, base_theta, spec.center, axes, extent, "CCW", seed)
@@ -373,12 +566,24 @@ def render_summary(results: Sequence[HotspotSummary]) -> None:
                 )
             )
             print(
+                "           FS p95={:.3f} rad, guard_exceeded={}".format(
+                    ccw.fs_p95 if math.isfinite(ccw.fs_p95) else float("nan"),
+                    ccw.fs_guard_exceeded,
+                )
+            )
+            print(
                 "    CW : R={:+.6f}, Φ={:+.6f}{}, κ₁={:+.6f}, χ={}".format(
                     cw.area,
                     cw.phi_flux,
                     cw_flag,
                     cw.kappa,
                     _format_memory(cw.memory),
+                )
+            )
+            print(
+                "           FS p95={:.3f} rad, guard_exceeded={}".format(
+                    cw.fs_p95 if math.isfinite(cw.fs_p95) else float("nan"),
+                    cw.fs_guard_exceeded,
                 )
             )
             flip_area_pct = (
@@ -462,6 +667,19 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Graph substrate to use for the validation loop (default: ring3_hetero)",
     )
     parser.add_argument(
+        "--fs-guard",
+        type=float,
+        default=None,
+        help="Optional FS guard threshold in radians (enables CLI enforcement when set)",
+    )
+    parser.add_argument(
+        "--micro-scan",
+        type=_parse_bool,
+        default=False,
+        metavar="true|false",
+        help="Enable the 5×5 micro-scan refinement around each hotspot centre",
+    )
+    parser.add_argument(
         "--limit",
         type=int,
         default=None,
@@ -482,6 +700,15 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def _parse_bool(text: str) -> bool:
+    value = str(text).strip().lower()
+    if value in {"true", "t", "1", "yes", "y"}:
+        return True
+    if value in {"false", "f", "0", "no", "n"}:
+        return False
+    raise argparse.ArgumentTypeError("expected a boolean flag (true|false)")
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     axes = (str(args.axes[0]), str(args.axes[1]))
@@ -498,6 +725,14 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     substrate = _build_substrate(str(args.graph))
     config = _default_run_config(int(args.readout_target))
+    if args.fs_guard is not None:
+        config.fs_step_guard = {
+            "threshold": float(args.fs_guard),
+            "window": 64,
+            "throttle": 0.9,
+        }
+
+    micro_scan_enabled = bool(args.micro_scan)
 
     results: list[HotspotSummary] = []
     for index, spec in enumerate(hotspots):
@@ -509,6 +744,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             axes=axes,
             extents=extents,
             seed=int(args.seed),
+            micro_scan=micro_scan_enabled,
         )
         results.append(summary)
 

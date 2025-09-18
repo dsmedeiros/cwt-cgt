@@ -8,6 +8,7 @@ that records all intermediate states in a :class:`RunRecord` data structure.
 
 from __future__ import annotations
 
+import logging
 import math
 import warnings
 import zlib
@@ -30,6 +31,8 @@ from ..layers.state import LayersState, normalize_prob, wrap_angles
 from ..layers.theta_update import build_J_from_W, omega_from_delays, theta_step
 from ..orchestrator.param_path import ParameterPath
 from .with_geom import curvature_bias, make_phi_edge_ring3, nodewise_connection_a_i, phase_kick
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
@@ -570,6 +573,7 @@ def run_parameter_loop(
     delta_frac_base = {key: float(val) for key, val in (config.delta_frac or {}).items()}
     delta_frac_scale = 1.0
     throttle_pending = False
+    warned_delta_frac: set[str] = set()
 
     def direction_for(knob: str) -> np.ndarray:
         if knob not in direction_cache:
@@ -660,6 +664,12 @@ def run_parameter_loop(
             if scale == 0.0:
                 scale = 1.0
             base_frac = float(delta_frac_base.get(knob, 0.0)) * delta_frac_scale
+            if knob not in delta_frac_base and knob in delta_lambda and knob not in warned_delta_frac:
+                warned_delta_frac.add(knob)
+                _LOGGER.warning(
+                    "delta_frac missing knob '%s'; falling back to delta_lambda for geometry sampling.",
+                    knob,
+                )
             delta_candidate = base_frac * scale
             if delta_candidate == 0.0 and knob in delta_lambda:
                 delta_candidate = float(delta_lambda[knob])
