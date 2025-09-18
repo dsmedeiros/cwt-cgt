@@ -9,7 +9,7 @@ import math
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Mapping, Sequence
+from typing import Callable, Mapping, Sequence
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -52,6 +52,7 @@ except ImportError:  # pragma: no cover - fallback when run as a script
     from experiments.report_helpers import ReportHeaderMetrics, render_report_header
 
 VALID_AXES = ("rho", "tau", "zeta", "zeta_phase", "kappa")
+AVAILABLE_GRAPHS = ("ring3", "random_regular", "small_world", "scale_free")
 
 
 @dataclass(frozen=True)
@@ -883,11 +884,15 @@ def scan_graph(
     )
 
 
-def build_substrates(seed: int) -> list[tuple[str, GraphSubstrate]]:
-    """Return the two canonical substrates used in Gate B."""
+def _jitter_edge_params(graph: nx.DiGraph, rng: np.random.Generator) -> None:
+    for source, target, data in graph.edges(data=True):
+        base_weight = float(data.get("weight", 1.0))
+        base_delay = float(data.get("delay", 1.0))
+        data["weight"] = base_weight * (0.9 + 0.2 * rng.random())
+        data["delay"] = base_delay * (0.5 + rng.random())
 
-    rng = np.random.default_rng(seed)
 
+def _build_ring3(_: int, __: np.random.Generator) -> GraphSubstrate:
     ring_graph = nx.DiGraph()
     ring_edges = [
         (0, 1, 1.0, 0.6),
@@ -896,20 +901,72 @@ def build_substrates(seed: int) -> list[tuple[str, GraphSubstrate]]:
     ]
     for u, v, weight, delay in ring_edges:
         ring_graph.add_edge(u, v, weight=weight, delay=delay)
-    ring_substrate = build_substrate(ring_graph)
+    return build_substrate(ring_graph)
 
+
+def _build_random_regular(seed: int, rng: np.random.Generator) -> GraphSubstrate:
     base_random = random_regular_digraph(N=20, out_degree=3, seed=seed)
-    random_graph = nx.DiGraph()
+    graph = nx.DiGraph()
     for u, v, data in base_random.G.edges(data=True):
-        weight = float(data.get("weight", 1.0)) * (0.9 + 0.2 * rng.random())
-        delay = float(data.get("delay", 1.0)) * (0.5 + rng.random())
-        random_graph.add_edge(u, v, weight=weight, delay=delay)
-    random_substrate = build_substrate(random_graph)
+        graph.add_edge(
+            u,
+            v,
+            weight=float(data.get("weight", 1.0)),
+            delay=float(data.get("delay", 1.0)),
+        )
+    _jitter_edge_params(graph, rng)
+    return build_substrate(graph)
 
-    return [
-        ("ring3", ring_substrate),
-        ("random_regular", random_substrate),
-    ]
+
+def _build_small_world(seed: int, rng: np.random.Generator) -> GraphSubstrate:
+    undirected = nx.watts_strogatz_graph(20, 4, 0.2, seed=seed)
+    graph = nx.DiGraph()
+    for u, v in undirected.edges():
+        graph.add_edge(u, v, weight=1.0, delay=1.0)
+        graph.add_edge(v, u, weight=1.0, delay=1.0)
+    _jitter_edge_params(graph, rng)
+    return build_substrate(graph)
+
+
+def _build_scale_free(seed: int, rng: np.random.Generator) -> GraphSubstrate:
+    base = nx.scale_free_graph(20, seed=seed)
+    graph = nx.DiGraph()
+    for node in base.nodes():
+        graph.add_node(int(node))
+    for u, v in base.edges():
+        u_idx = int(u)
+        v_idx = int(v)
+        if u_idx == v_idx:
+            continue
+        graph.add_edge(u_idx, v_idx, weight=1.0, delay=1.0)
+    _jitter_edge_params(graph, rng)
+    return build_substrate(graph)
+
+
+_SUBSTRATE_FACTORIES: dict[str, Callable[[int, np.random.Generator], GraphSubstrate]] = {
+    "ring3": _build_ring3,
+    "random_regular": _build_random_regular,
+    "small_world": _build_small_world,
+    "scale_free": _build_scale_free,
+}
+
+
+def build_substrates(graphs: Sequence[str], seed: int) -> list[tuple[str, GraphSubstrate]]:
+    """Build substrates for the requested graph names."""
+
+    selections = [str(name).strip().lower() for name in graphs if str(name).strip()]
+    if not selections:
+        raise ValueError("at least one graph must be specified")
+
+    built: list[tuple[str, GraphSubstrate]] = []
+    for index, key in enumerate(selections):
+        factory = _SUBSTRATE_FACTORIES.get(key)
+        if factory is None:
+            raise ValueError(f"unsupported substrate '{key}'")
+        factory_seed = seed + 97 * index
+        rng = np.random.default_rng(factory_seed)
+        built.append((key, factory(factory_seed, rng)))
+    return built
 
 
 def run_experiment(
@@ -920,6 +977,7 @@ def run_experiment(
     bootstrap_samples: int,
     seed: int,
     top_k: int,
+    graphs: Sequence[str],
     output_dir: Path,
 ) -> list[GraphScanResult]:
     """Execute the Gate B ridge finder across the canonical substrates."""
@@ -935,7 +993,7 @@ def run_experiment(
     axis1_values = np.linspace(axis1_range[0], axis1_range[1], num=grid_size)
 
     results: list[GraphScanResult] = []
-    for name, substrate in build_substrates(seed):
+    for name, substrate in build_substrates(graphs, seed):
         result = scan_graph(
             name,
             substrate,
@@ -1073,6 +1131,14 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         default=(0.5, 1.5),
         help="Range of kappa values when scanned",
     )
+    parser.add_argument(
+        "--graphs",
+        type=str,
+        default="ring3,random_regular",
+        help=(
+            "Comma-separated list of graph substrates to scan " f"(options: {', '.join(AVAILABLE_GRAPHS)})"
+        ),
+    )
     parser.add_argument("--bootstrap", type=int, default=256, help="Bootstrap replicates for the AUC CI")
     parser.add_argument("--seed", type=int, default=7, help="Base seed controlling RNG usage")
     parser.add_argument("--output-dir", type=Path, default=Path(__file__).resolve().parent / "artifacts")
@@ -1124,6 +1190,13 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def _parse_graphs(text: str) -> list[str]:
+    graphs = [token.strip() for token in str(text).split(",") if token.strip()]
+    if not graphs:
+        raise ValueError("at least one graph name must be provided")
+    return graphs
+
+
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv)
     output_dir = Path(args.output_dir)
@@ -1146,6 +1219,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
 
     axes = (str(args.axes[0]), str(args.axes[1]))
+    graphs = _parse_graphs(args.graphs)
     axis_ranges = {
         "rho": (float(args.rho_range[0]), float(args.rho_range[1])),
         "tau": (float(args.tau_range[0]), float(args.tau_range[1])),
@@ -1162,6 +1236,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         bootstrap_samples=args.bootstrap,
         seed=args.seed,
         top_k=args.top_k,
+        graphs=graphs,
         output_dir=output_dir,
     )
 
