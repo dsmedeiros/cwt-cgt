@@ -6,6 +6,7 @@ import argparse
 import csv
 import json
 import math
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping, Sequence
@@ -17,18 +18,38 @@ from numpy.typing import ArrayLike
 from scipy.sparse.linalg import ArpackNoConvergence, eigs
 from scipy.stats import rankdata
 
-from cwt.geometry.curvature import curvature_tile
-from cwt.geometry.metric import metric_tile
-from cwt.geometry.psi import build_psi
-from cwt.graph.factories import random_regular_digraph
-from cwt.graph.kernels import build_transport_kernel
-from cwt.graph.substrate import GraphSubstrate, build_substrate
-from cwt.layers.q_update import q_step
-from cwt.layers.state import LayersState, wrap_angles
-from cwt.layers.theta_update import build_J_from_W, omega_from_delays, theta_step
-from cwt.orchestrator.with_geom import make_phi_edge_ring3
+try:
+    from cwt.geometry.curvature import curvature_tile
+    from cwt.geometry.metric import metric_tile
+    from cwt.geometry.psi import build_psi
+    from cwt.graph.factories import random_regular_digraph
+    from cwt.graph.kernels import build_transport_kernel
+    from cwt.graph.substrate import GraphSubstrate, build_substrate
+    from cwt.layers.q_update import q_step
+    from cwt.layers.state import LayersState, wrap_angles
+    from cwt.layers.theta_update import build_J_from_W, omega_from_delays, theta_step
+    from cwt.orchestrator.with_geom import make_phi_edge_ring3
+except ModuleNotFoundError as exc:  # pragma: no cover - fallback when package isn't installed
+    if exc.name is None or not exc.name.startswith("cwt"):
+        raise
+    package_root = Path(__file__).resolve().parents[2]
+    if str(package_root) not in sys.path:
+        sys.path.insert(0, str(package_root))
+    from cwt.geometry.curvature import curvature_tile
+    from cwt.geometry.metric import metric_tile
+    from cwt.geometry.psi import build_psi
+    from cwt.graph.factories import random_regular_digraph
+    from cwt.graph.kernels import build_transport_kernel
+    from cwt.graph.substrate import GraphSubstrate, build_substrate
+    from cwt.layers.q_update import q_step
+    from cwt.layers.state import LayersState, wrap_angles
+    from cwt.layers.theta_update import build_J_from_W, omega_from_delays, theta_step
+    from cwt.orchestrator.with_geom import make_phi_edge_ring3
 
-from ..report_helpers import ReportHeaderMetrics, render_report_header
+try:  # pragma: no cover - import shim for script/module execution
+    from ..report_helpers import ReportHeaderMetrics, render_report_header
+except ImportError:  # pragma: no cover - fallback when run as a script
+    from experiments.report_helpers import ReportHeaderMetrics, render_report_header
 
 VALID_AXES = ("rho", "tau", "zeta", "zeta_phase", "kappa")
 
