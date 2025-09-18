@@ -49,7 +49,7 @@ def fabricate_record(
         fs_steps=[0.0],
         overlaps_min=[0.0],
         g_tiles=[{}],
-        omega_tiles=[{}],
+        omega_tiles=[{"omega": 0.0, "tile_area": 0.0}],
         phase_kicks=[phase],
         curvature_biases=[phase],
         clip_counts=[0],
