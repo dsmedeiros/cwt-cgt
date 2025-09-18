@@ -26,6 +26,7 @@ from cwt.orchestrator.scheduler import RunConfig, _psi_at, run_parameter_loop
 class OrientationSummary:
     orientation: str
     phi_flux: float
+    phi_missing: bool
     area: float
     kappa: float
     p_final: np.ndarray
@@ -95,8 +96,9 @@ def _initial_state(
     return prob, theta
 
 
-def _phi_flux(record_steps: int, omega_tiles: Sequence[Mapping[str, float]]) -> float:
+def _phi_flux(record_steps: int, omega_tiles: Sequence[Mapping[str, float]]) -> tuple[float, bool]:
     total = 0.0
+    tiles_present = False
     for tile in omega_tiles:
         if not isinstance(tile, Mapping):
             continue
@@ -106,8 +108,11 @@ def _phi_flux(record_steps: int, omega_tiles: Sequence[Mapping[str, float]]) -> 
         except (TypeError, ValueError):
             continue
         if math.isfinite(omega_val) and math.isfinite(area_val):
+            tiles_present = True
             total += omega_val * area_val
-    return float(total)
+    if not tiles_present:
+        return 0.0, True
+    return float(total), False
 
 
 def _orientation_run(
@@ -137,15 +142,16 @@ def _orientation_run(
     record = run_parameter_loop(substrate, init_state, path, config, seed=seed)
 
     area = float(sum(float(delta) for delta in record.delta_area))
-    phi_flux = _phi_flux(path.steps, record.omega_tiles)
+    phi_flux, phi_missing = _phi_flux(path.steps, record.omega_tiles)
     kappa = float("nan")
-    if area != 0.0 and math.isfinite(phi_flux):
+    if not phi_missing and area != 0.0 and math.isfinite(phi_flux):
         kappa = phi_flux / area
     p_final = record.pQ_traj[-1].copy() if record.pQ_traj else base_prob.copy()
     theta_final = record.theta_traj[-1].copy() if record.theta_traj else base_theta.copy()
     return OrientationSummary(
         orientation=orientation,
         phi_flux=phi_flux,
+        phi_missing=phi_missing,
         area=area,
         kappa=kappa,
         p_final=p_final,
@@ -195,12 +201,22 @@ def _run_readout(
         seed + 1,
     )
 
-    phi_flip = _relative_flip_error(ccw.phi_flux, cw.phi_flux)
+    if ccw.phi_missing or cw.phi_missing:
+        phi_flip = float("nan")
+    else:
+        phi_flip = _relative_flip_error(ccw.phi_flux, cw.phi_flux)
+
+    readout_params = config.readout.get("params", {}) if isinstance(config.readout, Mapping) else {}
+    try:
+        target_index = int(readout_params.get("target", 0))
+    except (TypeError, ValueError):
+        target_index = 0
 
     memory_vec = memory_uniform_charge(
         ccw.phi_flux,
         pQ=ccw.p_final,
-        mode="psi_amp",
+        mode="one_hot",
+        target=target_index,
     )
 
     readout_meta: dict[str, float | int | bool]
@@ -244,7 +260,7 @@ def _run_readout(
 def _build_run_config(mode: str) -> RunConfig:
     memory_target = 0
     readout_params: dict[str, object] = {
-        "mode": "psi_amp",
+        "mode": "one_hot",
         "target": memory_target,
         "pQ_source": "probability",
     }
@@ -310,6 +326,13 @@ def _print_summary(results: Sequence[ReadoutSummary]) -> None:
         kappa = summary.kappa if math.isfinite(summary.kappa) else float("nan")
         meta_repr = ", ".join(f"{k}={v}" for k, v in summary.readout_meta.items())
         print(f"{summary.name:<14}{kappa:>12.5f}{summary.flip_error:>12.4f}  {meta_repr}")
+
+    missing_labels = [
+        summary.name for summary in results if summary.ccw.phi_missing or summary.cw.phi_missing
+    ]
+    if missing_labels:
+        print()
+        print("⚠️  Missing curvature tiles for runs: " + ", ".join(missing_labels))
 
     kappas = [res.kappa for res in results if math.isfinite(res.kappa)]
     if kappas:

@@ -36,6 +36,7 @@ class OrientationRun:
     steps: int
     area: float
     phi_flux: float
+    phi_missing: bool
     kappa: float
     memory: list[float]
 
@@ -227,26 +228,35 @@ def _loop_steps_for_extent(extent: float, base_steps: int = 2048) -> int:
     return base_steps * scale
 
 
-def _extract_readout(record_steps: int, readouts: Sequence[Mapping[str, Any]]) -> tuple[float, list[float]]:
-    phi = float("nan")
+def _extract_readout(
+    record_steps: int, readouts: Sequence[Mapping[str, Any]]
+) -> tuple[float, list[float], bool]:
+    phi_value = 0.0
     memory: list[float] = []
+    missing = True
     for entry in readouts:
         if not isinstance(entry, Mapping):
             continue
         if int(entry.get("step", -1)) != record_steps:
             continue
+        missing_flag = bool(entry.get("phi_flux_missing_tiles"))
         try:
-            phi = float(entry.get("phi_flux", float("nan")))
+            phi_raw = float(entry.get("phi_flux", float("nan")))
         except (TypeError, ValueError):
-            phi = float("nan")
+            phi_raw = float("nan")
         memory_seq = entry.get("memory")
         if isinstance(memory_seq, Sequence) and not isinstance(memory_seq, (str, bytes)):
             try:
                 memory = [float(val) for val in memory_seq]
             except (TypeError, ValueError):
                 memory = []
+        missing = missing_flag or not math.isfinite(phi_raw)
+        if not missing:
+            phi_value = float(phi_raw)
         break
-    return phi, memory
+    if missing:
+        return 0.0, memory, True
+    return phi_value, memory, False
 
 
 def _run_loop(
@@ -277,8 +287,8 @@ def _run_loop(
     record = run_parameter_loop(substrate, init_state, path, config, seed=seed)
 
     area = float(sum(float(delta) for delta in record.delta_area))
-    phi_flux, memory = _extract_readout(path.steps, record.readouts)
-    if area != 0.0 and math.isfinite(phi_flux):
+    phi_flux, memory, phi_missing = _extract_readout(path.steps, record.readouts)
+    if not phi_missing and area != 0.0 and math.isfinite(phi_flux):
         kappa = phi_flux / area
     else:
         kappa = float("nan")
@@ -289,6 +299,7 @@ def _run_loop(
         steps=steps,
         area=area,
         phi_flux=phi_flux,
+        phi_missing=phi_missing,
         kappa=kappa,
         memory=memory,
     )
@@ -310,7 +321,10 @@ def evaluate_hotspot(
         ccw = _run_loop(substrate, config, base_prob, base_theta, spec.center, axes, extent, "CCW", seed)
         cw = _run_loop(substrate, config, base_prob, base_theta, spec.center, axes, extent, "CW", seed)
         area_flip = _relative_flip_error(ccw.area, cw.area)
-        phi_flip = _relative_flip_error(ccw.phi_flux, cw.phi_flux)
+        if ccw.phi_missing or cw.phi_missing:
+            phi_flip = float("nan")
+        else:
+            phi_flip = _relative_flip_error(ccw.phi_flux, cw.phi_flux)
         summaries.append(
             ExtentSummary(
                 extent=float(extent),
@@ -347,18 +361,22 @@ def render_summary(results: Sequence[HotspotSummary]) -> None:
             ccw = extent_summary.ccw
             cw = extent_summary.cw
             print(f"  extent={extent:+.4f}")
+            ccw_flag = " ⚠️ missing Ω" if ccw.phi_missing else ""
+            cw_flag = " ⚠️ missing Ω" if cw.phi_missing else ""
             print(
-                "    CCW: R={:+.6f}, Φ={:+.6f}, κ₁={:+.6f}, χ={}".format(
+                "    CCW: R={:+.6f}, Φ={:+.6f}{}, κ₁={:+.6f}, χ={}".format(
                     ccw.area,
                     ccw.phi_flux,
+                    ccw_flag,
                     ccw.kappa,
                     _format_memory(ccw.memory),
                 )
             )
             print(
-                "    CW : R={:+.6f}, Φ={:+.6f}, κ₁={:+.6f}, χ={}".format(
+                "    CW : R={:+.6f}, Φ={:+.6f}{}, κ₁={:+.6f}, χ={}".format(
                     cw.area,
                     cw.phi_flux,
+                    cw_flag,
                     cw.kappa,
                     _format_memory(cw.memory),
                 )

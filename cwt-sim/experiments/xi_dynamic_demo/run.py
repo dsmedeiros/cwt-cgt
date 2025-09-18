@@ -19,6 +19,7 @@ from cwt.orchestrator.scheduler import RunConfig, _psi_at, run_parameter_loop
 class XiRunSummary:
     mode: str
     phi_flux: float
+    phi_missing: bool
     area: float
     kappa: float
     kappa_ci: tuple[float, float] | None
@@ -72,8 +73,9 @@ def _initial_state(
     return np.square(np.abs(psi_center)).astype(float), np.angle(psi_center).astype(float)
 
 
-def _phi_flux(record) -> float:
+def _phi_flux(record) -> tuple[float, bool]:
     total = 0.0
+    tiles_present = False
     for tile in record.omega_tiles:
         if not isinstance(tile, Mapping):
             continue
@@ -83,8 +85,11 @@ def _phi_flux(record) -> float:
         except (TypeError, ValueError):
             continue
         if math.isfinite(omega_val) and math.isfinite(area_val):
+            tiles_present = True
             total += omega_val * area_val
-    return float(total)
+    if not tiles_present:
+        return 0.0, True
+    return float(total), False
 
 
 def _kappa_ci(record, total_area: float) -> tuple[float, float] | None:
@@ -193,17 +198,18 @@ def _run_mode(
     )
 
     area = float(sum(float(delta) for delta in record.delta_area))
-    phi_flux = _phi_flux(record)
+    phi_flux, phi_missing = _phi_flux(record)
     kappa = float("nan")
-    if area != 0.0 and math.isfinite(phi_flux):
+    if not phi_missing and area != 0.0 and math.isfinite(phi_flux):
         kappa = phi_flux / area
     xi_deltas = _xi_norm_deltas(record.pQ_traj)
     return XiRunSummary(
         mode=xi_type,
         phi_flux=phi_flux,
+        phi_missing=phi_missing,
         area=area,
         kappa=kappa,
-        kappa_ci=_kappa_ci(record, area),
+        kappa_ci=None if phi_missing else _kappa_ci(record, area),
         xi_deltas=xi_deltas,
     )
 
@@ -231,6 +237,9 @@ def _print_summary(static_run: XiRunSummary, dynamic_run: XiRunSummary) -> None:
             ci=_format_ci(dynamic_run.kappa_ci),
         )
     )
+    missing_modes = [run.mode for run in (static_run, dynamic_run) if getattr(run, "phi_missing", False)]
+    if missing_modes:
+        print("⚠️  Missing curvature tiles for: " + ", ".join(sorted(set(missing_modes))))
     shift = dynamic_run.kappa - static_run.kappa
     print(f"κ₁ shift (dynamic-static): {shift:+.5f}")
 

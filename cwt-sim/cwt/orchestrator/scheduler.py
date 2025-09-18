@@ -482,7 +482,9 @@ def run_parameter_loop(
 
     geometry_cfg = config.geometry or {}
     sample_mode = str(geometry_cfg.get("sample_mode", "direct")).lower()
-    if sample_mode not in {"direct", "phase_factor"}:
+    if config.compute_curvature:
+        sample_mode = "direct"
+    elif sample_mode not in {"direct", "phase_factor"}:
         sample_mode = "direct"
 
     neighbor_steps_raw = geometry_cfg.get("neighbor_steps", 1)
@@ -490,6 +492,8 @@ def run_parameter_loop(
         neighbor_steps = max(int(neighbor_steps_raw), 1)
     except (TypeError, ValueError):
         neighbor_steps = 1
+
+    neighbor_settle_steps = max(int(config.neighbor_settle_steps), 20)
 
     lambda_path: list[dict[str, float]] = []
     delta_lambda_log: list[dict[str, float]] = []
@@ -626,7 +630,7 @@ def run_parameter_loop(
                 theta,
                 config,
                 neighbor_steps=neighbor_steps,
-                settle_steps=config.neighbor_settle_steps,
+                settle_steps=neighbor_settle_steps,
             )
 
         for knob in sorted(geometry_knobs):
@@ -654,7 +658,7 @@ def run_parameter_loop(
                         theta,
                         config,
                         neighbor_steps=neighbor_steps,
-                        settle_steps=config.neighbor_settle_steps,
+                        settle_steps=neighbor_settle_steps,
                     )
                 Psi_i = direct_state_for({knob: float(delta_candidate)})
             neighbor_states[knob] = Psi_i
@@ -699,7 +703,7 @@ def run_parameter_loop(
                             theta,
                             config,
                             neighbor_steps=neighbor_steps,
-                            settle_steps=config.neighbor_settle_steps,
+                            settle_steps=neighbor_settle_steps,
                         )
                     sampler = _psi_sampler_factory_direct(Psi0, knob_i, knob_j, direct_state_for)
                 plaquette = curvature_anytime(
@@ -820,6 +824,20 @@ def run_parameter_loop(
         overall_fraction = guard_exceedances / float(path.steps)
     else:
         overall_fraction = 0.0
+
+    fs_steps_arr = np.asarray([step for step in fs_steps if math.isfinite(step)], dtype=float)
+    fs_p95 = float(np.percentile(fs_steps_arr, 95)) if fs_steps_arr.size else float("nan")
+    fs_boundary = 0.1
+    fs_boundary_exceeded = fs_steps_arr.size and fs_p95 > fs_boundary
+    if fs_boundary_exceeded:
+        warnings.warn(
+            (
+                f"Fubini-Study step p95={fs_p95:.3f} rad exceeds boundary "
+                f"{fs_boundary:.3f} rad; consider reducing loop step size or smoothing."
+            ),
+            RuntimeWarning,
+            stacklevel=2,
+        )
     guard_meta = {
         "enabled": bool(guard_enabled),
         "threshold": float(guard_threshold),
@@ -831,9 +849,13 @@ def run_parameter_loop(
         "overall_fraction": float(overall_fraction),
         "trigger_steps": guard_events,
         "peak_ratio": float(guard_peak_ratio),
+        "p95": float(fs_p95),
+        "boundary": float(fs_boundary),
+        "boundary_exceeded": bool(fs_boundary_exceeded),
     }
 
     phi_flux_total = 0.0
+    phi_tiles_present = False
     if omega_tiles:
         for tile in omega_tiles:
             if not isinstance(tile, dict):
@@ -844,12 +866,18 @@ def run_parameter_loop(
             except (TypeError, ValueError):  # pragma: no cover - defensive guard
                 continue
             if math.isfinite(omega_val) and math.isfinite(area_val):
+                phi_tiles_present = True
                 phi_flux_total += omega_val * area_val
+
+    phi_flux_missing_tiles = not phi_tiles_present and bool(config.compute_curvature)
+    if phi_flux_missing_tiles:
+        phi_flux_total = 0.0
 
     if readouts:
         final_entry = readouts[-1]
         if isinstance(final_entry, dict) and final_entry.get("step") == path.steps:
             final_entry["phi_flux"] = float(phi_flux_total)
+            final_entry["phi_flux_missing_tiles"] = bool(phi_flux_missing_tiles)
             memory_form_cfg = str(readout_cfg.get("memory_form", "")).lower()
             readout_params = readout_cfg.get("params") or {}
             if memory_form_cfg == "uniform_charge":
@@ -898,6 +926,7 @@ def run_parameter_loop(
     }
 
     meta["fs_step_guard"] = guard_meta
+    meta["phi_flux_missing_tiles"] = bool(phi_flux_missing_tiles)
 
     return RunRecord(
         meta=meta,

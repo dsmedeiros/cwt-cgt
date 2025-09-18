@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import math
+import warnings
 from dataclasses import dataclass
 from typing import Iterable, Mapping, Sequence
 
@@ -22,6 +23,7 @@ class PathEvaluation:
 
     control_points: tuple[tuple[float, float], ...]
     phi_flux: float
+    phi_missing: bool
     guard_fraction: float
     path_length: float
     objective: float
@@ -177,17 +179,23 @@ def _path_length(deltas: Iterable[Mapping[str, float]], axes: tuple[str, str]) -
     return total
 
 
-def _phi_flux(record_steps: int, readouts: Sequence[Mapping[str, float]]) -> float:
+def _phi_flux(record_steps: int, readouts: Sequence[Mapping[str, float]]) -> tuple[float, bool]:
     for entry in readouts:
         if not isinstance(entry, Mapping):
             continue
         if int(entry.get("step", -1)) != record_steps:
             continue
+        missing = bool(entry.get("phi_flux_missing_tiles"))
         try:
-            return float(entry.get("phi_flux", 0.0))
+            phi_val = float(entry.get("phi_flux", 0.0))
         except (TypeError, ValueError):
-            return 0.0
-    return 0.0
+            phi_val = 0.0
+            missing = True
+        if not math.isfinite(phi_val):
+            phi_val = 0.0
+            missing = True
+        return float(phi_val), bool(missing)
+    return 0.0, True
 
 
 def _evaluate_path(
@@ -208,7 +216,13 @@ def _evaluate_path(
         config,
         seed=0,
     )
-    phi_flux = _phi_flux(path.steps, record.readouts)
+    phi_flux, phi_missing = _phi_flux(path.steps, record.readouts)
+    if phi_missing:
+        warnings.warn(
+            "Missing curvature tiles in inverse-design loop; φ flux forced to 0.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
     guard_meta = record.meta.get("fs_step_guard", {}) if isinstance(record.meta, Mapping) else {}
     guard_fraction = float(guard_meta.get("overall_fraction", 0.0)) if guard_meta else 0.0
     length = _path_length(record.delta_lambda, path.axes)
@@ -231,6 +245,7 @@ def _evaluate_path(
     return PathEvaluation(
         control_points=points,
         phi_flux=float(phi_flux),
+        phi_missing=bool(phi_missing),
         guard_fraction=guard_fraction,
         path_length=length,
         objective=float(objective),
@@ -334,6 +349,8 @@ def main() -> None:
             abs(rectangle_result.R_value), rectangle_result.guard_fraction, rectangle_result.path_length
         )
     )
+    if rectangle_result.phi_missing:
+        print("  ⚠️  Missing curvature tiles for baseline; φ flux fixed at 0.0")
 
     initial_points = [
         (-extents[axes[0]], -extents[axes[1]]),
@@ -372,6 +389,8 @@ def main() -> None:
             abs(best_result.R_value), best_result.guard_fraction, best_result.path_length, improvement
         )
     )
+    if best_result.phi_missing:
+        print("  ⚠️  Missing curvature tiles for optimised loop; φ flux fixed at 0.0")
 
     if improvement >= 1.15 and best_result.guard_fraction <= rectangle_result.guard_fraction + 1e-6:
         print("Acceptance criterion met: |R| improved by ≥15% without worsening FS guard.")
