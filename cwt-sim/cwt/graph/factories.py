@@ -39,7 +39,12 @@ def ring3(
     delay: float = 1.0,
     delays: Iterable[float] | None = None,
 ) -> GraphSubstrate:
-    """Three-node directed ring 0→1→2→0."""
+    """Three-node directed ring 0→1→2→0.
+
+    When ``delays`` is not provided, the ring uses a geometric progression of
+    delays ``[delay, 1.5 * delay, 2.25 * delay]`` that preserves the legacy
+    heterogeneity built into earlier placeholder experiments.
+    """
 
     edges = [(0, 1), (1, 2), (2, 0)]
     if delays is None:
@@ -54,6 +59,17 @@ def ring3(
     for (source, target), edge_delay in zip(edges, delay_values):
         G.add_edge(source, target, weight=float(weight), delay=float(edge_delay))
     return build_substrate(G)
+
+
+def ring3_hetero(
+    weight: float = 1.0,
+    delays: Iterable[float] | None = None,
+) -> GraphSubstrate:
+    """Three-node ring with heterogeneous delays tuned for curvature probes."""
+
+    if delays is None:
+        delays = (1.0, 1.5, 2.2)
+    return ring3(weight=weight, delays=delays)
 
 
 def random_regular_digraph(

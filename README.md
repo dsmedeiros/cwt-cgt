@@ -204,6 +204,20 @@ python -m experiments.stage0_analytic.run --output-dir experiments/stage0_analyt
 - The `tables/` subdirectory contains either Parquet or CSV files depending on the selected format and `pyarrow` availability.
 - `figures/` includes the validation plots unless `--no-figures` is provided.
 
+The ring plaquette examples in this stage lean on a deliberately asymmetric
+three-node substrate. Unequal propagation delays inject the τ-gradient needed
+to excite Berry-like curvature when the Θ-coupling is looped. You can build the
+same substrate programmatically via the dedicated factory:
+
+```python
+from cwt.graph.factories import ring3_hetero
+
+substrate = ring3_hetero()
+```
+
+The default delays ``[1.0, 1.5, 2.2]`` align with the hetero-ring templates in
+`cwt-sim/configs/` and with the Stage-0 analytics.
+
 ## Non-trivial loops
 
 Two hetero-ring templates in `cwt-sim/configs/` showcase Θ-coupling effects that go beyond trivial rectangular sweeps:

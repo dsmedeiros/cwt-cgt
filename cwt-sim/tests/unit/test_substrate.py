@@ -31,6 +31,15 @@ def test_ring3_substrate_structure() -> None:
     assert Tau_dense[0, 2] == pytest.approx(6.75)
 
 
+def test_ring3_hetero_default_delays() -> None:
+    substrate = factories.ring3_hetero(weight=1.0)
+
+    Tau_dense = substrate.Tau.toarray()
+    assert Tau_dense[1, 0] == pytest.approx(1.0)
+    assert Tau_dense[2, 1] == pytest.approx(1.5)
+    assert Tau_dense[0, 2] == pytest.approx(2.2)
+
+
 def test_from_edgelist_single_edge() -> None:
     substrate = factories.from_edgelist([(0, 1, 5.0, 7.0)])
 
