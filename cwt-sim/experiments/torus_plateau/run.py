@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import math
+import warnings
 from dataclasses import dataclass
 from typing import Iterable, Mapping, Sequence
 
@@ -20,6 +21,7 @@ from cwt.orchestrator.scheduler import RunConfig, _psi_at, run_parameter_loop
 class PlateauSample:
     disorder: float
     integral: float
+    phi_missing: bool
     guard_fraction: float
     min_overlap: float
     closing_tiles: int
@@ -62,7 +64,7 @@ def _run_config(disorder: float) -> RunConfig:
         alpha=0.4,
         beta=1.0,
         neighbor_settle_steps=40,
-        geometry={"sample_mode": "phase_factor", "neighbor_steps": 1},
+        geometry={"sample_mode": "direct", "neighbor_steps": 1},
         delta_frac={"tau": 0.02, "zeta_phase": 0.02},
         xi_kind={"type": "static"},
         readout={"final": True},
@@ -75,8 +77,9 @@ def _run_config(disorder: float) -> RunConfig:
     )
 
 
-def _integrated_curvature(omega_tiles: Iterable[Mapping[str, float]]) -> tuple[float, float, int]:
+def _integrated_curvature(omega_tiles: Iterable[Mapping[str, float]]) -> tuple[float, bool, float, int]:
     total = 0.0
+    tiles_present = False
     min_overlap = math.inf
     closing_tiles = 0
     for tile in omega_tiles:
@@ -87,14 +90,19 @@ def _integrated_curvature(omega_tiles: Iterable[Mapping[str, float]]) -> tuple[f
         except (TypeError, ValueError):
             continue
         if math.isfinite(omega) and math.isfinite(area):
+            tiles_present = True
             total += omega * area
         if math.isfinite(overlap):
             min_overlap = min(min_overlap, overlap)
             if overlap < 0.1:
                 closing_tiles += 1
-    if min_overlap is math.inf:
+    missing = not tiles_present
+    if missing:
+        total = 0.0
+    if min_overlap is math.inf or missing:
         min_overlap = float("nan")
-    return total, float(min_overlap), int(closing_tiles)
+    closing_report = closing_tiles if not missing else 0
+    return float(total), bool(missing), float(min_overlap), int(closing_report)
 
 
 def _torus_path(
@@ -131,10 +139,21 @@ def _collect_plateau(
     )
     guard_meta = record.meta.get("fs_step_guard", {}) if isinstance(record.meta, Mapping) else {}
     guard_fraction = float(guard_meta.get("overall_fraction", 0.0)) if guard_meta else 0.0
-    integral, min_overlap, closing_tiles = _integrated_curvature(record.omega_tiles)
+    integral, phi_missing, min_overlap, closing_tiles = _integrated_curvature(record.omega_tiles)
+    meta_flag = False
+    if isinstance(record.meta, Mapping):
+        meta_flag = bool(record.meta.get("phi_flux_missing_tiles"))
+    phi_missing = bool(phi_missing or meta_flag)
+    if phi_missing:
+        warnings.warn(
+            f"Missing curvature tiles on torus plateau for disorder {disorder:.3f}; integral forced to 0.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
     return PlateauSample(
         disorder=float(disorder),
         integral=float(integral),
+        phi_missing=phi_missing,
         guard_fraction=guard_fraction,
         min_overlap=float(min_overlap),
         closing_tiles=int(closing_tiles),
@@ -145,6 +164,9 @@ def _stability(samples: Sequence[PlateauSample]) -> tuple[bool, list[str]]:
     notes: list[str] = []
     if len(samples) < 2:
         return False, ["insufficient samples to assess stability"]
+    for sample in samples:
+        if sample.phi_missing:
+            notes.append(f"missing curvature tiles at disorder {sample.disorder:.3f}")
     sorted_samples = sorted(samples, key=lambda s: s.disorder)
     base = sorted_samples[0]
     for follow in sorted_samples[1:2]:
@@ -211,17 +233,17 @@ def main() -> None:
         config = _run_config(value)
         sample = _collect_plateau(substrate, base_state, config, path, value)
         samples.append(sample)
-        print(
-            (
-                "disorder={:.3f}  integral={:+.4f}  guard_fraction={:.3f}  min_overlap={:.3f}  " "closings={}"
-            ).format(
-                sample.disorder,
-                sample.integral,
-                sample.guard_fraction,
-                sample.min_overlap,
-                sample.closing_tiles,
-            )
+        summary = (
+            "disorder={:.3f}  integral={:+.4f}  guard_fraction={:.3f}  min_overlap={:.3f}  closings={}{}"
+        ).format(
+            sample.disorder,
+            sample.integral,
+            sample.guard_fraction,
+            sample.min_overlap,
+            sample.closing_tiles,
+            "  ⚠️ missing Ω" if sample.phi_missing else "",
         )
+        print(summary)
 
     stable, stability_notes = _stability(samples)
     jump_notes = _detect_jumps(samples)

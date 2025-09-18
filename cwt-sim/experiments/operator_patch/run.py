@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import math
+import warnings
 from dataclasses import dataclass
 from typing import Mapping, Sequence
 
@@ -155,6 +156,7 @@ def _cgt_curvature(
     )
     area = float(sum(float(delta) for delta in record.delta_area))
     phi_flux = 0.0
+    tiles_present = False
     for tile in record.omega_tiles:
         if not isinstance(tile, Mapping):
             continue
@@ -164,7 +166,18 @@ def _cgt_curvature(
         except (TypeError, ValueError):
             continue
         if math.isfinite(omega_val) and math.isfinite(area_val):
+            tiles_present = True
             phi_flux += omega_val * area_val
+    phi_missing = not tiles_present
+    if isinstance(record.meta, Mapping):
+        phi_missing = phi_missing or bool(record.meta.get("phi_flux_missing_tiles"))
+    if phi_missing:
+        warnings.warn(
+            "Missing curvature tiles during CGT sampling; φ flux forced to 0.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        return 0.0
     return phi_flux / area if area else float("nan")
 
 

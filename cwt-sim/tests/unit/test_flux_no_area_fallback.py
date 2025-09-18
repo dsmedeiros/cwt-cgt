@@ -71,3 +71,4 @@ def test_line_path_flux_is_zero_without_omega_tiles() -> None:
     final_entry = record.readouts[-1]
     assert final_entry.get("step") == path.steps
     assert final_entry.get("phi_flux") == 0.0
+    assert final_entry.get("phi_flux_missing_tiles") is False

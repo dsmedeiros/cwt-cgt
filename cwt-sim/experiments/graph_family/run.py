@@ -27,6 +27,7 @@ class FamilyResult:
     peak_abs_omega: float
     kappa_mean: float
     ridge_auc: float
+    phi_missing: bool
 
 
 def _loop_steps(extent: float, grid_size: int) -> int:
@@ -61,8 +62,9 @@ def _run_config() -> RunConfig:
     )
 
 
-def _phi_flux(record) -> float:
+def _phi_flux(record) -> tuple[float, bool]:
     total = 0.0
+    tiles_present = False
     for tile in record.omega_tiles:
         if not isinstance(tile, Mapping):
             continue
@@ -72,8 +74,11 @@ def _phi_flux(record) -> float:
         except (TypeError, ValueError):
             continue
         if math.isfinite(omega_val) and math.isfinite(area_val):
+            tiles_present = True
             total += omega_val * area_val
-    return float(total)
+    if not tiles_present:
+        return 0.0, True
+    return float(total), False
 
 
 def _ridge_auc(record) -> tuple[float, float]:
@@ -162,8 +167,11 @@ def _eval_family(
     )
 
     area = float(sum(float(delta) for delta in record.delta_area))
-    phi_flux = _phi_flux(record)
-    kappa = phi_flux / area if area else float("nan")
+    phi_flux, phi_missing = _phi_flux(record)
+    if phi_missing:
+        kappa = float("nan")
+    else:
+        kappa = phi_flux / area if area else float("nan")
     peak, auc = _ridge_auc(record)
 
     G = substrate.G
@@ -184,6 +192,7 @@ def _eval_family(
         peak_abs_omega=peak,
         kappa_mean=kappa,
         ridge_auc=auc,
+        phi_missing=phi_missing,
     )
 
 
@@ -293,6 +302,11 @@ def _print_results(results: Sequence[FamilyResult]) -> None:
             f"{res.name:<6}  {res.degree_entropy:7.3f}  {res.clustering:6.3f}  {res.modularity:6.3f}  "
             f"{res.peak_abs_omega:9.3e}  {res.kappa_mean:9.4f}  {res.ridge_auc:11.4f}"
         )
+
+    flagged = [res.name for res in results if res.phi_missing]
+    if flagged:
+        print()
+        print("⚠️  Missing curvature tiles for families: " + ", ".join(flagged))
 
     print()
     best_modularity = max(results, key=lambda r: r.modularity)
