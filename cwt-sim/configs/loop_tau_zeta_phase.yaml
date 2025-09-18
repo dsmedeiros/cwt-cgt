@@ -13,8 +13,8 @@ params:
   steps: 200
 geometry:
   delta_frac:
-    tau: 0.02
-    zeta_phase: 0.02
+    tau: 0.01
+    zeta_phase: 0.01
   s_min: 0.6
   smooth_window: 5
   compute_metric: true

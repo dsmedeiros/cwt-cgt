@@ -30,7 +30,7 @@ from cwt.orchestrator.with_geom import make_phi_edge_ring3
 
 from ..report_helpers import ReportHeaderMetrics, render_report_header
 
-VALID_AXES = ("rho", "tau", "zeta", "zeta_phase")
+VALID_AXES = ("rho", "tau", "zeta", "zeta_phase", "kappa")
 
 
 @dataclass(frozen=True)
@@ -61,6 +61,7 @@ class ParameterPoint:
     tau: float
     zeta: float
     zeta_phase: float
+    kappa: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -181,6 +182,7 @@ def _axis_label(axis: str) -> str:
         "tau": "τ",
         "zeta": "ζ",
         "zeta_phase": "ζ_phase",
+        "kappa": "κ",
     }
     return mapping.get(axis, axis)
 
@@ -334,7 +336,7 @@ def simulate_state(
     else:
         state = LayersState(pQ=warm_start.pQ.copy(), theta=warm_start.theta.copy())
 
-    K = build_transport_kernel(S, rho=lam.rho, tau_scale=lam.tau)
+    K = build_transport_kernel(S, rho=lam.rho, tau_scale=lam.tau, kappa=lam.kappa)
     gap = markov_spectral_gap(K)
     omega = omega_from_delays(S, rho=lam.rho, tau_scale=lam.tau, omega_scale=config.omega_scale)
     zeta_eff = lam.zeta * math.exp(-0.5 * float(lam.rho)) / (1.0 + 0.5 * float(lam.tau))
@@ -362,6 +364,7 @@ def simulate_state(
             "tau": lam.tau,
             "zeta": lam.zeta,
             "zeta_phase": lam.zeta_phase,
+            "kappa": lam.kappa,
         },
     )
     r_arr = np.asarray(r_series, dtype=float)
@@ -691,7 +694,7 @@ def save_numpy_bundle(result: GraphScanResult, out_dir: Path) -> None:
         json.dump(result.detection.to_json(), fh, indent=2)
 
 
-def save_metrics_csv(result: GraphScanResult, out_dir: Path) -> None:
+def save_metrics_csv(result: GraphScanResult, out_dir: Path, sim_config: SimulationConfig) -> None:
     ensure_dir(out_dir)
     axis0_name, axis1_name = result.axes
     path = out_dir / "metrics.csv"
@@ -703,6 +706,9 @@ def save_metrics_csv(result: GraphScanResult, out_dir: Path) -> None:
         "spectral_gap",
         "kuramoto_r",
         "grad_r",
+        "delta_axis0",
+        "delta_axis1",
+        "neighbor_settle_steps",
     ]
 
     def _format(value: float) -> str | float:
@@ -715,6 +721,18 @@ def save_metrics_csv(result: GraphScanResult, out_dir: Path) -> None:
         if not math.isfinite(number):
             return ""
         return number
+
+    delta_axis0 = (
+        float(result.axis0_values[1] - result.axis0_values[0])
+        if result.axis0_values.size > 1
+        else float("nan")
+    )
+    delta_axis1 = (
+        float(result.axis1_values[1] - result.axis1_values[0])
+        if result.axis1_values.size > 1
+        else float("nan")
+    )
+    settle_steps = int(sim_config.transient_steps)
 
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
@@ -729,6 +747,9 @@ def save_metrics_csv(result: GraphScanResult, out_dir: Path) -> None:
                     "spectral_gap": _format(result.spectral_gap[i, j]),
                     "kuramoto_r": _format(result.kuramoto_r[i, j]),
                     "grad_r": _format(result.r_gradient[i, j]),
+                    "delta_axis0": _format(delta_axis0),
+                    "delta_axis1": _format(delta_axis1),
+                    "neighbor_settle_steps": settle_steps,
                 }
                 writer.writerow(row)
 
@@ -795,6 +816,7 @@ def scan_graph(
         "tau": float(config.tau_base),
         "zeta": float(config.zeta),
         "zeta_phase": float(config.zeta_phase),
+        "kappa": 1.0,
     }
 
     for i, axis0_value in enumerate(axis0_values):
@@ -809,6 +831,7 @@ def scan_graph(
                 tau=float(params.get("tau", config.tau_base)),
                 zeta=float(params.get("zeta", config.zeta)),
                 zeta_phase=float(params.get("zeta_phase", config.zeta_phase)),
+                kappa=float(params.get("kappa", 1.0)),
             )
             state, r_series, r_mean, gap = simulate_state(substrate, lam, config, warm)
             states[i][j] = state
@@ -906,7 +929,7 @@ def run_experiment(
         save_heatmaps(result, graph_dir)
         save_roc_curve(result, graph_dir)
         save_numpy_bundle(result, graph_dir)
-        save_metrics_csv(result, graph_dir)
+        save_metrics_csv(result, graph_dir, sim_config)
         save_top_omega_tiles(result, graph_dir, top_k=top_k)
         results.append(result)
     return results
@@ -1022,6 +1045,13 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         default=(-0.5, 0.5),
         help="Range of zeta_phase values when scanned",
     )
+    parser.add_argument(
+        "--kappa-range",
+        type=float,
+        nargs=2,
+        default=(0.5, 1.5),
+        help="Range of kappa values when scanned",
+    )
     parser.add_argument("--bootstrap", type=int, default=256, help="Bootstrap replicates for the AUC CI")
     parser.add_argument("--seed", type=int, default=7, help="Base seed controlling RNG usage")
     parser.add_argument("--output-dir", type=Path, default=Path(__file__).resolve().parent / "artifacts")
@@ -1100,6 +1130,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         "tau": (float(args.tau_range[0]), float(args.tau_range[1])),
         "zeta": (float(args.zeta_range[0]), float(args.zeta_range[1])),
         "zeta_phase": (float(args.zeta_phase_range[0]), float(args.zeta_phase_range[1])),
+        "kappa": (float(args.kappa_range[0]), float(args.kappa_range[1])),
     }
 
     results = run_experiment(
