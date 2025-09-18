@@ -1,5 +1,5 @@
 graph:
-  kind: ring3
+  kind: ring3_hetero
   weights: 1.0
   delays: [1.0, 1.5, 2.2]
 params:
