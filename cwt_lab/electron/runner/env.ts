@@ -32,3 +32,22 @@ export const resolveVenvBin = (env: PythonEnvironment | null): string | null => 
     ? path.join(env.venvRoot, 'Scripts')
     : path.join(env.venvRoot, 'bin');
 };
+
+export const canImportCwt = (env: PythonEnvironment | null): boolean => {
+  if (!env) {
+    return false;
+  }
+
+  const result = spawnSync(env.executable, ['-c', 'import cwt'], {
+    encoding: 'utf-8',
+  });
+
+  return result.status === 0;
+};
+
+export const normalizePythonEnv = (
+  env: PythonEnvironment | null,
+): { executable: string | null; venvRoot: string | null } => ({
+  executable: env?.executable ?? null,
+  venvRoot: env?.venvRoot ?? null,
+});

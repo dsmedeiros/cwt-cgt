@@ -152,11 +152,62 @@ python -m scripts.sweep_grid --config configs/grid_scan.yaml --limit 5
 **Outputs**
 - A JSON object containing the UUIDs of the fabricated runs and the count of generated directories.
   ```json
-  {"runs": ["7a...", "28...", "c1..."], "count": 3}
+ {"runs": ["7a...", "28...", "c1..."], "count": 3}
   ```
 
 ### Summarise saved runs (`scripts/eval_report.py`)
 Aggregate persisted runs into a compact report that tracks geometric metrics and curvature-driven bias.
+
+## IPC API (channels & payloads)
+In addition to the Typer CLIs, the toolkit exposes a lightweight inter-process control (IPC) facade that mirrors the workflow
+stages implemented by the orchestration scripts. Every method returns an envelope of the form
+`{ ok: boolean, data?: T, error?: string }`, enabling callers to short-circuit on transport failures while leaving the payload
+schema unchanged.
+
+### Environment helpers
+| Method | Description |
+| ------ | ----------- |
+| `env.detect()` | Probes the active environment, preferring virtual environments, and verifies that the `cwt` package can be imported via `python -c "import cwt"`. |
+| `env.setPythonPath(path: string)` | Overrides the Python interpreter path used when spawning subprocesses. |
+| `env.getConfig()` | Reports the resolved repository root, working directories, and artifact destination paths. |
+
+### Generic run orchestration
+| Method | Description |
+| ------ | ----------- |
+| `run.create({ experiment, args, workdir })` | Launches a background simulation or fabrication run (mirroring the CLIs) and returns a `runId`. |
+| `run.abort({ runId })` | Requests early termination of a live run. |
+| `run.tail({ runId, fromByte? })` | Streams incremental stdout/stderr output from a run, optionally resuming from a byte offset. |
+| `run.openArtifacts({ runId })` | Lists generated artifact paths for the completed run. |
+
+### Phase-specific workflows
+The remaining channels map to the numbered research phases and their Python entry points. All commands accept structured JSON
+arguments mirroring the CLI flags used in the corresponding script.
+
+| Phase | Method | Purpose |
+| ----- | ------ | ------- |
+| Phase 1 | `phase1.map({ axes, ranges, gridSize, graphs, bootstrap, topK, seed, outDir })` | Executes `gateB_ridge_finder/run.py` to scan ridge structures across the specified axis grid. |
+| Phase 2 | `phase2.correlate({ metricsDirs, thresholdMode, thresholdValue\|percentile })` | Parses saved CSV/JSON metrics to compute correlation tables and AUCs without invoking Python workers. |
+| Phase 3 | `phase3.loopAtHotspot({ hotspotsJson, axes, extents, fsGuard, graph, limit, seed })` | Kicks off hotspot-focused loops to refine free-surface estimates. |
+| Phase 3 | `phase3.guidedLoop({ center, graph, axes3, amplitudes, fsGuard, stepsList, minPhi, settle, handleSteps })` | Orchestrates sequential `wilson_loop_3d/run.py` executions, returning the collected run records and whether the guard criteria were satisfied. |
+| Phase 4 | `phase4.wilson3d({ axes3, center, amplitudes, steps, settle, fsGuard, graph, seed, outDir })` | Runs the full 3D Wilson loop explorer with configurable grids and guards. |
+| Phase 4 | `phase4.torusPlateau({ axes, gridSize, disorderList, centersExtents, outDir })` | Generates torus plateau scans across disorder settings. |
+| Phase 5 | `phase5.graphFamily({ families, axes, gridSize, extents, seed, outDir })` | Sweeps over graph families to catalogue phase responses. |
+| Phase 5 | `phase5.inverseDesign({ axes, center, extentPair, budgetSteps, maxFs, targetIndex, outDir })` | Launches the inverse-design loop to seek configurations matching the requested target. |
+| Phase 5 | `phase5.noiseRobust({ phaseStd, ampStd, delayStd, numTrials, loopSteps, axes, outDir })` | Evaluates the robustness of loops under stochastic perturbations. |
+| Phase 5 | `phase5.betaSweep({ configPath, betas[] })` | Generates patched YAML configs and sequentially runs `scripts/run_loop.py`, reporting the run IDs for each β value. |
+
+### Artifacts, registry, and recipes
+| Method | Description |
+| ------ | ----------- |
+| `artifacts.list({ under })` | Returns a tree view of artifacts suitable for browsing UIs. |
+| `registry.query({ phase?, experiment?, limit? })` | Lists recent runs with their metrics, completion status, and metadata tags. |
+| `recipes.save({ name, params, command, seed, envInfo })` | Persists a reusable recipe template that records inputs and environment details. |
+| `recipes.list()` | Enumerates saved recipes. |
+| `recipes.run({ id })` | Executes a previously saved recipe. |
+
+> **Status:** The IPC facade now delegates each channel to the corresponding Python module (or Node analysis in the case of the
+> Phase 2 correlation helper), streams output via the run manager, updates the registry database, and returns structured payloads
+> for higher-level orchestrations such as guided Wilson loops and β sweeps.
 
 ```bash
 cd cwt-sim
