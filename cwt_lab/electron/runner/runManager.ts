@@ -5,7 +5,7 @@ import path from 'node:path';
 
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 
-import type Database from 'better-sqlite3';
+import type { Database as BetterSqlite3Database } from 'better-sqlite3';
 
 import { scanArtifacts } from './files';
 import type { PythonEnvironment } from './env';
@@ -74,7 +74,7 @@ export class RunManager {
   private readonly config: ManagerConfig;
   private pythonEnv: PythonEnvironment | null = null;
   private readonly runs = new Map<string, RunContext>();
-  private readonly registry: Database;
+  private readonly registry: BetterSqlite3Database;
 
   constructor(config: ManagerConfig) {
     this.config = config;
