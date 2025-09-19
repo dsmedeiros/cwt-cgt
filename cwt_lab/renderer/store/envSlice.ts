@@ -1,9 +1,13 @@
 import type { StateCreator } from 'zustand';
 
+import type { EnvCandidate, EnvConfig } from '../types/ipc';
+
 export type PythonEnvInfo = {
-  executable: string | null;
-  venvRoot: string | null;
+  candidates: EnvCandidate[];
+  selected: EnvCandidate | null;
+  config: EnvConfig | null;
   status: 'unknown' | 'available' | 'missing';
+  error?: string;
 };
 
 export type EnvSlice = {
@@ -13,9 +17,11 @@ export type EnvSlice = {
 
 export const createEnvSlice: StateCreator<EnvSlice, [], [], EnvSlice> = (set) => ({
   environment: {
-    executable: null,
-    venvRoot: null,
+    candidates: [],
+    selected: null,
+    config: null,
     status: 'unknown',
+    error: undefined,
   },
   setEnvironment: (environment) => set({ environment }),
 });
