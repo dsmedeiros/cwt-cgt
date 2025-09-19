@@ -5,11 +5,15 @@ import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
-import type { PythonEnvironment } from './runner/env';
-import { canImportCwt, detectPython, normalizePythonEnv } from './runner/env';
+import {
+  detectPython,
+  getEnvironmentConfig,
+  setPythonPath,
+  type PythonCandidate,
+} from './runner/env';
 import { RunManager, type RunMetadata } from './runner/runManager';
 
-type Envelope<T> = { ok: true; data: T } | { ok: false; error: string };
+type Envelope<T> = { ok: true; data: T } | { ok: false; error: string; data?: T };
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 const cwtSimRoot = path.join(repoRoot, 'cwt-sim');
@@ -145,45 +149,38 @@ const listDirectoryTree = async (root: string, base: string) => {
   return result;
 };
 
-ipcMain.handle('cwt:env:detect', () =>
-  wrap(async () => {
-    const detected = detectPython();
-    if (!detected) {
-      throw new Error('python3 not found on PATH');
-    }
+ipcMain.handle('cwt:env:detect', () => {
+  const result = detectPython();
+  const payload = {
+    candidates: result.candidates,
+    selected: result.selected,
+  } satisfies {
+    candidates: PythonCandidate[];
+    selected: PythonCandidate | null;
+  };
 
-    if (!canImportCwt(detected)) {
-      throw new Error('Python interpreter cannot import the cwt package');
-    }
+  if (result.environment) {
+    runManager.setPythonEnv(result.environment);
+    return { ok: true as const, data: payload } satisfies Envelope<typeof payload>;
+  }
 
-    runManager.setPythonEnv(detected);
-    return {
-      ...normalizePythonEnv(detected),
-      status: 'available' as const,
-    };
-  }),
-);
+  runManager.setPythonEnv(null);
+  return {
+    ok: false as const,
+    error: result.error ?? 'No usable Python interpreter found.',
+    data: payload,
+  } satisfies Envelope<typeof payload>;
+});
 
 ipcMain.handle('cwt:env:set-python-path', (_event, executable: string) =>
   wrap(() => {
-    if (!executable) {
-      throw new Error('Executable path is required');
-    }
-    const env: PythonEnvironment = { executable, venvRoot: undefined };
-    runManager.setPythonEnv(env);
-    return normalizePythonEnv(env);
+    const { candidate, environment } = setPythonPath(executable);
+    runManager.setPythonEnv(environment);
+    return candidate;
   }),
 );
 
-ipcMain.handle('cwt:env:get-config', () =>
-  wrap(() => ({
-    repoRoot,
-    cwtSimRoot,
-    artifactsRoot,
-    registryPath,
-    recipesPath,
-  })),
-);
+ipcMain.handle('cwt:env:get-config', () => wrap(() => getEnvironmentConfig()));
 
 ipcMain.handle('cwt:run:create', (_event, payload: { experiment: string; args?: Record<string, unknown>; workdir?: string }) =>
   wrap(async () => {
