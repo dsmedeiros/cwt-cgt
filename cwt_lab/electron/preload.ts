@@ -120,6 +120,8 @@ const api: Api = {
   version: () => invoke('cwt:get-version'),
 };
 
-contextBridge.exposeInMainWorld('cwtLab', api);
+const frozenApi: Readonly<Api> = Object.freeze(api);
 
-export type PreloadApi = typeof api;
+contextBridge.exposeInMainWorld('cwtLab', frozenApi);
+
+export type PreloadApi = typeof frozenApi;
