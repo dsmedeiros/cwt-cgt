@@ -3,7 +3,17 @@ name: CI
 on:
   push:
     branches: ["main", "master", "work"]
+    paths:
+      - "cwt-sim/**"
+      - ".github/workflows/tests.yml"
+      - "requirements.test.txt"
+      - "requirements.txt"
   pull_request:
+    paths:
+      - "cwt-sim/**"
+      - ".github/workflows/tests.yml"
+      - "requirements.test.txt"
+      - "requirements.txt"
 
 permissions:
   contents: read

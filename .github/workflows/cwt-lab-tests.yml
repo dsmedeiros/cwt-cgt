@@ -1,0 +1,41 @@
+name: CWT Lab CI
+
+on:
+  push:
+    branches: ["main", "master", "work"]
+    paths:
+      - "cwt_lab/**"
+      - ".github/workflows/cwt-lab-tests.yml"
+  pull_request:
+    paths:
+      - "cwt_lab/**"
+      - ".github/workflows/cwt-lab-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  frontend-quality:
+    name: Lint and type-check CWT Lab
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        working-directory: cwt_lab
+        run: npm install
+
+      - name: Lint
+        working-directory: cwt_lab
+        run: npm run lint
+
+      - name: Typecheck
+        working-directory: cwt_lab
+        run: npm run typecheck
