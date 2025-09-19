@@ -1,4 +1,5 @@
-import Database from 'better-sqlite3';
+import BetterSqlite3 from 'better-sqlite3';
+import type { Database as BetterSqlite3Database } from 'better-sqlite3';
 
 export type RunStatus = 'pending' | 'running' | 'complete' | 'failed' | 'aborted';
 
@@ -23,7 +24,7 @@ export type RunQuery = {
   limit?: number;
 };
 
-const ensureColumns = (db: Database) => {
+const ensureColumns = (db: BetterSqlite3Database) => {
   const columns = db.prepare("PRAGMA table_info(runs)").all() as Array<{ name: string }>;
   const columnNames = new Set(columns.map((column) => column.name));
   const addColumn = (definition: string) => {
@@ -59,8 +60,8 @@ const ensureColumns = (db: Database) => {
   }
 };
 
-export const openRegistry = (dbPath: string): Database => {
-  const db = new Database(dbPath);
+export const openRegistry = (dbPath: string): BetterSqlite3Database => {
+  const db = new BetterSqlite3(dbPath);
   db.pragma('journal_mode = WAL');
   db.exec(`
     CREATE TABLE IF NOT EXISTS runs (
@@ -82,7 +83,7 @@ export const openRegistry = (dbPath: string): Database => {
   return db;
 };
 
-export const upsertRun = (db: Database, run: RunRecord) => {
+export const upsertRun = (db: BetterSqlite3Database, run: RunRecord) => {
   const stmt = db.prepare(
     `INSERT INTO runs (id, created_at, updated_at, status, command, args, cwd, phase, experiment, label, artifacts_dir, metrics_json)
      VALUES (@id, @createdAt, @updatedAt, @status, @command, @args, @cwd, @phase, @experiment, @label, @artifactsDir, @metrics)
@@ -114,7 +115,7 @@ export const upsertRun = (db: Database, run: RunRecord) => {
   });
 };
 
-export const fetchRuns = (db: Database, query: RunQuery): RunRecord[] => {
+export const fetchRuns = (db: BetterSqlite3Database, query: RunQuery): RunRecord[] => {
   const clauses: string[] = [];
   const params: Record<string, unknown> = {};
 

@@ -2,9 +2,9 @@ appId: com.example.cwtlab
 productName: CWT Lab
 files:
   - dist/**
-  - electron/**
+  - dist-electron/**
 extraMetadata:
-  main: electron/main.js
+  main: dist-electron/main/index.js
 mac:
   target:
     - dmg
