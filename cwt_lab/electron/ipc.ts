@@ -1,8 +1,9 @@
 import { ipcMain } from 'electron';
-import { randomUUID } from 'node:crypto';
 import { promises as fs, existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
+import { v4 as uuidv4 } from 'uuid';
+import { z } from 'zod';
 
 import type { PythonEnvironment } from './runner/env';
 import { canImportCwt, detectPython, normalizePythonEnv } from './runner/env';
@@ -30,6 +31,14 @@ const runManager = new RunManager({
   artifactsRoot,
   registryPath,
   pythonPathEntries: [cwtSimRoot],
+});
+
+const recipePayloadSchema = z.object({
+  name: z.string().min(1, 'name is required'),
+  params: z.record(z.string(), z.unknown()).optional().default({}),
+  command: z.string().min(1, 'command is required'),
+  seed: z.number().optional(),
+  envInfo: z.unknown().optional(),
 });
 
 const wrap = async <T>(fn: () => Promise<T> | T): Promise<Envelope<T>> => {
@@ -689,16 +698,14 @@ ipcMain.handle('cwt:registry:query', (_event, payload?: { phase?: string; experi
 
 ipcMain.handle('cwt:recipes:list', () => wrap(async () => loadRecipes()));
 
-ipcMain.handle('cwt:recipes:save', (_event, payload: { name: string; params: Record<string, unknown>; command: string; seed?: number; envInfo?: unknown }) =>
+ipcMain.handle('cwt:recipes:save', (_event, payload: unknown) =>
   wrap(async () => {
-    if (!payload?.name || !payload.command) {
-      throw new Error('name and command are required');
-    }
+    const parsed = recipePayloadSchema.parse(payload ?? {});
 
     const recipes = await loadRecipes();
     const recipe = {
-      id: randomUUID(),
-      ...payload,
+      id: uuidv4(),
+      ...parsed,
       createdAt: Date.now(),
     };
     recipes.push(recipe);
