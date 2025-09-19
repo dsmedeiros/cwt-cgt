@@ -256,8 +256,10 @@ export class RunManager {
       }
     }
 
-    for (const entry of this.config.pythonPathEntries) {
-      entries.add(entry);
+    if (this.pythonEnv?.strategy === 'py_path') {
+      for (const entry of this.config.pythonPathEntries) {
+        entries.add(entry);
+      }
     }
 
     return Array.from(entries).join(path.delimiter);
