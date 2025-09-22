@@ -9,6 +9,12 @@
     "resolveJsonModule": true,
     "outDir": "dist"
   },
-  "include": ["electron/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "electron/**/*.ts",
+    "renderer/**/*.ts",
+    "renderer/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
