@@ -1,0 +1,9 @@
+Hotspot #3: x=+0.0420, y=-0.0133, z=+0.0987 (|Ω|=0.456789)
+  extent=+0.0800
+    CCW: R=+0.732100, Φ=+0.512300, κ₁=+0.231000, χ=[0.101, 0.204, 0.305]
+           FS p95=0.245 rad, guard_exceeded=False
+    CW : R=-0.712300, Φ=-0.478900, κ₁=+0.228000, χ=[0.110, 0.214, 0.312]
+           FS p95=0.198 rad, guard_exceeded=True
+    flip error: area=1.23%  phi=4.56%
+overlap min = 0.654
+  κ₁ scale change: 3.21%
