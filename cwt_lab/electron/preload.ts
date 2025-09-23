@@ -27,6 +27,7 @@ const api = {
   phase3: {
     loopAtHotspot: (params) => invoke('cwt:phase3:loop-at-hotspot', params),
     guidedLoop: (params) => invoke('cwt:phase3:guided-loop', params),
+    adiabaticBoundary: (params) => invoke('cwt:phase3:adiabatic-boundary', params),
   },
   phase4: {
     wilson3d: (params) => invoke('cwt:phase4:wilson3d', params),

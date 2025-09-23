@@ -189,6 +189,7 @@ arguments mirroring the CLI flags used in the corresponding script.
 | Phase 2 | `phase2.correlate({ metricsDirs, thresholdMode, thresholdValue\|percentile })` | Parses saved CSV/JSON metrics to compute correlation tables and AUCs without invoking Python workers. |
 | Phase 3 | `phase3.loopAtHotspot({ hotspotsJson, axes, extents, fsGuard, graph, limit, seed })` | Kicks off hotspot-focused loops to refine free-surface estimates. |
 | Phase 3 | `phase3.guidedLoop({ center, graph, axes3, amplitudes, fsGuard, stepsList, minPhi, settle, handleSteps })` | Orchestrates sequential `wilson_loop_3d/run.py` executions, returning the collected run records and whether the guard criteria were satisfied. |
+| Phase 3 | `phase3.adiabaticBoundary({ outDir })` | Launches `experiments.adiabatic_boundary.run` to map the adiabatic boundary for a supplied output directory. |
 | Phase 4 | `phase4.wilson3d({ axes3, center, amplitudes, steps, settle, fsGuard, graph, seed, outDir })` | Runs the full 3D Wilson loop explorer with configurable grids and guards. |
 | Phase 4 | `phase4.torusPlateau({ axes, gridSize, disorderList, centersExtents, outDir })` | Generates torus plateau scans across disorder settings. |
 | Phase 5 | `phase5.graphFamily({ families, axes, gridSize, extents, seed, outDir })` | Sweeps over graph families to catalogue phase responses. |

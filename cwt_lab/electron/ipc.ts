@@ -12,6 +12,7 @@ import {
   type PythonCandidate,
 } from './runner/env';
 import { RunManager, type RunMetadata } from './runner/runManager';
+import type { GuidedLoopArgs, LoopAtHotspotPayload } from '../renderer/types/ipc';
 
 type Envelope<T> = { ok: true; data: T } | { ok: false; error: string; data?: T };
 
@@ -246,38 +247,242 @@ ipcMain.handle('cwt:phase1:map', (_event, params) =>
 );
 
 ipcMain.handle('cwt:phase3:loop-at-hotspot', (_event, params) =>
-  wrap(() =>
-    launchPhase('experiments.loop_at_hotspot.run', params, {
+  wrap(() => {
+    if (!params || typeof params !== 'object') {
+      throw new Error('parameters are required for loop-at-hotspot');
+    }
+
+    const payload = params as LoopAtHotspotPayload & Record<string, unknown>;
+    const hotspotsPath =
+      typeof payload.hotspotsJson === 'string' ? payload.hotspotsJson.trim() : '';
+    if (!hotspotsPath) {
+      throw new Error('hotspotsJson must be a non-empty string path');
+    }
+
+    const axesRaw = Array.isArray(payload.axes) ? payload.axes : [];
+    if (axesRaw.length !== 2) {
+      throw new Error('axes must contain exactly two axis names');
+    }
+    const axes = axesRaw.map((axis, index) => {
+      const value = String(axis).trim();
+      if (!value) {
+        throw new Error(`axis ${index + 1} must be a non-empty string`);
+      }
+      return value;
+    }) as [string, string];
+
+    const extentsRaw = Array.isArray(payload.extents) ? payload.extents : [];
+    if (extentsRaw.length === 0) {
+      throw new Error('extents must contain at least one numeric value');
+    }
+    const extents = extentsRaw.map((value, index) => {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) {
+        throw new Error(`extent ${index + 1} must be a finite number`);
+      }
+      return numeric;
+    });
+
+    const fsGuard = Number(payload.fsGuard);
+    if (!Number.isFinite(fsGuard)) {
+      throw new Error('fsGuard must be a finite number');
+    }
+
+    const graph = typeof payload.graph === 'string' ? payload.graph.trim() : '';
+    if (!graph) {
+      throw new Error('graph must be a non-empty string');
+    }
+
+    const limit = Number(payload.limit);
+    if (!Number.isInteger(limit) || limit <= 0) {
+      throw new Error('limit must be a positive integer');
+    }
+
+    const seed = Number(payload.seed);
+    if (!Number.isInteger(seed)) {
+      throw new Error('seed must be an integer');
+    }
+
+    const passthrough = { ...(payload as Record<string, unknown>) };
+    delete passthrough.hotspotsJson;
+    delete passthrough.axes;
+    delete passthrough.extents;
+    delete passthrough.fsGuard;
+    delete passthrough.graph;
+    delete passthrough.limit;
+    delete passthrough.seed;
+    delete passthrough.microScan;
+    delete passthrough.readoutTarget;
+
+    let microScan: boolean | undefined;
+    const rawMicroScan = (params as { microScan?: unknown }).microScan;
+    if (rawMicroScan !== undefined) {
+      if (typeof rawMicroScan === 'string') {
+        const normalized = rawMicroScan.trim().toLowerCase();
+        if (['true', 't', '1', 'yes', 'y'].includes(normalized)) {
+          microScan = true;
+        } else if (['false', 'f', '0', 'no', 'n'].includes(normalized)) {
+          microScan = false;
+        } else {
+          throw new Error('microScan must be a boolean value');
+        }
+      } else {
+        microScan = Boolean(rawMicroScan);
+      }
+    }
+
+    const readoutTargetRaw = (params as { readoutTarget?: unknown }).readoutTarget;
+    let readoutTarget: number | null = null;
+    if (readoutTargetRaw !== undefined && readoutTargetRaw !== null) {
+      readoutTarget = Number(readoutTargetRaw);
+      if (!Number.isInteger(readoutTarget)) {
+        throw new Error('readoutTarget must be an integer when provided');
+      }
+    }
+
+    const runParams: Record<string, unknown> = {
+      ...passthrough,
+      hotspots: hotspotsPath,
+      axes,
+      extents,
+      graph,
+      fsGuard,
+      limit,
+      seed,
+    };
+
+    if (microScan !== undefined) {
+      runParams.microScan = microScan;
+    }
+    if (readoutTarget !== null) {
+      runParams.readoutTarget = readoutTarget;
+    }
+
+    return launchPhase('experiments.loop_at_hotspot.run', runParams, {
       phase: 'phase3',
       experiment: 'loop_at_hotspot',
       label: 'Loop at hotspot',
-    }),
-  ),
+    });
+  }),
 );
 
 ipcMain.handle('cwt:phase3:guided-loop', (_event, params) =>
   wrap(async () => {
-    const payload = params as Record<string, unknown> | undefined;
-    if (!payload) {
+    if (!params || typeof params !== 'object') {
       throw new Error('parameters are required for guided mode');
     }
 
-    const { stepsList: rawSteps, minPhi: rawMinPhi, ...phaseParams } = payload as Record<string, unknown> & {
-      stepsList?: unknown;
-      minPhi?: unknown;
-    };
+    const payload = params as GuidedLoopArgs & Record<string, unknown>;
+    const {
+      stepsList: rawSteps,
+      minPhi: rawMinPhi,
+      axes3: rawAxes,
+      center: rawCenter,
+      amplitudes: rawAmplitudes,
+      fsGuard: rawFsGuard,
+      settle: rawSettle,
+      handleSteps: rawHandle,
+      graph: rawGraph,
+      seed: rawSeed,
+      ...otherParams
+    } = payload;
 
     const stepsList = Array.isArray(rawSteps)
-      ? rawSteps.map((value) => Number.parseInt(String(value), 10)).filter((value) => !Number.isNaN(value))
+      ? rawSteps
+          .map((value, index) => {
+            const parsed = Number.parseInt(String(value), 10);
+            if (!Number.isFinite(parsed)) {
+              throw new Error(`stepsList entry #${index + 1} must be an integer`);
+            }
+            if (parsed <= 0) {
+              throw new Error(`stepsList entry #${index + 1} must be positive`);
+            }
+            return parsed;
+          })
       : [];
     if (stepsList.length === 0) {
       throw new Error('stepsList must contain at least one integer value');
     }
 
-    const minPhiRaw = rawMinPhi !== undefined ? Number(rawMinPhi) : null;
-    const minPhi = Number.isFinite(minPhiRaw) ? minPhiRaw : null;
-    const fsGuardRaw = phaseParams.fsGuard !== undefined ? Number(phaseParams.fsGuard) : null;
-    const fsGuard = Number.isFinite(fsGuardRaw) ? fsGuardRaw : null;
+    const minPhiRaw = rawMinPhi !== undefined && rawMinPhi !== null ? Number(rawMinPhi) : null;
+    const minPhi = minPhiRaw !== null && Number.isFinite(minPhiRaw) ? minPhiRaw : null;
+    if (rawMinPhi !== undefined && minPhi === null) {
+      throw new Error('minPhi must be a finite number when provided');
+    }
+
+    const axes3 = Array.isArray(rawAxes) ? rawAxes.map((axis) => String(axis).trim()) : [];
+    if (axes3.length !== 3) {
+      throw new Error('axes3 must contain exactly three axis names');
+    }
+    if (axes3.some((axis) => !axis)) {
+      throw new Error('axes3 entries must be non-empty strings');
+    }
+    if (new Set(axes3).size !== axes3.length) {
+      throw new Error('axes3 entries must be distinct');
+    }
+
+    const center = Array.isArray(rawCenter) ? rawCenter.map((value) => Number(value)) : [];
+    if (center.length !== 3 || center.some((value) => !Number.isFinite(value))) {
+      throw new Error('center must contain three numeric coordinates');
+    }
+
+    const amplitudes = Array.isArray(rawAmplitudes)
+      ? rawAmplitudes.map((value) => Number(value))
+      : [];
+    if (amplitudes.length !== 3 || amplitudes.some((value) => !Number.isFinite(value))) {
+      throw new Error('amplitudes must contain three numeric values');
+    }
+
+    const fsGuardRaw = rawFsGuard !== undefined && rawFsGuard !== null ? Number(rawFsGuard) : null;
+    const fsGuard = fsGuardRaw !== null && Number.isFinite(fsGuardRaw) ? fsGuardRaw : null;
+    if (rawFsGuard !== undefined && fsGuard === null) {
+      throw new Error('fsGuard must be a finite number when provided');
+    }
+
+    const settleRaw = rawSettle !== undefined && rawSettle !== null ? Number(rawSettle) : null;
+    const settle = settleRaw !== null && Number.isInteger(settleRaw) && settleRaw > 0 ? settleRaw : null;
+    if (rawSettle !== undefined && settle === null) {
+      throw new Error('settle must be a positive integer when provided');
+    }
+
+    const handleRaw = rawHandle !== undefined && rawHandle !== null ? Number(rawHandle) : null;
+    const handleSteps =
+      handleRaw !== null && Number.isInteger(handleRaw) && handleRaw > 0 ? handleRaw : null;
+    if (rawHandle !== undefined && handleSteps === null) {
+      throw new Error('handleSteps must be a positive integer when provided');
+    }
+
+    const graph = typeof rawGraph === 'string' ? rawGraph.trim() : '';
+    if (!graph) {
+      throw new Error('graph must be a non-empty string');
+    }
+
+    const seedRaw = rawSeed !== undefined && rawSeed !== null ? Number(rawSeed) : null;
+    const seed = seedRaw !== null && Number.isInteger(seedRaw) ? seedRaw : null;
+    if (rawSeed !== undefined && seed === null) {
+      throw new Error('seed must be an integer when provided');
+    }
+
+    const baseRunParams: Record<string, unknown> = {
+      ...otherParams,
+      axes3,
+      center,
+      amplitudes,
+      graph,
+    };
+
+    if (fsGuard !== null) {
+      baseRunParams.fsGuard = fsGuard;
+    }
+    if (settle !== null) {
+      baseRunParams.settle = settle;
+    }
+    if (handleSteps !== null) {
+      baseRunParams.handleSteps = handleSteps;
+    }
+    if (seed !== null) {
+      baseRunParams.seed = seed;
+    }
 
     const runs: Array<{
       runId: string;
@@ -288,14 +493,14 @@ ipcMain.handle('cwt:phase3:guided-loop', (_event, params) =>
     let satisfied = false;
 
     for (const steps of stepsList) {
-      const runParams = {
-        ...phaseParams,
+      const currentParams = {
+        ...baseRunParams,
         steps,
       } as Record<string, unknown>;
 
       const { runId } = await runManager.createRun(
         'experiments.wilson_loop_3d.run',
-        buildArgsFromParams(runParams),
+        buildArgsFromParams(currentParams),
         cwtSimRoot,
         {
           phase: 'phase3',
@@ -325,7 +530,10 @@ ipcMain.handle('cwt:phase3:guided-loop', (_event, params) =>
         minPhi === null ||
         (typeof phiSum === 'number' && Number.isFinite(phiSum) && phiSum >= minPhi);
       const guardCriterion =
-        fsGuard === null || metrics.fs_p95 === undefined || metrics.fs_p95 === null || metrics.fs_p95 <= fsGuard;
+        fsGuard === null ||
+        metrics.fs_p95 === undefined ||
+        metrics.fs_p95 === null ||
+        metrics.fs_p95 <= fsGuard;
 
       if (phiCriterion && guardCriterion) {
         satisfied = true;
@@ -342,6 +550,31 @@ ipcMain.handle('cwt:phase3:guided-loop', (_event, params) =>
     }
 
     return { runs, satisfied };
+  }),
+);
+
+ipcMain.handle('cwt:phase3:adiabatic-boundary', (_event, payload) =>
+  wrap(() => {
+    if (!payload || typeof payload !== 'object') {
+      throw new Error('parameters are required for adiabatic-boundary');
+    }
+
+    const { outDir: rawOutDir, ...rest } = payload as { outDir?: unknown } & Record<string, unknown>;
+    const outDir = typeof rawOutDir === 'string' ? rawOutDir.trim() : '';
+    if (!outDir) {
+      throw new Error('outDir must be a non-empty string path');
+    }
+
+    const runParams: Record<string, unknown> = {
+      ...rest,
+      outputDir: outDir,
+    };
+
+    return launchPhase('experiments.adiabatic_boundary.run', runParams, {
+      phase: 'phase3',
+      experiment: 'adiabatic_boundary',
+      label: 'Adiabatic boundary sweep',
+    });
   }),
 );
 

@@ -51,6 +51,37 @@ export type RunTailChunk = {
   status: string;
 };
 
+export type LoopAtHotspotPayload = {
+  hotspotsJson: string;
+  axes: [string, string];
+  extents: [number, ...number[]];
+  fsGuard: number;
+  graph: string;
+  limit: number;
+  seed: number;
+  microScan?: boolean;
+  readoutTarget?: number;
+  [extra: string]: unknown;
+};
+
+export type GuidedLoopArgs = {
+  axes3: [string, string, string];
+  center: [number, number, number];
+  amplitudes: [number, number, number];
+  graph: string;
+  stepsList: number[];
+  fsGuard?: number;
+  minPhi?: number;
+  settle?: number;
+  handleSteps?: number;
+  seed?: number;
+  etaQ?: number;
+  zeta?: number;
+  omegaScale?: number;
+  outputDir?: string;
+  [extra: string]: unknown;
+};
+
 export type ArtifactsListPayload = {
   under?: string;
 };
@@ -100,9 +131,9 @@ export interface RendererIpc {
     ) => Promise<IpcEnvelope<unknown>>;
   };
   phase3: {
-    loopAtHotspot: (params: Record<string, unknown>) => Promise<IpcEnvelope<RunCreateResult>>;
+    loopAtHotspot: (params: LoopAtHotspotPayload) => Promise<IpcEnvelope<RunCreateResult>>;
     guidedLoop: (
-      params: Record<string, unknown>,
+      params: GuidedLoopArgs,
     ) => Promise<
       IpcEnvelope<{
         runs: Array<{
@@ -114,6 +145,7 @@ export interface RendererIpc {
         satisfied: boolean;
       }>
     >;
+    adiabaticBoundary: (payload: { outDir: string }) => Promise<IpcEnvelope<RunCreateResult>>;
   };
   phase4: {
     wilson3d: (params: Record<string, unknown>) => Promise<IpcEnvelope<RunCreateResult>>;
