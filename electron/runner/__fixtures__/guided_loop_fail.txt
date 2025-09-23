@@ -1,0 +1,3 @@
+Step=160 FS p95=0.120 rad Φ=0.005 R=0.98
+κ₁ scale change: 1.0%
+guard_exceeded=True
