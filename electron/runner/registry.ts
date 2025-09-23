@@ -11,20 +11,9 @@ const JsonValueSchema: z.ZodType<unknown> = z.lazy(() =>
   z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(JsonValueSchema), z.record(JsonValueSchema)])
 );
 
-function isIsoUtcTimestamp(value: string): boolean {
-  try {
-    const date = new Date(value);
-    return !Number.isNaN(date.getTime()) && date.toISOString() === value;
-  } catch (error) {
-    return false;
-  }
-}
-
 const InsertRunSchema = z.object({
   id: z.string().uuid(),
-  createdAt: z.string().refine((value) => isIsoUtcTimestamp(value), {
-    message: 'createdAt must be an ISO8601 UTC timestamp',
-  }),
+  createdAt: z.string(),
   phase: z.string().optional().nullable(),
   experiment: z.string().optional().nullable(),
   status: z.string().optional().nullable(),
