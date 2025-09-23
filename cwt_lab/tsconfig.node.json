@@ -14,6 +14,6 @@
     "types": ["node", "electron-vite/node"],
     "noEmit": true
   },
-  "include": ["electron/**/*.ts", "electron/**/*.d.ts"],
+  "include": ["electron/**/*.ts", "electron/**/*.d.ts", "shared/**/*.ts"],
   "exclude": ["dist", "dist-electron", "node_modules"]
 }

@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import type { GuidedLoopArgs, LoopAtHotspotPayload } from '../types/ipc';
+import AdiabaticBoundaryViewer from './AdiabaticBoundaryViewer';
 
 type Hotspot = {
   id: string;
@@ -716,6 +717,9 @@ const Phase3Loops = () => {
           )}
         </div>
       </div>
+      <section className="phase3__card">
+        <AdiabaticBoundaryViewer />
+      </section>
     </div>
   );
 };
