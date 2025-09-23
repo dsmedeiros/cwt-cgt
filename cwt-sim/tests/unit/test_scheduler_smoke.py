@@ -1,8 +1,10 @@
 import networkx as nx
 import numpy as np
+import pytest
 
 from cwt.graph.substrate import build_substrate
 from cwt.layers.state import LayersState
+from cwt.orchestrator import scheduler
 from cwt.orchestrator.param_path import ParameterPath
 from cwt.orchestrator.scheduler import RunConfig, run_parameter_loop
 
@@ -79,3 +81,64 @@ def test_run_parameter_loop_smoke() -> None:
         assert "phi_flux" in final_readout
         assert "memory" in final_readout
         assert len(final_readout["memory"]) == substrate.N
+
+
+def _make_static_path(center: dict[str, float]) -> ParameterPath:
+    keys = list(center)
+    if not keys:
+        raise ValueError("center must contain at least one knob")
+    if len(keys) == 1:
+        axes = (keys[0], keys[0])
+    else:
+        axes = (keys[0], keys[1])
+    extents = {key: 0.0 for key in center}
+    return ParameterPath(kind="line", center=center, extents=extents, steps=1, axes=axes)
+
+
+def test_run_parameter_loop_respects_tau_knobs(monkeypatch: pytest.MonkeyPatch) -> None:
+    G = nx.DiGraph()
+    G.add_edge(0, 1, weight=1.0, delay=1.0)
+    substrate = build_substrate(G)
+    init_state = LayersState(pQ=np.array([1.0, 0.0]), theta=np.zeros(2))
+
+    config = RunConfig(
+        eta_q=0.5,
+        zeta=0.0,
+        omega_scale=1.0,
+        smooth_window=1,
+        compute_curvature=False,
+        readout={},
+        noise={},
+        fs_step_guard={},
+    )
+
+    kernel_calls: list[float] = []
+    omega_calls: list[float] = []
+
+    real_kernel = scheduler.build_transport_kernel
+    real_omega = scheduler.omega_from_delays
+
+    def capture_kernel(S, rho, tau_scale, kappa):
+        kernel_calls.append(float(tau_scale))
+        return real_kernel(S, rho, tau_scale, kappa)
+
+    def capture_omega(S, rho, tau_scale, omega_scale):
+        omega_calls.append(float(tau_scale))
+        return real_omega(S, rho, tau_scale, omega_scale)
+
+    monkeypatch.setattr(scheduler, "build_transport_kernel", capture_kernel)
+    monkeypatch.setattr(scheduler, "omega_from_delays", capture_omega)
+
+    def run_with(center: dict[str, float]) -> float:
+        kernel_calls.clear()
+        omega_calls.clear()
+        path = _make_static_path(center)
+        run_parameter_loop(substrate, init_state, path, config, seed=0)
+        assert kernel_calls, "transport kernel was not invoked"
+        assert omega_calls, "omega update was not invoked"
+        assert pytest.approx(kernel_calls[0]) == omega_calls[0]
+        return kernel_calls[0]
+
+    assert run_with({"tau": 1.7}) == pytest.approx(1.7)
+    assert run_with({"tau_scale": 2.5}) == pytest.approx(2.5)
+    assert run_with({"tau": 1.2, "tau_scale": 1.5}) == pytest.approx(1.2 * 1.5)
