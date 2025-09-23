@@ -16,6 +16,6 @@
     "jsx": "react-jsx",
     "types": ["vite/client"]
   },
-  "include": ["renderer/**/*"],
+  "include": ["renderer/**/*", "shared/**/*"],
   "exclude": ["dist", "dist-electron", "node_modules"]
 }

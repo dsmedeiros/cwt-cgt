@@ -1,3 +1,5 @@
+import type { AdiabaticBoundaryResult } from '../../shared/adiabatic';
+
 export type IpcEnvelope<T> = { ok: true; data: T } | { ok: false; error: string; data?: T };
 
 export type PythonStrategy = 'module' | 'py_path' | 'installed';
@@ -146,6 +148,9 @@ export interface RendererIpc {
       }>
     >;
     adiabaticBoundary: (payload: { outDir: string }) => Promise<IpcEnvelope<RunCreateResult>>;
+    cmdAdiabaticBoundary: (
+      params?: Record<string, unknown>,
+    ) => Promise<IpcEnvelope<AdiabaticBoundaryResult>>;
   };
   phase4: {
     wilson3d: (params: Record<string, unknown>) => Promise<IpcEnvelope<RunCreateResult>>;

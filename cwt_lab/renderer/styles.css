@@ -412,3 +412,104 @@ body {
     order: 1;
   }
 }
+
+.adiabatic {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.adiabatic__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.adiabatic__header h3 {
+  margin: 0;
+}
+
+.adiabatic__header p {
+  margin: 0.25rem 0 0;
+  color: #4b5563;
+  max-width: 520px;
+}
+
+.adiabatic__badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.adiabatic__plot {
+  width: 100%;
+  height: 360px;
+}
+
+.adiabatic__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.adiabatic__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.adiabatic__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.adiabatic__table th,
+.adiabatic__table td {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.adiabatic__table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.adiabatic__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.adiabatic__field select {
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.95rem;
+}
+
+.adiabatic__histogram {
+  width: 100%;
+  height: 260px;
+}
+
+.adiabatic__hint {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.adiabatic__error {
+  background: #fee2e2;
+  color: #7f1d1d;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+}
+
+.adiabatic__empty {
+  text-align: center;
+  color: #6b7280;
+  padding: 0.75rem 0;
+}
