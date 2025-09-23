@@ -12,3 +12,6 @@ __pycache__/
 /cwt-sim/networkx
 /cwt-sim/runs
 /cwt-sim/.venv
+
+# Node
+node_modules/
