@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#022c22"/>
+  <rect x="40" y="40" width="880" height="460" rx="24" fill="#064e3b" stroke="#10b981" stroke-width="3"/>
+  <text x="80" y="110" fill="#d1fae5" font-family="'Inter', sans-serif" font-size="32" font-weight="700">Phase 5 – Optimisation</text>
+  <text x="80" y="160" fill="#bbf7d0" font-family="'Inter', sans-serif" font-size="20">Gradient traces and convergence history.</text>
+  <polyline points="120,360 220,320 300,290 380,250 460,220 540,200 640,180 760,170" fill="none" stroke="#34d399" stroke-width="6"/>
+  <rect x="600" y="220" width="260" height="200" rx="18" fill="#065f46" stroke="#10b981"/>
+  <text x="630" y="270" fill="#d1fae5" font-family="'Inter', sans-serif" font-size="18">Best overlap: 0.91</text>
+  <text x="630" y="310" fill="#d1fae5" font-family="'Inter', sans-serif" font-size="18">FS₉₅: 0.215</text>
+  <text x="630" y="350" fill="#d1fae5" font-family="'Inter', sans-serif" font-size="18">Recipe provenance: run-204</text>
+</svg>

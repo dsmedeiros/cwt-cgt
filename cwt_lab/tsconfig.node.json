@@ -11,7 +11,7 @@
     "skipLibCheck": true,
     "strict": true,
     "resolveJsonModule": true,
-    "types": ["node", "electron-vite/node"],
+    "types": ["node", "electron-vite/node", "vitest"],
     "noEmit": true
   },
   "include": ["electron/**/*.ts", "electron/**/*.d.ts", "shared/**/*.ts"],

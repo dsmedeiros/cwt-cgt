@@ -1,9 +1,12 @@
-import { spawn } from 'node:child_process';
+import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { promises as fs, existsSync } from 'node:fs';
 import path from 'node:path';
 
-import type { ChildProcessWithoutNullStreams } from 'node:child_process';
+import os from 'node:os';
+import { setTimeout as delay } from 'node:timers/promises';
+
+import JSZip from 'jszip';
 
 import type { Database as BetterSqlite3Database } from 'better-sqlite3';
 
@@ -52,6 +55,11 @@ type RunContext = {
   updatedAt: number;
   completion: Promise<RunCompletion>;
   resolveCompletion: (result: RunCompletion) => void;
+  timeoutHandle: NodeJS.Timeout | null;
+  timeoutMs: number | null;
+  diagnosticsPath: string;
+  diagnostics: RunDiagnostics;
+  timeoutTriggered: boolean;
 };
 
 type ManagerConfig = {
@@ -59,6 +67,26 @@ type ManagerConfig = {
   artifactsRoot: string;
   registryPath: string;
   pythonPathEntries: string[];
+};
+
+export type RunOptions = {
+  timeoutMs?: number;
+};
+
+type RunDiagnostics = {
+  runId: string;
+  command: string;
+  args: string[];
+  cwd: string;
+  createdAtUtc: string;
+  updatedAtUtc: string;
+  status: RunStatus;
+  timeoutMs: number | null;
+  exitCode: number | null;
+  signal: NodeJS.Signals | null;
+  error: string | null;
+  platform: NodeJS.Platform;
+  env: Record<string, string>;
 };
 
 const ensureDir = async (dir: string) => {
@@ -94,6 +122,7 @@ export class RunManager {
     args: string[],
     cwd?: string,
     metadata: RunMetadata = {},
+    options: RunOptions = {},
   ): Promise<RunCreateResult> {
     if (!this.pythonEnv) {
       throw new Error('Python environment not configured. Call env.detect() first.');
@@ -108,6 +137,29 @@ export class RunManager {
     const completion = new Promise<RunCompletion>((resolve) => {
       resolveCompletion = resolve;
     });
+
+    const timeoutMs = Number.isFinite(options.timeoutMs) ? Number(options.timeoutMs) : null;
+    const diagnosticsPath = path.join(runArtifactsDir, 'diagnostics.json');
+
+    const diagnostics: RunDiagnostics = {
+      runId,
+      command,
+      args,
+      cwd: runCwd,
+      createdAtUtc: new Date().toISOString(),
+      updatedAtUtc: new Date().toISOString(),
+      status: 'pending',
+      timeoutMs,
+      exitCode: null,
+      signal: null,
+      error: null,
+      platform: process.platform,
+      env: this.snapshotEnv({
+        ...process.env,
+        PYTHONPATH: this.buildPythonPath(),
+        CWT_OUTPUT_DIR: runArtifactsDir,
+      }),
+    };
 
     const context: RunContext = {
       id: runId,
@@ -128,9 +180,15 @@ export class RunManager {
       updatedAt: Date.now(),
       completion,
       resolveCompletion,
+      timeoutHandle: null,
+      timeoutMs,
+      diagnosticsPath,
+      diagnostics,
+      timeoutTriggered: false,
     };
 
     this.runs.set(runId, context);
+    await this.writeDiagnostics(context);
     this.spawnProcess(context);
     upsertRun(this.registry, {
       id: context.id,
@@ -158,10 +216,21 @@ export class RunManager {
         PYTHONPATH: this.buildPythonPath(),
         CWT_OUTPUT_DIR: context.artifactsDir,
       },
+      detached: process.platform !== 'win32',
+      windowsHide: true,
     });
 
     context.process = child;
     context.status = 'running';
+    context.diagnostics.status = 'running';
+    context.diagnostics.updatedAtUtc = new Date().toISOString();
+    void this.writeDiagnostics(context);
+
+    if (context.timeoutMs && context.timeoutMs > 0) {
+      context.timeoutHandle = setTimeout(() => {
+        void this.handleTimeout(context);
+      }, context.timeoutMs).unref();
+    }
     child.stdout.on('data', (chunk: Buffer) => {
       context.buffer = Buffer.concat([context.buffer, chunk]);
     });
@@ -170,7 +239,14 @@ export class RunManager {
     });
 
     child.on('exit', async (code, signal) => {
-      if (signal === 'SIGTERM') {
+      if (context.timeoutHandle) {
+        clearTimeout(context.timeoutHandle);
+        context.timeoutHandle = null;
+      }
+
+      if (context.timeoutTriggered) {
+        context.status = 'failed';
+      } else if (signal === 'SIGTERM') {
         context.status = 'aborted';
       } else if (code === 0) {
         context.status = 'complete';
@@ -180,6 +256,15 @@ export class RunManager {
 
       context.updatedAt = Date.now();
       await writeLog(context.logPath, context.buffer);
+
+      context.diagnostics.status = context.status;
+      context.diagnostics.exitCode = code ?? null;
+      context.diagnostics.signal = signal ?? null;
+      if (context.timeoutTriggered) {
+        context.diagnostics.error = 'timeout';
+      }
+      context.diagnostics.updatedAtUtc = new Date().toISOString();
+      await this.writeDiagnostics(context);
 
       const metrics = await this.collectRunMetrics(context.id);
       upsertRun(this.registry, {
@@ -202,6 +287,7 @@ export class RunManager {
         status: context.status,
         exitCode: code,
         signal,
+        error: context.timeoutTriggered ? 'timeout' : undefined,
       });
     });
 
@@ -223,6 +309,13 @@ export class RunManager {
         artifactsDir: context.artifactsDir,
         metrics: null,
       });
+      context.diagnostics.status = 'failed';
+      context.diagnostics.exitCode = null;
+      context.diagnostics.signal = null;
+      context.diagnostics.error = error.message;
+      context.diagnostics.updatedAtUtc = new Date().toISOString();
+      await this.writeDiagnostics(context);
+
       context.resolveCompletion({
         runId: context.id,
         status: 'failed',
@@ -231,6 +324,19 @@ export class RunManager {
         error: error.message,
       });
     });
+  }
+
+  private async handleTimeout(context: RunContext) {
+    if (!context.process) {
+      return;
+    }
+
+    context.timeoutTriggered = true;
+    context.diagnostics.error = 'timeout';
+    context.diagnostics.updatedAtUtc = new Date().toISOString();
+    await this.writeDiagnostics(context);
+
+    await this.terminateProcessTree(context, 'SIGTERM');
   }
 
   private buildPythonCommand(context: RunContext): [string, ...string[]] {
@@ -287,7 +393,7 @@ export class RunManager {
       throw new Error(`Run ${runId} not running`);
     }
 
-    context.process.kill('SIGTERM');
+    await this.terminateProcessTree(context, 'SIGTERM');
   }
 
   async listArtifacts(runId: string) {
@@ -327,13 +433,31 @@ export class RunManager {
     return context.completion;
   }
 
-  async collectRunMetrics(runId: string): Promise<Record<string, number | null> | null> {
-    const context = this.runs.get(runId);
-    if (!context) {
-      throw new Error(`Run ${runId} not found`);
-    }
+  async shutdown(gracePeriodMs = 2_000) {
+    const active = Array.from(this.runs.values()).filter((context) => context.process);
+    await Promise.all(
+      active.map(async (context) => {
+        if (!context.process) {
+          return;
+        }
 
-    const summaryPath = path.join(context.artifactsDir, 'summary.json');
+        await this.terminateProcessTree(context, 'SIGTERM');
+        const outcome = await Promise.race([
+          context.completion,
+          delay(gracePeriodMs).then(() => null),
+        ]);
+
+        if (!outcome && context.process) {
+          await this.terminateProcessTree(context, 'SIGKILL');
+        }
+      }),
+    );
+  }
+
+  async collectRunMetrics(runId: string): Promise<Record<string, number | null> | null> {
+    const artifactsDir = await this.resolveArtifactsDir(runId);
+
+    const summaryPath = path.join(artifactsDir, 'summary.json');
     if (!existsSync(summaryPath)) {
       return null;
     }
@@ -354,6 +478,138 @@ export class RunManager {
       console.warn(`Failed to parse summary metrics for run ${runId}:`, error);
       return null;
     }
+  }
+
+  async collectDiagnosticsBundle(runId: string): Promise<{ zipPath: string; files: string[] }> {
+    const artifactsDir = await this.resolveArtifactsDir(runId);
+    const attachments: string[] = [];
+    const zip = new JSZip();
+
+    const addFile = async (filename: string) => {
+      const absolute = path.join(artifactsDir, filename);
+      if (!existsSync(absolute)) {
+        return;
+      }
+      const data = await fs.readFile(absolute);
+      zip.file(filename, data);
+      attachments.push(absolute);
+    };
+
+    await addFile('stdout.log');
+    await addFile('diagnostics.json');
+
+    const envInfo = {
+      platform: process.platform,
+      release: os.release(),
+      python: this.pythonEnv,
+      timestampUtc: new Date().toISOString(),
+    } satisfies Record<string, unknown>;
+    zip.file('environment.json', JSON.stringify(envInfo, null, 2));
+
+    const zipBuffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+    const zipPath = path.join(artifactsDir, `diagnostics-${Date.now()}.zip`);
+    await fs.writeFile(zipPath, zipBuffer);
+
+    return { zipPath, files: attachments };
+  }
+
+  private snapshotEnv(env: NodeJS.ProcessEnv): Record<string, string> {
+    const preferredKeys = new Set([
+      'PATH',
+      'PYTHONPATH',
+      'VIRTUAL_ENV',
+      'CONDA_PREFIX',
+      'CONDA_DEFAULT_ENV',
+      'CWT_OUTPUT_DIR',
+    ]);
+
+    const entries: [string, string][] = [];
+    for (const key of preferredKeys) {
+      const value = env[key];
+      if (typeof value === 'string') {
+        entries.push([key, value]);
+      }
+    }
+
+    const extraKeys = Object.keys(env)
+      .filter((key) =>
+        key.startsWith('PYTHON') || key.startsWith('CWT_') || key.startsWith('VIRTUAL')
+          ? true
+          : false,
+      )
+      .slice(0, 5);
+
+    for (const key of extraKeys) {
+      if (entries.find(([existing]) => existing === key)) {
+        continue;
+      }
+      const value = env[key];
+      if (typeof value === 'string') {
+        entries.push([key, value]);
+      }
+    }
+
+    const snapshot: Record<string, string> = {};
+    for (const [key, value] of entries) {
+      snapshot[key] = value;
+    }
+    return snapshot;
+  }
+
+  private async writeDiagnostics(context: RunContext) {
+    try {
+      const payload = {
+        ...context.diagnostics,
+        hostname: os.hostname(),
+        pid: context.process?.pid ?? null,
+      } satisfies RunDiagnostics & { hostname: string; pid: number | null };
+      await ensureDir(path.dirname(context.diagnosticsPath));
+      await fs.writeFile(context.diagnosticsPath, JSON.stringify(payload, null, 2), 'utf-8');
+    } catch (error) {
+      console.warn(`Failed to write diagnostics for run ${context.id}:`, error);
+    }
+  }
+
+  private async terminateProcessTree(context: RunContext, signal: NodeJS.Signals | 'SIGKILL') {
+    const child = context.process;
+    if (!child || !child.pid) {
+      return;
+    }
+
+    try {
+      if (process.platform === 'win32') {
+        await new Promise<void>((resolve) => {
+          const taskkill = spawn('taskkill', ['/PID', String(child.pid), '/T', '/F']);
+          taskkill.on('exit', () => resolve());
+          taskkill.on('error', () => resolve());
+        });
+      } else {
+        try {
+          process.kill(-child.pid, signal);
+        } catch {
+          try {
+            child.kill(signal);
+          } catch {
+            // ignore
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(`Failed to terminate run ${context.id}:`, error);
+    }
+  }
+
+  private async resolveArtifactsDir(runId: string): Promise<string> {
+    const context = this.runs.get(runId);
+    if (context) {
+      return context.artifactsDir;
+    }
+
+    const [record] = fetchRuns(this.registry, { id: runId, limit: 1 });
+    if (!record) {
+      throw new Error(`Run ${runId} not found`);
+    }
+    return record.artifactsDir;
   }
 }
 

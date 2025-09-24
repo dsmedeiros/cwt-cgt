@@ -226,6 +226,7 @@ export type RunCreatePayload = {
   experiment: string;
   args?: Record<string, unknown>;
   workdir?: string;
+  timeoutMs?: number;
 };
 
 export type RunCreateResult = {
@@ -249,6 +250,26 @@ export type RunTailChunk = {
   output: string;
   nextFromByte: number;
   status: string;
+};
+
+export type RunDiagnosticsBundle = {
+  zipPath: string;
+  files: string[];
+};
+
+export type RegistryRunRecord = {
+  id: string;
+  status: 'pending' | 'running' | 'complete' | 'failed' | 'aborted';
+  command: string;
+  args: string[];
+  cwd: string;
+  phase: string | null;
+  experiment: string | null;
+  label: string | null;
+  createdAt: number;
+  updatedAt: number;
+  artifactsDir: string;
+  metrics: Record<string, number | null> | null;
 };
 
 export type ArtifactFile = {
@@ -341,6 +362,7 @@ export interface RendererIpc {
     abort: (payload: RunAbortPayload) => Promise<IpcEnvelope<RunAbortResult>>;
     tail: (payload: RunTailPayload) => Promise<IpcEnvelope<RunTailChunk>>;
     openArtifacts: (payload: { runId: string }) => Promise<IpcEnvelope<ArtifactFile[]>>;
+    collectDiagnostics: (payload: { runId: string }) => Promise<IpcEnvelope<RunDiagnosticsBundle>>;
     readArtifact: (
       payload: { runId: string; relativePath: string },
     ) => Promise<IpcEnvelope<{ path: string; contents: string }>>;
@@ -405,7 +427,9 @@ export interface RendererIpc {
     list: (payload?: ArtifactsListPayload) => Promise<IpcEnvelope<unknown>>;
   };
   registry: {
-    query: (payload?: RegistryQueryPayload) => Promise<IpcEnvelope<unknown>>;
+    query: (
+      payload?: RegistryQueryPayload,
+    ) => Promise<IpcEnvelope<RegistryRunRecord[]>>;
   };
   recipes: {
     list: () => Promise<IpcEnvelope<RecipeRecord[]>>;

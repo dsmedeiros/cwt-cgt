@@ -2,6 +2,8 @@ import type {
   IpcEnvelope,
   Phase2CorrelatePayload,
   Phase2CorrelateResult,
+  RegistryRunRecord,
+  RunDiagnosticsBundle,
 } from './types/ipc';
 
 const unwrap = async <T>(
@@ -29,6 +31,21 @@ export const phase2 = {
     return unwrap(
       window?.CWT?.phase2?.saveSnapshot?.(payload),
       'Phase-2 snapshot IPC is unavailable',
+    );
+  },
+};
+
+export const runs = {
+  async listRecent(limit = 20): Promise<RegistryRunRecord[]> {
+    return unwrap(
+      window?.CWT?.registry?.query?.({ limit }),
+      'Run registry IPC is unavailable',
+    );
+  },
+  async collectDiagnostics(runId: string): Promise<RunDiagnosticsBundle> {
+    return unwrap(
+      window?.CWT?.run?.collectDiagnostics?.({ runId }),
+      'Diagnostics IPC is unavailable',
     );
   },
 };
