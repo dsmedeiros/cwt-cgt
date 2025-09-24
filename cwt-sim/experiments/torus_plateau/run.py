@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import json
 import math
 import warnings
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import Iterable, Mapping, Sequence
 
 import numpy as np
@@ -15,6 +17,10 @@ from cwt.graph.substrate import GraphSubstrate
 from cwt.layers.state import LayersState
 from cwt.orchestrator.param_path import ParameterPath
 from cwt.orchestrator.scheduler import RunConfig, _psi_at, run_parameter_loop
+
+
+def ensure_dir(path: Path) -> None:
+    path.mkdir(parents=True, exist_ok=True)
 
 
 @dataclass
@@ -214,6 +220,12 @@ def main() -> None:
     parser.add_argument("--tau-extent", type=float, default=0.22)
     parser.add_argument("--zeta-center", type=float, default=0.5)
     parser.add_argument("--zeta-extent", type=float, default=0.5)
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help="Optional directory to store JSON summaries",
+    )
     args = parser.parse_args()
 
     axes = (str(args.axes[0]), str(args.axes[1]))
@@ -221,6 +233,10 @@ def main() -> None:
 
     center = {axes[0]: float(args.tau_center), axes[1]: float(args.zeta_center)}
     extents = {axes[0]: float(abs(args.tau_extent)), axes[1]: float(abs(args.zeta_extent))}
+
+    output_dir: Path | None = args.output_dir
+    if output_dir is not None:
+        ensure_dir(output_dir)
 
     substrate = _build_substrate()
     base_config = _run_config(0.0)
@@ -248,6 +264,19 @@ def main() -> None:
     stable, stability_notes = _stability(samples)
     jump_notes = _detect_jumps(samples)
 
+    summary_payload = {
+        "axes": list(axes),
+        "grid_size": int(args.grid_size),
+        "steps": steps,
+        "center": center,
+        "extents": extents,
+        "disorder": [float(value) for value in args.disorder],
+        "samples": [asdict(sample) for sample in samples],
+        "stable": stable,
+        "stability_notes": stability_notes,
+        "jump_notes": jump_notes,
+    }
+
     if stable:
         print("Plateau stable across low disorder values.")
     else:
@@ -259,6 +288,11 @@ def main() -> None:
             print(note)
     else:
         print("No large integral jumps detected across disorder sweep.")
+
+    if output_dir is not None:
+        summary_path = output_dir / "summary.json"
+        summary_path.write_text(json.dumps(summary_payload, indent=2), encoding="utf-8")
+        print(f"Summary written to {summary_path}")
 
 
 if __name__ == "__main__":
