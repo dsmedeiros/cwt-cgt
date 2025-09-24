@@ -28,7 +28,10 @@ describe('validators', () => {
 
   it('validates allowed axes per phase', () => {
     expect(validateAxis('phase1', 'rho')).toEqual({ ok: true, value: 'rho' });
-    expect(validateAxis('phase3', 'omega')).toEqual({ ok: false, message: 'Axis name must be one of: tau, zeta, rho, sigma, kappa.' });
+    expect(validateAxis('phase3', 'omega')).toEqual({
+      ok: false,
+      message: 'Axis name must be one of: tau, zeta, rho, kappa, zeta_phase.',
+    });
   });
 
   it('formats validation messages for UI consumption', () => {

@@ -8,6 +8,7 @@ import { z } from 'zod';
 
 import {
   detectPython,
+  getBundledPythonPathEntries,
   getEnvironmentConfig,
   setPythonPath,
   type PythonCandidate,
@@ -42,11 +43,15 @@ ensureDirSync(artifactsRoot);
 ensureDirSync(path.dirname(registryPath));
 ensureDirSync(exportsRoot);
 
+const pythonPathEntries = [cwtSimRoot, ...getBundledPythonPathEntries()].filter(
+  (entry) => entry && entry.length > 0,
+);
+
 const runManager = new RunManager({
   repoRoot,
   artifactsRoot,
   registryPath,
-  pythonPathEntries: [cwtSimRoot],
+  pythonPathEntries,
 });
 
 let shuttingDown = false;

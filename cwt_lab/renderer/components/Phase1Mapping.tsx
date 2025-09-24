@@ -1,30 +1,72 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
-import { createDecisionGateEngine } from '../decisionGate';
 import { formatValidationMessage, validateAxis, validateExtent } from '../../shared/validators';
 import { useCommandRegistration } from '../commandCenter';
+import { phase1 } from '../ipc';
 
-const AXIS_OPTIONS = ['rho', 'tau', 'zeta', 'sigma', 'omega'];
+const AXIS_OPTIONS = ['rho', 'tau', 'zeta', 'zeta_phase', 'kappa'] as const;
 
-const simulatePhase1Metrics = (seed: number, extent: number) => {
-  const base = Math.sin(seed * 12.9898 + extent * 78.233) * 43758.5453;
-  const normalized = base - Math.floor(base);
-  const maxOmega = Number(((normalized < 0.35 ? normalized * 4e-6 : normalized * 5e-5 + 1e-5)).toFixed(7));
-  const coverage = Number(Math.min(1, 0.45 + extent * 0.65).toFixed(2));
-  return { maxOmega, coverage };
+type AxisOption = (typeof AXIS_OPTIONS)[number];
+
+const DEFAULT_AXIS_RANGES: Record<AxisOption, [number, number]> = {
+  rho: [0, 3],
+  tau: [0.5, 3],
+  zeta: [0, 1.5],
+  zeta_phase: [-0.5, 0.5],
+  kappa: [0.5, 1.5],
 };
 
+type AxisRangeSnapshot = {
+  axis: AxisOption;
+  range: [number, number];
+};
+
+const formatAxisLabel = (axis: AxisOption) => axis.replace(/_/g, ' ');
+
+const scaleRange = (axis: AxisOption, extent: number): [number, number] => {
+  const [min, max] = DEFAULT_AXIS_RANGES[axis];
+  const center = (min + max) / 2;
+  const halfWidth = ((max - min) / 2) * extent;
+  return [center - halfWidth, center + halfWidth];
+};
+
+const computeCoverageFraction = (
+  primaryAxis: AxisOption,
+  secondaryAxis: AxisOption,
+  extent: number,
+): number | null => {
+  const primarySpan = DEFAULT_AXIS_RANGES[primaryAxis][1] - DEFAULT_AXIS_RANGES[primaryAxis][0];
+  const secondarySpan = DEFAULT_AXIS_RANGES[secondaryAxis][1] - DEFAULT_AXIS_RANGES[secondaryAxis][0];
+  if (primarySpan <= 0 || secondarySpan <= 0) {
+    return null;
+  }
+  const scaledPrimary = primarySpan * extent;
+  const scaledSecondary = secondarySpan * extent;
+  const baselineArea = primarySpan * secondarySpan;
+  if (baselineArea <= 0) {
+    return null;
+  }
+  return (scaledPrimary * scaledSecondary) / baselineArea;
+};
+
+const formatRange = (range: [number, number]) => `${range[0].toFixed(3)} … ${range[1].toFixed(3)}`;
+
 const Phase1Mapping = () => {
-  const decisionGate = useMemo(() => createDecisionGateEngine(), []);
-  const [axisPrimary, setAxisPrimary] = useState(AXIS_OPTIONS[0]);
-  const [axisSecondary, setAxisSecondary] = useState(AXIS_OPTIONS[1]);
+  const [axisPrimary, setAxisPrimary] = useState<AxisOption>(AXIS_OPTIONS[0]);
+  const [axisSecondary, setAxisSecondary] = useState<AxisOption>(AXIS_OPTIONS[1]);
   const [extent, setExtent] = useState(0.6);
   const [seed, setSeed] = useState(2024);
   const [isRunning, setIsRunning] = useState(false);
   const [maxOmega, setMaxOmega] = useState<number | null>(null);
   const [coverage, setCoverage] = useState<number | null>(null);
   const [tipMessage, setTipMessage] = useState<string | null>(null);
-  const timerRef = useRef<number | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [lastRunId, setLastRunId] = useState<string | null>(null);
+  const [lastRanges, setLastRanges] = useState<
+    | { primary: AxisRangeSnapshot; secondary: AxisRangeSnapshot }
+    | null
+  >(null);
 
   const axisPrimaryValidation = useMemo(() => validateAxis('phase1', axisPrimary), [axisPrimary]);
   const axisSecondaryValidation = useMemo(() => validateAxis('phase1', axisSecondary), [axisSecondary]);
@@ -38,60 +80,71 @@ const Phase1Mapping = () => {
   const isRunDisabled = isRunning || Boolean(runDisabledReason);
   const runTitle = isRunning ? 'Mapping already running.' : runDisabledReason;
 
-  const runMapping = useCallback(() => {
-    if (!extentValidation.ok || isRunning) {
+  const runMapping = useCallback(async () => {
+    if (!extentValidation.ok || !axisPrimaryValidation.ok || !axisSecondaryValidation.ok || axisPairError) {
       return;
     }
-    setIsRunning(true);
-    if (timerRef.current) {
-      window.clearTimeout(timerRef.current);
-    }
-    timerRef.current = window.setTimeout(() => {
-      const metrics = simulatePhase1Metrics(seed, extentValidation.value);
-      setMaxOmega(metrics.maxOmega);
-      setCoverage(metrics.coverage);
-      const tip = decisionGate.evaluate({
-        phase: 'phase1',
-        omegaMaxAbs: metrics.maxOmega,
-      });
-      setTipMessage(tip);
-      setIsRunning(false);
-      timerRef.current = null;
-    }, 160);
-  }, [decisionGate, extentValidation, isRunning, seed]);
 
-  const abortMapping = useCallback(() => {
-    if (!isRunning) {
-      return;
-    }
-    if (timerRef.current) {
-      window.clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    setIsRunning(false);
-    setTipMessage('Mapping aborted before completion.');
-  }, [isRunning]);
+    const primaryAxis = axisPrimaryValidation.value as AxisOption;
+    const secondaryAxis = axisSecondaryValidation.value as AxisOption;
+    const extentValue = extentValidation.value;
 
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        window.clearTimeout(timerRef.current);
-      }
+    const primaryRange = scaleRange(primaryAxis, extentValue);
+    const secondaryRange = scaleRange(secondaryAxis, extentValue);
+    const payload: Record<string, unknown> = {
+      axes: [primaryAxis, secondaryAxis],
+      seed,
+      [`${primaryAxis}Range`]: primaryRange,
+      [`${secondaryAxis}Range`]: secondaryRange,
     };
-  }, []);
+
+    setIsRunning(true);
+    setErrorMessage(null);
+    setStatusMessage(null);
+    setTipMessage(null);
+
+    try {
+      const result = await phase1.map(payload);
+      const coverageFraction = computeCoverageFraction(primaryAxis, secondaryAxis, extentValue);
+      setCoverage(coverageFraction);
+      setMaxOmega(null);
+      setLastRunId(result.runId ?? null);
+      setLastRanges({
+        primary: { axis: primaryAxis, range: primaryRange },
+        secondary: { axis: secondaryAxis, range: secondaryRange },
+      });
+      let nextTip: string | null = null;
+      if (coverageFraction != null) {
+        if (coverageFraction < 0.15) {
+          nextTip =
+            'Sweep window is extremely narrow. Increase the extent before moving on to avoid missing ridges.';
+        } else if (coverageFraction > 0.85) {
+          nextTip =
+            'Sweep window spans almost the full default range. Consider tightening the extent to focus later phases.';
+        }
+      }
+      setTipMessage(nextTip);
+      setStatusMessage(`Mapping run ${result.runId} launched. Track progress in the Run Board.`);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsRunning(false);
+    }
+  }, [
+    axisPairError,
+    axisPrimaryValidation,
+    axisSecondaryValidation,
+    extentValidation,
+    seed,
+  ]);
 
   const runRegistration = useMemo(
-    () => ({ handler: runMapping, description: 'Run Phase-1 mapping' }),
+    () => ({ handler: () => void runMapping(), description: 'Run Phase-1 mapping' }),
     [runMapping],
-  );
-  const abortRegistration = useMemo(
-    () => (isRunning ? { handler: abortMapping, description: 'Abort Phase-1 mapping' } : null),
-    [abortMapping, isRunning],
   );
 
   useCommandRegistration({
     run: runRegistration,
-    abort: abortRegistration,
   });
 
   return (
@@ -118,13 +171,19 @@ const Phase1Mapping = () => {
           </button>
         </div>
       ) : null}
+      {errorMessage ? (
+        <div className="phase1__error" role="alert">{errorMessage}</div>
+      ) : null}
+      {statusMessage ? (
+        <p className="phase1__status-note" role="status">{statusMessage}</p>
+      ) : null}
       <section className="phase1__controls">
         <div className="phase1__field">
           <label htmlFor="phase1-axis-primary">Primary axis</label>
           <select
             id="phase1-axis-primary"
             value={axisPrimary}
-            onChange={(event) => setAxisPrimary(event.target.value)}
+            onChange={(event) => setAxisPrimary(event.target.value as AxisOption)}
           >
             {AXIS_OPTIONS.map((axis) => (
               <option key={axis} value={axis}>
@@ -139,7 +198,7 @@ const Phase1Mapping = () => {
           <select
             id="phase1-axis-secondary"
             value={axisSecondary}
-            onChange={(event) => setAxisSecondary(event.target.value)}
+            onChange={(event) => setAxisSecondary(event.target.value as AxisOption)}
           >
             {AXIS_OPTIONS.map((axis) => (
               <option key={axis} value={axis}>
@@ -198,7 +257,21 @@ const Phase1Mapping = () => {
           <li>
             <span className="phase1__metric-label">Axes</span>
             <strong>
-              {axisPrimary} / {axisSecondary}
+              {lastRanges
+                ? `${formatAxisLabel(lastRanges.primary.axis)} / ${formatAxisLabel(lastRanges.secondary.axis)}`
+                : `${formatAxisLabel(axisPrimary)} / ${formatAxisLabel(axisSecondary)}`}
+            </strong>
+          </li>
+          <li>
+            <span className="phase1__metric-label">Primary range</span>
+            <strong>
+              {lastRanges ? formatRange(lastRanges.primary.range) : '–'}
+            </strong>
+          </li>
+          <li>
+            <span className="phase1__metric-label">Secondary range</span>
+            <strong>
+              {lastRanges ? formatRange(lastRanges.secondary.range) : '–'}
             </strong>
           </li>
           <li>
@@ -208,6 +281,10 @@ const Phase1Mapping = () => {
           <li>
             <span className="phase1__metric-label">Tile coverage</span>
             <strong>{coverage != null ? `${(coverage * 100).toFixed(0)}%` : '–'}</strong>
+          </li>
+          <li>
+            <span className="phase1__metric-label">Run ID</span>
+            <strong>{lastRunId ?? '–'}</strong>
           </li>
         </ul>
       </section>

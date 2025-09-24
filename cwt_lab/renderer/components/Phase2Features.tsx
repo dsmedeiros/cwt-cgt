@@ -9,7 +9,7 @@ import { useCommandRegistration } from '../commandCenter';
 
 const FEATURE_DISPLAY_NAMES: Record<Phase2FeatureName, string> = {
   spectral_gap: 'Spectral gap',
-  kuramoto_r: 'Kuramoto r',
+  kuramoto_r: 'Readout bias R',
   grad_r: '∇r',
   trace_g: 'Trace g',
 };
