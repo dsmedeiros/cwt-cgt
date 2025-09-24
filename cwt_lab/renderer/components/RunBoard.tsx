@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { runs as defaultRunsApi } from '../ipc';
-import type { RegistryRunRecord, RunDiagnosticsBundle } from '../types/ipc';
+import type { RegistryRunRecord, RunDiagnosticsBundle, RunTailChunk } from '../types/ipc';
 
 type RunsApi = {
   listRecent: (limit?: number) => Promise<RegistryRunRecord[]>;
   collectDiagnostics: (runId: string) => Promise<RunDiagnosticsBundle>;
+  tail: (payload: { runId: string; fromByte?: number; maxBytes?: number }) => Promise<RunTailChunk>;
 };
 
 type RunBoardProps = {
@@ -16,6 +17,34 @@ type NoticeState =
   | { kind: 'success'; message: string }
   | { kind: 'error'; message: string }
   | null;
+
+export const LOG_CHUNK_BYTES = 64 * 1024;
+
+type LogChunkEntry = { start: number; text: string };
+
+type LogState = {
+  runId: string | null;
+  chunks: LogChunkEntry[];
+  status: string | null;
+  loading: boolean;
+  error: string | null;
+  hasMoreBefore: boolean;
+  startByte: number | null;
+  nextByte: number | null;
+  totalBytes: number | null;
+};
+
+const makeEmptyLogState = (): LogState => ({
+  runId: null,
+  chunks: [],
+  status: null,
+  loading: false,
+  error: null,
+  hasMoreBefore: false,
+  startByte: null,
+  nextByte: null,
+  totalBytes: null,
+});
 
 const statusLabels: Record<RegistryRunRecord['status'], string> = {
   pending: 'Pending',
@@ -59,6 +88,50 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeState>(null);
   const [collectingId, setCollectingId] = useState<string | null>(null);
+  const [logState, setLogState] = useState<LogState>(() => makeEmptyLogState());
+
+  const resetLogState = useCallback(() => {
+    setLogState(makeEmptyLogState());
+  }, []);
+
+  const applyLogChunk = useCallback(
+    (runId: string, chunk: RunTailChunk) => {
+      setLogState((prev) => {
+        if (prev.runId !== runId) {
+          return prev;
+        }
+
+        const earliestStart =
+          prev.startByte == null ? chunk.startFromByte : Math.min(prev.startByte, chunk.startFromByte);
+        const hasMoreBefore =
+          earliestStart > 0
+            ? chunk.startFromByte <= (prev.startByte ?? chunk.startFromByte)
+              ? chunk.hasMoreBefore
+              : prev.hasMoreBefore
+            : false;
+        const nextByte =
+          prev.nextByte == null ? chunk.nextFromByte : Math.max(prev.nextByte, chunk.nextFromByte);
+
+        const chunks = chunk.output.length
+          ? [...prev.chunks.filter((entry) => entry.start !== chunk.startFromByte),
+            { start: chunk.startFromByte, text: chunk.output }].sort((a, b) => a.start - b.start)
+          : prev.chunks;
+
+        return {
+          ...prev,
+          chunks,
+          status: chunk.status,
+          loading: false,
+          error: null,
+          hasMoreBefore,
+          startByte: earliestStart,
+          nextByte,
+          totalBytes: chunk.totalBytes,
+        };
+      });
+    },
+    [],
+  );
 
   const fetchRuns = useCallback(async () => {
     setLoading(true);
@@ -73,6 +146,77 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
       setLoading(false);
     }
   }, [api]);
+
+  const fetchLogChunk = useCallback(
+    async (runId: string, mode: 'latest' | 'older' | 'refresh') => {
+      setLogState((prev) => {
+        if (prev.runId === runId) {
+          return { ...prev, loading: true, error: null };
+        }
+        return { ...makeEmptyLogState(), runId, loading: true };
+      });
+
+      try {
+        let fromByte: number | undefined;
+        let maxBytes = LOG_CHUNK_BYTES;
+
+        if (mode === 'latest') {
+          fromByte = -LOG_CHUNK_BYTES;
+        } else if (mode === 'older') {
+          const startByte = logState.startByte ?? 0;
+          const canLoadMore = logState.hasMoreBefore && startByte > 0;
+          if (!canLoadMore) {
+            setLogState((prev) =>
+              prev.runId === runId ? { ...prev, loading: false } : prev,
+            );
+            return;
+          }
+          const targetStart = Math.max(0, startByte - LOG_CHUNK_BYTES);
+          maxBytes = Math.max(1, startByte - targetStart || LOG_CHUNK_BYTES);
+          fromByte = targetStart;
+        } else {
+          const nextByte = logState.nextByte ?? 0;
+          fromByte = nextByte > 0 ? nextByte : -LOG_CHUNK_BYTES;
+        }
+
+        const chunk = await api.tail({ runId, fromByte, maxBytes });
+        applyLogChunk(runId, chunk);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        setLogState((prev) =>
+          prev.runId === runId ? { ...prev, loading: false, error: message } : prev,
+        );
+      }
+    },
+    [api, applyLogChunk, logState.hasMoreBefore, logState.nextByte, logState.startByte],
+  );
+
+  const handleViewLog = useCallback(
+    (runId: string) => {
+      if (logState.runId === runId) {
+        resetLogState();
+        return;
+      }
+
+      setLogState({ ...makeEmptyLogState(), runId, loading: true });
+      void fetchLogChunk(runId, 'latest');
+    },
+    [fetchLogChunk, logState.runId, resetLogState],
+  );
+
+  const handleLoadMore = useCallback(() => {
+    if (!logState.runId) {
+      return;
+    }
+    void fetchLogChunk(logState.runId, 'older');
+  }, [fetchLogChunk, logState.runId]);
+
+  const handleRefresh = useCallback(() => {
+    if (!logState.runId) {
+      return;
+    }
+    void fetchLogChunk(logState.runId, 'refresh');
+  }, [fetchLogChunk, logState.runId]);
 
   useEffect(() => {
     void fetchRuns();
@@ -185,6 +329,18 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
                     <button
                       type="button"
                       className="run-board__button"
+                      onClick={() => handleViewLog(run.id)}
+                      disabled={logState.loading && logState.runId === run.id}
+                    >
+                      {logState.runId === run.id
+                        ? logState.loading
+                          ? 'Loading log…'
+                          : 'Hide log'
+                        : 'View log'}
+                    </button>
+                    <button
+                      type="button"
+                      className="run-board__button"
                       onClick={() => handleCollectDiagnostics(run.id)}
                       disabled={collectingId === run.id}
                     >
@@ -197,6 +353,55 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
           </tbody>
         </table>
       </div>
+      {logState.runId ? (
+        <section className="run-board__log" aria-live="polite">
+          <header className="run-board__log-header">
+            <h3>Run log</h3>
+            <div className="run-board__log-meta-row">
+              <code className="run-board__mono">{logState.runId}</code>
+              {logState.status ? (
+                <span className={`run-board__status run-board__status--${logState.status}`}>
+                  {statusLabels[logState.status as RegistryRunRecord['status']] ?? logState.status}
+                </span>
+              ) : null}
+            </div>
+          </header>
+          {logState.error ? (
+            <div className="run-board__notice run-board__notice--error" role="alert">
+              {logState.error}
+            </div>
+          ) : null}
+          <pre className="run-board__log-output">
+            {logState.chunks.length > 0
+              ? logState.chunks.map((chunk) => chunk.text).join('')
+              : '(no output yet)'}
+          </pre>
+          <div className="run-board__log-actions">
+            <button
+              type="button"
+              className="run-board__button"
+              onClick={handleLoadMore}
+              disabled={!logState.hasMoreBefore || logState.loading}
+            >
+              {logState.loading && logState.hasMoreBefore ? 'Loading…' : 'Load more'}
+            </button>
+            <button
+              type="button"
+              className="run-board__button"
+              onClick={handleRefresh}
+              disabled={logState.loading}
+            >
+              {logState.loading && !logState.hasMoreBefore ? 'Refreshing…' : 'Refresh'}
+            </button>
+          </div>
+          {logState.totalBytes != null ? (
+            <p className="run-board__log-meta">
+              Showing bytes {logState.startByte ?? 0}–
+              {Math.max((logState.nextByte ?? 1) - 1, 0)} of {logState.totalBytes}.
+            </p>
+          ) : null}
+        </section>
+      ) : null}
     </div>
   );
 };

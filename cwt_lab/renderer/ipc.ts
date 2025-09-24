@@ -4,6 +4,8 @@ import type {
   Phase2CorrelateResult,
   RegistryRunRecord,
   RunDiagnosticsBundle,
+  RunTailChunk,
+  RunTailPayload,
 } from './types/ipc';
 
 const unwrap = async <T>(
@@ -47,6 +49,9 @@ export const runs = {
       window?.CWT?.run?.collectDiagnostics?.({ runId }),
       'Diagnostics IPC is unavailable',
     );
+  },
+  async tail(payload: RunTailPayload): Promise<RunTailChunk> {
+    return unwrap(window?.CWT?.run?.tail?.(payload), 'Run tail IPC is unavailable');
   },
 };
 

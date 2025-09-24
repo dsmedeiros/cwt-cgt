@@ -186,6 +186,7 @@ export const cmdInverseDesign = async (
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     PYTHONUNBUFFERED: '1',
+    PYTHONIOENCODING: 'utf-8',
   };
 
   const pythonPath = buildPythonPath(strategy);

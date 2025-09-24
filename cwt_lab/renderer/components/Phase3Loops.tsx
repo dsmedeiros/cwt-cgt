@@ -16,6 +16,9 @@ type Hotspot = {
   tau: number;
   zeta: number;
   calm?: boolean;
+  axes?: [string, string];
+  graph?: string | null;
+  originPath?: string | null;
 };
 
 type SimpleLoopMetrics = {
@@ -58,9 +61,35 @@ type GuidedLoopResult = {
 };
 
 const defaultHotspots: Hotspot[] = [
-  { id: 'calm-1', name: 'Calm Basin A', tau: 0.08, zeta: -0.03, calm: true },
-  { id: 'calm-2', name: 'Calm Basin B', tau: -0.04, zeta: 0.06, calm: true },
-  { id: 'spicy-1', name: 'Energetic Ridge', tau: 0.18, zeta: 0.12 },
+  {
+    id: 'calm-1',
+    name: 'Calm Basin A',
+    tau: 0.08,
+    zeta: -0.03,
+    calm: true,
+    axes: ['tau', 'zeta'],
+    graph: 'default',
+    originPath: 'defaults',
+  },
+  {
+    id: 'calm-2',
+    name: 'Calm Basin B',
+    tau: -0.04,
+    zeta: 0.06,
+    calm: true,
+    axes: ['tau', 'zeta'],
+    graph: 'default',
+    originPath: 'defaults',
+  },
+  {
+    id: 'spicy-1',
+    name: 'Energetic Ridge',
+    tau: 0.18,
+    zeta: 0.12,
+    axes: ['tau', 'zeta'],
+    graph: 'default',
+    originPath: 'defaults',
+  },
 ];
 
 const graphOptions = [
@@ -72,6 +101,32 @@ const graphOptions = [
 const safeNumber = (value: number) => Number(value.toFixed(4));
 
 const toCliValue = (value: number) => value.toFixed(4).replace(/\.0+$/, '');
+
+const normalizeOrigin = (value: string | null | undefined) =>
+  value ? value.replace(/\\/g, '/').trim() : '';
+
+const hotspotKey = (hotspot: Hotspot) => {
+  const axes = hotspot.axes ?? ['tau', 'zeta'];
+  const graph = hotspot.graph ?? '';
+  const origin = normalizeOrigin(hotspot.originPath);
+  const center = `${hotspot.tau.toFixed(6)}|${hotspot.zeta.toFixed(6)}`;
+  return `${axes[0]}|${axes[1]}|${graph}|${center}|${origin}`;
+};
+
+const mergeHotspotList = (
+  existing: Hotspot[],
+  candidate: Hotspot,
+): { list: Hotspot[]; activeId: string } => {
+  const key = hotspotKey(candidate);
+  const index = existing.findIndex((item) => hotspotKey(item) === key);
+  if (index >= 0) {
+    const preservedId = existing[index].id;
+    const next = [...existing];
+    next[index] = { ...candidate, id: preservedId };
+    return { list: next, activeId: preservedId };
+  }
+  return { list: [...existing, candidate], activeId: candidate.id };
+};
 
 const buildSimplePayload = (
   hotspot: Hotspot,
@@ -228,6 +283,17 @@ const Phase3Loops = () => {
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement | null>(null);
 
+  const upsertHotspot = useCallback(
+    (incoming: Hotspot) => {
+      setHotspots((prev) => {
+        const { list, activeId } = mergeHotspotList(prev, incoming);
+        setSelectedHotspotId(activeId);
+        return list;
+      });
+    },
+    [],
+  );
+
   const selectedHotspot = useMemo(
     () => hotspots.find((hotspot) => hotspot.id === selectedHotspotId) ?? hotspots[0],
     [hotspots, selectedHotspotId],
@@ -286,10 +352,12 @@ const Phase3Loops = () => {
       tau: manualTau,
       zeta: manualZeta,
       calm: true,
+      axes: ['tau', 'zeta'],
+      graph,
+      originPath: 'manual',
     };
 
-    setHotspots((prev) => [...prev, newHotspot]);
-    setSelectedHotspotId(id);
+    upsertHotspot(newHotspot);
   };
 
   const runSimpleLoop = useCallback(async () => {

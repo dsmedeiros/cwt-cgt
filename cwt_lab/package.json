@@ -29,7 +29,8 @@
     "yaml": "^2.3.4",
     "zod": "^3.22.4",
     "zustand": "^4.4.1",
-    "jszip": "^3.10.1"
+    "jszip": "^3.10.1",
+    "ufo": "^1.6.1"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.9",
