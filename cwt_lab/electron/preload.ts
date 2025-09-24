@@ -38,6 +38,7 @@ const api = {
   },
   phase5: {
     graphFamily: (params) => invoke('cwt:phase5:graph-family', params),
+    cmdGraphFamily: (params) => invoke('cwt:phase5:graph-family:analyze', params),
     inverseDesign: (params) => invoke('cwt:phase5:inverse-design', params),
     noiseRobust: (params) => invoke('cwt:phase5:noise-robust', params),
     betaSweep: (params) => invoke('cwt:phase5:beta-sweep', params),

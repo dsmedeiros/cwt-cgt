@@ -14,6 +14,7 @@ import {
 import { RunManager, type RunMetadata } from './runner/runManager';
 import type { GuidedLoopArgs, LoopAtHotspotPayload } from '../renderer/types/ipc';
 import { runAdiabaticBoundary } from './adiabaticBoundary';
+import { cmdGraphFamily } from './graphFamily';
 import { buildArgsFromParams } from './runner/args';
 import { correlate as correlatePhase2 } from '../../electron/runner/phase2';
 
@@ -584,6 +585,70 @@ ipcMain.handle('cwt:phase5:graph-family', (_event, params) =>
       label: 'Graph family sweep',
     }),
   ),
+);
+
+ipcMain.handle('cwt:phase5:graph-family:analyze', (_event, payload) =>
+  wrap(async () => {
+    const env = runManager.getPythonEnv();
+    if (!env) {
+      throw new Error('Python environment not configured. Run environment detection first.');
+    }
+
+    const familiesRaw = Array.isArray(payload?.families)
+      ? payload?.families
+      : typeof payload?.families === 'string'
+        ? payload?.families.split(',')
+        : ['ring', 'rr', 'sw', 'sf', 'mod'];
+    const families = familiesRaw
+      .map((entry: unknown) => String(entry ?? '').trim())
+      .filter((entry: string): entry is string => entry.length > 0);
+    if (families.length === 0) {
+      throw new Error('Select at least one graph family.');
+    }
+
+    const axesRaw = Array.isArray(payload?.axes) ? payload.axes : [];
+    if (axesRaw.length !== 2) {
+      throw new Error('axes must contain exactly two entries.');
+    }
+    const axes = axesRaw.map((axis: unknown) => String(axis ?? '').trim()) as [string, string];
+    if (!axes[0] || !axes[1]) {
+      throw new Error('axes entries must be non-empty strings.');
+    }
+    if (axes[0].toLowerCase() === axes[1].toLowerCase()) {
+      throw new Error('axes must be distinct.');
+    }
+
+    const gridSizeValue = payload?.gridSize ?? payload?.grid_size ?? 21;
+    const gridSize = Number(gridSizeValue);
+    if (!Number.isInteger(gridSize) || gridSize <= 0) {
+      throw new Error('gridSize must be a positive integer.');
+    }
+
+    const extentValue = payload?.extents ?? payload?.extent ?? 0.02;
+    const extent = Number(extentValue);
+    if (!Number.isFinite(extent) || extent <= 0) {
+      throw new Error('extents must be a positive number.');
+    }
+
+    const seedValue = payload?.seed ?? 123;
+    const seed = Number(seedValue);
+    if (!Number.isFinite(seed)) {
+      throw new Error('seed must be numeric.');
+    }
+
+    const outDir = path.join(artifactsRoot, 'graph_family', uuidv4());
+    await fs.mkdir(outDir, { recursive: true });
+
+    return cmdGraphFamily(env.executable, {
+      families,
+      axes,
+      gridSize,
+      extents: extent,
+      seed: Math.trunc(seed),
+      outDir,
+      strategy: env.strategy,
+    });
+  }),
 );
 
 ipcMain.handle('cwt:phase5:inverse-design', (_event, params) =>
