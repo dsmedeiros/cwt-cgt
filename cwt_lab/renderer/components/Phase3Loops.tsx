@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { GuidedLoopArgs, LoopAtHotspotPayload } from '../types/ipc';
 import AdiabaticBoundaryViewer from './AdiabaticBoundaryViewer';
@@ -210,6 +210,13 @@ const Phase3Loops = () => {
   const [guidedSeed, setGuidedSeed] = useState(2024);
   const [guidedResult, setGuidedResult] = useState<GuidedLoopResult | null>(null);
   const [isGuidedRunning, setIsGuidedRunning] = useState(false);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [saveName, setSaveName] = useState('');
+  const [saveDescription, setSaveDescription] = useState('');
+  const [saveInFlight, setSaveInFlight] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
+  const modalRef = useRef<HTMLDivElement | null>(null);
 
   const selectedHotspot = useMemo(
     () => hotspots.find((hotspot) => hotspot.id === selectedHotspotId) ?? hotspots[0],
@@ -361,23 +368,124 @@ const Phase3Loops = () => {
     void navigator.clipboard?.writeText(guidedResult.command);
   };
 
-  const saveRecipe = async () => {
+  const openSaveRecipeModal = () => {
     if (!guidedResult) {
       return;
     }
+    setSaveName(`Guided loop ${new Date().toLocaleString()}`);
+    setSaveDescription('');
+    setSaveError(null);
+    setSaveModalOpen(true);
+  };
 
+  const closeSaveRecipeModal = useCallback(() => {
+    if (saveInFlight) {
+      return;
+    }
+    setSaveModalOpen(false);
+    setSaveError(null);
+  }, [saveInFlight]);
+
+  const confirmSaveRecipe = async () => {
+    if (!guidedResult) {
+      setSaveModalOpen(false);
+      return;
+    }
     if (!window?.CWT?.recipes?.save) {
       return;
     }
 
-    const name = `Guided loop ${new Date().toLocaleString()}`;
-    await window.CWT.recipes.save({
-      name,
-      params: guidedResult.payload,
-      command: guidedResult.command,
-      seed: guidedResult.payload.seed,
-    });
+    const trimmedName = saveName.trim();
+    if (!trimmedName) {
+      setSaveError('Provide a recipe name.');
+      return;
+    }
+
+    setSaveInFlight(true);
+    setSaveError(null);
+    try {
+      await window.CWT.recipes.save({
+        name: trimmedName,
+        description: saveDescription.trim(),
+        params: guidedResult.payload,
+        command: guidedResult.command,
+        seed: guidedResult.payload.seed,
+        basedOnRunId: guidedResult.runs[guidedResult.runs.length - 1]?.runId ?? null,
+      });
+      setSaveModalOpen(false);
+      setSaveSuccessMessage(`Saved recipe “${trimmedName}”.`);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('cwt:recipes:updated'));
+      }
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setSaveInFlight(false);
+    }
   };
+
+  useEffect(() => {
+    if (!saveSuccessMessage) {
+      return;
+    }
+    const timer = window.setTimeout(() => setSaveSuccessMessage(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [saveSuccessMessage]);
+
+  useEffect(() => {
+    if (!saveModalOpen) {
+      return;
+    }
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const focusFirst = () => {
+      if (!modalRef.current) {
+        return;
+      }
+      const focusable = modalRef.current.querySelector<HTMLElement>(
+        'input, textarea, button, select, [tabindex]:not([tabindex="-1"])',
+      );
+      focusable?.focus();
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (!saveInFlight) {
+          event.preventDefault();
+          setSaveModalOpen(false);
+          setSaveError(null);
+        }
+        return;
+      }
+      if (event.key !== 'Tab' || !modalRef.current) {
+        return;
+      }
+      const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+        'input, textarea, button, select, [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable.length) {
+        event.preventDefault();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (event.shiftKey) {
+        if (active === first || !modalRef.current.contains(active)) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else if (active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    setTimeout(focusFirst, 0);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      previouslyFocused?.focus?.();
+    };
+  }, [saveModalOpen, saveInFlight]);
 
   return (
     <div className="panel phase3">
@@ -662,10 +770,12 @@ const Phase3Loops = () => {
                 <div className="phase3__guided-result">
                   <header className="phase3__guided-header">
                     <h4>{guidedResult.satisfied ? 'Stable configuration found' : 'Tuning incomplete'}</h4>
-                    <button type="button" className="btn btn--ghost" onClick={saveRecipe}>
+                    <button type="button" className="btn btn--ghost" onClick={openSaveRecipeModal}>
                       Save as Recipe
                     </button>
                   </header>
+
+                  {saveSuccessMessage ? <p className="phase3__notice">{saveSuccessMessage}</p> : null}
 
                   <div className="phase3__badges">
                     <span className={fsGuardBadgeClass(guidedResult.derivedMetrics.fsP95, fsGuard)}>
@@ -720,6 +830,54 @@ const Phase3Loops = () => {
       <section className="phase3__card">
         <AdiabaticBoundaryViewer />
       </section>
+      {saveModalOpen ? (
+        <div
+          className="modal-overlay"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeSaveRecipeModal();
+            }
+          }}
+        >
+          <div
+            className="modal"
+            ref={modalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="save-recipe-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <h3 id="save-recipe-title">Save recipe</h3>
+            <label>
+              <span>Name</span>
+              <input value={saveName} onChange={(event) => setSaveName(event.target.value)} />
+            </label>
+            <label>
+              <span>Description</span>
+              <textarea
+                rows={3}
+                value={saveDescription}
+                onChange={(event) => setSaveDescription(event.target.value)}
+              />
+            </label>
+            {saveError ? <p className="modal__error">{saveError}</p> : null}
+            <div className="modal__actions">
+              <button type="button" className="btn btn--primary" onClick={confirmSaveRecipe} disabled={saveInFlight}>
+                {saveInFlight ? 'Saving…' : 'Save recipe'}
+              </button>
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={closeSaveRecipeModal}
+                disabled={saveInFlight}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

@@ -19,6 +19,7 @@ export type RunRecord = {
 };
 
 export type RunQuery = {
+  id?: string;
   phase?: string;
   experiment?: string;
   limit?: number;
@@ -119,6 +120,10 @@ export const fetchRuns = (db: BetterSqlite3Database, query: RunQuery): RunRecord
   const clauses: string[] = [];
   const params: Record<string, unknown> = {};
 
+  if (query.id) {
+    clauses.push('id = @id');
+    params.id = query.id;
+  }
   if (query.phase) {
     clauses.push('phase = @phase');
     params.phase = query.phase;

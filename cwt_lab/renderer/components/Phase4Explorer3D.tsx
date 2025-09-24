@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Plot from 'react-plotly.js';
 import type { Layout, PlotData } from 'plotly.js';
+import type { RecipeRecord } from '../types/ipc';
 
 type WilsonMetrics = {
   fsP95: number;
@@ -14,13 +15,6 @@ type WilsonExplorerResult = {
   runId?: string;
   command: string;
   metrics: WilsonMetrics;
-};
-
-type RecipeRecord = {
-  id: string;
-  name?: string;
-  command?: string;
-  params?: Record<string, unknown>;
 };
 
 const AXIS_CHOICES = ['rho', 'tau', 'zeta', 'zeta_phase', 'kappa'];

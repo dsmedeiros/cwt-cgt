@@ -50,6 +50,120 @@ export type GraphFamilyCommandPayload = {
   seed: number;
 };
 
+export type InverseDesignControlPoint = {
+  index: number;
+  axisA: number;
+  axisB: number;
+};
+
+export type InverseDesignPathSummary = {
+  magnitude: number | null;
+  guardFraction: number | null;
+  length: number | null;
+  phiMissing: boolean;
+};
+
+export type InverseDesignOptimisedSummary = InverseDesignPathSummary & {
+  improvement: number | null;
+  controlPoints: InverseDesignControlPoint[];
+};
+
+export type InverseDesignCommandResult = {
+  stdout: string;
+  stderr: string;
+  outputDir: string;
+  baseline: InverseDesignPathSummary | null;
+  optimised: InverseDesignOptimisedSummary | null;
+  acceptance: string | null;
+};
+
+export type InverseDesignCommandPayload = {
+  axes: [string, string];
+  center: [number, number];
+  extentPair: [number, number];
+  budgetSteps?: number;
+  maxFs?: number;
+  targetIndex?: number;
+};
+
+export type NoiseRobustTrial = {
+  seed: number;
+  rGamma: number | null;
+  overlapAverage: number | null;
+  minOverlap: number | null;
+  fsSteps: number[];
+};
+
+export type NoiseRobustPoint = {
+  phaseStd: number;
+  ampStd: number;
+  delayStd: number;
+  signPersistence: number | null;
+  overlapMean: number | null;
+  coherenceMean: number | null;
+  quantized: boolean;
+  fsP95: number | null;
+  fsMax: number | null;
+  trials: NoiseRobustTrial[];
+};
+
+export type NoiseRobustGraph = {
+  name: string;
+  axes: [string, string];
+  flux: number | null;
+  overlapThreshold: number | null;
+  coherenceThreshold: number | null;
+  points: NoiseRobustPoint[];
+};
+
+export type NoiseRobustCommandResult = {
+  stdout: string;
+  stderr: string;
+  outputDir: string;
+  recordsPath: string;
+  reportPath: string | null;
+  graphs: NoiseRobustGraph[];
+  numTrials?: number;
+  loopSteps?: number;
+};
+
+export type NoiseRobustCommandPayload = {
+  phaseStd?: number[];
+  ampStd?: number[];
+  delayStd?: number[];
+  numTrials?: number;
+  loopSteps?: number;
+  gridSize?: number;
+  axes?: [string, string];
+};
+
+export type CouplingVariantSummary = {
+  beta: number;
+  etaQ: number | null;
+  phi: number | null;
+  phiMissing: boolean;
+  rValue: number | null;
+  fsP95: number | null;
+  fsBoundary: number | null;
+  guardExceeded: boolean;
+  runId: string;
+  variantConfig: string;
+  runDir: string;
+};
+
+export type CouplingTunerResult = {
+  outputDir: string;
+  baselineConfig: string;
+  variants: CouplingVariantSummary[];
+  bestIndex: number | null;
+};
+
+export type CouplingTunerPayload = {
+  configPath: string;
+  betas: number[];
+  etaQ?: number | number[];
+};
+
 export type Phase2FeatureName = 'spectral_gap' | 'kuramoto_r' | 'grad_r' | 'trace_g';
 
 export type Phase2FeatureStat = {
@@ -187,14 +301,32 @@ export type RegistryQueryPayload = {
 
 export type RecipeSavePayload = {
   name: string;
+  description?: string;
+  basedOnRunId?: string | null;
   params: Record<string, unknown>;
   command: string;
-  seed?: number;
+  seed?: number | null;
   envInfo?: unknown;
 };
 
 export type RecipeRunPayload = {
   id: string;
+};
+
+export type RecipeExportPayload = {
+  id: string;
+};
+
+export type RecipeRecord = {
+  id: string;
+  name: string;
+  description: string;
+  basedOnRunId: string | null;
+  params: Record<string, unknown>;
+  command: string;
+  seed: number | null;
+  envInfo: unknown;
+  createdAt: string;
 };
 
 export interface RendererIpc {
@@ -250,7 +382,13 @@ export interface RendererIpc {
       params: GraphFamilyCommandPayload,
     ) => Promise<IpcEnvelope<GraphFamilyCommandResult>>;
     inverseDesign: (params: Record<string, unknown>) => Promise<IpcEnvelope<RunCreateResult>>;
+    cmdInverseDesign: (
+      params: InverseDesignCommandPayload,
+    ) => Promise<IpcEnvelope<InverseDesignCommandResult>>;
     noiseRobust: (params: Record<string, unknown>) => Promise<IpcEnvelope<RunCreateResult>>;
+    cmdNoiseRobust: (
+      params: NoiseRobustCommandPayload,
+    ) => Promise<IpcEnvelope<NoiseRobustCommandResult>>;
     betaSweep: (
       params: { configPath: string; betas: number[] },
     ) => Promise<
@@ -259,6 +397,9 @@ export interface RendererIpc {
         tempDir: string;
       }>
     >;
+    couplingTuner: (
+      params: CouplingTunerPayload,
+    ) => Promise<IpcEnvelope<CouplingTunerResult>>;
   };
   artifacts: {
     list: (payload?: ArtifactsListPayload) => Promise<IpcEnvelope<unknown>>;
@@ -267,9 +408,12 @@ export interface RendererIpc {
     query: (payload?: RegistryQueryPayload) => Promise<IpcEnvelope<unknown>>;
   };
   recipes: {
-    list: () => Promise<IpcEnvelope<unknown>>;
-    save: (payload: RecipeSavePayload) => Promise<IpcEnvelope<unknown>>;
+    list: () => Promise<IpcEnvelope<RecipeRecord[]>>;
+    save: (payload: RecipeSavePayload) => Promise<IpcEnvelope<RecipeRecord>>;
     run: (payload: RecipeRunPayload) => Promise<IpcEnvelope<RunCreateResult>>;
+    export: (
+      payload: RecipeExportPayload,
+    ) => Promise<IpcEnvelope<{ zipPath: string; attachments: string[] }>>;
   };
   ping: (payload: string) => Promise<IpcEnvelope<{ pong: string }>>;
   version: () => Promise<IpcEnvelope<{ version: string }>>;
