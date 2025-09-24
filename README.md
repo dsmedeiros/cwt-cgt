@@ -1,6 +1,6 @@
 # Causal Web Theory & Geometric Tensor Toolkit
 
-A research sandbox for exploring **Continuous Wavelet Transport (CWT)** dynamics and the associated **CWT Geometric Tensor (CGT)**. The repository combines theory notes with a Python package (`cwt-sim`) that orchestrates placeholder simulations, parameter sweeps, and evaluation utilities.
+A research sandbox for exploring **Causal Web Theory (CWT)** dynamics and the associated **CWT Geometric Tensor (CGT)**. The repository combines theory notes with a Python package (`cwt-sim`) that orchestrates placeholder simulations, parameter sweeps, and evaluation utilities.
 
 ## Table of contents
 1. [Project overview](#project-overview)
@@ -19,7 +19,7 @@ A research sandbox for exploring **Continuous Wavelet Transport (CWT)** dynamics
 11. [License and citation](#license-and-citation)
 
 ## Project overview
-Continuous Wavelet Transport treats macroscopic dynamics as emerging from local propagation on a graph substrate with density-dependent delays. Three interacting layers – probabilistic mass flow (`Q`), phase (`Θ`), and classical readout (`C`) – evolve under a geometry imposed on the control-parameter manifold. That geometry is captured by the CWT Geometric Tensor whose real part behaves as a sensitivity metric and whose imaginary part induces Berry-like curvature effects. The high-level theory is documented in [`theory.md`](theory.md), while this repository provides executable scaffolding for experiments and regression tests.
+Causal Web Theory treats macroscopic dynamics as emerging from local propagation on a graph substrate with density-dependent delays. Three interacting layers – probabilistic mass flow (`Q`), phase (`Θ`), and classical readout (`C`) – evolve under a geometry imposed on the control-parameter manifold. That geometry is captured by the CWT Geometric Tensor whose real part behaves as a sensitivity metric and whose imaginary part induces Berry-like curvature effects. The high-level theory is documented in [`theory.md`](theory.md), while this repository provides executable scaffolding for experiments and regression tests.
 
 The Python package housed in `cwt-sim/` wires together:
 - graph substrates and transport kernels,
