@@ -7,6 +7,7 @@ import Phase2Features from './components/Phase2Features';
 import Phase3Loops from './components/Phase3Loops';
 import Phase4Explorer3D from './components/Phase4Explorer3D';
 import Phase5Optimize from './components/Phase5Optimize';
+import TorusPlateauViewer from './components/TorusPlateauViewer';
 import RunBoard from './components/RunBoard';
 
 const tabs = [
@@ -15,6 +16,7 @@ const tabs = [
   { id: 'phase2', label: 'Phase 2', element: <Phase2Features /> },
   { id: 'phase3', label: 'Phase 3', element: <Phase3Loops /> },
   { id: 'phase4', label: 'Phase 4', element: <Phase4Explorer3D /> },
+  { id: 'torus', label: 'Torus Plateau', element: <TorusPlateauViewer /> },
   { id: 'phase5', label: 'Phase 5', element: <Phase5Optimize /> },
   { id: 'artifacts', label: 'Artifacts', element: <ArtifactBrowser /> },
   { id: 'env', label: 'Env Doctor', element: <EnvDoctor /> },
