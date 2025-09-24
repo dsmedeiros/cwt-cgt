@@ -15,6 +15,7 @@ import { RunManager, type RunMetadata } from './runner/runManager';
 import type { GuidedLoopArgs, LoopAtHotspotPayload } from '../renderer/types/ipc';
 import { runAdiabaticBoundary } from './adiabaticBoundary';
 import { buildArgsFromParams } from './runner/args';
+import { correlate as correlatePhase2 } from '../../electron/runner/phase2';
 
 type Envelope<T> = { ok: true; data: T } | { ok: false; error: string; data?: T };
 
@@ -646,234 +647,71 @@ ipcMain.handle('cwt:phase5:beta-sweep', (_event, params: { configPath: string; b
   }),
 );
 
-const computePearson = (x: number[], y: number[]): number | null => {
-  if (x.length !== y.length || x.length === 0) {
-    return null;
-  }
-
-  const n = x.length;
-  const meanX = x.reduce((acc, value) => acc + value, 0) / n;
-  const meanY = y.reduce((acc, value) => acc + value, 0) / n;
-
-  let numerator = 0;
-  let denomX = 0;
-  let denomY = 0;
-
-  for (let i = 0; i < n; i += 1) {
-    const dx = x[i] - meanX;
-    const dy = y[i] - meanY;
-    numerator += dx * dy;
-    denomX += dx * dx;
-    denomY += dy * dy;
-  }
-
-  const denominator = Math.sqrt(denomX * denomY);
-  if (denominator === 0) {
-    return null;
-  }
-
-  return numerator / denominator;
-};
-
-const computeAuc = (scores: number[], labels: number[]): number | null => {
-  if (scores.length !== labels.length || scores.length === 0) {
-    return null;
-  }
-
-  const paired = scores.map((score, index) => ({ score, label: labels[index] }));
-  paired.sort((a, b) => b.score - a.score);
-
-  let tp = 0;
-  let fp = 0;
-  let prevScore: number | null = null;
-  const positives = labels.filter((label) => label > 0).length;
-  const negatives = labels.length - positives;
-
-  if (positives === 0 || negatives === 0) {
-    return null;
-  }
-
-  let auc = 0;
-  let lastTpRate = 0;
-  let lastFpRate = 0;
-
-  for (const { score, label } of paired) {
-    if (prevScore !== null && score !== prevScore) {
-      const tpRate = tp / positives;
-      const fpRate = fp / negatives;
-      auc += (fpRate - lastFpRate) * (tpRate + lastTpRate) * 0.5;
-      lastTpRate = tpRate;
-      lastFpRate = fpRate;
-    }
-
-    if (label > 0) {
-      tp += 1;
-    } else {
-      fp += 1;
-    }
-    prevScore = score;
-  }
-
-  const finalTpRate = tp / positives;
-  const finalFpRate = fp / negatives;
-  auc += (finalFpRate - lastFpRate) * (finalTpRate + lastTpRate) * 0.5;
-  return auc;
-};
-
-const parseMetricsFile = async (filePath: string): Promise<Record<string, number>[]> => {
-  const ext = path.extname(filePath).toLowerCase();
-  const content = await fs.readFile(filePath, 'utf-8');
-
-  if (ext === '.json') {
-    try {
-      const parsed = JSON.parse(content);
-      if (Array.isArray(parsed)) {
-        return parsed.map((item) => flattenNumericFields(item));
-      }
-      return [flattenNumericFields(parsed)];
-    } catch (error) {
-      console.warn(`Failed to parse JSON metrics at ${filePath}:`, error);
-      return [];
-    }
-  }
-
-  if (ext === '.csv') {
-    const rows = content
-      .trim()
-      .split(/\r?\n/)
-      .filter((line) => line.length > 0);
-    if (rows.length === 0) {
-      return [];
-    }
-
-    const headers = rows[0].split(',').map((header) => header.trim());
-    const records: Record<string, number>[] = [];
-
-    for (let i = 1; i < rows.length; i += 1) {
-      const values = rows[i].split(',');
-      const record: Record<string, number> = {};
-      headers.forEach((header, index) => {
-        const value = Number.parseFloat(values[index]);
-        if (!Number.isNaN(value)) {
-          record[header] = value;
-        }
-      });
-      records.push(record);
-    }
-    return records;
-  }
-
-  return [];
-};
-
-const flattenNumericFields = (value: unknown, prefix = ''): Record<string, number> => {
-  if (value === null || value === undefined) {
-    return {};
-  }
-
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return { [prefix || 'value']: value };
-  }
-
-  if (typeof value !== 'object') {
-    return {};
-  }
-
-  const entries: Record<string, number> = {};
-  for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
-    const pathKey = prefix ? `${prefix}.${key}` : key;
-    Object.assign(entries, flattenNumericFields(nested, pathKey));
-  }
-  return entries;
-};
 
 ipcMain.handle(
   'cwt:phase2:correlate',
   (
     _event,
-    payload: {
-      metricsDirs: string[];
+    payload?: {
+      metricsDirs?: unknown[];
       thresholdMode?: 'absolute' | 'percentile';
-      thresholdValue?: number;
-      percentile?: number;
+      thresholdValue?: unknown;
+      percentile?: unknown;
     },
   ) =>
     wrap(async () => {
-      if (!payload?.metricsDirs || payload.metricsDirs.length === 0) {
+      const dirs = Array.isArray(payload?.metricsDirs)
+        ? (payload?.metricsDirs as unknown[])
+            .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+            .filter((entry) => entry.length > 0)
+        : [];
+
+      if (dirs.length === 0) {
         throw new Error('metricsDirs is required');
       }
 
-      const dataset: Record<string, number>[] = [];
+      const thresholdMode = payload?.thresholdMode === 'percentile' ? 'percentile' : 'absolute';
 
-      for (const dir of payload.metricsDirs) {
-        const absoluteDir = path.resolve(dir);
-        if (!existsSync(absoluteDir)) {
-          continue;
-        }
+      const rawValue =
+        thresholdMode === 'absolute' ? payload?.thresholdValue ?? 0 : payload?.percentile ?? 0;
+      const numericValue = Number(rawValue);
 
-        const files = await fs.readdir(absoluteDir);
-        for (const file of files) {
-          const filePath = path.join(absoluteDir, file);
-          const stats = await parseMetricsFile(filePath);
-          dataset.push(...stats);
-        }
+      if (!Number.isFinite(numericValue)) {
+        throw new Error(thresholdMode === 'absolute' ? 'thresholdValue must be numeric' : 'percentile must be numeric');
       }
 
-      if (dataset.length === 0) {
-        return { correlations: [], aucs: [] };
-      }
+      const uniqueDirs = Array.from(new Set(dirs.map((dir) => path.resolve(dir))));
 
-      const metricKeys = Array.from(
-        dataset.reduce((set, record) => {
-          Object.keys(record).forEach((key) => set.add(key));
-          return set;
-        }, new Set<string>()),
-      );
+      const result = correlatePhase2({
+        metricsDirs: uniqueDirs,
+        threshold: { mode: thresholdMode, value: numericValue },
+      });
 
-      const matrix: Array<{ metric: string; correlations: Record<string, number | null> }> = [];
-      const labelKey = metricKeys.find((key) => key.toLowerCase().includes('label'));
-      let labels = labelKey ? dataset.map((record) => record[labelKey] ?? 0) : [];
-
-      let appliedThreshold: number | null = null;
-      if (labelKey && payload.thresholdMode === 'absolute' && typeof payload.thresholdValue === 'number') {
-        appliedThreshold = payload.thresholdValue;
-        labels = dataset.map((record) => (record[labelKey] ?? 0) >= appliedThreshold! ? 1 : 0);
-      } else if (labelKey && payload.thresholdMode === 'percentile' && typeof payload.percentile === 'number') {
-        const sorted = [...labels].sort((a, b) => a - b);
-        if (sorted.length > 0) {
-          const rank = Math.min(
-            sorted.length - 1,
-            Math.max(0, Math.round((payload.percentile / 100) * (sorted.length - 1))),
-          );
-          appliedThreshold = sorted[rank] ?? null;
-          labels = dataset.map((record) => (record[labelKey] ?? 0) >= (appliedThreshold ?? 0) ? 1 : 0);
-        }
-      }
-
-      for (const metric of metricKeys) {
-        const values = dataset.map((record) => record[metric] ?? 0);
-        const correlations: Record<string, number | null> = {};
-        for (const other of metricKeys) {
-          const otherValues = dataset.map((record) => record[other] ?? 0);
-          correlations[other] = computePearson(values, otherValues);
-        }
-        matrix.push({ metric, correlations });
-      }
-
-      const aucs = labelKey
-        ? metricKeys
-            .filter((metric) => metric !== labelKey)
-            .map((metric) => ({
-              metric,
-              auc: computeAuc(
-                dataset.map((record) => record[metric] ?? 0),
-                labels.map((value) => (value >= 0.5 ? 1 : 0)),
-              ),
-            }))
-        : [];
-
-      return { correlations: matrix, aucs, labelKey: labelKey ?? null, threshold: appliedThreshold };
+      return result;
     }),
+);
+
+ipcMain.handle('cwt:phase2:save-snapshot', (_event, payload?: unknown) =>
+  wrap(async () => {
+    if (!payload || typeof payload !== 'object') {
+      throw new Error('payload is required');
+    }
+
+    const snapshotDir = path.join(artifactsRoot, '_ui');
+    ensureDirSync(snapshotDir);
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filePath = path.join(snapshotDir, `features_${timestamp}.json`);
+
+    const snapshot = {
+      savedAt: new Date().toISOString(),
+      ...payload,
+    };
+
+    await fs.writeFile(filePath, JSON.stringify(snapshot, null, 2), 'utf-8');
+
+    return { path: filePath };
+  }),
 );
 
 ipcMain.handle('cwt:artifacts:list', (_event, payload: { under?: string }) =>
