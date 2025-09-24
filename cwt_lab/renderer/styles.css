@@ -198,6 +198,143 @@ body {
   margin: 0.5rem 0 0;
 }
 
+.run-board {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.run-board__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.run-board__subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--color-muted);
+}
+
+.run-board__button {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: inherit;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s ease, color 0.2s ease, border 0.2s ease;
+}
+
+.run-board__button:hover,
+.run-board__button:focus-visible {
+  outline: none;
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  border-color: transparent;
+}
+
+.run-board__button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.run-board__notice {
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+}
+
+.run-board__notice--success {
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+.run-board__notice--error {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+}
+
+.run-board__table-wrapper {
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.run-board__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.run-board__table thead {
+  background: rgba(148, 163, 184, 0.16);
+}
+
+.run-board__table th,
+.run-board__table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.run-board__table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.run-board__mono {
+  font-family: 'Roboto Mono', 'SFMono-Regular', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
+  font-size: 0.85rem;
+}
+
+.run-board__status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.run-board__status--pending {
+  background: var(--color-badge-bg);
+  color: var(--color-badge-text);
+}
+
+.run-board__status--running {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.run-board__status--complete {
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+.run-board__status--failed,
+.run-board__status--aborted {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+}
+
+.run-board__actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.run-board__actions-col {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.run-board__empty {
+  text-align: center;
+  color: var(--color-muted);
+}
+
 .phase3__hotspot-list {
   display: flex;
   flex-direction: column;

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#f5f3ff"/>
+  <rect x="40" y="40" width="880" height="460" rx="24" fill="#ede9fe" stroke="#7c3aed" stroke-width="3"/>
+  <text x="80" y="110" fill="#4c1d95" font-family="'Inter', sans-serif" font-size="32" font-weight="700">Phase 4 – 3D Explorer</text>
+  <text x="80" y="160" fill="#5b21b6" font-family="'Inter', sans-serif" font-size="20">3D surface snapshot with torus overlay.</text>
+  <ellipse cx="360" cy="320" rx="220" ry="140" fill="#c4b5fd" stroke="#7c3aed" stroke-width="6"/>
+  <ellipse cx="360" cy="320" rx="160" ry="90" fill="#ede9fe" stroke="#5b21b6" stroke-width="4"/>
+  <path d="M640 240 h200 v200 h-200 z" fill="#ddd6fe" stroke="#5b21b6" stroke-width="4"/>
+  <text x="660" y="300" fill="#4c1d95" font-family="'Inter', sans-serif" font-size="18">Handle steps: 48</text>
+  <text x="660" y="340" fill="#4c1d95" font-family="'Inter', sans-serif" font-size="18">Comparing recipe A vs B</text>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#111827"/>
+  <rect x="40" y="40" width="880" height="460" rx="24" fill="#1f2937" stroke="#f97316" stroke-width="3"/>
+  <text x="80" y="110" fill="#fed7aa" font-family="'Inter', sans-serif" font-size="32" font-weight="700">Env Doctor</text>
+  <text x="80" y="160" fill="#ffedd5" font-family="'Inter', sans-serif" font-size="20">Python interpreter health checks.</text>
+  <rect x="80" y="200" width="800" height="80" rx="16" fill="#0f172a" stroke="#fb923c" stroke-width="2"/>
+  <text x="110" y="250" fill="#fed7aa" font-family="'Inter', sans-serif" font-size="20">✔ .venv/bin/python · strategy: installed · cwt import ok</text>
+  <rect x="80" y="310" width="800" height="80" rx="16" fill="#0f172a" stroke="#ea580c" stroke-width="2"/>
+  <text x="110" y="360" fill="#fed7aa" font-family="'Inter', sans-serif" font-size="20">✖ python3 · missing cwt (pip install -r requirements.txt)</text>
+</svg>

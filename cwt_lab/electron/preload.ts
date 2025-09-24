@@ -17,6 +17,7 @@ const api = {
     abort: (payload) => invoke('cwt:run:abort', payload),
     tail: (payload) => invoke('cwt:run:tail', payload),
     openArtifacts: (payload) => invoke('cwt:run:open-artifacts', payload),
+    collectDiagnostics: (payload) => invoke('cwt:run:collect-diagnostics', payload),
     readArtifact: (payload) => invoke('cwt:run:read-artifact', payload),
   },
   phase1: {

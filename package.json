@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "test": "jest"
+    "test": "npm run test:node && npm run test:lab",
+    "test:node": "jest",
+    "test:lab": "npm --prefix cwt_lab test"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
