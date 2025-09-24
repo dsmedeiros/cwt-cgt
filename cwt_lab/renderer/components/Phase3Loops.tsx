@@ -2,6 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { GuidedLoopArgs, LoopAtHotspotPayload } from '../types/ipc';
 import AdiabaticBoundaryViewer from './AdiabaticBoundaryViewer';
+import { createDecisionGateEngine } from '../decisionGate';
+import {
+  formatValidationMessage,
+  validateExtent,
+  validateFsGuard,
+  validateSteps,
+} from '../../shared/validators';
 
 type Hotspot = {
   id: string;
@@ -195,10 +202,13 @@ const Phase3Loops = () => {
   const [graph, setGraph] = useState(graphOptions[0].id);
   const [activeTab, setActiveTab] = useState<'simple' | 'guided'>('guided');
 
+  const decisionGate = useMemo(() => createDecisionGateEngine(), []);
+  const [tipMessage, setTipMessage] = useState<string | null>(null);
+
   const [extentA, setExtentA] = useState(0.4);
   const [extentB, setExtentB] = useState(0.4);
-  const [fsGuard, setFsGuard] = useState(0.1);
-  const [simpleLimit, setSimpleLimit] = useState(300);
+  const [fsGuardInput, setFsGuardInput] = useState('0.1');
+  const [simpleLimitInput, setSimpleLimitInput] = useState('300');
   const [simpleSeed, setSimpleSeed] = useState(42);
   const [simpleRuns, setSimpleRuns] = useState<SimpleLoopResult[]>([]);
   const [isSimpleRunning, setIsSimpleRunning] = useState(false);
@@ -223,6 +233,51 @@ const Phase3Loops = () => {
     [hotspots, selectedHotspotId],
   );
 
+  const extentAValidation = useMemo(() => validateExtent(extentA), [extentA]);
+  const extentBValidation = useMemo(() => validateExtent(extentB), [extentB]);
+  const fsGuardValidation = useMemo(() => validateFsGuard(fsGuardInput), [fsGuardInput]);
+  const simpleLimitValidation = useMemo(() => validateSteps(simpleLimitInput), [simpleLimitInput]);
+  const fsGuardNumber = fsGuardValidation.ok ? fsGuardValidation.value : null;
+  const guidedStepValidation = useMemo(() => guidedSteps.map((step) => validateSteps(step)), [guidedSteps]);
+  const guidedStepError = guidedStepValidation.find((result) => !result.ok);
+  const guidedStepErrorMessage = guidedStepError && !guidedStepError.ok ? guidedStepError.message : undefined;
+  const fsGuardError = formatValidationMessage(fsGuardValidation);
+  const simpleLimitError = formatValidationMessage(simpleLimitValidation);
+
+  const simpleRunDisabledReason = useMemo(() => {
+    if (!extentAValidation.ok) {
+      return extentAValidation.message;
+    }
+    if (!extentBValidation.ok) {
+      return extentBValidation.message;
+    }
+    if (!fsGuardValidation.ok) {
+      return fsGuardValidation.message;
+    }
+    if (!simpleLimitValidation.ok) {
+      return simpleLimitValidation.message;
+    }
+    return undefined;
+  }, [extentAValidation, extentBValidation, fsGuardValidation, simpleLimitValidation]);
+
+  const guidedRunDisabledReason = useMemo(() => {
+    if (!fsGuardValidation.ok) {
+      return fsGuardValidation.message;
+    }
+    if (guidedSteps.length === 0) {
+      return 'Select at least one step.';
+    }
+    if (guidedStepErrorMessage) {
+      return guidedStepErrorMessage;
+    }
+    return undefined;
+  }, [fsGuardValidation, guidedStepErrorMessage, guidedSteps.length]);
+
+  const isSimpleRunDisabled = isSimpleRunning || Boolean(simpleRunDisabledReason);
+  const isGuidedRunDisabled = isGuidedRunning || Boolean(guidedRunDisabledReason);
+  const simpleRunTitle = isSimpleRunning ? 'Loop already running.' : simpleRunDisabledReason;
+  const guidedRunTitle = isGuidedRunning ? 'Guided calibration in progress.' : guidedRunDisabledReason;
+
   const addManualHotspot = () => {
     const id = `manual-${Date.now()}`;
     const newHotspot: Hotspot = {
@@ -238,12 +293,26 @@ const Phase3Loops = () => {
   };
 
   const runSimpleLoop = useCallback(async () => {
-    if (!selectedHotspot) {
+    if (
+      !selectedHotspot ||
+      !extentAValidation.ok ||
+      !extentBValidation.ok ||
+      !fsGuardValidation.ok ||
+      !simpleLimitValidation.ok
+    ) {
       return;
     }
 
-    const extents: [number, number] = [extentA, extentB];
-    const payload = buildSimplePayload(selectedHotspot, graph, extents, fsGuard, simpleLimit, simpleSeed);
+    const extents: [number, number] = [extentAValidation.value, extentBValidation.value];
+    const guardValue = fsGuardValidation.value;
+    const payload = buildSimplePayload(
+      selectedHotspot,
+      graph,
+      extents,
+      guardValue,
+      simpleLimitValidation.value,
+      simpleSeed,
+    );
 
     setIsSimpleRunning(true);
     try {
@@ -257,7 +326,7 @@ const Phase3Loops = () => {
         return undefined;
       })();
 
-      const metrics = simulateSimpleMetrics(simpleSeed, extents, fsGuard);
+      const metrics = simulateSimpleMetrics(simpleSeed, extents, guardValue);
       const result: SimpleLoopResult = {
         id: `${Date.now()}`,
         hotspot: selectedHotspot,
@@ -267,10 +336,27 @@ const Phase3Loops = () => {
         runId,
       };
       setSimpleRuns((prev) => [result, ...prev]);
+      const tip = decisionGate.evaluate({
+        phase: 'phase3',
+        fsP95: metrics.fsP95,
+        fsGuard: guardValue,
+        phi: metrics.phi,
+        calmHotspot: selectedHotspot.calm ?? false,
+      });
+      setTipMessage(tip);
     } finally {
       setIsSimpleRunning(false);
     }
-  }, [extentA, extentB, fsGuard, graph, selectedHotspot, simpleLimit, simpleSeed]);
+  }, [
+    decisionGate,
+    extentAValidation,
+    extentBValidation,
+    fsGuardValidation,
+    graph,
+    selectedHotspot,
+    simpleLimitValidation,
+    simpleSeed,
+  ]);
 
   const toggleStep = (step: number) => {
     setGuidedSteps((prev) =>
@@ -279,17 +365,18 @@ const Phase3Loops = () => {
   };
 
   const runGuidedLoop = useCallback(async () => {
-    if (!selectedHotspot) {
+    if (!selectedHotspot || !fsGuardValidation.ok) {
       return;
     }
 
+    const guardValue = fsGuardValidation.value;
     const payload = buildGuidedPayload(
       selectedHotspot,
       graph,
       tauAmplitude,
       zetaAmplitude,
       guidedSteps,
-      fsGuard,
+      guardValue,
       guidedMinPhi,
       guidedSeed,
     );
@@ -311,7 +398,7 @@ const Phase3Loops = () => {
       if (!runs) {
         const simulatedMetrics: GuidedLoopRun[] = guidedSteps.map((steps, index) => {
           const seed = guidedSeed + index * 23;
-          const simpleMetrics = simulateSimpleMetrics(seed, [tauAmplitude, zetaAmplitude], fsGuard);
+          const simpleMetrics = simulateSimpleMetrics(seed, [tauAmplitude, zetaAmplitude], guardValue);
           const metricsRecord: Record<string, number> = {
             fs_p95: simpleMetrics.fsP95,
             phi: simpleMetrics.phi,
@@ -346,11 +433,20 @@ const Phase3Loops = () => {
         satisfied,
         derivedMetrics: derived,
       });
+      const tip = decisionGate.evaluate({
+        phase: 'phase3',
+        fsP95: derived.fsP95 ?? undefined,
+        fsGuard: guardValue,
+        phi: derived.phi ?? undefined,
+        calmHotspot: selectedHotspot.calm ?? false,
+      });
+      setTipMessage(tip);
     } finally {
       setIsGuidedRunning(false);
     }
   }, [
-    fsGuard,
+    decisionGate,
+    fsGuardValidation,
     graph,
     guidedMinPhi,
     guidedSeed,
@@ -557,6 +653,22 @@ const Phase3Loops = () => {
         </aside>
 
         <div className="phase3__main">
+          {tipMessage ? (
+            <div className="decision-banner" role="status">
+              <div>
+                <strong>Next step tip:</strong>
+                <span>{` ${tipMessage}`}</span>
+              </div>
+              <button
+                type="button"
+                className="btn btn--ghost btn--small"
+                onClick={() => setTipMessage(null)}
+                aria-label="Dismiss tip"
+              >
+                ×
+              </button>
+            </div>
+          ) : null}
           <div className="phase3__tabs">
             <button
               type="button"
@@ -582,42 +694,61 @@ const Phase3Loops = () => {
                   <span>Extent τ</span>
                   <input
                     type="range"
-                    min="0"
+                    min="0.01"
                     max="1"
                     step="0.01"
                     value={extentA}
-                    onChange={(event) => setExtentA(Number(event.target.value))}
+                    onChange={(event) => setExtentA(Math.max(0.01, Number(event.target.value)))}
                   />
                   <code>{extentA.toFixed(2)}</code>
+                  <small className="field-hint">How far to sweep along τ from the hotspot centre.</small>
                 </label>
                 <label>
                   <span>Extent ζ</span>
                   <input
                     type="range"
-                    min="0"
+                    min="0.01"
                     max="1"
                     step="0.01"
                     value={extentB}
-                    onChange={(event) => setExtentB(Number(event.target.value))}
+                    onChange={(event) => setExtentB(Math.max(0.01, Number(event.target.value)))}
                   />
                   <code>{extentB.toFixed(2)}</code>
+                  <small className="field-hint">Controls the ζ reach of the loop about the hotspot.</small>
                 </label>
                 <label>
                   <span>FS guard</span>
                   <input
                     type="number"
                     step="0.01"
-                    value={fsGuard}
-                    onChange={(event) => setFsGuard(Number(event.target.value))}
+                    min="0.02"
+                    max="0.5"
+                    value={fsGuardInput}
+                    onChange={(event) => setFsGuardInput(event.target.value)}
                   />
+                  <small className="field-hint">
+                    Flux stability fence. Keep FS p95 at or below this level.
+                    {fsGuardError ? (
+                      <span className="field-error"> {fsGuardError}</span>
+                    ) : null}
+                  </small>
                 </label>
                 <label>
                   <span>Loop limit</span>
                   <input
                     type="number"
-                    value={simpleLimit}
-                    onChange={(event) => setSimpleLimit(Number(event.target.value))}
+                    min="16"
+                    max="2000"
+                    step="1"
+                    value={simpleLimitInput}
+                    onChange={(event) => setSimpleLimitInput(event.target.value)}
                   />
+                  <small className="field-hint">
+                    Number of solver steps per loop.
+                    {simpleLimitError ? (
+                      <span className="field-error"> {simpleLimitError}</span>
+                    ) : null}
+                  </small>
                 </label>
                 <label>
                   <span>Seed</span>
@@ -626,10 +757,17 @@ const Phase3Loops = () => {
                     value={simpleSeed}
                     onChange={(event) => setSimpleSeed(Number(event.target.value))}
                   />
+                  <small className="field-hint">Use the same seed to reproduce a sweep for comparison.</small>
                 </label>
               </div>
               <div className="phase3__actions">
-                <button type="button" className="btn btn--primary" onClick={runSimpleLoop} disabled={isSimpleRunning}>
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  onClick={runSimpleLoop}
+                  disabled={isSimpleRunDisabled}
+                  title={simpleRunTitle ?? undefined}
+                >
                   {isSimpleRunning ? 'Running…' : 'Run'}
                 </button>
               </div>
@@ -697,6 +835,7 @@ const Phase3Loops = () => {
                     onChange={(event) => setTauAmplitude(Number(event.target.value))}
                   />
                   <code>{tauAmplitude.toFixed(2)}</code>
+                  <small className="field-hint">Half-width of the sweep along τ when guiding the loop.</small>
                 </label>
                 <label>
                   <span>ζ amplitude</span>
@@ -709,15 +848,22 @@ const Phase3Loops = () => {
                     onChange={(event) => setZetaAmplitude(Number(event.target.value))}
                   />
                   <code>{zetaAmplitude.toFixed(2)}</code>
+                  <small className="field-hint">Adjust to explore broader ζ excursions without overshooting.</small>
                 </label>
                 <label>
                   <span>FS guard</span>
                   <input
                     type="number"
                     step="0.01"
-                    value={fsGuard}
-                    onChange={(event) => setFsGuard(Number(event.target.value))}
+                    min="0.02"
+                    max="0.5"
+                    value={fsGuardInput}
+                    onChange={(event) => setFsGuardInput(event.target.value)}
                   />
+                  <small className="field-hint">
+                    Same guard shared with the simple loop. Raise it only if every guided pass fails.
+                    {fsGuardError ? <span className="field-error"> {fsGuardError}</span> : null}
+                  </small>
                 </label>
                 <label>
                   <span>min Φ</span>
@@ -727,6 +873,7 @@ const Phase3Loops = () => {
                     value={guidedMinPhi}
                     onChange={(event) => setGuidedMinPhi(Number(event.target.value))}
                   />
+                  <small className="field-hint">Guard against flat Φ by requiring at least this magnitude.</small>
                 </label>
                 <label>
                   <span>Seed</span>
@@ -735,6 +882,7 @@ const Phase3Loops = () => {
                     value={guidedSeed}
                     onChange={(event) => setGuidedSeed(Number(event.target.value))}
                   />
+                  <small className="field-hint">Changes the jitter pattern while preserving other settings.</small>
                 </label>
               </div>
 
@@ -753,6 +901,9 @@ const Phase3Loops = () => {
                   ))}
                 </div>
                 <p className="phase3__hint">Toggle to include or exclude calibration steps.</p>
+                {guidedRunDisabledReason ? (
+                  <p className="field-error" role="alert">{guidedRunDisabledReason}</p>
+                ) : null}
               </div>
 
               <div className="phase3__actions">
@@ -760,7 +911,8 @@ const Phase3Loops = () => {
                   type="button"
                   className="btn btn--primary"
                   onClick={runGuidedLoop}
-                  disabled={isGuidedRunning || guidedSteps.length === 0}
+                  disabled={isGuidedRunDisabled}
+                  title={guidedRunTitle ?? undefined}
                 >
                   {isGuidedRunning ? 'Calibrating…' : 'Calibrate & Run'}
                 </button>
@@ -778,7 +930,7 @@ const Phase3Loops = () => {
                   {saveSuccessMessage ? <p className="phase3__notice">{saveSuccessMessage}</p> : null}
 
                   <div className="phase3__badges">
-                    <span className={fsGuardBadgeClass(guidedResult.derivedMetrics.fsP95, fsGuard)}>
+                    <span className={fsGuardBadgeClass(guidedResult.derivedMetrics.fsP95, fsGuardNumber ?? undefined)}>
                       FS p95: {guidedResult.derivedMetrics.fsP95 != null ? guidedResult.derivedMetrics.fsP95.toFixed(3) : '–'}
                     </span>
                     <span className="badge">
