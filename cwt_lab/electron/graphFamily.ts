@@ -108,6 +108,7 @@ export const cmdGraphFamily = async (
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     PYTHONUNBUFFERED: '1',
+    PYTHONIOENCODING: 'utf-8',
   };
   if (pythonPath) {
     env.PYTHONPATH = pythonPath;

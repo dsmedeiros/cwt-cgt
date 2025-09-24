@@ -244,11 +244,15 @@ export type RunAbortResult = {
 export type RunTailPayload = {
   runId: string;
   fromByte?: number;
+  maxBytes?: number;
 };
 
 export type RunTailChunk = {
   output: string;
   nextFromByte: number;
+  startFromByte: number;
+  totalBytes: number;
+  hasMoreBefore: boolean;
   status: string;
 };
 

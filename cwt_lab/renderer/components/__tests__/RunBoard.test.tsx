@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import RunBoard from '../RunBoard';
+import RunBoard, { LOG_CHUNK_BYTES } from '../RunBoard';
 import type { RegistryRunRecord } from '../../types/ipc';
 
 const buildRun = (overrides: Partial<RegistryRunRecord> = {}): RegistryRunRecord => ({
@@ -31,6 +31,7 @@ describe('RunBoard', () => {
       collectDiagnostics: vi
         .fn()
         .mockResolvedValue({ zipPath: '/tmp/demo.zip', files: ['/tmp/demo/stdout.log'] }),
+      tail: vi.fn(),
     };
 
     render(<RunBoard api={api} />);
@@ -53,11 +54,68 @@ describe('RunBoard', () => {
     const api = {
       listRecent: vi.fn().mockRejectedValue(new Error('IPC unavailable')),
       collectDiagnostics: vi.fn(),
+      tail: vi.fn(),
     };
 
     render(<RunBoard api={api} />);
 
     await waitFor(() => expect(api.listRecent).toHaveBeenCalled());
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('IPC unavailable'));
+  });
+
+  it('tails logs with pagination controls', async () => {
+    const runs = [buildRun({ id: 'run-1', status: 'running' })];
+    const tail = vi
+      .fn()
+      .mockResolvedValueOnce({
+        output: 'tail chunk',
+        startFromByte: 7,
+        nextFromByte: 12,
+        totalBytes: 12,
+        hasMoreBefore: true,
+        status: 'running',
+      })
+      .mockResolvedValueOnce({
+        output: 'older ',
+        startFromByte: 0,
+        nextFromByte: 7,
+        totalBytes: 12,
+        hasMoreBefore: false,
+        status: 'running',
+      });
+    const api = {
+      listRecent: vi.fn().mockResolvedValue(runs),
+      collectDiagnostics: vi.fn(),
+      tail,
+    };
+
+    render(<RunBoard api={api} />);
+
+    await waitFor(() => expect(api.listRecent).toHaveBeenCalled());
+    const viewButtons = screen.getAllByRole('button', { name: /View log/i });
+    fireEvent.click(viewButtons[0]);
+
+    await waitFor(() =>
+      expect(tail).toHaveBeenCalledWith({
+        runId: 'run-1',
+        fromByte: -LOG_CHUNK_BYTES,
+        maxBytes: LOG_CHUNK_BYTES,
+      }),
+    );
+    await waitFor(() => expect(screen.getByText(/tail chunk/)).toBeInTheDocument());
+
+    const loadMore = screen.getByRole('button', { name: /Load more/i });
+    fireEvent.click(loadMore);
+
+    await waitFor(() =>
+      expect(tail).toHaveBeenLastCalledWith({
+        runId: 'run-1',
+        fromByte: 0,
+        maxBytes: expect.any(Number),
+      }),
+    );
+    await waitFor(() =>
+      expect(screen.getByText(/older tail chunk/)).toBeInTheDocument(),
+    );
   });
 });

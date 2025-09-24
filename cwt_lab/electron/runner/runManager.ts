@@ -19,6 +19,9 @@ export type RunStatus = 'pending' | 'running' | 'complete' | 'failed' | 'aborted
 export type RunTailChunk = {
   output: string;
   nextFromByte: number;
+  startFromByte: number;
+  totalBytes: number;
+  hasMoreBefore: boolean;
   status: RunStatus;
 };
 
@@ -89,13 +92,36 @@ type RunDiagnostics = {
   env: Record<string, string>;
 };
 
+const LONG_PATH_THRESHOLD = 240;
+
+const toFsPath = (value: string) => {
+  if (process.platform !== 'win32') {
+    return value;
+  }
+
+  const absolute = path.resolve(value);
+  if (absolute.startsWith('\\\\?\\')) {
+    return absolute;
+  }
+
+  if (absolute.length < LONG_PATH_THRESHOLD) {
+    return absolute;
+  }
+
+  if (absolute.startsWith('\\\\')) {
+    return `\\\\?\\UNC\\${absolute.slice(2)}`;
+  }
+
+  return `\\\\?\\${absolute}`;
+};
+
 const ensureDir = async (dir: string) => {
-  await fs.mkdir(dir, { recursive: true });
+  await fs.mkdir(toFsPath(dir), { recursive: true });
 };
 
 const writeLog = async (logPath: string, contents: Buffer) => {
   await ensureDir(path.dirname(logPath));
-  await fs.writeFile(logPath, contents);
+  await fs.writeFile(toFsPath(logPath), contents);
 };
 
 export class RunManager {
@@ -215,6 +241,7 @@ export class RunManager {
         ...process.env,
         PYTHONPATH: this.buildPythonPath(),
         CWT_OUTPUT_DIR: context.artifactsDir,
+        PYTHONIOENCODING: 'utf-8',
       },
       detached: process.platform !== 'win32',
       windowsHide: true,
@@ -372,17 +399,35 @@ export class RunManager {
     return Array.from(entries).join(path.delimiter);
   }
 
-  async tail(runId: string, fromByte = 0): Promise<RunTailChunk> {
+  async tail(runId: string, fromByte = 0, maxBytes?: number): Promise<RunTailChunk> {
     const context = this.runs.get(runId);
     if (!context) {
       throw new Error(`Run ${runId} not found`);
     }
 
-    const start = Math.max(0, fromByte);
-    const slice = context.buffer.subarray(start);
+    const totalBytes = context.buffer.byteLength;
+    let start = Math.trunc(fromByte);
+    if (!Number.isFinite(start)) {
+      start = 0;
+    }
+    if (maxBytes && start < 0) {
+      start = Math.max(totalBytes - maxBytes, 0);
+    } else if (start < 0) {
+      start = Math.max(totalBytes + start, 0);
+    }
+    if (start > totalBytes) {
+      start = totalBytes;
+    }
+
+    const effectiveMax = maxBytes && maxBytes > 0 ? Math.min(maxBytes, totalBytes) : null;
+    const end = effectiveMax ? Math.min(start + effectiveMax, totalBytes) : totalBytes;
+    const slice = context.buffer.subarray(start, end);
     return {
       output: slice.toString('utf-8'),
       nextFromByte: start + slice.byteLength,
+      startFromByte: start,
+      totalBytes,
+      hasMoreBefore: start > 0,
       status: context.status,
     };
   }
@@ -417,7 +462,7 @@ export class RunManager {
       throw new Error('Invalid artifact path');
     }
 
-    const contents = await fs.readFile(resolved, 'utf-8');
+    const contents = await fs.readFile(toFsPath(resolved), 'utf-8');
     return { path: resolved, contents };
   }
 
@@ -458,12 +503,12 @@ export class RunManager {
     const artifactsDir = await this.resolveArtifactsDir(runId);
 
     const summaryPath = path.join(artifactsDir, 'summary.json');
-    if (!existsSync(summaryPath)) {
+    if (!existsSync(toFsPath(summaryPath))) {
       return null;
     }
 
     try {
-      const raw = await fs.readFile(summaryPath, 'utf-8');
+      const raw = await fs.readFile(toFsPath(summaryPath), 'utf-8');
       const parsed = JSON.parse(raw) as Record<string, unknown>;
       const metrics: Record<string, number | null> = {};
       for (const [key, value] of Object.entries(parsed)) {
@@ -487,10 +532,10 @@ export class RunManager {
 
     const addFile = async (filename: string) => {
       const absolute = path.join(artifactsDir, filename);
-      if (!existsSync(absolute)) {
+      if (!existsSync(toFsPath(absolute))) {
         return;
       }
-      const data = await fs.readFile(absolute);
+      const data = await fs.readFile(toFsPath(absolute));
       zip.file(filename, data);
       attachments.push(absolute);
     };
@@ -508,7 +553,7 @@ export class RunManager {
 
     const zipBuffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
     const zipPath = path.join(artifactsDir, `diagnostics-${Date.now()}.zip`);
-    await fs.writeFile(zipPath, zipBuffer);
+    await fs.writeFile(toFsPath(zipPath), zipBuffer);
 
     return { zipPath, files: attachments };
   }
@@ -564,7 +609,7 @@ export class RunManager {
         pid: context.process?.pid ?? null,
       } satisfies RunDiagnostics & { hostname: string; pid: number | null };
       await ensureDir(path.dirname(context.diagnosticsPath));
-      await fs.writeFile(context.diagnosticsPath, JSON.stringify(payload, null, 2), 'utf-8');
+      await fs.writeFile(toFsPath(context.diagnosticsPath), JSON.stringify(payload, null, 2), 'utf-8');
     } catch (error) {
       console.warn(`Failed to write diagnostics for run ${context.id}:`, error);
     }

@@ -591,7 +591,7 @@ ipcMain.handle('cwt:run:tail', (_event, payload: { runId: string; fromByte?: num
       throw new Error('runId is required');
     }
 
-    return runManager.tail(payload.runId, payload.fromByte ?? 0);
+    return runManager.tail(payload.runId, payload.fromByte ?? 0, (payload as { maxBytes?: number }).maxBytes);
   }),
 );
 

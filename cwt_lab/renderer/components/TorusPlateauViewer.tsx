@@ -79,8 +79,6 @@ const buildCommandPreview = (
   return parts.join(' ');
 };
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 type PlateauHeatmap = {
   axes: string[];
   x: number[];
@@ -149,52 +147,48 @@ const TorusPlateauViewer = () => {
     setIsLoadingSummary(true);
     setSummaryError(null);
 
-    const maxAttempts = 18;
-    let attempt = 0;
-    let parsedSummary: PlateauSummary | null = null;
-
-    while (attempt < maxAttempts && !parsedSummary) {
-      // Exponentially back off between attempts, capped at ~4s
-      const delay = Math.min(4000, 500 * 2 ** attempt);
-      await sleep(delay);
-
+    try {
       const artifactsResponse = await window.CWT.run.openArtifacts({ runId });
       if (!artifactsResponse.ok) {
-        attempt += 1;
-        continue;
+        throw new Error(artifactsResponse.error ?? 'Failed to list artifacts for the run.');
       }
 
       const files = artifactsResponse.data as ArtifactFile[];
-      const summaryFile = files.find((file) => file.type === 'file' && file.relativePath.endsWith('summary.json'));
+      const summaryFile = files.find(
+        (file) => file.type === 'file' && file.relativePath.endsWith('summary.json'),
+      );
+
       if (!summaryFile) {
-        attempt += 1;
-        continue;
+        setSummary(null);
+        setSummaryError('Summary not found yet. Retry once artifacts finish writing.');
+        return;
       }
 
-      const readResponse = await window.CWT.run.readArtifact({ runId, relativePath: summaryFile.relativePath });
+      const readResponse = await window.CWT.run.readArtifact({
+        runId,
+        relativePath: summaryFile.relativePath,
+      });
       if (!readResponse.ok) {
-        attempt += 1;
-        continue;
+        throw new Error(readResponse.error ?? 'Failed to read summary artifact.');
       }
 
       try {
-        parsedSummary = JSON.parse(readResponse.data.contents) as PlateauSummary;
+        const parsedSummary = JSON.parse(readResponse.data.contents) as PlateauSummary;
+        setSummary(parsedSummary);
+        setSelectedSampleIndex(0);
       } catch (parseError) {
-        setSummaryError(
-          parseError instanceof Error ? `Failed to parse summary: ${parseError.message}` : 'Failed to parse summary file.',
+        throw new Error(
+          parseError instanceof Error
+            ? `Failed to parse summary: ${parseError.message}`
+            : 'Failed to parse summary file.',
         );
-        break;
       }
+    } catch (loadError) {
+      setSummary(null);
+      setSummaryError(loadError instanceof Error ? loadError.message : String(loadError));
+    } finally {
+      setIsLoadingSummary(false);
     }
-
-    if (parsedSummary) {
-      setSummary(parsedSummary);
-      setSelectedSampleIndex(0);
-    } else {
-      setSummaryError((prev) => prev ?? 'Summary file was not produced for this run.');
-    }
-
-    setIsLoadingSummary(false);
   }, []);
 
   const runExperiment = useCallback(async () => {
@@ -287,6 +281,12 @@ const TorusPlateauViewer = () => {
   }, [axisA, axisB, disorderInput, gridSizeInput, loadSummary, tauCenter, tauExtent, zetaCenter, zetaExtent]);
 
   const selectedSample = summary?.samples?.[selectedSampleIndex];
+
+  const handleRetrySummary = useCallback(() => {
+    if (currentRunId) {
+      void loadSummary(currentRunId);
+    }
+  }, [currentRunId, loadSummary]);
 
   const heatmapPlot = useMemo(() => {
     if (!selectedSample?.heatmap) {
@@ -469,7 +469,24 @@ const TorusPlateauViewer = () => {
 
       <section className="torus__main">
         {isLoadingSummary ? <div className="torus__loading">Collecting summary from run…</div> : null}
-        {summaryError ? <div className="torus__error">{summaryError}</div> : null}
+        {summaryError ? (
+          <div className="torus__error">
+            {summaryError}
+            {currentRunId ? (
+              <>
+                {' '}
+                <button
+                  type="button"
+                  className="link-button"
+                  onClick={handleRetrySummary}
+                  disabled={isLoadingSummary}
+                >
+                  Retry
+                </button>
+              </>
+            ) : null}
+          </div>
+        ) : null}
 
         {summary ? (
           <>
