@@ -3,6 +3,7 @@ import Plot from 'react-plotly.js';
 import type { Data, Layout } from 'plotly.js';
 
 import { phase2 } from '../ipc';
+import { formatValidationMessage, validatePercentile } from '../../shared/validators';
 import type { Phase2CorrelateResult, Phase2FeatureName, Phase2RocPoint } from '../types/ipc';
 
 const FEATURE_DISPLAY_NAMES: Record<Phase2FeatureName, string> = {
@@ -84,6 +85,15 @@ const Phase2Features = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [snapshotStatus, setSnapshotStatus] = useState<string | null>(null);
 
+  const percentileValidation = useMemo(() => validatePercentile(percentileThreshold), [percentileThreshold]);
+  const percentileError = thresholdMode === 'percentile' ? formatValidationMessage(percentileValidation) : null;
+  const isAnalyzeDisabled = isLoading || (thresholdMode === 'percentile' && !percentileValidation.ok);
+  const analyzeTitle = isLoading
+    ? 'Correlation analysis already running.'
+    : thresholdMode === 'percentile' && !percentileValidation.ok
+      ? percentileValidation.message
+      : undefined;
+
   useEffect(() => {
     if (fileInputRef.current) {
       fileInputRef.current.setAttribute('webkitdirectory', 'true');
@@ -117,13 +127,12 @@ const Phase2Features = () => {
       }
       return value;
     }
-    const value = Number(percentileThreshold);
-    if (!Number.isFinite(value)) {
-      setError('Percentile must be numeric.');
+    if (!percentileValidation.ok) {
+      setError(percentileValidation.message);
       return null;
     }
-    return value;
-  }, [absoluteThreshold, percentileThreshold, thresholdMode]);
+    return percentileValidation.value;
+  }, [absoluteThreshold, percentileValidation, thresholdMode]);
 
   const runCorrelation = useCallback(async () => {
     if (metricsDirs.length === 0) {
@@ -417,17 +426,25 @@ const Phase2Features = () => {
           </label>
           <input
             type="number"
-            min="0"
-            max="100"
+            min="1"
+            max="99"
             value={percentileThreshold}
             onChange={(event) => setPercentileThreshold(event.target.value)}
             disabled={isLoading || thresholdMode !== 'percentile'}
             step="1"
           />
+          {thresholdMode === 'percentile' ? (
+            <small className="field-hint">
+              Keeps only the hottest percentile of tiles.
+              {percentileError ? <span className="field-error"> {percentileError}</span> : null}
+            </small>
+          ) : (
+            <small className="field-hint">Switch to percentile mode to clip noisy extremes.</small>
+          )}
         </div>
 
         <div className="control-group">
-          <button type="button" onClick={runCorrelation} disabled={isLoading}>
+          <button type="button" onClick={runCorrelation} disabled={isAnalyzeDisabled} title={analyzeTitle ?? undefined}>
             {isLoading ? 'Analyzing…' : 'Analyze correlations'}
           </button>
         </div>
