@@ -5,6 +5,7 @@ import type { Data, Layout } from 'plotly.js';
 import { phase2 } from '../ipc';
 import { formatValidationMessage, validatePercentile } from '../../shared/validators';
 import type { Phase2CorrelateResult, Phase2FeatureName, Phase2RocPoint } from '../types/ipc';
+import { useCommandRegistration } from '../commandCenter';
 
 const FEATURE_DISPLAY_NAMES: Record<Phase2FeatureName, string> = {
   spectral_gap: 'Spectral gap',
@@ -84,6 +85,7 @@ const Phase2Features = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [snapshotStatus, setSnapshotStatus] = useState<string | null>(null);
+  const abortRef = useRef<{ aborted: boolean } | null>(null);
 
   const percentileValidation = useMemo(() => validatePercentile(percentileThreshold), [percentileThreshold]);
   const percentileError = thresholdMode === 'percentile' ? formatValidationMessage(percentileValidation) : null;
@@ -144,6 +146,7 @@ const Phase2Features = () => {
       return;
     }
 
+    abortRef.current = { aborted: false };
     setIsLoading(true);
     setError(null);
     setSnapshotStatus(null);
@@ -153,19 +156,60 @@ const Phase2Features = () => {
           ? { metricsDirs, thresholdMode, thresholdValue }
           : { metricsDirs, thresholdMode, percentile: thresholdValue };
       const stats = await phase2.correlate(payload);
+      if (abortRef.current?.aborted) {
+        return;
+      }
       setResult(stats);
       const names = stats.features.map((feature) => feature.name);
       setSelectedFeatures(names);
       setScatterFeature((prev) => (prev && names.includes(prev) ? prev : names[0] ?? null));
       setSummary(buildSummary(stats));
     } catch (err) {
+      if (abortRef.current?.aborted) {
+        return;
+      }
       setResult(null);
       setSummary(buildSummary(null));
       setError(err instanceof Error ? err.message : String(err));
     } finally {
+      if (abortRef.current?.aborted) {
+        return;
+      }
       setIsLoading(false);
     }
   }, [metricsDirs, thresholdMode, validateThreshold]);
+
+  const abortCorrelation = useCallback(() => {
+    if (!isLoading || !abortRef.current) {
+      return;
+    }
+    abortRef.current.aborted = true;
+    setIsLoading(false);
+    setSummary(buildSummary(null));
+    setError('Correlation aborted by user.');
+  }, [isLoading]);
+
+  useEffect(() => {
+    return () => {
+      if (abortRef.current) {
+        abortRef.current.aborted = true;
+      }
+    };
+  }, []);
+
+  const runRegistration = useMemo(
+    () => ({ handler: () => void runCorrelation(), description: 'Run Phase-2 correlation' }),
+    [runCorrelation],
+  );
+  const abortRegistration = useMemo(
+    () => (isLoading ? { handler: abortCorrelation, description: 'Abort Phase-2 correlation' } : null),
+    [abortCorrelation, isLoading],
+  );
+
+  useCommandRegistration({
+    run: runRegistration,
+    abort: abortRegistration,
+  });
 
   const toggleFeature = (name: Phase2FeatureName) => {
     setSelectedFeatures((prev) =>

@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { createDecisionGateEngine } from '../decisionGate';
 import { formatValidationMessage, validateAxis, validateExtent } from '../../shared/validators';
+import { useCommandRegistration } from '../commandCenter';
 
 const AXIS_OPTIONS = ['rho', 'tau', 'zeta', 'sigma', 'omega'];
 
@@ -23,6 +24,7 @@ const Phase1Mapping = () => {
   const [maxOmega, setMaxOmega] = useState<number | null>(null);
   const [coverage, setCoverage] = useState<number | null>(null);
   const [tipMessage, setTipMessage] = useState<string | null>(null);
+  const timerRef = useRef<number | null>(null);
 
   const axisPrimaryValidation = useMemo(() => validateAxis('phase1', axisPrimary), [axisPrimary]);
   const axisSecondaryValidation = useMemo(() => validateAxis('phase1', axisSecondary), [axisSecondary]);
@@ -36,12 +38,15 @@ const Phase1Mapping = () => {
   const isRunDisabled = isRunning || Boolean(runDisabledReason);
   const runTitle = isRunning ? 'Mapping already running.' : runDisabledReason;
 
-  const runMapping = () => {
-    if (!extentValidation.ok) {
+  const runMapping = useCallback(() => {
+    if (!extentValidation.ok || isRunning) {
       return;
     }
     setIsRunning(true);
-    setTimeout(() => {
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
+    }
+    timerRef.current = window.setTimeout(() => {
       const metrics = simulatePhase1Metrics(seed, extentValidation.value);
       setMaxOmega(metrics.maxOmega);
       setCoverage(metrics.coverage);
@@ -51,8 +56,43 @@ const Phase1Mapping = () => {
       });
       setTipMessage(tip);
       setIsRunning(false);
+      timerRef.current = null;
     }, 160);
-  };
+  }, [decisionGate, extentValidation, isRunning, seed]);
+
+  const abortMapping = useCallback(() => {
+    if (!isRunning) {
+      return;
+    }
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    setIsRunning(false);
+    setTipMessage('Mapping aborted before completion.');
+  }, [isRunning]);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        window.clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
+
+  const runRegistration = useMemo(
+    () => ({ handler: runMapping, description: 'Run Phase-1 mapping' }),
+    [runMapping],
+  );
+  const abortRegistration = useMemo(
+    () => (isRunning ? { handler: abortMapping, description: 'Abort Phase-1 mapping' } : null),
+    [abortMapping, isRunning],
+  );
+
+  useCommandRegistration({
+    run: runRegistration,
+    abort: abortRegistration,
+  });
 
   return (
     <div className="panel phase1">

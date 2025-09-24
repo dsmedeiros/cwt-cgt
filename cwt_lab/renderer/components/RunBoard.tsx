@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { runs as defaultRunsApi } from '../ipc';
 import type { RegistryRunRecord, RunDiagnosticsBundle, RunTailChunk } from '../types/ipc';
+import { useCommandRegistration } from '../commandCenter';
 
-type RunsApi = {
+export type RunsApi = {
   listRecent: (limit?: number) => Promise<RegistryRunRecord[]>;
   collectDiagnostics: (runId: string) => Promise<RunDiagnosticsBundle>;
   tail: (payload: { runId: string; fromByte?: number; maxBytes?: number }) => Promise<RunTailChunk>;
@@ -89,9 +90,11 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
   const [notice, setNotice] = useState<NoticeState>(null);
   const [collectingId, setCollectingId] = useState<string | null>(null);
   const [logState, setLogState] = useState<LogState>(() => makeEmptyLogState());
+  const [logAbortable, setLogAbortable] = useState(false);
 
   const resetLogState = useCallback(() => {
     setLogState(makeEmptyLogState());
+    setLogAbortable(false);
   }, []);
 
   const applyLogChunk = useCallback(
@@ -117,7 +120,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
             { start: chunk.startFromByte, text: chunk.output }].sort((a, b) => a.start - b.start)
           : prev.chunks;
 
-        return {
+        const nextState = {
           ...prev,
           chunks,
           status: chunk.status,
@@ -128,6 +131,8 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
           nextByte,
           totalBytes: chunk.totalBytes,
         };
+        setLogAbortable(false);
+        return nextState;
       });
     },
     [],
@@ -155,6 +160,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
         }
         return { ...makeEmptyLogState(), runId, loading: true };
       });
+      setLogAbortable(true);
 
       try {
         let fromByte: number | undefined;
@@ -169,6 +175,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
             setLogState((prev) =>
               prev.runId === runId ? { ...prev, loading: false } : prev,
             );
+            setLogAbortable(false);
             return;
           }
           const targetStart = Math.max(0, startByte - LOG_CHUNK_BYTES);
@@ -186,6 +193,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
         setLogState((prev) =>
           prev.runId === runId ? { ...prev, loading: false, error: message } : prev,
         );
+        setLogAbortable(false);
       }
     },
     [api, applyLogChunk, logState.hasMoreBefore, logState.nextByte, logState.startByte],
@@ -221,6 +229,18 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
   useEffect(() => {
     void fetchRuns();
   }, [fetchRuns]);
+
+  const runCommand = useMemo(
+    () => ({ handler: () => void fetchRuns(), description: 'Refresh run board' }),
+    [fetchRuns],
+  );
+
+  const abortCommand = useMemo(
+    () => (logAbortable ? { handler: resetLogState, description: 'Stop log tail request' } : null),
+    [logAbortable, resetLogState],
+  );
+
+  useCommandRegistration({ run: runCommand, abort: abortCommand });
 
   const sortedRuns = useMemo(
     () =>
@@ -393,6 +413,15 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
             >
               {logState.loading && !logState.hasMoreBefore ? 'Refreshing…' : 'Refresh'}
             </button>
+            {logAbortable ? (
+              <button
+                type="button"
+                className="run-board__button"
+                onClick={resetLogState}
+              >
+                Cancel request
+              </button>
+            ) : null}
           </div>
           {logState.totalBytes != null ? (
             <p className="run-board__log-meta">

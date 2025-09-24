@@ -91,7 +91,26 @@ body {
   align-items: center;
 }
 
+.app__shortcut-hints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.app__shortcut-hints span {
+  display: inline-flex;
+  gap: 0.25rem;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
 .app__theme-toggle,
+.app__demo-toggle,
 .app__help-button {
   border: 1px solid rgba(255, 255, 255, 0.4);
   background: transparent;
@@ -101,6 +120,16 @@ body {
   cursor: pointer;
   font-weight: 600;
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.app__demo-toggle {
+  min-width: 6rem;
+}
+
+.app__demo-toggle--active {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  border-color: var(--color-accent);
 }
 
 .app__help-button {
@@ -113,8 +142,10 @@ body {
 }
 
 .app__theme-toggle:hover,
+.app__demo-toggle:hover,
 .app__help-button:hover,
 .app__theme-toggle:focus-visible,
+.app__demo-toggle:focus-visible,
 .app__help-button:focus-visible {
   outline: none;
   background: var(--color-accent);
@@ -149,6 +180,20 @@ body {
   flex: 1;
   padding: 1.5rem;
   overflow-y: auto;
+}
+
+.app__command-status {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-border);
+  box-shadow: 0 18px 32px rgba(15, 23, 42, 0.25);
+  max-width: 24rem;
+  z-index: 30;
 }
 
 .app__panel {
@@ -1748,6 +1793,220 @@ body {
 
 .phase5__stderr {
   background: #7f1d1d;
+}
+
+.artifact-browser {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.artifact-browser__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.artifact-browser__filters {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.artifact-browser__filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.artifact-browser__filter input,
+.artifact-browser__filter select {
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.artifact-browser__placeholder {
+  background: rgba(148, 163, 184, 0.12);
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  margin: 0;
+}
+
+.artifact-browser__body {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) 1fr;
+  gap: 1.5rem;
+}
+
+.artifact-browser__list {
+  background: rgba(148, 163, 184, 0.12);
+  border-radius: 1rem;
+  padding: 1rem;
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.artifact-browser__list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.artifact-browser__item {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.artifact-browser__item:hover,
+.artifact-browser__item:focus-visible {
+  outline: none;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.artifact-browser__item--active {
+  background: rgba(59, 130, 246, 0.25);
+}
+
+.artifact-browser__tags {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.artifact-browser__phase {
+  background: rgba(236, 72, 153, 0.2);
+  color: rgba(236, 72, 153, 1);
+  font-size: 0.75rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+}
+
+.artifact-browser__tag {
+  background: rgba(59, 130, 246, 0.2);
+  color: rgba(59, 130, 246, 1);
+  font-size: 0.75rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+}
+
+.artifact-browser__details {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.artifact-browser__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.artifact-browser__metric {
+  background: rgba(148, 163, 184, 0.12);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.artifact-browser__metric-label {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.artifact-browser__plot {
+  min-height: 320px;
+}
+
+.recipe-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.recipe-comparison__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.recipe-comparison__selectors {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.recipe-comparison__selectors label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.recipe-comparison__selectors select {
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.recipe-comparison__placeholder {
+  background: rgba(148, 163, 184, 0.12);
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  margin: 0;
+}
+
+.recipe-comparison__content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.recipe-comparison__metrics table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.recipe-comparison__metrics th,
+.recipe-comparison__metrics td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+}
+
+.recipe-comparison__plots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.recipe-comparison__plot {
+  min-height: 300px;
+  background: rgba(148, 163, 184, 0.12);
+  border-radius: 1rem;
+  padding: 0.75rem;
 }
 
 @media (max-width: 960px) {
