@@ -128,11 +128,236 @@ const saveRecipes = async (recipes: StoredRecipe[]) => {
   await fs.writeFile(recipesPath, JSON.stringify(recipes, null, 2), 'utf-8');
 };
 
+const parseFiniteNumber = (value: unknown): number | null => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
+const formatNumber = (value: number): string => {
+  const abs = Math.abs(value);
+  if ((abs > 0 && abs < 0.0001) || abs >= 1000) {
+    return value.toExponential(2);
+  }
+  const decimals = abs >= 1 ? 3 : 4;
+  return value.toFixed(decimals).replace(/0+$/, '').replace(/\.$/, '');
+};
+
+const formatPercent = (value: number | null): string | null => {
+  if (value == null) {
+    return null;
+  }
+  const percent = value * 100;
+  if (!Number.isFinite(percent)) {
+    return null;
+  }
+  const digits = Math.abs(percent) >= 10 ? 0 : 1;
+  return percent.toFixed(digits).replace(/\.0$/, '');
+};
+
+const loadRunMeta = async (artifactsDir: string): Promise<Record<string, unknown> | null> => {
+  const metaPath = path.join(artifactsDir, 'meta.json');
+  if (!existsSync(metaPath)) {
+    return null;
+  }
+  try {
+    const raw = await fs.readFile(metaPath, 'utf-8');
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+};
+
+const loadSummaryMetrics = async (
+  artifactsDir: string,
+): Promise<Record<string, number | null> | null> => {
+  const summaryPath = path.join(artifactsDir, 'summary.json');
+  if (!existsSync(summaryPath)) {
+    return null;
+  }
+  try {
+    const raw = await fs.readFile(summaryPath, 'utf-8');
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') {
+      return null;
+    }
+    const metrics: Record<string, number | null> = {};
+    for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+      if (typeof value === 'number') {
+        metrics[key] = Number.isFinite(value) ? value : null;
+      } else if (typeof value === 'boolean') {
+        metrics[key] = value ? 1 : 0;
+      }
+    }
+    return Object.keys(metrics).length > 0 ? metrics : null;
+  } catch {
+    return null;
+  }
+};
+
+type GuardSummary = {
+  threshold: number | null;
+  boundary: number | null;
+  fraction: number | null;
+};
+
+const extractGuardSummary = (
+  meta: Record<string, unknown> | null,
+  metrics: Record<string, number | null> | null,
+): GuardSummary => {
+  let guardMeta: Record<string, unknown> | null = null;
+  if (meta && typeof meta.meta === 'object' && meta.meta !== null) {
+    const nested = (meta.meta as Record<string, unknown>).fs_step_guard;
+    if (nested && typeof nested === 'object') {
+      guardMeta = nested as Record<string, unknown>;
+    }
+  }
+
+  const summary: GuardSummary = {
+    threshold: guardMeta ? parseFiniteNumber(guardMeta.threshold) : null,
+    boundary: guardMeta ? parseFiniteNumber(guardMeta.boundary) : null,
+    fraction: guardMeta ? parseFiniteNumber(guardMeta.fraction) : null,
+  };
+
+  if (summary.threshold == null && guardMeta) {
+    summary.threshold = parseFiniteNumber(guardMeta.guard_threshold ?? guardMeta.max);
+  }
+
+  if (summary.threshold == null && metrics) {
+    const threshold = metrics['fs_guard'] ?? metrics['fs_threshold'];
+    if (typeof threshold === 'number' && Number.isFinite(threshold)) {
+      summary.threshold = threshold;
+    }
+  }
+
+  if (summary.boundary == null && metrics) {
+    const boundary = metrics['fs_boundary'];
+    if (typeof boundary === 'number' && Number.isFinite(boundary)) {
+      summary.boundary = boundary;
+    }
+  }
+
+  return summary;
+};
+
+const formatGuardSummary = (summary: GuardSummary): string => {
+  const parts: string[] = [];
+  if (summary.threshold != null) {
+    parts.push(`${formatNumber(summary.threshold)} rad threshold`);
+  }
+  if (summary.boundary != null) {
+    parts.push(`${formatNumber(summary.boundary)} rad boundary`);
+  }
+  const fraction = formatPercent(summary.fraction);
+  if (fraction) {
+    parts.push(`fraction ${fraction}%`);
+  }
+  return parts.length > 0 ? parts.join(', ') : 'n/a';
+};
+
+const formatHeadlineMetrics = (metrics: Record<string, number | null> | null): string => {
+  if (!metrics) {
+    return 'n/a';
+  }
+
+  const pickMetric = (keys: string[]): number | null => {
+    for (const key of keys) {
+      const value = metrics[key];
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+      }
+    }
+    return null;
+  };
+
+  const parts: string[] = [];
+
+  const phi = pickMetric(['phi_flux', 'phi_sum', 'phi_value', 'phi']);
+  if (phi != null) {
+    parts.push(`Φ=${formatNumber(phi)}`);
+  } else {
+    const phiForward = pickMetric(['phi_forward']);
+    const phiReverse = pickMetric(['phi_reverse']);
+    if (phiForward != null && phiReverse != null) {
+      parts.push(`Φ=${formatNumber(phiForward + phiReverse)}`);
+    } else if (phiForward != null) {
+      parts.push(`Φ₊=${formatNumber(phiForward)}`);
+    } else if (phiReverse != null) {
+      parts.push(`Φ₋=${formatNumber(phiReverse)}`);
+    }
+  }
+
+  const rValue = pickMetric(['r_value', 'kuramoto_r', 'r']);
+  if (rValue != null) {
+    parts.push(`R=${formatNumber(rValue)}`);
+  }
+
+  const fsP95 = pickMetric(['fs_p95', 'fs95', 'fs_mean']);
+  if (fsP95 != null) {
+    parts.push(`FS p95=${formatNumber(fsP95)}`);
+  }
+
+  const fsBoundary = pickMetric(['fs_boundary']);
+  if (fsBoundary != null) {
+    parts.push(`FS boundary=${formatNumber(fsBoundary)}`);
+  }
+
+  const guardExceeded = metrics['fs_guard_exceeded'];
+  if (typeof guardExceeded === 'number') {
+    parts.push(guardExceeded >= 0.5 ? 'guard exceeded' : 'guard ok');
+  }
+
+  return parts.length > 0 ? parts.join(', ') : 'n/a';
+};
+
 const exportRecipeBundle = async (recipe: StoredRecipe) => {
   const exportId = `${recipe.id}-${Date.now()}`;
   const bundleDir = path.join(exportsRoot, exportId);
   await fs.mkdir(bundleDir, { recursive: true });
 
+  let originPhase: string | null = null;
+  let originCommand: string | null = null;
+  let guardSummary = 'n/a';
+  let metricsSummary = 'n/a';
+  let originRunArtifacts: string | null = null;
+  let originMetrics: Record<string, number | null> | null = null;
+
+  if (recipe.basedOnRunId) {
+    const runs = await runManager.fetchRegistry({ id: recipe.basedOnRunId, limit: 1 });
+    const runRecord = runs[0];
+    if (runRecord) {
+      originPhase = runRecord.phase ?? null;
+      originCommand = runRecord.command ?? null;
+      originRunArtifacts = runRecord.artifactsDir ?? null;
+      originMetrics = runRecord.metrics ?? null;
+    }
+  }
+
+  let runMeta: Record<string, unknown> | null = null;
+  if (originRunArtifacts && existsSync(originRunArtifacts)) {
+    runMeta = await loadRunMeta(originRunArtifacts);
+    const summaryMetrics = await loadSummaryMetrics(originRunArtifacts);
+    if (summaryMetrics) {
+      originMetrics = originMetrics ? { ...summaryMetrics, ...originMetrics } : summaryMetrics;
+    }
+  }
+
+  guardSummary = formatGuardSummary(extractGuardSummary(runMeta, originMetrics));
+  metricsSummary = formatHeadlineMetrics(originMetrics);
+
+  const scriptCandidate = originCommand && originCommand.trim() ? originCommand : null;
+  const recipeCommand = recipe.command && recipe.command.trim() ? recipe.command : null;
+  const scriptLine = scriptCandidate ?? recipeCommand ?? 'n/a';
   const readmeLines = [
     '# Research Pack',
     '',
@@ -143,6 +368,10 @@ const exportRecipeBundle = async (recipe: StoredRecipe) => {
     `- Command: ${recipe.command}`,
     `- Seed: ${recipe.seed ?? 'n/a'}`,
     `- Based on run: ${recipe.basedOnRunId ?? 'n/a'}`,
+    `- Phase: ${originPhase ?? 'n/a'}`,
+    `- Script: ${scriptLine}`,
+    `- Guard limit: ${guardSummary}`,
+    `- Metrics: ${metricsSummary}`,
     '',
   ];
   await fs.writeFile(path.join(bundleDir, 'README.md'), readmeLines.join('\n'), 'utf-8');
@@ -178,26 +407,22 @@ const exportRecipeBundle = async (recipe: StoredRecipe) => {
     }
   }
 
-  let copiedFiles: string[] = [];
-  if (recipe.basedOnRunId) {
-    const runs = await runManager.fetchRegistry({ id: recipe.basedOnRunId, limit: 1 });
-    const runRecord = runs[0];
-    if (runRecord?.artifactsDir && existsSync(runRecord.artifactsDir)) {
-      const entries = await scanArtifacts(runRecord.artifactsDir);
-      const interesting = entries.filter(
-        (entry) =>
-          entry.type === 'file' &&
-          /report|heatmap|plateau|loop|summary/i.test(entry.relativePath) &&
-          (entry.relativePath.endsWith('.png') || entry.relativePath.endsWith('.md') || entry.relativePath.endsWith('.json')),
-      );
-      if (interesting.length > 0) {
-        const artifactsDir = path.join(bundleDir, 'artifacts');
-        await fs.mkdir(artifactsDir, { recursive: true });
-        for (const file of interesting.slice(0, 12)) {
-          const target = path.join(artifactsDir, path.basename(file.relativePath));
-          await fs.copyFile(file.path, target);
-          copiedFiles.push(path.basename(file.relativePath));
-        }
+  const copiedFiles: string[] = [];
+  if (originRunArtifacts && existsSync(originRunArtifacts)) {
+    const entries = await scanArtifacts(originRunArtifacts);
+    const interesting = entries.filter(
+      (entry) =>
+        entry.type === 'file' &&
+        /report|heatmap|plateau|loop|summary/i.test(entry.relativePath) &&
+        (entry.relativePath.endsWith('.png') || entry.relativePath.endsWith('.md') || entry.relativePath.endsWith('.json')),
+    );
+    if (interesting.length > 0) {
+      const artifactsDir = path.join(bundleDir, 'artifacts');
+      await fs.mkdir(artifactsDir, { recursive: true });
+      for (const file of interesting.slice(0, 12)) {
+        const target = path.join(artifactsDir, path.basename(file.relativePath));
+        await fs.copyFile(file.path, target);
+        copiedFiles.push(path.basename(file.relativePath));
       }
     }
   }

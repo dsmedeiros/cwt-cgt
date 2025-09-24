@@ -299,7 +299,7 @@ const TorusPlateauViewer = () => {
     const maxAbs = Math.max(Math.abs(heatmap.min_value ?? 0), Math.abs(heatmap.max_value ?? 0));
     const zmax = maxAbs > 0 ? maxAbs : undefined;
 
-    const heatmapTrace: PlotData = {
+    const heatmapTrace: Partial<PlotData> = {
       type: 'heatmap',
       x,
       y,
@@ -314,16 +314,16 @@ const TorusPlateauViewer = () => {
       heatmapTrace.zmin = -zmax;
     }
 
-    const data: PlotData[] = [heatmapTrace];
+    const data: Partial<PlotData>[] = [heatmapTrace];
 
     const layout: Partial<Layout> = {
       title: { text: `Integrated Φ at disorder ${formatNumber(selectedSample.disorder, 3)}` },
       xaxis: {
-        title: summary?.axes?.[0] ?? heatmap.axes?.[0] ?? 'τ',
+        title: { text: summary?.axes?.[0] ?? heatmap.axes?.[0] ?? 'τ' },
         zeroline: false,
       },
       yaxis: {
-        title: summary?.axes?.[1] ?? heatmap.axes?.[1] ?? 'ζ',
+        title: { text: summary?.axes?.[1] ?? heatmap.axes?.[1] ?? 'ζ' },
         zeroline: false,
       },
       margin: { t: 50, r: 20, b: 60, l: 60 },
