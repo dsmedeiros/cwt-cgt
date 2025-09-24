@@ -1,4 +1,4 @@
-# Continuous Wavelet Transport & Geometric Tensor Toolkit
+# Causal Web Theory & Geometric Tensor Toolkit
 
 A research sandbox for exploring **Continuous Wavelet Transport (CWT)** dynamics and the associated **CWT Geometric Tensor (CGT)**. The repository combines theory notes with a Python package (`cwt-sim`) that orchestrates placeholder simulations, parameter sweeps, and evaluation utilities.
 
