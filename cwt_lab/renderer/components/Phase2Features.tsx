@@ -108,7 +108,7 @@ const Phase2Features = () => {
     setMetricsDirs((prev) => prev.filter((entry) => entry !== dir));
   };
 
-  const validateThreshold = (): number | null => {
+  const validateThreshold = useCallback((): number | null => {
     if (thresholdMode === 'absolute') {
       const value = Number(absoluteThreshold);
       if (!Number.isFinite(value)) {
@@ -123,7 +123,7 @@ const Phase2Features = () => {
       return null;
     }
     return value;
-  };
+  }, [absoluteThreshold, percentileThreshold, thresholdMode]);
 
   const runCorrelation = useCallback(async () => {
     if (metricsDirs.length === 0) {
@@ -156,7 +156,7 @@ const Phase2Features = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [metricsDirs, thresholdMode, absoluteThreshold, percentileThreshold]);
+  }, [metricsDirs, thresholdMode, validateThreshold]);
 
   const toggleFeature = (name: Phase2FeatureName) => {
     setSelectedFeatures((prev) =>
@@ -337,7 +337,16 @@ const Phase2Features = () => {
     } catch (err) {
       setSnapshotStatus(`Failed to save snapshot: ${err instanceof Error ? err.message : String(err)}`);
     }
-  }, [metricsDirs, thresholdMode, selectedFeatures, scatterFeature, scatterScale, summary, result, absoluteThreshold, percentileThreshold]);
+  }, [
+    metricsDirs,
+    thresholdMode,
+    selectedFeatures,
+    scatterFeature,
+    scatterScale,
+    summary,
+    result,
+    validateThreshold,
+  ]);
 
   return (
     <div className="panel">
