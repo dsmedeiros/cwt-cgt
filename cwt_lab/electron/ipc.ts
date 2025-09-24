@@ -1,4 +1,5 @@
 import { ipcMain } from 'electron';
+import { spawn } from 'node:child_process';
 import { promises as fs, existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
@@ -15,8 +16,12 @@ import { RunManager, type RunMetadata } from './runner/runManager';
 import type { GuidedLoopArgs, LoopAtHotspotPayload } from '../renderer/types/ipc';
 import { runAdiabaticBoundary } from './adiabaticBoundary';
 import { cmdGraphFamily } from './graphFamily';
+import cmdInverseDesign from './inverseDesign';
+import cmdGateCRobust from './noiseRobust';
+import runCouplingTuner from './couplingTuner';
 import { buildArgsFromParams } from './runner/args';
 import { correlate as correlatePhase2 } from '../../electron/runner/phase2';
+import { scanArtifacts } from './runner/files';
 
 type Envelope<T> = { ok: true; data: T } | { ok: false; error: string; data?: T };
 
@@ -25,6 +30,7 @@ const cwtSimRoot = path.join(repoRoot, 'cwt-sim');
 const artifactsRoot = path.join(repoRoot, 'artifacts');
 const registryPath = path.join(artifactsRoot, 'registry.sqlite');
 const recipesPath = path.join(artifactsRoot, 'recipes.json');
+const exportsRoot = path.join(artifactsRoot, '_exports');
 
 const ensureDirSync = (dir: string) => {
   if (!existsSync(dir)) {
@@ -34,6 +40,7 @@ const ensureDirSync = (dir: string) => {
 
 ensureDirSync(artifactsRoot);
 ensureDirSync(path.dirname(registryPath));
+ensureDirSync(exportsRoot);
 
 const runManager = new RunManager({
   repoRoot,
@@ -44,9 +51,11 @@ const runManager = new RunManager({
 
 const recipePayloadSchema = z.object({
   name: z.string().min(1, 'name is required'),
+  description: z.string().optional().default(''),
+  basedOnRunId: z.string().optional().nullable(),
   params: z.record(z.string(), z.unknown()).optional().default({}),
   command: z.string().min(1, 'command is required'),
-  seed: z.number().optional(),
+  seed: z.number().nullable().optional(),
   envInfo: z.unknown().optional(),
 });
 
@@ -59,7 +68,48 @@ const wrap = async <T>(fn: () => Promise<T> | T): Promise<Envelope<T>> => {
   }
 };
 
-const loadRecipes = async (): Promise<any[]> => {
+type StoredRecipe = {
+  id: string;
+  name: string;
+  description: string;
+  basedOnRunId: string | null;
+  params: Record<string, unknown>;
+  command: string;
+  seed: number | null;
+  envInfo: unknown;
+  createdAt: string;
+};
+
+const normalizeRecipe = (input: any): StoredRecipe => {
+  const id = typeof input?.id === 'string' ? input.id : uuidv4();
+  const name = typeof input?.name === 'string' ? input.name : 'Untitled recipe';
+  const description = typeof input?.description === 'string' ? input.description : '';
+  const basedOnRunId =
+    typeof input?.basedOnRunId === 'string'
+      ? input.basedOnRunId
+      : typeof input?.based_on_run_id === 'string'
+      ? input.based_on_run_id
+      : null;
+  const params =
+    input && typeof input.params === 'object' && input.params !== null
+      ? (input.params as Record<string, unknown>)
+      : input && typeof input.params_json === 'object' && input.params_json !== null
+      ? (input.params_json as Record<string, unknown>)
+      : {};
+  const command = typeof input?.command === 'string' ? input.command : '';
+  const seed = Number.isFinite(input?.seed) ? Number(input.seed) : null;
+  const envInfo = input?.envInfo ?? input?.envInfo_json ?? null;
+  const createdAt =
+    typeof input?.createdAt === 'string'
+      ? input.createdAt
+      : typeof input?.created_at === 'string'
+      ? input.created_at
+      : new Date().toISOString();
+
+  return { id, name, description, basedOnRunId, params, command, seed, envInfo, createdAt };
+};
+
+const loadRecipes = async (): Promise<StoredRecipe[]> => {
   if (!existsSync(recipesPath)) {
     return [];
   }
@@ -67,14 +117,110 @@ const loadRecipes = async (): Promise<any[]> => {
   const content = await fs.readFile(recipesPath, 'utf-8');
   try {
     const parsed = JSON.parse(content);
-    return Array.isArray(parsed) ? parsed : [];
+    const records = Array.isArray(parsed) ? parsed : [];
+    return records.map((entry) => normalizeRecipe(entry));
   } catch {
     return [];
   }
 };
 
-const saveRecipes = async (recipes: any[]) => {
+const saveRecipes = async (recipes: StoredRecipe[]) => {
   await fs.writeFile(recipesPath, JSON.stringify(recipes, null, 2), 'utf-8');
+};
+
+const exportRecipeBundle = async (recipe: StoredRecipe) => {
+  const exportId = `${recipe.id}-${Date.now()}`;
+  const bundleDir = path.join(exportsRoot, exportId);
+  await fs.mkdir(bundleDir, { recursive: true });
+
+  const readmeLines = [
+    '# Research Pack',
+    '',
+    '## Summary',
+    `- Recipe: ${recipe.name}`,
+    `- Description: ${recipe.description || '(none)'}`,
+    `- Created at: ${recipe.createdAt}`,
+    `- Command: ${recipe.command}`,
+    `- Seed: ${recipe.seed ?? 'n/a'}`,
+    `- Based on run: ${recipe.basedOnRunId ?? 'n/a'}`,
+    '',
+  ];
+  await fs.writeFile(path.join(bundleDir, 'README.md'), readmeLines.join('\n'), 'utf-8');
+  await fs.writeFile(path.join(bundleDir, 'command.txt'), `${recipe.command}\n`, 'utf-8');
+  await fs.writeFile(path.join(bundleDir, 'params.json'), JSON.stringify(recipe.params ?? {}, null, 2), 'utf-8');
+
+  const env = runManager.getPythonEnv();
+  const envPayload = {
+    pythonExecutable: env?.executable ?? null,
+    strategy: env?.strategy ?? null,
+    platform: process.platform,
+    envInfo: recipe.envInfo ?? null,
+  };
+  await fs.writeFile(path.join(bundleDir, 'env.json'), JSON.stringify(envPayload, null, 2), 'utf-8');
+
+  if (env?.executable) {
+    const freezePath = path.join(bundleDir, 'pip-freeze.txt');
+    try {
+      await new Promise<void>((resolve) => {
+        const child = spawn(env.executable, ['-m', 'pip', 'freeze'], { cwd: cwtSimRoot });
+        const chunks: Buffer[] = [];
+        child.stdout.on('data', (chunk: Buffer) => chunks.push(chunk));
+        child.on('error', () => resolve());
+        child.on('close', async (code) => {
+          if (code === 0) {
+            await fs.writeFile(freezePath, Buffer.concat(chunks).toString('utf-8'), 'utf-8');
+          }
+          resolve();
+        });
+      });
+    } catch {
+      /* ignore pip-freeze failures */
+    }
+  }
+
+  let copiedFiles: string[] = [];
+  if (recipe.basedOnRunId) {
+    const runs = await runManager.fetchRegistry({ id: recipe.basedOnRunId, limit: 1 });
+    const runRecord = runs[0];
+    if (runRecord?.artifactsDir && existsSync(runRecord.artifactsDir)) {
+      const entries = await scanArtifacts(runRecord.artifactsDir);
+      const interesting = entries.filter(
+        (entry) =>
+          entry.type === 'file' &&
+          /report|heatmap|plateau|loop|summary/i.test(entry.relativePath) &&
+          (entry.relativePath.endsWith('.png') || entry.relativePath.endsWith('.md') || entry.relativePath.endsWith('.json')),
+      );
+      if (interesting.length > 0) {
+        const artifactsDir = path.join(bundleDir, 'artifacts');
+        await fs.mkdir(artifactsDir, { recursive: true });
+        for (const file of interesting.slice(0, 12)) {
+          const target = path.join(artifactsDir, path.basename(file.relativePath));
+          await fs.copyFile(file.path, target);
+          copiedFiles.push(path.basename(file.relativePath));
+        }
+      }
+    }
+  }
+
+  const zipName = `${exportId}.zip`;
+  await new Promise<void>((resolve, reject) => {
+    const child = spawn('zip', ['-r', zipName, exportId], { cwd: exportsRoot });
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`zip exited with code ${code ?? 'unknown'}`));
+      }
+    });
+  });
+
+  await fs.rm(bundleDir, { recursive: true, force: true });
+
+  return {
+    zipPath: path.join(exportsRoot, zipName),
+    attachments: copiedFiles,
+  };
 };
 
 const listDirectoryTree = async (root: string, base: string) => {
@@ -651,6 +797,134 @@ ipcMain.handle('cwt:phase5:graph-family:analyze', (_event, payload) =>
   }),
 );
 
+ipcMain.handle('cwt:phase5:inverse-design:command', (_event, payload: Record<string, unknown> | undefined) =>
+  wrap(async () => {
+    const env = runManager.getPythonEnv();
+    if (!env) {
+      throw new Error('Python environment not configured. Run env.detect first.');
+    }
+
+    const axesRaw = Array.isArray(payload?.axes) ? payload.axes : [];
+    if (axesRaw.length !== 2) {
+      throw new Error('axes must contain exactly two entries.');
+    }
+    const axes = axesRaw.map((axis: unknown) => String(axis ?? '').trim()) as [string, string];
+    if (!axes[0] || !axes[1]) {
+      throw new Error('axes entries must be non-empty strings.');
+    }
+
+    const centerRaw = Array.isArray(payload?.center) ? payload.center : [];
+    if (centerRaw.length !== 2) {
+      throw new Error('center must contain exactly two numeric entries.');
+    }
+    const center = centerRaw.map((value, index) => {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) {
+        throw new Error(`center entry ${index + 1} must be numeric.`);
+      }
+      return numeric;
+    }) as [number, number];
+
+    const extentRaw = Array.isArray(payload?.extentPair) ? payload.extentPair : [];
+    if (extentRaw.length !== 2) {
+      throw new Error('extentPair must contain exactly two numeric entries.');
+    }
+    const extentPair = extentRaw.map((value, index) => {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric) || numeric === 0) {
+        throw new Error(`extent entry ${index + 1} must be numeric.`);
+      }
+      return numeric;
+    }) as [number, number];
+
+    const budgetSteps = payload?.budgetSteps == null ? undefined : Number(payload.budgetSteps);
+    if (budgetSteps != null && (!Number.isInteger(budgetSteps) || budgetSteps <= 0)) {
+      throw new Error('budgetSteps must be a positive integer when provided.');
+    }
+    const maxFs = payload?.maxFs == null ? undefined : Number(payload.maxFs);
+    if (maxFs != null && (!Number.isFinite(maxFs) || maxFs <= 0)) {
+      throw new Error('maxFs must be a positive number when provided.');
+    }
+    const targetIndex = payload?.targetIndex == null ? undefined : Number(payload.targetIndex);
+    if (targetIndex != null && !Number.isInteger(targetIndex)) {
+      throw new Error('targetIndex must be an integer when provided.');
+    }
+
+    const outDir = path.join(artifactsRoot, 'inverse_design', uuidv4());
+    await fs.mkdir(outDir, { recursive: true });
+
+    return cmdInverseDesign(env.executable, {
+      axes,
+      center,
+      extentPair,
+      budgetSteps: budgetSteps == null ? undefined : Math.trunc(budgetSteps),
+      maxFs: maxFs == null ? undefined : maxFs,
+      targetIndex: targetIndex == null ? undefined : Math.trunc(targetIndex),
+      outDir,
+      strategy: env.strategy,
+    });
+  }),
+);
+
+ipcMain.handle('cwt:phase5:noise-robust:command', (_event, payload: Record<string, unknown> | undefined) =>
+  wrap(async () => {
+    const env = runManager.getPythonEnv();
+    if (!env) {
+      throw new Error('Python environment not configured. Run env.detect first.');
+    }
+
+    const toNumericArray = (value: unknown): number[] => {
+      if (!Array.isArray(value)) {
+        return [];
+      }
+      return (value as unknown[])
+        .map((entry) => Number(entry))
+        .filter((entry) => Number.isFinite(entry));
+    };
+
+    const phaseStd = toNumericArray(payload?.phaseStd ?? payload?.phase_std);
+    const ampStd = toNumericArray(payload?.ampStd ?? payload?.amp_std);
+    const delayStd = toNumericArray(payload?.delayStd ?? payload?.delay_std);
+
+    const numTrials = payload?.numTrials == null ? undefined : Number(payload.numTrials);
+    if (numTrials != null && (!Number.isInteger(numTrials) || numTrials <= 0)) {
+      throw new Error('numTrials must be a positive integer when provided.');
+    }
+    const loopSteps = payload?.loopSteps == null ? undefined : Number(payload.loopSteps);
+    if (loopSteps != null && (!Number.isInteger(loopSteps) || loopSteps <= 0)) {
+      throw new Error('loopSteps must be a positive integer when provided.');
+    }
+    const gridSize = payload?.gridSize == null ? undefined : Number(payload.gridSize);
+    if (gridSize != null && (!Number.isInteger(gridSize) || gridSize <= 0)) {
+      throw new Error('gridSize must be a positive integer when provided.');
+    }
+
+    const axesRaw = Array.isArray(payload?.axes) ? payload.axes : undefined;
+    const axes =
+      axesRaw && axesRaw.length === 2
+        ? (axesRaw.map((axis: unknown) => String(axis ?? '').trim()) as [string, string])
+        : undefined;
+    if (axes && (!axes[0] || !axes[1])) {
+      throw new Error('axes entries must be non-empty strings.');
+    }
+
+    const outDir = path.join(artifactsRoot, 'noise_robust', uuidv4());
+    await fs.mkdir(outDir, { recursive: true });
+
+    return cmdGateCRobust(env.executable, {
+      phaseStd,
+      ampStd,
+      delayStd,
+      numTrials: numTrials == null ? undefined : Math.trunc(numTrials),
+      loopSteps: loopSteps == null ? undefined : Math.trunc(loopSteps),
+      gridSize: gridSize == null ? undefined : Math.trunc(gridSize),
+      axes,
+      outDir,
+      strategy: env.strategy,
+    });
+  }),
+);
+
 ipcMain.handle('cwt:phase5:inverse-design', (_event, params) =>
   wrap(() =>
     launchPhase('experiments.inverse_design.run', params, {
@@ -722,6 +996,65 @@ ipcMain.handle('cwt:phase5:beta-sweep', (_event, params: { configPath: string; b
     }
 
     return { runs, tempDir };
+  }),
+);
+
+ipcMain.handle('cwt:phase5:coupling-tuner', (_event, payload: Record<string, unknown> | undefined) =>
+  wrap(async () => {
+    const env = runManager.getPythonEnv();
+    if (!env) {
+      throw new Error('Python environment not configured. Run env.detect first.');
+    }
+
+    const configPathRaw = typeof payload?.configPath === 'string' ? payload.configPath.trim() : '';
+    if (!configPathRaw) {
+      throw new Error('configPath is required.');
+    }
+
+    const betasRaw = Array.isArray(payload?.betas) ? payload?.betas : [];
+    const betas = betasRaw
+      .map((value, index) => {
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric)) {
+          throw new Error(`beta entry ${index + 1} must be numeric.`);
+        }
+        return numeric;
+      })
+      .filter((value) => Number.isFinite(value));
+    if (betas.length === 0) {
+      throw new Error('At least one beta value is required.');
+    }
+
+    let etaQ: number | number[] | undefined;
+    if (Array.isArray(payload?.etaQ)) {
+      const values = (payload?.etaQ as unknown[])
+        .map((value, index) => {
+          const numeric = Number(value);
+          if (!Number.isFinite(numeric)) {
+            throw new Error(`etaQ entry ${index + 1} must be numeric.`);
+          }
+          return numeric;
+        })
+        .filter((value) => Number.isFinite(value));
+      etaQ = values.length > 0 ? values : undefined;
+    } else if (payload?.etaQ != null) {
+      const numeric = Number(payload.etaQ);
+      if (!Number.isFinite(numeric)) {
+        throw new Error('etaQ must be numeric when provided.');
+      }
+      etaQ = numeric;
+    }
+
+    const outDir = path.join(artifactsRoot, 'coupling_tuner', uuidv4());
+    await fs.mkdir(outDir, { recursive: true });
+
+    return runCouplingTuner(env.executable, {
+      configPath: configPathRaw,
+      betas,
+      etaQ,
+      outDir,
+      strategy: env.strategy,
+    });
   }),
 );
 
@@ -806,17 +1139,29 @@ ipcMain.handle('cwt:registry:query', (_event, payload?: { phase?: string; experi
   wrap(() => runManager.fetchRegistry(payload ?? {})),
 );
 
-ipcMain.handle('cwt:recipes:list', () => wrap(async () => loadRecipes()));
+ipcMain.handle('cwt:recipes:list', () =>
+  wrap(async () => {
+    const recipes = await loadRecipes();
+    recipes.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return recipes;
+  }),
+);
 
 ipcMain.handle('cwt:recipes:save', (_event, payload: unknown) =>
   wrap(async () => {
     const parsed = recipePayloadSchema.parse(payload ?? {});
 
     const recipes = await loadRecipes();
-    const recipe = {
+    const recipe: StoredRecipe = {
       id: uuidv4(),
-      ...parsed,
-      createdAt: Date.now(),
+      name: parsed.name,
+      description: parsed.description ?? '',
+      basedOnRunId: parsed.basedOnRunId ?? null,
+      params: parsed.params ?? {},
+      command: parsed.command,
+      seed: parsed.seed ?? null,
+      envInfo: parsed.envInfo ?? null,
+      createdAt: new Date().toISOString(),
     };
     recipes.push(recipe);
     await saveRecipes(recipes);
@@ -841,6 +1186,22 @@ ipcMain.handle('cwt:recipes:run', (_event, payload: { id: string }) =>
       experiment: recipe.command,
       label: `Recipe: ${recipe.name}`,
     });
+  }),
+);
+
+ipcMain.handle('cwt:recipes:export', (_event, payload: { id: string }) =>
+  wrap(async () => {
+    if (!payload?.id) {
+      throw new Error('id is required');
+    }
+
+    const recipes = await loadRecipes();
+    const recipe = recipes.find((item) => item.id === payload.id);
+    if (!recipe) {
+      throw new Error(`Recipe ${payload.id} not found`);
+    }
+
+    return exportRecipeBundle(recipe);
   }),
 );
 
