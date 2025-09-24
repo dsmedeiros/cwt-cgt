@@ -128,6 +128,154 @@ const guardBadgeClass = (entry: CouplingVariantSummary) => {
   return 'badge badge--success';
 };
 
+const asRecord = (value: unknown): Record<string, unknown> | null => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+};
+
+const coerceBoolean = (value: unknown): boolean | null => {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) {
+      return null;
+    }
+    if (value > 0) {
+      return true;
+    }
+    if (value === 0) {
+      return false;
+    }
+  }
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) {
+      return null;
+    }
+    if (['true', 'yes', 'ok', 'okay', 'pass', 'passed', 'compliant', 'satisfied', '1'].includes(normalized)) {
+      return true;
+    }
+    if (['false', 'no', 'fail', 'failed', 'exceeded', 'violation', 'warn', 'warning', '0'].includes(normalized)) {
+      return false;
+    }
+  }
+  return null;
+};
+
+const coerceNumber = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number.parseFloat(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return null;
+};
+
+const pickFromSources = (
+  sources: Array<Record<string, unknown> | null>,
+  keys: string[],
+): unknown => {
+  for (const source of sources) {
+    if (!source) {
+      continue;
+    }
+    for (const key of keys) {
+      if (key in source && source[key] != null) {
+        return source[key];
+      }
+    }
+  }
+  return undefined;
+};
+
+const isRecipeGuardCompliant = (recipe: RecipeRecord): boolean => {
+  const paramsRecord = asRecord(recipe.params);
+  const metricsRecord = paramsRecord ? asRecord(paramsRecord['metrics']) : null;
+  const derivedRecord = paramsRecord ? asRecord(paramsRecord['derivedMetrics']) : null;
+  const metaRecord = paramsRecord ? asRecord(paramsRecord['meta']) : null;
+
+  const sources = [paramsRecord, metricsRecord, derivedRecord, metaRecord];
+
+  const guardExceededValue = pickFromSources(sources, [
+    'guardExceeded',
+    'guard_exceeded',
+    'fsGuardExceeded',
+    'fs_guard_exceeded',
+    'guardBreached',
+    'guard_breached',
+  ]);
+  const guardExceeded = coerceBoolean(guardExceededValue);
+  if (guardExceeded === true) {
+    return false;
+  }
+
+  const guardSatisfiedValue = pickFromSources(sources, [
+    'guardSatisfied',
+    'guard_satisfied',
+    'fsGuardSatisfied',
+    'fs_guard_satisfied',
+    'guardOk',
+    'guard_ok',
+    'guardOK',
+  ]);
+  const guardSatisfied = coerceBoolean(guardSatisfiedValue);
+  if (guardSatisfied != null) {
+    return guardSatisfied;
+  }
+
+  if (guardExceeded === false) {
+    return true;
+  }
+
+  const fractionValue = pickFromSources(sources, [
+    'guardFraction',
+    'guard_fraction',
+    'fsGuardFraction',
+    'fs_guard_fraction',
+    'guardPercent',
+    'guard_percent',
+    'fsGuardRate',
+    'fs_guard_rate',
+  ]);
+  const fraction = coerceNumber(fractionValue);
+  if (fraction != null) {
+    const boundaryValue = pickFromSources(sources, [
+      'fsGuard',
+      'fs_guard',
+      'guardThreshold',
+      'guard_threshold',
+      'guardLimit',
+      'guard_limit',
+      'boundary',
+      'fsBoundary',
+      'fs_boundary',
+      'threshold',
+    ]);
+    const boundary = coerceNumber(boundaryValue);
+    if (boundary != null) {
+      return fraction <= boundary;
+    }
+    return fraction <= 0.25;
+  }
+
+  return true;
+};
+
+const deriveBestRecipe = (recipes: RecipeRecord[]): RecipeRecord | null => {
+  if (!recipes.length) {
+    return null;
+  }
+  const guardCompliant = recipes.find((recipe) => isRecipeGuardCompliant(recipe));
+  return guardCompliant ?? recipes[0] ?? null;
+};
+
 const Phase5Optimize = () => {
   const [activeTab, setActiveTab] = useState<Phase5Tab>('graph');
 
@@ -187,6 +335,8 @@ const Phase5Optimize = () => {
       }
     | null
   >(null);
+  const [bestRecipe, setBestRecipe] = useState<RecipeRecord | null>(null);
+  const [exportingRecipeId, setExportingRecipeId] = useState<string | null>(null);
 
   const toggleFamily = (id: string) => {
     setSelectedFamilies((prev) => {
@@ -301,6 +451,12 @@ const Phase5Optimize = () => {
     });
     return entries;
   }, [recipes]);
+
+  useEffect(() => {
+    setBestRecipe(deriveBestRecipe(sortedRecipes));
+  }, [sortedRecipes]);
+
+  const bestRecipeId = bestRecipe?.id ?? null;
 
   const runGraphAnalysis = async () => {
     if (!window?.CWT?.phase5?.cmdGraphFamily) {
@@ -553,10 +709,14 @@ const Phase5Optimize = () => {
   };
 
   const handleExportRecipe = async (id: string) => {
+    if (exportingRecipeId) {
+      return;
+    }
     if (!window?.CWT?.recipes?.export) {
       setExportMessage({ tone: 'error', text: 'Recipe export is unavailable in this build.' });
       return;
     }
+    setExportingRecipeId(id);
     setExportMessage({ tone: 'info', text: 'Exporting…' });
     try {
       const response = await window.CWT.recipes.export({ id });
@@ -574,6 +734,15 @@ const Phase5Optimize = () => {
         text: error instanceof Error ? error.message : String(error),
       });
     }
+    setExportingRecipeId(null);
+  };
+
+  const handleExportBestRecipe = () => {
+    if (!bestRecipeId) {
+      setExportMessage({ tone: 'info', text: 'No guard-compliant recipe available yet.' });
+      return;
+    }
+    void handleExportRecipe(bestRecipeId);
   };
 
   const renderRecipesTab = () => {
@@ -588,12 +757,20 @@ const Phase5Optimize = () => {
           <div className="phase5__recipes-actions">
             <button
               type="button"
+              className="btn btn--primary"
+              onClick={handleExportBestRecipe}
+              disabled={!bestRecipe || Boolean(exportingRecipeId)}
+            >
+              {bestRecipe && exportingRecipeId === bestRecipe.id ? 'Exporting…' : 'Export Best Recipe'}
+            </button>
+            <button
+              type="button"
               className="btn btn--ghost"
               onClick={() => {
                 setRecipesStale(true);
                 void loadRecipes();
               }}
-              disabled={recipesLoading}
+              disabled={recipesLoading || Boolean(exportingRecipeId)}
             >
               {recipesLoading ? 'Refreshing…' : 'Refresh'}
             </button>
@@ -617,7 +794,7 @@ const Phase5Optimize = () => {
             </thead>
             <tbody>
               {sortedRecipes.map((recipe) => (
-                <tr key={recipe.id}>
+                <tr key={recipe.id} className={bestRecipeId === recipe.id ? 'phase5__recipes-best' : undefined}>
                   <td>
                     <div className="phase5__recipe-meta">
                       <strong>{recipe.name}</strong>
@@ -648,8 +825,9 @@ const Phase5Optimize = () => {
                         type="button"
                         className="btn btn--ghost"
                         onClick={() => handleExportRecipe(recipe.id)}
+                        disabled={Boolean(exportingRecipeId)}
                       >
-                        Export
+                        {exportingRecipeId === recipe.id ? 'Exporting…' : 'Export'}
                       </button>
                     </div>
                   </td>

@@ -1010,12 +1010,19 @@ body {
 .phase5__recipes-actions {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .phase5__recipes-table td,
 .phase5__recipes-table th {
   vertical-align: top;
   text-align: left;
+}
+
+.phase5__recipes-best {
+  background: rgba(37, 99, 235, 0.08);
 }
 
 .phase5__recipe-meta {
