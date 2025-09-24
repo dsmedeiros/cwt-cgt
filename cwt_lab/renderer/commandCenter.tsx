@@ -123,16 +123,25 @@ export const useCommandCenter = () => {
 export const useCommandRegistration = (
   registration: { run?: CommandRegistration | null; abort?: CommandRegistration | null },
 ) => {
-  const { registerRun, registerAbort } = useCommandCenter();
-  useEffect(() => {
-    registerRun(registration.run ?? null);
-    return () => registerRun(null);
-  }, [registerRun, registration.run]);
+  const context = useContext(CommandContext);
 
   useEffect(() => {
-    registerAbort(registration.abort ?? null);
-    return () => registerAbort(null);
-  }, [registerAbort, registration.abort]);
+    if (!context) {
+      return;
+    }
+
+    context.registerRun(registration.run ?? null);
+    return () => context.registerRun(null);
+  }, [context, registration.run]);
+
+  useEffect(() => {
+    if (!context) {
+      return;
+    }
+
+    context.registerAbort(registration.abort ?? null);
+    return () => context.registerAbort(null);
+  }, [context, registration.abort]);
 };
 
 export const useCommandCombos = () => ({
