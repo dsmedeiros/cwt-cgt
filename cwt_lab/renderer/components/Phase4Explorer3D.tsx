@@ -285,7 +285,7 @@ const Phase4Explorer3D = () => {
         zaxis: { title: { text: axes3[2] } },
       },
     }),
-    axes3,
+    [axes3],
   );
 
   const commandPreview = useMemo(

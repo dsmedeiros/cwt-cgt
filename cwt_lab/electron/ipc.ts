@@ -188,6 +188,19 @@ ipcMain.handle('cwt:run:open-artifacts', (_event, payload: { runId: string }) =>
   }),
 );
 
+ipcMain.handle('cwt:run:read-artifact', (_event, payload: { runId: string; relativePath: string }) =>
+  wrap(async () => {
+    if (!payload?.runId) {
+      throw new Error('runId is required');
+    }
+    if (!payload?.relativePath || typeof payload.relativePath !== 'string') {
+      throw new Error('relativePath is required');
+    }
+
+    return runManager.readArtifact(payload.runId, payload.relativePath);
+  }),
+);
+
 const launchPhase = (
   module: string,
   params: Record<string, unknown> | undefined,

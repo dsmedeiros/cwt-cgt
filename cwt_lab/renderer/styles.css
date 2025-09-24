@@ -399,6 +399,183 @@ body {
   font-family: 'Fira Mono', 'SFMono-Regular', ui-monospace, monospace;
 }
 
+.torus {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: minmax(260px, 300px) 1fr;
+}
+
+.torus__sidebar {
+  background: #f3f4f6;
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.torus__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.torus__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.torus__field input,
+.torus__field textarea {
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+.torus__field textarea {
+  resize: vertical;
+}
+
+.torus__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.torus__error {
+  background: #fee2e2;
+  border-left: 4px solid #dc2626;
+  color: #7f1d1d;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+}
+
+.torus__command {
+  display: block;
+  background: rgba(17, 24, 39, 0.1);
+  border-radius: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  font-family: 'Fira Mono', 'SFMono-Regular', ui-monospace, monospace;
+  word-break: break-all;
+}
+
+.torus__status {
+  margin: 0;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.torus__main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.torus__loading {
+  background: #dbeafe;
+  border-left: 4px solid #2563eb;
+  color: #1e3a8a;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+}
+
+.torus__empty {
+  background: #f9fafb;
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+.torus__disorder-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.torus__disorder-button {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  border-radius: 9999px;
+  padding: 0.4rem 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border 0.2s ease;
+}
+
+.torus__disorder-button--active,
+.torus__disorder-button:hover {
+  background: #fde68a;
+  border-color: #f59e0b;
+}
+
+.torus__heatmap {
+  width: 100%;
+}
+
+.torus__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.torus__metric {
+  background: #f9fafb;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+.torus__metric-label {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.torus__metric-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.torus__warnings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.torus__warning {
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  color: #92400e;
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+}
+
+.torus__warning--danger {
+  background: #fecaca;
+  border-left-color: #dc2626;
+  color: #7f1d1d;
+}
+
+.torus__notes ul {
+  list-style: disc;
+  margin: 0;
+  padding-left: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
 @media (max-width: 960px) {
   .phase3__layout {
     grid-template-columns: 1fr;

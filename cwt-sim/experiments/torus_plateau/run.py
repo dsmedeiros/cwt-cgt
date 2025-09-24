@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import warnings
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -24,6 +25,17 @@ def ensure_dir(path: Path) -> None:
 
 
 @dataclass
+class PlateauHeatmap:
+    axes: list[str]
+    x: list[float]
+    y: list[float]
+    values: list[list[float]]
+    coverage: list[list[float]]
+    min_value: float
+    max_value: float
+
+
+@dataclass
 class PlateauSample:
     disorder: float
     integral: float
@@ -31,6 +43,7 @@ class PlateauSample:
     guard_fraction: float
     min_overlap: float
     closing_tiles: int
+    heatmap: PlateauHeatmap | None = None
 
 
 def _build_substrate() -> GraphSubstrate:
@@ -111,6 +124,98 @@ def _integrated_curvature(omega_tiles: Iterable[Mapping[str, float]]) -> tuple[f
     return float(total), bool(missing), float(min_overlap), int(closing_report)
 
 
+def _build_heatmap(
+    omega_tiles: Iterable[Mapping[str, object]],
+    axes: tuple[str, str],
+    bins: int,
+    center: Mapping[str, float],
+    extents: Mapping[str, float],
+) -> PlateauHeatmap | None:
+    xs: list[float] = []
+    ys: list[float] = []
+    flux: list[float] = []
+    coverage: list[float] = []
+
+    axis_a, axis_b = axes
+    for tile in omega_tiles:
+        if not isinstance(tile, Mapping):
+            continue
+        lambda0 = tile.get("lambda0")
+        if not isinstance(lambda0, Mapping):
+            continue
+        try:
+            x_val = float(lambda0.get(axis_a, float("nan")))
+            y_val = float(lambda0.get(axis_b, float("nan")))
+            omega_val = float(tile.get("omega", 0.0))
+            tile_area = float(tile.get("tile_area", 0.0))
+        except (TypeError, ValueError):
+            continue
+        if not (math.isfinite(x_val) and math.isfinite(y_val)):
+            continue
+        if not (math.isfinite(omega_val) and math.isfinite(tile_area)):
+            continue
+        xs.append(x_val)
+        ys.append(y_val)
+        flux.append(omega_val * tile_area)
+        coverage.append(abs(tile_area))
+
+    if not xs:
+        return None
+
+    try:
+        span_a = float(extents.get(axis_a, 0.0))
+        span_b = float(extents.get(axis_b, 0.0))
+        center_a = float(center.get(axis_a, xs[0]))
+        center_b = float(center.get(axis_b, ys[0]))
+    except (TypeError, ValueError):
+        span_a = 0.0
+        span_b = 0.0
+        center_a = xs[0]
+        center_b = ys[0]
+
+    range_a = (
+        min(xs) if span_a <= 0 else center_a - span_a,
+        max(xs) if span_a <= 0 else center_a + span_a,
+    )
+    range_b = (
+        min(ys) if span_b <= 0 else center_b - span_b,
+        max(ys) if span_b <= 0 else center_b + span_b,
+    )
+
+    if not (math.isfinite(range_a[0]) and math.isfinite(range_a[1])):
+        return None
+    if not (math.isfinite(range_b[0]) and math.isfinite(range_b[1])):
+        return None
+    if range_a[0] == range_a[1] or range_b[0] == range_b[1]:
+        return None
+
+    bin_count = max(int(bins), 4)
+    heatmap, x_edges, y_edges = np.histogram2d(
+        xs,
+        ys,
+        bins=bin_count,
+        range=[range_a, range_b],
+        weights=flux,
+    )
+    coverage_map, _, _ = np.histogram2d(xs, ys, bins=[x_edges, y_edges], weights=coverage)
+
+    heatmap = np.nan_to_num(heatmap, nan=0.0, copy=False)
+    coverage_map = np.nan_to_num(coverage_map, nan=0.0, copy=False)
+
+    x_centers = ((x_edges[:-1] + x_edges[1:]) / 2.0).astype(float)
+    y_centers = ((y_edges[:-1] + y_edges[1:]) / 2.0).astype(float)
+
+    return PlateauHeatmap(
+        axes=[axis_a, axis_b],
+        x=[float(value) for value in x_centers.tolist()],
+        y=[float(value) for value in y_centers.tolist()],
+        values=np.transpose(heatmap).tolist(),
+        coverage=np.transpose(coverage_map).tolist(),
+        min_value=float(np.min(heatmap)),
+        max_value=float(np.max(heatmap)),
+    )
+
+
 def _torus_path(
     center: Mapping[str, float],
     extents: Mapping[str, float],
@@ -135,6 +240,10 @@ def _collect_plateau(
     config: RunConfig,
     path: ParameterPath,
     disorder: float,
+    axes: tuple[str, str],
+    grid_size: int,
+    center: Mapping[str, float],
+    extents: Mapping[str, float],
 ) -> PlateauSample:
     record = run_parameter_loop(
         substrate,
@@ -156,6 +265,7 @@ def _collect_plateau(
             RuntimeWarning,
             stacklevel=2,
         )
+    heatmap = _build_heatmap(record.omega_tiles, axes, grid_size, center, extents)
     return PlateauSample(
         disorder=float(disorder),
         integral=float(integral),
@@ -163,6 +273,7 @@ def _collect_plateau(
         guard_fraction=guard_fraction,
         min_overlap=float(min_overlap),
         closing_tiles=int(closing_tiles),
+        heatmap=heatmap,
     )
 
 
@@ -229,12 +340,17 @@ def main() -> None:
     args = parser.parse_args()
 
     axes = (str(args.axes[0]), str(args.axes[1]))
-    steps = max(int(args.grid_size) ** 2, 8)
+    grid_size = max(int(args.grid_size), 1)
+    steps = max(grid_size**2, 8)
 
     center = {axes[0]: float(args.tau_center), axes[1]: float(args.zeta_center)}
     extents = {axes[0]: float(abs(args.tau_extent)), axes[1]: float(abs(args.zeta_extent))}
 
     output_dir: Path | None = args.output_dir
+    if output_dir is None:
+        env_out_dir = os.environ.get("CWT_OUTPUT_DIR")
+        if env_out_dir:
+            output_dir = Path(env_out_dir)
     if output_dir is not None:
         ensure_dir(output_dir)
 
@@ -247,7 +363,17 @@ def main() -> None:
     samples: list[PlateauSample] = []
     for value in args.disorder:
         config = _run_config(value)
-        sample = _collect_plateau(substrate, base_state, config, path, value)
+        sample = _collect_plateau(
+            substrate,
+            base_state,
+            config,
+            path,
+            value,
+            axes,
+            grid_size,
+            center,
+            extents,
+        )
         samples.append(sample)
         summary = (
             "disorder={:.3f}  integral={:+.4f}  guard_fraction={:.3f}  min_overlap={:.3f}  closings={}{}"
@@ -266,7 +392,7 @@ def main() -> None:
 
     summary_payload = {
         "axes": list(axes),
-        "grid_size": int(args.grid_size),
+        "grid_size": grid_size,
         "steps": steps,
         "center": center,
         "extents": extents,
