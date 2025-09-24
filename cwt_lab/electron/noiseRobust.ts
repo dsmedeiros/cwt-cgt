@@ -53,6 +53,8 @@ export type NoiseSweepResult = {
   reportPath: string | null;
   outputDir: string;
   graphs: NoiseSweepGraph[];
+  numTrials?: number;
+  loopSteps?: number;
 };
 
 const repoRoot = path.resolve(__dirname, '..', '..');
