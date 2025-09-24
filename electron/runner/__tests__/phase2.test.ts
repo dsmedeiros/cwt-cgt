@@ -44,6 +44,8 @@ describe('correlate', () => {
     });
 
     expect(result.features).toHaveLength(4);
+    expect(result.samples).toHaveLength(0);
+    expect(result.threshold).toBeNull();
     result.features.forEach((feature) => {
       expect(feature.correlation).toBeNull();
       expect(feature.sampleSize).toBe(0);
@@ -80,6 +82,13 @@ describe('correlate', () => {
 
     expect(result.auc).toBeDefined();
     expect(result.auc ?? 0).toBeCloseTo(1.0, 6);
+    expect(result.threshold).toBeCloseTo(1.0, 6);
+    expect(result.samples.length).toBeGreaterThan(0);
+    expect(result.roc).toBeDefined();
+    if (result.roc) {
+      expect(result.features.map((feature) => feature.name)).toContain(result.roc.feature);
+      expect(result.roc.points.length).toBeGreaterThan(0);
+    }
   });
 
   it('supports percentile thresholds and recomputes statistics accordingly', () => {
@@ -98,5 +107,6 @@ describe('correlate', () => {
     expect(spectral?.correlation ?? 0).toBeCloseTo(0.6708203, 6);
     expect(result.auc).toBeDefined();
     expect(result.auc ?? 0).toBeCloseTo(1.0, 6);
+    expect(result.threshold).not.toBeNull();
   });
 });

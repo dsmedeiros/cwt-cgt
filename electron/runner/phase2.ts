@@ -18,6 +18,25 @@ export interface CorrelateOptions {
   threshold: { mode: 'absolute' | 'percentile'; value: number };
 }
 
+export interface Phase2Sample {
+  omegaAbs: number | null;
+  features: Partial<Record<FeatureName, number | null>>;
+}
+
+export interface RocPoint {
+  threshold: number;
+  tpr: number;
+  fpr: number;
+}
+
+export interface CorrelateResult {
+  features: FeatureStat[];
+  auc?: number;
+  roc?: { feature: FeatureName; points: RocPoint[] };
+  threshold: number | null;
+  samples: Phase2Sample[];
+}
+
 interface MetricsRow {
   omega_abs: number;
   spectral_gap?: number;
@@ -38,11 +57,24 @@ const FEATURE_NAMES: FeatureName[] = [
   'trace_g',
 ];
 
-export function correlate({ metricsDirs, threshold }: CorrelateOptions): {
-  features: FeatureStat[];
-  auc?: number;
-} {
+export function correlate({ metricsDirs, threshold }: CorrelateOptions): CorrelateResult {
   const rows = loadMetrics(metricsDirs);
+
+  if (rows.length === 0) {
+    return {
+      features: FEATURE_NAMES.map((name) => ({
+        name,
+        correlation: null,
+        sampleSize: 0,
+        hotCount: 0,
+        coldCount: 0,
+        meanHot: null,
+        meanCold: null,
+      })),
+      samples: [],
+      threshold: null,
+    } satisfies CorrelateResult;
+  }
 
   const omegaValues = rows
     .map((row) => row.omega_abs)
@@ -57,6 +89,18 @@ export function correlate({ metricsDirs, threshold }: CorrelateOptions): {
     trace_g: { values: [], labels: [] },
   };
 
+  const samples = rows.map((row) => {
+    const features: Partial<Record<FeatureName, number | null>> = {};
+    FEATURE_NAMES.forEach((feature) => {
+      const value = row[feature];
+      features[feature] = Number.isFinite(value as number) ? (value as number) : null;
+    });
+    return {
+      omegaAbs: Number.isFinite(row.omega_abs) ? row.omega_abs : null,
+      features,
+    } satisfies Phase2Sample;
+  });
+
   if (!Number.isFinite(theta)) {
     return {
       features: FEATURE_NAMES.map((name) => ({
@@ -68,7 +112,9 @@ export function correlate({ metricsDirs, threshold }: CorrelateOptions): {
         meanHot: null,
         meanCold: null,
       })),
-    };
+      samples,
+      threshold: null,
+    } satisfies CorrelateResult;
   }
 
   rows.forEach((row) => {
@@ -102,12 +148,23 @@ export function correlate({ metricsDirs, threshold }: CorrelateOptions): {
     } satisfies FeatureStat;
   });
 
-  const auc = computeBestFeatureAuc(featureData, features);
+  const { auc, bestFeature } = computeBestFeatureAuc(featureData, features);
+
+  const roc =
+    bestFeature && auc !== null
+      ? {
+          feature: bestFeature,
+          points: computeRoc(featureData[bestFeature].values, featureData[bestFeature].labels),
+        }
+      : undefined;
 
   return {
     features,
     ...(auc === null ? {} : { auc }),
-  };
+    ...(roc && roc.points.length > 0 ? { roc } : {}),
+    threshold: Number.isFinite(theta) ? (theta as number) : null,
+    samples,
+  } satisfies CorrelateResult;
 }
 
 function loadMetrics(metricsDirs: string[]): MetricsRow[] {
@@ -309,7 +366,7 @@ function sampleVariance(values: number[], meanValue: number): number {
 function computeBestFeatureAuc(
   featureData: Record<FeatureName, FeatureAccumulator>,
   features: FeatureStat[],
-): number | null {
+): { auc: number | null; bestFeature: FeatureName | null } {
   let bestFeature: FeatureName | null = null;
   let bestScore = -Infinity;
 
@@ -326,14 +383,14 @@ function computeBestFeatureAuc(
   });
 
   if (!bestFeature) {
-    return null;
+    return { auc: null, bestFeature: null };
   }
 
   const selectedFeature: FeatureName = bestFeature;
   const data: FeatureAccumulator = featureData[selectedFeature];
 
   const auc = computeAuc(data.values, data.labels);
-  return auc;
+  return { auc, bestFeature };
 }
 
 function computeAuc(values: number[], labels: number[]): number | null {
@@ -378,4 +435,45 @@ function computeAuc(values: number[], labels: number[]): number | null {
     (rankSum - (positives * (positives + 1)) / 2) / (positives * negatives);
 
   return auc;
+}
+
+function computeRoc(values: number[], labels: number[]): RocPoint[] {
+  const n = values.length;
+  if (n === 0 || labels.length !== n) {
+    return [];
+  }
+
+  const pairs = values.map((value, index) => ({ value, label: labels[index] }));
+  const positives = pairs.filter((pair) => pair.label === 1).length;
+  const negatives = pairs.filter((pair) => pair.label === 0).length;
+
+  if (positives === 0 || negatives === 0) {
+    return [];
+  }
+
+  pairs.sort((a, b) => b.value - a.value);
+
+  const points: RocPoint[] = [{ threshold: Number.POSITIVE_INFINITY, tpr: 0, fpr: 0 }];
+  let tp = 0;
+  let fp = 0;
+  let index = 0;
+
+  while (index < pairs.length) {
+    const value = pairs[index].value;
+    let j = index;
+    while (j < pairs.length && pairs[j].value === value) {
+      if (pairs[j].label === 1) {
+        tp += 1;
+      } else {
+        fp += 1;
+      }
+      j += 1;
+    }
+    points.push({ threshold: value, tpr: tp / positives, fpr: fp / negatives });
+    index = j;
+  }
+
+  points.push({ threshold: Number.NEGATIVE_INFINITY, tpr: 1, fpr: 1 });
+
+  return points;
 }

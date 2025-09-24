@@ -23,6 +23,7 @@ const api = {
   },
   phase2: {
     correlate: (payload) => invoke('cwt:phase2:correlate', payload),
+    saveSnapshot: (payload) => invoke('cwt:phase2:save-snapshot', payload),
   },
   phase3: {
     loopAtHotspot: (params) => invoke('cwt:phase3:loop-at-hotspot', params),

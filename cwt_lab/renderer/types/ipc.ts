@@ -4,6 +4,44 @@ export type IpcEnvelope<T> = { ok: true; data: T } | { ok: false; error: string;
 
 export type PythonStrategy = 'module' | 'py_path' | 'installed';
 
+export type Phase2FeatureName = 'spectral_gap' | 'kuramoto_r' | 'grad_r' | 'trace_g';
+
+export type Phase2FeatureStat = {
+  name: Phase2FeatureName;
+  correlation: number | null;
+  sampleSize: number;
+  hotCount: number;
+  coldCount: number;
+  meanHot: number | null;
+  meanCold: number | null;
+};
+
+export type Phase2Sample = {
+  omegaAbs: number | null;
+  features: Partial<Record<Phase2FeatureName, number | null>>;
+};
+
+export type Phase2RocPoint = {
+  threshold: number;
+  tpr: number;
+  fpr: number;
+};
+
+export type Phase2CorrelateResult = {
+  features: Phase2FeatureStat[];
+  auc?: number;
+  roc?: { feature: Phase2FeatureName; points: Phase2RocPoint[] };
+  threshold: number | null;
+  samples: Phase2Sample[];
+};
+
+export type Phase2CorrelatePayload = {
+  metricsDirs: string[];
+  thresholdMode: 'absolute' | 'percentile';
+  thresholdValue?: number;
+  percentile?: number;
+};
+
 export type EnvCandidate = {
   path: string;
   version: string | null;
@@ -123,14 +161,8 @@ export interface RendererIpc {
     map: (params: Record<string, unknown>) => Promise<IpcEnvelope<RunCreateResult>>;
   };
   phase2: {
-    correlate: (
-      payload: {
-        metricsDirs: string[];
-        thresholdMode?: string;
-        thresholdValue?: number;
-        percentile?: number;
-      },
-    ) => Promise<IpcEnvelope<unknown>>;
+    correlate: (payload: Phase2CorrelatePayload) => Promise<IpcEnvelope<Phase2CorrelateResult>>;
+    saveSnapshot: (payload: unknown) => Promise<IpcEnvelope<{ path: string }>>;
   };
   phase3: {
     loopAtHotspot: (params: LoopAtHotspotPayload) => Promise<IpcEnvelope<RunCreateResult>>;
