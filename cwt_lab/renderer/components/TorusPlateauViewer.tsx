@@ -47,7 +47,7 @@ const parseFloatInput = (value: string): number | null => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-const buildCommandPreview = (
+const buildTorusPayload = (
   axes: [string, string],
   gridSize: number,
   disorders: number[],
@@ -55,29 +55,15 @@ const buildCommandPreview = (
   tauExtent: number,
   zetaCenter: number,
   zetaExtent: number,
-) => {
-  const parts = [
-    'cwt',
-    'phase4',
-    'torus_plateau',
-    '--axes',
-    axes[0],
-    axes[1],
-    '--grid-size',
-    gridSize.toString(),
-    '--disorder',
-    ...disorders.map((value) => Number(value.toFixed(6)).toString()),
-    '--tau-center',
-    Number(tauCenter.toFixed(6)).toString(),
-    '--tau-extent',
-    Number(tauExtent.toFixed(6)).toString(),
-    '--zeta-center',
-    Number(zetaCenter.toFixed(6)).toString(),
-    '--zeta-extent',
-    Number(zetaExtent.toFixed(6)).toString(),
-  ];
-  return parts.join(' ');
-};
+) => ({
+  axes,
+  gridSize,
+  disorderList: disorders,
+  centersExtents: {
+    [axes[0]]: { center: tauCenter, extent: tauExtent },
+    [axes[1]]: { center: zetaCenter, extent: zetaExtent },
+  },
+});
 
 type PlateauHeatmap = {
   axes: string[];
@@ -132,11 +118,92 @@ const TorusPlateauViewer = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [commandPreview, setCommandPreview] = useState('');
+  const [commandPreviewError, setCommandPreviewError] = useState<string | null>(null);
   const [currentRunId, setCurrentRunId] = useState<string | null>(null);
   const [summary, setSummary] = useState<PlateauSummary | null>(null);
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const [selectedSampleIndex, setSelectedSampleIndex] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const updatePreview = async () => {
+      const axes: [string, string] = [axisA.trim(), axisB.trim()];
+      const gridSize = Number(gridSizeInput);
+      const disorders = parseNumberList(disorderInput) ?? [];
+      const tauCenterValue = parseFloatInput(tauCenter);
+      const tauExtentValue = parseFloatInput(tauExtent);
+      const zetaCenterValue = parseFloatInput(zetaCenter);
+      const zetaExtentValue = parseFloatInput(zetaExtent);
+
+      const inputsValid =
+        axes[0].length > 0 &&
+        axes[1].length > 0 &&
+        Number.isInteger(gridSize) &&
+        gridSize > 0 &&
+        disorders.length > 0 &&
+        tauCenterValue != null &&
+        tauExtentValue != null &&
+        tauExtentValue > 0 &&
+        zetaCenterValue != null &&
+        zetaExtentValue != null &&
+        zetaExtentValue > 0;
+
+      if (!inputsValid) {
+        setCommandPreview('');
+        setCommandPreviewError('Adjust parameters to preview the command.');
+        return;
+      }
+
+      if (!window?.CWT?.run?.preview) {
+        setCommandPreview('');
+        setCommandPreviewError('Command preview unavailable in this environment.');
+        return;
+      }
+
+      const payload = buildTorusPayload(
+        axes,
+        gridSize,
+        disorders,
+        tauCenterValue,
+        tauExtentValue,
+        zetaCenterValue,
+        zetaExtentValue,
+      );
+
+      try {
+        const response = await window.CWT.run.preview({
+          experiment: 'experiments.torus_plateau.run',
+          args: payload,
+        });
+        if (cancelled) {
+          return;
+        }
+        if (response.ok) {
+          setCommandPreview(response.data.cli);
+          setCommandPreviewError(null);
+        } else {
+          setCommandPreview('');
+          setCommandPreviewError(response.error ?? 'Unable to preview command.');
+        }
+      } catch (previewError) {
+        if (cancelled) {
+          return;
+        }
+        setCommandPreview('');
+        setCommandPreviewError(
+          previewError instanceof Error ? previewError.message : String(previewError),
+        );
+      }
+    };
+
+    void updatePreview();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [axisA, axisB, gridSizeInput, disorderInput, tauCenter, tauExtent, zetaCenter, zetaExtent]);
 
   const loadSummary = useCallback(async (runId: string) => {
     if (!window?.CWT?.run?.openArtifacts || !window.CWT.run.readArtifact) {
@@ -232,7 +299,7 @@ const TorusPlateauViewer = () => {
       return;
     }
 
-    const preview = buildCommandPreview(
+    const payload = buildTorusPayload(
       axes,
       gridSize,
       disorders,
@@ -241,17 +308,6 @@ const TorusPlateauViewer = () => {
       zetaCenterValue,
       zetaExtentValue,
     );
-    setCommandPreview(preview);
-
-    const payload: Record<string, unknown> = {
-      axes,
-      gridSize,
-      disorderList: disorders,
-      centersExtents: {
-        [axes[0]]: { center: tauCenterValue, extent: tauExtentValue },
-        [axes[1]]: { center: zetaCenterValue, extent: zetaExtentValue },
-      },
-    };
 
     setIsRunning(true);
     setError(null);
@@ -463,7 +519,8 @@ const TorusPlateauViewer = () => {
         </section>
 
         {error ? <div className="torus__error">{error}</div> : null}
-        {commandPreview ? <code className="torus__command">{commandPreview}</code> : null}
+        <code className="torus__command">{commandPreview || 'Preview unavailable'}</code>
+        {commandPreviewError ? <div className="torus__error">{commandPreviewError}</div> : null}
         {currentRunId ? <p className="torus__status">Run ID: {currentRunId}</p> : null}
       </aside>
 

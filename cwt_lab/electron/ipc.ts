@@ -575,6 +575,23 @@ ipcMain.handle(
     }),
 );
 
+ipcMain.handle(
+  'cwt:run:preview',
+  (
+    _event,
+    payload: { experiment: string; args?: Record<string, unknown>; workdir?: string },
+  ) =>
+    wrap(() => {
+      if (!payload?.experiment) {
+        throw new Error('experiment is required');
+      }
+
+      const args = buildArgsFromParams(payload.args);
+      const cwd = payload.workdir ? path.resolve(payload.workdir) : cwtSimRoot;
+      return runManager.previewCommand(payload.experiment, args, cwd);
+    }),
+);
+
 ipcMain.handle('cwt:run:abort', (_event, payload: { runId: string }) =>
   wrap(async () => {
     if (!payload?.runId) {

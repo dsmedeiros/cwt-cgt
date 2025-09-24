@@ -171,6 +171,35 @@ const buildGuidedPayload = (
   seed,
 });
 
+const previewGuidedCli = async (payload: GuidedLoopArgs): Promise<string> => {
+  if (typeof window === 'undefined' || !window?.CWT?.run?.preview) {
+    return 'Command preview unavailable in this environment.';
+  }
+
+  const { stepsList, minPhi: _ignored, ...rest } = payload;
+  const baseParams: Record<string, unknown> = { ...rest };
+  const previews: string[] = [];
+
+  for (const steps of stepsList) {
+    const currentParams = { ...baseParams, steps };
+    try {
+      const response = await window.CWT.run.preview({
+        experiment: 'experiments.wilson_loop_3d.run',
+        args: currentParams,
+      });
+      if (!response.ok) {
+        throw new Error(response.error ?? 'Preview request failed');
+      }
+      previews.push(response.data.cli);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      previews.push(`(preview failed for steps=${steps}: ${message})`);
+    }
+  }
+
+  return previews.join('\n');
+};
+
 const simulateSimpleMetrics = (
   seed: number,
   extents: [number, number],
@@ -225,28 +254,6 @@ const metricFromRecord = (metrics: Record<string, number | null> | null, key: st
     }
   }
   return undefined;
-};
-
-const buildGuidedCli = (payload: GuidedLoopArgs) => {
-  const parts = [
-    'cwt phase3 guided-loop',
-    `--center ${payload.center.map(toCliValue).join(',')}`,
-    `--amplitudes ${payload.amplitudes.map(toCliValue).join(',')}`,
-    `--graph ${payload.graph}`,
-    `--steps ${payload.stepsList.join(',')}`,
-  ];
-
-  if (payload.fsGuard != null) {
-    parts.push(`--fs-guard ${toCliValue(payload.fsGuard)}`);
-  }
-  if (payload.minPhi != null) {
-    parts.push(`--min-phi ${toCliValue(payload.minPhi)}`);
-  }
-  if (payload.seed != null) {
-    parts.push(`--seed ${payload.seed}`);
-  }
-
-  return parts.join(' ');
 };
 
 const Phase3Loops = () => {
@@ -448,7 +455,7 @@ const Phase3Loops = () => {
       guidedMinPhi,
       guidedSeed,
     );
-    const command = buildGuidedCli(payload);
+    const command = await previewGuidedCli(payload);
 
     setIsGuidedRunning(true);
     try {

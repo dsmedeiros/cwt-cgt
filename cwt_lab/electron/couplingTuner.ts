@@ -4,6 +4,7 @@ import path from 'node:path';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 
 import type { PythonStrategy } from './runner/env';
+import { planModuleInvocation } from './runner/pythonInvoker';
 
 export type CouplingVariantRequest = {
   configPath: string;
@@ -32,6 +33,7 @@ export type CouplingTunerResult = {
   baselineConfig: string;
   variants: CouplingVariantSummary[];
   bestIndex: number | null;
+  commands: string[];
 };
 
 const repoRoot = path.resolve(__dirname, '..', '..');
@@ -39,29 +41,6 @@ const cwtSimRoot = path.join(repoRoot, 'cwt-sim');
 
 const ensureDir = async (dir: string) => {
   await fs.mkdir(dir, { recursive: true });
-};
-
-const buildPythonPath = (strategy: PythonStrategy): string | undefined => {
-  const entries = new Set<string>();
-  const current = process.env.PYTHONPATH ?? '';
-  if (current) {
-    for (const part of current.split(path.delimiter)) {
-      const trimmed = part.trim();
-      if (trimmed.length > 0) {
-        entries.add(trimmed);
-      }
-    }
-  }
-
-  if (strategy === 'py_path') {
-    entries.add(cwtSimRoot);
-  }
-
-  const values = Array.from(entries);
-  if (values.length === 0) {
-    return undefined;
-  }
-  return values.join(path.delimiter);
 };
 
 const normalizeEtaQ = (etaQ: number | number[] | undefined, index: number): number | null => {
@@ -182,17 +161,14 @@ export const runCouplingTuner = async (
   const baselineCopy = path.join(options.outDir, path.basename(baselinePath));
   await fs.writeFile(baselineCopy, baselineRaw, 'utf-8');
 
-  const pythonPath = buildPythonPath(options.strategy);
-  const env: NodeJS.ProcessEnv = {
+  const baseEnv: NodeJS.ProcessEnv = {
     ...process.env,
     PYTHONUNBUFFERED: '1',
     PYTHONIOENCODING: 'utf-8',
   };
-  if (pythonPath) {
-    env.PYTHONPATH = pythonPath;
-  }
 
   const variants: CouplingVariantSummary[] = [];
+  const invocations: string[] = [];
 
   for (let index = 0; index < options.betas.length; index += 1) {
     const beta = Number(options.betas[index]);
@@ -205,11 +181,24 @@ export const runCouplingTuner = async (
     const variantPath = path.join(options.outDir, `${variantName}.yaml`);
     await fs.writeFile(variantPath, stringifyYaml(mutated), 'utf-8');
 
-    const args = ['-m', 'scripts.run_loop', '--config', variantPath, '--out', options.outDir];
+    const moduleArgs = ['--config', variantPath, '--out', options.outDir];
+    const invocation = planModuleInvocation({
+      pythonExe,
+      strategy: options.strategy,
+      repoRoot,
+      moduleName: 'scripts.run_loop',
+      args: moduleArgs,
+      pythonPathEntries: [cwtSimRoot],
+    });
+    invocations.push(invocation.cli);
+    const env = { ...baseEnv };
+    if (invocation.pythonPath) {
+      env.PYTHONPATH = invocation.pythonPath;
+    }
     const result = await new Promise<{ runId: string; runDir: string }>((resolve, reject) => {
       let stdout = '';
       let stderr = '';
-      const child = spawn(pythonExe, args, { cwd: cwtSimRoot, env });
+      const child = spawn(invocation.command, invocation.args, { cwd: invocation.cwd, env });
       child.stdout.on('data', (chunk: Buffer) => {
         stdout += chunk.toString('utf-8');
       });
@@ -277,6 +266,7 @@ export const runCouplingTuner = async (
     baselineConfig: baselineCopy,
     variants,
     bestIndex,
+    commands: invocations,
   };
 };
 

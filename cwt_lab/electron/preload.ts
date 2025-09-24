@@ -14,6 +14,7 @@ const api = {
   },
   run: {
     create: (payload) => invoke('cwt:run:create', payload),
+    preview: (payload) => invoke('cwt:run:preview', payload),
     abort: (payload) => invoke('cwt:run:abort', payload),
     tail: (payload) => invoke('cwt:run:tail', payload),
     openArtifacts: (payload) => invoke('cwt:run:open-artifacts', payload),

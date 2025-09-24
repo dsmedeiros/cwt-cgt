@@ -917,6 +917,12 @@ const Phase5Optimize = () => {
                   <code>{formatFloat(graphResult.runtimeSeconds, 2)} s</code>
                 </span>
               ) : null}
+              {graphResult.cli ? (
+                <span className="phase5__cli">
+                  CLI:&nbsp;
+                  <code className="phase5__code-snippet">{graphResult.cli}</code>
+                </span>
+              ) : null}
             </div>
           ) : (
             <p className="phase5__placeholder">Run the sweep to populate the leaderboard.</p>
@@ -1054,6 +1060,11 @@ const Phase5Optimize = () => {
               <h3>Before / After comparison</h3>
               {invResult.acceptance ? <span>{invResult.acceptance}</span> : null}
             </header>
+            {invResult.cli ? (
+              <p className="phase5__command">
+                CLI:&nbsp;<code className="phase5__code-snippet">{invResult.cli}</code>
+              </p>
+            ) : null}
             <div className="phase5__inverse-grid">
               <article className="phase5__inverse-card">
                 <h4>Baseline rectangle</h4>
@@ -1237,6 +1248,11 @@ const Phase5Optimize = () => {
                 <span>Loop steps: {noiseResult.loopSteps ?? '—'}</span>
               </div>
             </header>
+            {noiseResult.cli ? (
+              <p className="phase5__command">
+                CLI:&nbsp;<code className="phase5__code-snippet">{noiseResult.cli}</code>
+              </p>
+            ) : null}
             {activeNoiseGraph ? (
               <table className="phase5__table">
                 <thead>
@@ -1340,6 +1356,12 @@ const Phase5Optimize = () => {
                 </button>
               </p>
             </header>
+            {tunerResult.commands.length ? (
+              <details className="phase5__cli-list">
+                <summary>Show CLI commands</summary>
+                <pre>{tunerResult.commands.join('\n')}</pre>
+              </details>
+            ) : null}
             <table className="phase5__table">
               <thead>
                 <tr>

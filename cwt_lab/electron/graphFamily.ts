@@ -4,6 +4,7 @@ import path from 'node:path';
 
 import type { GraphFamilyCommandResult } from '../renderer/types/ipc';
 import type { PythonStrategy } from './runner/env';
+import { planModuleInvocation } from './runner/pythonInvoker';
 
 type GraphFamilyCommandParams = {
   families: string[];
@@ -86,9 +87,7 @@ export const cmdGraphFamily = async (
 ): Promise<GraphFamilyCommandResult> => {
   await ensureUniquePath(params.outDir);
 
-  const args = [
-    '-m',
-    'experiments.graph_family.run',
+  const moduleArgs = [
     '--families',
     params.families.join(','),
     '--axes',
@@ -104,22 +103,29 @@ export const cmdGraphFamily = async (
     params.outDir,
   ];
 
-  const pythonPath = buildPythonPath(params.strategy);
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     PYTHONUNBUFFERED: '1',
     PYTHONIOENCODING: 'utf-8',
   };
-  if (pythonPath) {
-    env.PYTHONPATH = pythonPath;
+  const invocation = planModuleInvocation({
+    pythonExe,
+    strategy: params.strategy,
+    repoRoot,
+    moduleName: 'experiments.graph_family.run',
+    args: moduleArgs,
+    pythonPathEntries: [cwtSimRoot],
+  });
+  if (invocation.pythonPath) {
+    env.PYTHONPATH = invocation.pythonPath;
   }
 
   let stdout = '';
   let stderr = '';
 
   await new Promise<void>((resolve, reject) => {
-    const child = spawn(pythonExe, args, {
-      cwd: cwtSimRoot,
+    const child = spawn(invocation.command, invocation.args, {
+      cwd: invocation.cwd,
       env,
     });
 
@@ -214,6 +220,9 @@ export const cmdGraphFamily = async (
     seed: parsed.seed ?? params.seed,
     runtimeSeconds: toNumber(parsed.runtime_seconds),
     families,
+    command: invocation.command,
+    args: invocation.args,
+    cli: invocation.cli,
   } satisfies GraphFamilyCommandResult;
 };
 

@@ -3,6 +3,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
 import type { PythonStrategy } from './runner/env';
+import { planModuleInvocation } from './runner/pythonInvoker';
 
 export type InverseDesignParams = {
   axes: [string, string];
@@ -39,6 +40,7 @@ export type InverseDesignResult = {
   outputDir: string;
   command: string;
   args: string[];
+  cli: string;
   baseline: InverseDesignPathSummary | null;
   optimised: InverseDesignOptimisedSummary | null;
   acceptance: string | null;
@@ -150,9 +152,7 @@ export const cmdInverseDesign = async (
 
   await ensureDir(outDir);
 
-  const args = [
-    '-m',
-    'experiments.inverse_design.run',
+  const moduleArgs = [
     '--axes',
     axes[0],
     axes[1],
@@ -168,19 +168,19 @@ export const cmdInverseDesign = async (
     if (!Number.isInteger(budgetSteps) || budgetSteps <= 0) {
       throw new Error('budgetSteps must be a positive integer when provided');
     }
-    args.push('--budget-steps', Math.trunc(budgetSteps).toString());
+    moduleArgs.push('--budget-steps', Math.trunc(budgetSteps).toString());
   }
   if (maxFs != null) {
     if (!Number.isFinite(maxFs) || maxFs <= 0) {
       throw new Error('maxFs must be a positive number when provided');
     }
-    args.push('--max-fs', maxFs.toString());
+    moduleArgs.push('--max-fs', maxFs.toString());
   }
   if (targetIndex != null) {
     if (!Number.isInteger(targetIndex)) {
       throw new Error('targetIndex must be an integer when provided');
     }
-    args.push('--target-index', Math.trunc(targetIndex).toString());
+    moduleArgs.push('--target-index', Math.trunc(targetIndex).toString());
   }
 
   const env: NodeJS.ProcessEnv = {
@@ -189,16 +189,24 @@ export const cmdInverseDesign = async (
     PYTHONIOENCODING: 'utf-8',
   };
 
-  const pythonPath = buildPythonPath(strategy);
-  if (pythonPath) {
-    env.PYTHONPATH = pythonPath;
+  const invocation = planModuleInvocation({
+    pythonExe,
+    strategy,
+    repoRoot,
+    moduleName: 'experiments.inverse_design.run',
+    args: moduleArgs,
+    pythonPathEntries: [cwtSimRoot],
+  });
+
+  if (invocation.pythonPath) {
+    env.PYTHONPATH = invocation.pythonPath;
   }
 
   let stdout = '';
   let stderr = '';
 
   await new Promise<void>((resolve, reject) => {
-    const child = spawn(pythonExe, args, { cwd: cwtSimRoot, env });
+    const child = spawn(invocation.command, invocation.args, { cwd: invocation.cwd, env });
     child.stdout.on('data', (chunk: Buffer) => {
       stdout += chunk.toString('utf-8');
     });
@@ -233,8 +241,9 @@ export const cmdInverseDesign = async (
     stdout,
     stderr,
     outputDir: outDir,
-    command: pythonExe,
-    args,
+    command: invocation.command,
+    args: invocation.args,
+    cli: invocation.cli,
     baseline,
     optimised,
     acceptance: acceptanceMatch ? acceptanceMatch[1].trim() : null,

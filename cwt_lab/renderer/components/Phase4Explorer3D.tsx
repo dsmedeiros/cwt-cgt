@@ -103,7 +103,7 @@ const toPlotTrace = (
   name: label,
 });
 
-const buildWilsonCommandPreview = (
+const buildWilsonPayload = (
   payload: {
     axes3: [string, string, string];
     center: [number, number, number];
@@ -117,23 +117,23 @@ const buildWilsonCommandPreview = (
   },
   outDir: string,
 ) => {
-  const format = (value: number) => Number(value.toFixed(6)).toString();
-  const parts = [
-    'cwt phase4 wilson3d',
-    `--axes3 ${payload.axes3.join(',')}`,
-    `--center ${payload.center.map(format).join(',')}`,
-    `--amplitudes ${payload.amplitudes.map(format).join(',')}`,
-    `--steps ${payload.steps}`,
-    `--handle-steps ${payload.handleSteps}`,
-    `--settle ${payload.settle}`,
-    `--fs-guard ${format(payload.fsGuard)}`,
-    `--graph ${payload.graph}`,
-    `--seed ${payload.seed}`,
-  ];
+  const record: Record<string, unknown> = {
+    axes3: payload.axes3,
+    center: payload.center,
+    amplitudes: payload.amplitudes,
+    steps: payload.steps,
+    handleSteps: payload.handleSteps,
+    settle: payload.settle,
+    fsGuard: payload.fsGuard,
+    graph: payload.graph,
+    seed: payload.seed,
+  };
+
   if (outDir.trim()) {
-    parts.push(`--output-dir ${outDir.trim()}`);
+    record.outputDir = outDir.trim();
   }
-  return parts.join(' ');
+
+  return record;
 };
 
 const pseudoRandom = (seed: number) => {
@@ -208,6 +208,8 @@ const Phase4Explorer3D = () => {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<WilsonExplorerResult | null>(null);
   const [tipMessage, setTipMessage] = useState<string | null>(null);
+  const [commandPreview, setCommandPreview] = useState('');
+  const [commandPreviewError, setCommandPreviewError] = useState<string | null>(null);
 
   const [recipes, setRecipes] = useState<RecipeRecord[]>([]);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string>('');
@@ -328,9 +330,17 @@ const Phase4Explorer3D = () => {
     [axes3],
   );
 
-  const commandPreview = useMemo(
-    () =>
-      buildWilsonCommandPreview(
+  useEffect(() => {
+    let cancelled = false;
+
+    const updatePreview = async () => {
+      if (!window?.CWT?.run?.preview) {
+        setCommandPreview('');
+        setCommandPreviewError('Command preview unavailable in this environment.');
+        return;
+      }
+
+      const payload = buildWilsonPayload(
         {
           axes3,
           center: numericCenter,
@@ -343,9 +353,40 @@ const Phase4Explorer3D = () => {
           seed,
         },
         outDir,
-      ),
-    [axes3, effectiveAmplitudes, fsGuard, graph, handleSteps, numericCenter, outDir, seed, settle, steps],
-  );
+      );
+
+      try {
+        const response = await window.CWT.run.preview({
+          experiment: 'experiments.wilson_loop_3d.run',
+          args: payload,
+        });
+        if (cancelled) {
+          return;
+        }
+        if (response.ok) {
+          setCommandPreview(response.data.cli);
+          setCommandPreviewError(null);
+        } else {
+          setCommandPreview('');
+          setCommandPreviewError(response.error ?? 'Unable to preview command.');
+        }
+      } catch (previewError) {
+        if (cancelled) {
+          return;
+        }
+        setCommandPreview('');
+        setCommandPreviewError(
+          previewError instanceof Error ? previewError.message : String(previewError),
+        );
+      }
+    };
+
+    void updatePreview();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [axes3, effectiveAmplitudes, fsGuard, graph, handleSteps, numericCenter, outDir, seed, settle, steps]);
 
   const selectedRecipe = useMemo(
     () => recipes.find((recipe) => recipe.id === selectedRecipeId),
@@ -434,20 +475,20 @@ const Phase4Explorer3D = () => {
     setError(null);
     setTipMessage(null);
 
-    const payload: Record<string, unknown> = {
-      axes3,
-      center: numericCenter,
-      amplitudes: effectiveAmplitudes,
-      steps,
-      handleSteps,
-      settle,
-      fsGuard,
-      graph,
-      seed,
-    };
-    if (outDir.trim()) {
-      payload.outputDir = outDir.trim();
-    }
+    const payload = buildWilsonPayload(
+      {
+        axes3,
+        center: numericCenter,
+        amplitudes: effectiveAmplitudes,
+        steps,
+        handleSteps,
+        settle,
+        fsGuard,
+        graph,
+        seed,
+      },
+      outDir,
+    );
 
     let runId: string | undefined;
     try {
@@ -693,11 +734,16 @@ const Phase4Explorer3D = () => {
 
           <section className="phase4__section">
             <h3>Command preview</h3>
-            <code className="phase4__command">{commandPreview}</code>
+            <code className="phase4__command">{commandPreview || 'Preview unavailable'}</code>
+            {commandPreviewError ? (
+              <p className="phase4__error" role="alert">
+                {commandPreviewError}
+              </p>
+            ) : null}
             <button
               type="button"
               className="btn btn--ghost btn--small"
-              disabled={isRunning}
+              disabled={isRunning || !commandPreview}
               onClick={() => void navigator.clipboard?.writeText(commandPreview)}
             >
               Copy command
