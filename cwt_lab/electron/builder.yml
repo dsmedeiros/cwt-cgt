@@ -1,8 +1,16 @@
-appId: com.example.cwtlab
+appId: com.cwt.lab
 productName: CWT Lab
+artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+asar: true
 files:
+  - electron/**
   - dist/**
   - dist-electron/**
+  - '!**/__tests__/**'
+  - '!**/__fixtures__/**'
+  - '!**/*.map'
+  - '!.vscode/**'
+  - '!.github/**'
 extraMetadata:
   main: dist-electron/main/index.js
 mac:

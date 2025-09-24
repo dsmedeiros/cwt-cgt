@@ -2,6 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Plot from 'react-plotly.js';
 import type { Layout, PlotData } from 'plotly.js';
 import type { RecipeRecord } from '../types/ipc';
+import { createDecisionGateEngine } from '../decisionGate';
+import {
+  formatValidationMessage,
+  validateAxis,
+  validateFsGuard,
+  validateSteps,
+} from '../../shared/validators';
 
 type WilsonMetrics = {
   fsP95: number;
@@ -180,6 +187,7 @@ const estimateRecipePhi = (recipe: RecipeRecord | undefined): number | null => {
 };
 
 const Phase4Explorer3D = () => {
+  const decisionGate = useMemo(() => createDecisionGateEngine(), []);
   const [axisA, setAxisA] = useState(AXIS_CHOICES[0]);
   const [axisB, setAxisB] = useState(AXIS_CHOICES[1]);
   const [axisC, setAxisC] = useState('kappa');
@@ -199,9 +207,22 @@ const Phase4Explorer3D = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<WilsonExplorerResult | null>(null);
+  const [tipMessage, setTipMessage] = useState<string | null>(null);
 
   const [recipes, setRecipes] = useState<RecipeRecord[]>([]);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string>('');
+
+  const trimmedAxisC = axisC.trim() || 'kappa';
+  const axisAValidation = useMemo(() => validateAxis('phase4', axisA), [axisA]);
+  const axisBValidation = useMemo(() => validateAxis('phase4', axisB), [axisB]);
+  const axisCValidation = useMemo(() => validateAxis('phase4', trimmedAxisC), [trimmedAxisC]);
+  const stepsValidation = useMemo(() => validateSteps(steps), [steps]);
+  const handleStepsValidation = useMemo(() => validateSteps(handleSteps), [handleSteps]);
+  const fsGuardValidation = useMemo(() => validateFsGuard(fsGuard), [fsGuard]);
+  const axisCError = formatValidationMessage(axisCValidation);
+  const stepsError = formatValidationMessage(stepsValidation);
+  const handleStepsError = formatValidationMessage(handleStepsValidation);
+  const fsGuardError = formatValidationMessage(fsGuardValidation);
 
   useEffect(() => {
     let cancelled = false;
@@ -228,8 +249,8 @@ const Phase4Explorer3D = () => {
   }, []);
 
   const axes3 = useMemo<[string, string, string]>(
-    () => [axisA, axisB, axisC.trim() || 'axis3'],
-    [axisA, axisB, axisC],
+    () => [axisA, axisB, trimmedAxisC],
+    [axisA, axisB, trimmedAxisC],
   );
 
   const numericCenter = useMemo(
@@ -254,6 +275,31 @@ const Phase4Explorer3D = () => {
     () => buildLoopPreview(numericCenter, effectiveAmplitudes, steps, handleSteps),
     [effectiveAmplitudes, handleSteps, numericCenter, steps],
   );
+
+  const runDisabledReason = useMemo(() => {
+    if (!axisAValidation.ok || !axisBValidation.ok) {
+      return 'Invalid axis selection.';
+    }
+    if (!axisCValidation.ok) {
+      return axisCValidation.message;
+    }
+    if (!stepsValidation.ok) {
+      return stepsValidation.message;
+    }
+    if (!handleStepsValidation.ok) {
+      return handleStepsValidation.message;
+    }
+    if (!fsGuardValidation.ok) {
+      return fsGuardValidation.message;
+    }
+    if (!loopPoints.length) {
+      return 'Loop preview is empty; adjust amplitudes or steps.';
+    }
+    return undefined;
+  }, [axisCValidation, fsGuardValidation, handleStepsValidation, loopPoints.length, stepsValidation]);
+
+  const isRunDisabled = isRunning || Boolean(runDisabledReason);
+  const runTitle = isRunning ? 'Explorer run in progress.' : runDisabledReason;
 
   const plotTraces = useMemo<PlotTrace[]>(() => {
     if (!loopPoints.length) {
@@ -326,6 +372,18 @@ const Phase4Explorer3D = () => {
     return Number(delta.toFixed(2));
   }, [recipePhi, result]);
 
+  useEffect(() => {
+    if (!result) {
+      return;
+    }
+    const tip = decisionGate.evaluate({
+      phase: 'phase4',
+      advantage3d: phiDifference != null ? Math.abs(phiDifference) : null,
+      overlap: result.metrics.overlap,
+    });
+    setTipMessage(tip);
+  }, [decisionGate, phiDifference, result]);
+
   const handleAmplitudeChange = (index: number, value: number) => {
     setAmplitudes((prev) => {
       const next = [...prev] as [number, number, number];
@@ -351,8 +409,20 @@ const Phase4Explorer3D = () => {
   };
 
   const runExplorer = useCallback(async () => {
-    if (!axes3.every((axis) => axis.trim().length > 0)) {
-      setError('Provide names for all three axes.');
+    if (!axisCValidation.ok) {
+      setError(axisCValidation.message);
+      return;
+    }
+    if (!stepsValidation.ok) {
+      setError(stepsValidation.message);
+      return;
+    }
+    if (!handleStepsValidation.ok) {
+      setError(handleStepsValidation.message);
+      return;
+    }
+    if (!fsGuardValidation.ok) {
+      setError(fsGuardValidation.message);
       return;
     }
     if (!loopPoints.length) {
@@ -362,6 +432,7 @@ const Phase4Explorer3D = () => {
 
     setIsRunning(true);
     setError(null);
+    setTipMessage(null);
 
     const payload: Record<string, unknown> = {
       axes3,
@@ -399,18 +470,22 @@ const Phase4Explorer3D = () => {
       setIsRunning(false);
     }
   }, [
+    axisCValidation,
     axes3,
     commandPreview,
     effectiveAmplitudes,
     fsGuard,
+    fsGuardValidation,
     graph,
     handleSteps,
+    handleStepsValidation,
     loopPoints.length,
     numericCenter,
     outDir,
     seed,
     settle,
     steps,
+    stepsValidation,
   ]);
 
   return (
@@ -431,6 +506,7 @@ const Phase4Explorer3D = () => {
                   </option>
                 ))}
               </select>
+              <small className="field-hint">Primary scan axis (whitelisted to keep calibration safe).</small>
             </label>
             <label>
               <span>Axis 2</span>
@@ -441,6 +517,7 @@ const Phase4Explorer3D = () => {
                   </option>
                 ))}
               </select>
+              <small className="field-hint">Secondary axis paired with Axis 1 for the base plane.</small>
             </label>
             <label>
               <span>Axis 3</span>
@@ -455,6 +532,10 @@ const Phase4Explorer3D = () => {
                   <option key={axis} value={axis} />
                 ))}
               </datalist>
+              <small className="field-hint">
+                Out-of-plane control (rho, tau, zeta, zeta_phase or kappa).
+                {axisCError ? <span className="field-error"> {axisCError}</span> : null}
+              </small>
             </label>
           </section>
 
@@ -504,6 +585,7 @@ const Phase4Explorer3D = () => {
                   disabled={lockedAxis === index}
                   onChange={(event) => handleAmplitudeChange(index, Number(event.target.value))}
                 />
+                <small className="field-hint">Adjust loop reach; locked axes stay at zero.</small>
               </label>
             ))}
           </section>
@@ -515,6 +597,10 @@ const Phase4Explorer3D = () => {
                 Steps <strong>{steps}</strong>
               </span>
               <input type="range" min="16" max="160" step="8" value={steps} onChange={(event) => setSteps(Number(event.target.value))} />
+              <small className="field-hint">
+                Total samples around the main loop.
+                {stepsError ? <span className="field-error"> {stepsError}</span> : null}
+              </small>
             </label>
             <label className="phase4__slider">
               <span>
@@ -522,12 +608,16 @@ const Phase4Explorer3D = () => {
               </span>
               <input
                 type="range"
-                min="8"
+                min="16"
                 max="160"
                 step="4"
                 value={handleSteps}
                 onChange={(event) => setHandleSteps(Number(event.target.value))}
               />
+              <small className="field-hint">
+                Samples used for the ingress/egress handles.
+                {handleStepsError ? <span className="field-error"> {handleStepsError}</span> : null}
+              </small>
             </label>
             <label className="phase4__slider">
               <span>
@@ -549,11 +639,15 @@ const Phase4Explorer3D = () => {
               <input
                 type="range"
                 min="0.05"
-                max="0.35"
+                max="0.5"
                 step="0.01"
                 value={fsGuard}
                 onChange={(event) => setFsGuard(Number(event.target.value))}
               />
+              <small className="field-hint">
+                Upper bound for fractional stability.
+                {fsGuardError ? <span className="field-error"> {fsGuardError}</span> : null}
+              </small>
             </label>
             <label>
               <span>Graph</span>
@@ -577,6 +671,22 @@ const Phase4Explorer3D = () => {
         </aside>
 
         <section className="phase4__main">
+          {tipMessage ? (
+            <div className="decision-banner" role="status">
+              <div>
+                <strong>Next step tip:</strong>
+                <span>{` ${tipMessage}`}</span>
+              </div>
+              <button
+                type="button"
+                className="btn btn--ghost btn--small"
+                onClick={() => setTipMessage(null)}
+                aria-label="Dismiss tip"
+              >
+                ×
+              </button>
+            </div>
+          ) : null}
           <div className="phase4__preview">
             <Plot data={plotTraces} layout={plotLayout} config={{ displayModeBar: false }} />
           </div>
@@ -584,13 +694,24 @@ const Phase4Explorer3D = () => {
           <section className="phase4__section">
             <h3>Command preview</h3>
             <code className="phase4__command">{commandPreview}</code>
-            <button type="button" className="button" disabled={isRunning} onClick={() => void navigator.clipboard?.writeText(commandPreview)}>
+            <button
+              type="button"
+              className="btn btn--ghost btn--small"
+              disabled={isRunning}
+              onClick={() => void navigator.clipboard?.writeText(commandPreview)}
+            >
               Copy command
             </button>
           </section>
 
           <section className="phase4__section phase4__actions">
-            <button type="button" className="button button--primary" disabled={isRunning} onClick={runExplorer}>
+            <button
+              type="button"
+              className="btn btn--primary"
+              disabled={isRunDisabled}
+              onClick={runExplorer}
+              title={runTitle ?? undefined}
+            >
               {isRunning ? 'Running…' : 'Run Wilson loop'}
             </button>
             {error ? <span className="phase4__error">{error}</span> : null}
