@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { app, ipcMain } from 'electron';
 import { spawn } from 'node:child_process';
 import { promises as fs, existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
@@ -47,6 +47,40 @@ const runManager = new RunManager({
   artifactsRoot,
   registryPath,
   pythonPathEntries: [cwtSimRoot],
+});
+
+let shuttingDown = false;
+const requestRunnerShutdown = async () => {
+  if (shuttingDown) {
+    return;
+  }
+  shuttingDown = true;
+  try {
+    await runManager.shutdown();
+  } catch (error) {
+    console.warn('Failed to shut down run manager gracefully:', error);
+  }
+};
+
+app.on('before-quit', () => {
+  void requestRunnerShutdown();
+});
+
+['SIGINT', 'SIGTERM', 'SIGHUP'].forEach((signal) => {
+  process.once(signal as NodeJS.Signals, () => {
+    void requestRunnerShutdown().finally(() => {
+      app.quit();
+      setTimeout(() => {
+        process.exit(0);
+      }, 500).unref();
+    });
+  });
+});
+
+process.once('exit', () => {
+  if (!shuttingDown) {
+    void runManager.shutdown();
+  }
 });
 
 const recipePayloadSchema = z.object({
@@ -516,18 +550,29 @@ ipcMain.handle('cwt:env:set-python-path', (_event, executable: string) =>
 
 ipcMain.handle('cwt:env:get-config', () => wrap(() => getEnvironmentConfig()));
 
-ipcMain.handle('cwt:run:create', (_event, payload: { experiment: string; args?: Record<string, unknown>; workdir?: string }) =>
-  wrap(async () => {
-    if (!payload?.experiment) {
-      throw new Error('experiment is required');
-    }
+ipcMain.handle(
+  'cwt:run:create',
+  (
+    _event,
+    payload: { experiment: string; args?: Record<string, unknown>; workdir?: string; timeoutMs?: number },
+  ) =>
+    wrap(async () => {
+      if (!payload?.experiment) {
+        throw new Error('experiment is required');
+      }
 
-    const args = buildArgsFromParams(payload.args);
-    const cwd = payload.workdir ? path.resolve(payload.workdir) : cwtSimRoot;
-    return runManager.createRun(payload.experiment, args, cwd, {
-      experiment: payload.experiment,
-    });
-  }),
+      const args = buildArgsFromParams(payload.args);
+      const cwd = payload.workdir ? path.resolve(payload.workdir) : cwtSimRoot;
+      return runManager.createRun(
+        payload.experiment,
+        args,
+        cwd,
+        {
+          experiment: payload.experiment,
+        },
+        { timeoutMs: payload.timeoutMs },
+      );
+    }),
 );
 
 ipcMain.handle('cwt:run:abort', (_event, payload: { runId: string }) =>
@@ -557,6 +602,16 @@ ipcMain.handle('cwt:run:open-artifacts', (_event, payload: { runId: string }) =>
     }
 
     return runManager.listArtifacts(payload.runId);
+  }),
+);
+
+ipcMain.handle('cwt:run:collect-diagnostics', (_event, payload: { runId: string }) =>
+  wrap(async () => {
+    if (!payload?.runId) {
+      throw new Error('runId is required');
+    }
+
+    return runManager.collectDiagnosticsBundle(payload.runId);
   }),
 );
 
