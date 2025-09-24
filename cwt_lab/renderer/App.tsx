@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import ArtifactBrowser from './components/ArtifactBrowser';
 import HelpDrawer from './components/HelpDrawer';
@@ -9,25 +9,113 @@ import Phase3Loops from './components/Phase3Loops';
 import Phase4Explorer3D from './components/Phase4Explorer3D';
 import Phase5Optimize from './components/Phase5Optimize';
 import TorusPlateauViewer from './components/TorusPlateauViewer';
-import RunBoard from './components/RunBoard';
+import RunBoard, { type RunsApi } from './components/RunBoard';
+import RecipeComparison from './components/RecipeComparison';
+import { CommandProvider, useCommandCenter, useCommandCombos } from './commandCenter';
+import { DemoModeProvider, useDemoMode, type DemoRun } from './demo/DemoModeContext';
+import { useTranslation } from './i18n';
 import { useThemeMode } from './theme';
 
-const tabs = [
-  { id: 'runs', label: 'Run Board', element: <RunBoard /> },
-  { id: 'phase1', label: 'Phase 1', element: <Phase1Mapping /> },
-  { id: 'phase2', label: 'Phase 2', element: <Phase2Features /> },
-  { id: 'phase3', label: 'Phase 3', element: <Phase3Loops /> },
-  { id: 'phase4', label: 'Phase 4', element: <Phase4Explorer3D /> },
-  { id: 'torus', label: 'Torus Plateau', element: <TorusPlateauViewer /> },
-  { id: 'phase5', label: 'Phase 5', element: <Phase5Optimize /> },
-  { id: 'artifacts', label: 'Artifacts', element: <ArtifactBrowser /> },
-  { id: 'env', label: 'Env Doctor', element: <EnvDoctor /> },
-];
+const DEFAULT_LOG_CHUNK = 8_192;
 
-const App = () => {
+const createDemoRunsApi = (runs: DemoRun[]): RunsApi => {
+  const byId = new Map(runs.map((entry) => [entry.record.id, entry]));
+
+  const sliceLog = (log: string, fromByte?: number, maxBytes = DEFAULT_LOG_CHUNK) => {
+    const total = log.length;
+    if (total === 0) {
+      return {
+        output: '',
+        startFromByte: 0,
+        nextFromByte: 0,
+        totalBytes: 0,
+        hasMoreBefore: false,
+      };
+    }
+    let start = 0;
+    if (typeof fromByte === 'number') {
+      if (fromByte < 0) {
+        start = Math.max(total + fromByte, 0);
+      } else {
+        start = Math.min(fromByte, total);
+      }
+    } else {
+      start = Math.max(0, total - maxBytes);
+    }
+    const end = Math.min(total, start + maxBytes);
+    const output = log.slice(start, end);
+    return {
+      output,
+      startFromByte: start,
+      nextFromByte: end,
+      totalBytes: total,
+      hasMoreBefore: start > 0,
+    };
+  };
+
+  return {
+    async listRecent() {
+      await new Promise((resolve) => setTimeout(resolve, 120));
+      return runs.map((entry) => entry.record);
+    },
+    async collectDiagnostics(runId) {
+      await new Promise((resolve) => setTimeout(resolve, 80));
+      const entry = byId.get(runId);
+      if (!entry) {
+        throw new Error(`Run ${runId} not found in demo catalog.`);
+      }
+      return entry.diagnostics;
+    },
+    async tail({ runId, fromByte, maxBytes }) {
+      await new Promise((resolve) => setTimeout(resolve, 60));
+      const entry = byId.get(runId);
+      if (!entry) {
+        throw new Error(`Run ${runId} not found in demo catalog.`);
+      }
+      const slice = sliceLog(entry.log, fromByte, maxBytes);
+      return {
+        ...slice,
+        status: entry.record.status,
+      };
+    },
+  };
+};
+
+type AppContentProps = {
+  mode: 'light' | 'dark';
+  onToggleTheme: () => void;
+  demoEnabled: boolean;
+  onToggleDemo: () => void;
+};
+
+const AppContent = ({ mode, onToggleTheme, demoEnabled, onToggleDemo }: AppContentProps) => {
   const [active, setActive] = useState('runs');
   const [helpOpen, setHelpOpen] = useState(false);
-  const { mode, toggleMode } = useThemeMode();
+  const { runDescription, abortDescription, status } = useCommandCenter();
+  const combos = useCommandCombos();
+  const { runs: demoRuns } = useDemoMode();
+  const { t } = useTranslation();
+
+  const demoRunsApi = useMemo<RunsApi | undefined>(
+    () => (demoEnabled ? createDemoRunsApi(demoRuns) : undefined),
+    [demoEnabled, demoRuns],
+  );
+
+  const tabs = useMemo(
+    () => [
+      { id: 'runs', label: 'Run Board', element: <RunBoard api={demoRunsApi} /> },
+      { id: 'phase1', label: 'Phase 1', element: <Phase1Mapping /> },
+      { id: 'phase2', label: 'Phase 2', element: <Phase2Features /> },
+      { id: 'phase3', label: 'Phase 3', element: <Phase3Loops /> },
+      { id: 'phase4', label: 'Phase 4', element: <Phase4Explorer3D /> },
+      { id: 'torus', label: 'Torus Plateau', element: <TorusPlateauViewer /> },
+      { id: 'phase5', label: 'Phase 5', element: <Phase5Optimize /> },
+      { id: 'comparison', label: 'Comparison', element: <RecipeComparison /> },
+      { id: 'artifacts', label: 'Artifacts', element: <ArtifactBrowser /> },
+      { id: 'env', label: 'Env Doctor', element: <EnvDoctor /> },
+    ],
+    [demoRunsApi],
+  );
 
   const activeHelp = useMemo(() => {
     const baseBullets = [
@@ -115,6 +203,16 @@ const App = () => {
           'Download bundles to share with collaborators without digging through directories.',
         ],
       },
+      comparison: {
+        title: 'Recipe comparison',
+        analogy: 'Think of comparison mode as laying two route maps side-by-side to pick the safest ascent.',
+        bullets: [
+          'Select any two saved protocols to contrast Φ flux, guard margins, and persistence.',
+          'Use the evolution plots to see which climb converged faster or held the guard margin longer.',
+          'Differences column highlights percentage gaps so you can justify your chosen baseline.',
+          'Export snapshots after aligning your preferred pair to share the decision trail.',
+        ],
+      },
       env: {
         title: 'Environment doctor',
         analogy: 'The environment doctor is base camp – it checks that your ropes, crampons, and radio are intact.',
@@ -136,15 +234,24 @@ const App = () => {
   return (
     <div className="app">
       <header className="app__header">
-        <h1>CWT Lab</h1>
+        <h1>{t('app.title', 'CWT Lab')}</h1>
         <div className="app__controls" role="group" aria-label="View controls">
           <button
             type="button"
             className="app__theme-toggle"
-            onClick={toggleMode}
+            onClick={onToggleTheme}
             aria-label={`Switch to ${mode === 'light' ? 'dark' : 'light'} theme`}
           >
             {mode === 'light' ? '🌙 Dark' : '☀️ Light'}
+          </button>
+          <button
+            type="button"
+            className={demoEnabled ? 'app__demo-toggle app__demo-toggle--active' : 'app__demo-toggle'}
+            onClick={onToggleDemo}
+            aria-pressed={demoEnabled}
+            title={t('app.demo.hint', 'Toggle demo mode')}
+          >
+            {demoEnabled ? t('app.demo.on', 'Demo: On') : t('app.demo.off', 'Demo: Off')}
           </button>
           {activeHelp ? (
             <button
@@ -156,6 +263,17 @@ const App = () => {
               ?
             </button>
           ) : null}
+        </div>
+        <div className="app__shortcut-hints" role="note" aria-label="Keyboard shortcuts">
+          <span>
+            {combos.run}
+            {` – ${runDescription ?? t('app.shortcuts.run', 'Run action')}`}
+          </span>
+          <span>
+            {combos.abort}
+            {` – ${abortDescription ?? t('app.shortcuts.abort', 'Abort action')}`}
+          </span>
+          <span>{`${combos.theme} – ${t('app.shortcuts.theme', 'Toggle theme')}`}</span>
         </div>
         <nav className="app__tabs">
           {tabs.map((tab) => (
@@ -188,7 +306,34 @@ const App = () => {
           bullets={activeHelp.bullets}
         />
       ) : null}
+      {status ? (
+        <div className="app__command-status" role="status">
+          {status}
+        </div>
+      ) : null}
     </div>
+  );
+};
+
+const App = () => {
+  const { mode, toggleMode } = useThemeMode();
+  const [demoEnabled, setDemoEnabled] = useState(false);
+
+  const toggleDemo = useCallback(() => {
+    setDemoEnabled((prev) => !prev);
+  }, []);
+
+  return (
+    <DemoModeProvider enabled={demoEnabled} onToggle={toggleDemo}>
+      <CommandProvider onToggleTheme={toggleMode}>
+        <AppContent
+          mode={mode}
+          onToggleTheme={toggleMode}
+          demoEnabled={demoEnabled}
+          onToggleDemo={toggleDemo}
+        />
+      </CommandProvider>
+    </DemoModeProvider>
   );
 };
 
