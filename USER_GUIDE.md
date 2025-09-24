@@ -11,8 +11,8 @@ playbook.
   is stumbling.
 - **Φ (phi)**: reports the curvature of the ridge you are following. Values near zero indicate a flat plateau;
   larger magnitudes signal a steep ridge or valley.
-- **R (Kuramoto synchrony)**: gauges how well the oscillators march together. Numbers near 1 mean the flock is
-  in sync, whereas values near 0 highlight chaotic, desynchronised motion.
+- **R (readout bias)**: tracks the curvature-induced preference of the classical readout. Values near 1 indicate
+  a strong bias toward the hotspot orientation; values closer to 0 signal a balanced, ambiguity-prone readout.
 
 These three metrics appear across the Run Board, diagnostics logs, and per-phase dashboards. Keep them in mind
 when deciding whether to tighten guards or adjust parameters.

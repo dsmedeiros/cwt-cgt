@@ -797,6 +797,22 @@ body {
   color: var(--color-muted);
 }
 
+.phase1__status-note {
+  margin: 0.5rem 0 1rem;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+.phase1__error {
+  margin: 0 0 1rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(220, 53, 69, 0.1);
+  border: 1px solid rgba(220, 53, 69, 0.3);
+  color: #a61c2c;
+  font-size: 0.9rem;
+}
+
 .phase4__layout {
   display: grid;
   grid-template-columns: minmax(260px, 320px) 1fr;

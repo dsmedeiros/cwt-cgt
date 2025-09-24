@@ -58,12 +58,55 @@ const artifactsRoot = path.join(repoRoot, 'artifacts');
 const cwtSimRoot = path.join(repoRoot, 'cwt-sim');
 const configPath = path.join(repoRoot, 'cwt_lab', 'config.json');
 
+const BUNDLED_PACKAGES = ['networkx'];
+
 let currentEnvironment: PythonEnvironment | null = null;
 
 const defaultConfig: StoredConfig = {
   pythonPath: null,
   strategy: null,
 };
+
+const candidatePythonRoots = (): string[] => [
+  path.join(repoRoot, 'python_deps'),
+  path.join(repoRoot, 'python_deps', 'site-packages'),
+  path.join(repoRoot, 'vendor'),
+  path.join(repoRoot, 'vendor', 'python'),
+  path.join(cwtSimRoot, 'vendor'),
+  path.join(cwtSimRoot, 'vendor', 'python'),
+];
+
+const resolveBundledPythonPaths = (): string[] => {
+  const entries = new Set<string>();
+  candidatePythonRoots().forEach((root) => {
+    if (!existsSync(root)) {
+      return;
+    }
+    if (BUNDLED_PACKAGES.some((pkg) => existsSync(path.join(root, pkg)))) {
+      entries.add(root);
+    }
+  });
+  return Array.from(entries);
+};
+
+const buildPythonPathSegments = (): string[] => {
+  const segments = new Set<string>();
+  segments.add(cwtSimRoot);
+  resolveBundledPythonPaths().forEach((entry) => segments.add(entry));
+
+  const existing = process.env.PYTHONPATH;
+  if (existing) {
+    existing
+      .split(path.delimiter)
+      .map((segment) => segment.trim())
+      .filter((segment) => segment.length > 0)
+      .forEach((segment) => segments.add(segment));
+  }
+
+  return Array.from(segments);
+};
+
+export const getBundledPythonPathEntries = (): string[] => resolveBundledPythonPaths();
 
 const ensureConfigDir = () => {
   const dir = path.dirname(configPath);
@@ -235,9 +278,8 @@ const evaluateCandidate = (spec: CandidateSpec): CandidateEvaluation => {
   }
   failures.push(describeFailure('module run', moduleResult));
 
-  const pythonPath = [cwtSimRoot, process.env.PYTHONPATH]
-    .filter((value): value is string => Boolean(value && value.length > 0))
-    .join(path.delimiter);
+  const pythonSegments = buildPythonPathSegments();
+  const pythonPath = pythonSegments.join(path.delimiter);
   const pyPathResult = runPythonCommand(spec, ['-c', "import cwt; print('ok')"], {
     cwd: repoRoot,
     env: {

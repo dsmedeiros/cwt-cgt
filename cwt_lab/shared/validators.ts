@@ -24,8 +24,8 @@ export const percentileSchema = z
   .min(1, { message: 'Percentile must be at least 1.' })
   .max(99, { message: 'Percentile must be no more than 99.' });
 
-const AXES_PHASE1 = ['rho', 'tau', 'zeta', 'sigma', 'omega'] as const;
-const AXES_PHASE3 = ['tau', 'zeta', 'rho', 'sigma', 'kappa'] as const;
+const AXES_PHASE1 = ['rho', 'tau', 'zeta', 'zeta_phase', 'kappa'] as const;
+const AXES_PHASE3 = ['tau', 'zeta', 'rho', 'kappa', 'zeta_phase'] as const;
 const AXES_PHASE4 = ['rho', 'tau', 'zeta', 'zeta_phase', 'kappa'] as const;
 
 export type Phase = 'phase1' | 'phase3' | 'phase4';
