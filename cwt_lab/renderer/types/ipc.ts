@@ -4,6 +4,52 @@ export type IpcEnvelope<T> = { ok: true; data: T } | { ok: false; error: string;
 
 export type PythonStrategy = 'module' | 'py_path' | 'installed';
 
+export type GraphFamilyThumbnail = {
+  name: string;
+  path: string | null;
+  dataUrl: string | null;
+};
+
+export type GraphFamilySummary = {
+  name: string;
+  degreeEntropy: number | null;
+  clustering: number | null;
+  modularity: number | null;
+  peakAbsOmega: number | null;
+  kappaMean: number | null;
+  ridgeAuc: number | null;
+  phiMissing: boolean;
+  phiFlux: number | null;
+  phiFluxMissing: boolean;
+  phiGuardOk: boolean;
+  fsP95: number | null;
+  fsBoundary: number | null;
+  fsExceeded: boolean;
+  medianAbsOmega: number | null;
+  thumbnail: GraphFamilyThumbnail | null;
+};
+
+export type GraphFamilyCommandResult = {
+  outputDir: string;
+  summaryPath: string;
+  stdout: string;
+  stderr: string;
+  axes: [string, string];
+  extent: number;
+  gridSize: number;
+  seed: number;
+  runtimeSeconds: number | null;
+  families: GraphFamilySummary[];
+};
+
+export type GraphFamilyCommandPayload = {
+  families: string[];
+  axes: [string, string];
+  gridSize: number;
+  extents: number;
+  seed: number;
+};
+
 export type Phase2FeatureName = 'spectral_gap' | 'kuramoto_r' | 'grad_r' | 'trace_g';
 
 export type Phase2FeatureStat = {
@@ -200,6 +246,9 @@ export interface RendererIpc {
   };
   phase5: {
     graphFamily: (params: Record<string, unknown>) => Promise<IpcEnvelope<RunCreateResult>>;
+    cmdGraphFamily: (
+      params: GraphFamilyCommandPayload,
+    ) => Promise<IpcEnvelope<GraphFamilyCommandResult>>;
     inverseDesign: (params: Record<string, unknown>) => Promise<IpcEnvelope<RunCreateResult>>;
     noiseRobust: (params: Record<string, unknown>) => Promise<IpcEnvelope<RunCreateResult>>;
     betaSweep: (
