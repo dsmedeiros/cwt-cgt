@@ -12,6 +12,7 @@ import type { Database as BetterSqlite3Database } from 'better-sqlite3';
 
 import { scanArtifacts } from './files';
 import type { PythonEnvironment } from './env';
+import { planModuleInvocation, formatCli } from './pythonInvoker';
 import { openRegistry, upsertRun, fetchRuns, type RunRecord, type RunQuery } from './registry';
 
 export type RunStatus = 'pending' | 'running' | 'complete' | 'failed' | 'aborted';
@@ -45,6 +46,9 @@ type RunCompletion = {
 
 type RunContext = {
   id: string;
+  requestedCommand: string;
+  requestedArgs: string[];
+  requestedCwd: string;
   command: string;
   args: string[];
   cwd: string;
@@ -167,6 +171,15 @@ export class RunManager {
     const timeoutMs = Number.isFinite(options.timeoutMs) ? Number(options.timeoutMs) : null;
     const diagnosticsPath = path.join(runArtifactsDir, 'diagnostics.json');
 
+    const pythonPathValue = this.buildPythonPath();
+    const envSnapshotSource: NodeJS.ProcessEnv = {
+      ...process.env,
+      CWT_OUTPUT_DIR: runArtifactsDir,
+    };
+    if (pythonPathValue) {
+      envSnapshotSource.PYTHONPATH = pythonPathValue;
+    }
+
     const diagnostics: RunDiagnostics = {
       runId,
       command,
@@ -180,15 +193,14 @@ export class RunManager {
       signal: null,
       error: null,
       platform: process.platform,
-      env: this.snapshotEnv({
-        ...process.env,
-        PYTHONPATH: this.buildPythonPath(),
-        CWT_OUTPUT_DIR: runArtifactsDir,
-      }),
+      env: this.snapshotEnv(envSnapshotSource),
     };
 
     const context: RunContext = {
       id: runId,
+      requestedCommand: command,
+      requestedArgs: [...args],
+      requestedCwd: runCwd,
       command,
       args,
       cwd: runCwd,
@@ -233,16 +245,69 @@ export class RunManager {
     return { runId };
   }
 
+  previewCommand(
+    command: string,
+    args: string[],
+    cwd?: string,
+  ): { command: string; args: string[]; cwd: string; env: Record<string, string>; cli: string } {
+    if (!this.pythonEnv) {
+      throw new Error('Python environment not configured. Call env.detect() first.');
+    }
+
+    const runCwd = cwd ? path.resolve(cwd) : this.config.repoRoot;
+    const invocation = this.resolveInvocation(command, args, runCwd);
+    const pythonPathValue = invocation.pythonPath ?? this.buildPythonPath();
+
+    const env: Record<string, string> = {};
+    if (pythonPathValue) {
+      env.PYTHONPATH = pythonPathValue;
+    }
+
+    const cli = formatCli({
+      command: invocation.command,
+      args: invocation.args,
+      cwd: invocation.cwd,
+      pythonPath: pythonPathValue ?? null,
+    });
+
+    return {
+      command: invocation.command,
+      args: [...invocation.args],
+      cwd: invocation.cwd,
+      env,
+      cli,
+    };
+  }
+
   private spawnProcess(context: RunContext) {
-    const [cmd, ...argv] = this.buildPythonCommand(context);
-    const child = spawn(cmd, argv, {
-      cwd: context.cwd,
-      env: {
-        ...process.env,
-        PYTHONPATH: this.buildPythonPath(),
-        CWT_OUTPUT_DIR: context.artifactsDir,
-        PYTHONIOENCODING: 'utf-8',
-      },
+    const invocation = this.resolveInvocation(
+      context.requestedCommand,
+      context.requestedArgs,
+      context.requestedCwd,
+    );
+
+    context.command = invocation.command;
+    context.args = [...invocation.args];
+    context.cwd = invocation.cwd;
+
+    const pythonPathValue = invocation.pythonPath ?? this.buildPythonPath();
+    const env: NodeJS.ProcessEnv = {
+      ...process.env,
+      CWT_OUTPUT_DIR: context.artifactsDir,
+      PYTHONIOENCODING: 'utf-8',
+    };
+    if (pythonPathValue) {
+      env.PYTHONPATH = pythonPathValue;
+    }
+
+    context.diagnostics.command = invocation.command;
+    context.diagnostics.args = [...invocation.args];
+    context.diagnostics.cwd = invocation.cwd;
+    context.diagnostics.env = this.snapshotEnv(env);
+
+    const child = spawn(invocation.command, invocation.args, {
+      cwd: invocation.cwd,
+      env,
       detached: process.platform !== 'win32',
       windowsHide: true,
     });
@@ -366,37 +431,75 @@ export class RunManager {
     await this.terminateProcessTree(context, 'SIGTERM');
   }
 
-  private buildPythonCommand(context: RunContext): [string, ...string[]] {
+  private isModuleName(command: string): boolean {
+    if (!command) {
+      return false;
+    }
+
+    if (command.includes('/') || command.includes('\\')) {
+      return false;
+    }
+
+    if (command.endsWith('.py')) {
+      return false;
+    }
+
+    if (this.pythonEnv && command === this.pythonEnv.executable) {
+      return false;
+    }
+
+    return command.split('.').every((segment) => segment.length > 0 && !segment.includes('-'));
+  }
+
+  private buildPythonPath(): string | null {
+    if (this.pythonEnv?.strategy !== 'py_path') {
+      return null;
+    }
+
+    const entries = this.config.pythonPathEntries.filter((entry) => entry && entry.length > 0);
+    if (entries.length === 0) {
+      return path.join(this.config.repoRoot, 'cwt-sim');
+    }
+    return entries.join(path.delimiter);
+  }
+
+  private resolveInvocation(
+    command: string,
+    args: string[],
+    cwd: string,
+  ): {
+    command: string;
+    args: string[];
+    cwd: string;
+    pythonPath: string | null;
+  } {
     if (!this.pythonEnv) {
       throw new Error('Python environment not configured');
     }
 
-    const python = this.pythonEnv.executable;
-    if (context.command === python) {
-      return [context.command, ...context.args];
+    const requestedCommand = command;
+    const requestedArgs = [...args];
+    const requestedCwd = cwd;
+
+    if (!this.isModuleName(requestedCommand)) {
+      return {
+        command: requestedCommand,
+        args: requestedArgs,
+        cwd: requestedCwd,
+        pythonPath: null,
+      };
     }
 
-    return [python, '-m', context.command, ...context.args];
-  }
+    const plan = planModuleInvocation({
+      pythonExe: this.pythonEnv.executable,
+      strategy: this.pythonEnv.strategy,
+      repoRoot: this.config.repoRoot,
+      moduleName: requestedCommand,
+      args: requestedArgs,
+      pythonPathEntries: this.config.pythonPathEntries,
+    });
 
-  private buildPythonPath(): string {
-    const entries = new Set<string>();
-
-    if (process.env.PYTHONPATH) {
-      for (const part of process.env.PYTHONPATH.split(path.delimiter)) {
-        if (part.trim().length > 0) {
-          entries.add(part.trim());
-        }
-      }
-    }
-
-    if (this.pythonEnv?.strategy === 'py_path') {
-      for (const entry of this.config.pythonPathEntries) {
-        entries.add(entry);
-      }
-    }
-
-    return Array.from(entries).join(path.delimiter);
+    return plan;
   }
 
   async tail(runId: string, fromByte = 0, maxBytes?: number): Promise<RunTailChunk> {

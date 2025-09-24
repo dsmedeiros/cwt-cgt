@@ -3,6 +3,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
 import type { PythonStrategy } from './runner/env';
+import { planModuleInvocation } from './runner/pythonInvoker';
 
 export type NoiseSweepParams = {
   phaseStd?: number[];
@@ -55,6 +56,9 @@ export type NoiseSweepResult = {
   graphs: NoiseSweepGraph[];
   numTrials?: number;
   loopSteps?: number;
+  command: string;
+  args: string[];
+  cli: string;
 };
 
 const repoRoot = path.resolve(__dirname, '..', '..');
@@ -62,29 +66,6 @@ const cwtSimRoot = path.join(repoRoot, 'cwt-sim');
 
 const ensureDir = async (dir: string) => {
   await fs.mkdir(dir, { recursive: true });
-};
-
-const buildPythonPath = (strategy: PythonStrategy): string | undefined => {
-  const entries = new Set<string>();
-  const current = process.env.PYTHONPATH ?? '';
-  if (current) {
-    for (const part of current.split(path.delimiter)) {
-      const trimmed = part.trim();
-      if (trimmed.length > 0) {
-        entries.add(trimmed);
-      }
-    }
-  }
-
-  if (strategy === 'py_path') {
-    entries.add(cwtSimRoot);
-  }
-
-  const values = Array.from(entries);
-  if (values.length === 0) {
-    return undefined;
-  }
-  return values.join(path.delimiter);
 };
 
 const appendArgs = (args: string[], flag: string, values: number[] | undefined) => {
@@ -173,54 +154,58 @@ export const cmdGateCRobust = async (
   }
   await ensureDir(params.outDir);
 
-  const args = [
-    '-m',
-    'experiments.gateC_topology_robust.run',
-    '--output-dir',
-    params.outDir,
-  ];
+  const moduleArgs = ['--output-dir', params.outDir];
 
   if (params.numTrials != null) {
     if (!Number.isInteger(params.numTrials) || params.numTrials <= 0) {
       throw new Error('numTrials must be a positive integer when provided');
     }
-    args.push('--num-trials', Math.trunc(params.numTrials).toString());
+    moduleArgs.push('--num-trials', Math.trunc(params.numTrials).toString());
   }
   if (params.loopSteps != null) {
     if (!Number.isInteger(params.loopSteps) || params.loopSteps <= 0) {
       throw new Error('loopSteps must be a positive integer when provided');
     }
-    args.push('--loop-steps', Math.trunc(params.loopSteps).toString());
+    moduleArgs.push('--loop-steps', Math.trunc(params.loopSteps).toString());
   }
   if (params.gridSize != null) {
     if (!Number.isInteger(params.gridSize) || params.gridSize <= 0) {
       throw new Error('gridSize must be a positive integer when provided');
     }
-    args.push('--grid-size', Math.trunc(params.gridSize).toString());
+    moduleArgs.push('--grid-size', Math.trunc(params.gridSize).toString());
   }
   if (params.axes && params.axes.length === 2) {
-    args.push('--axes', params.axes[0], params.axes[1]);
+    moduleArgs.push('--axes', params.axes[0], params.axes[1]);
   }
 
-  appendArgs(args, '--phase-std', params.phaseStd);
-  appendArgs(args, '--amp-std', params.ampStd);
-  appendArgs(args, '--delay-std', params.delayStd);
+  appendArgs(moduleArgs, '--phase-std', params.phaseStd);
+  appendArgs(moduleArgs, '--amp-std', params.ampStd);
+  appendArgs(moduleArgs, '--delay-std', params.delayStd);
 
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     PYTHONUNBUFFERED: '1',
     PYTHONIOENCODING: 'utf-8',
   };
-  const pythonPath = buildPythonPath(params.strategy);
-  if (pythonPath) {
-    env.PYTHONPATH = pythonPath;
+
+  const invocation = planModuleInvocation({
+    pythonExe,
+    strategy: params.strategy,
+    repoRoot,
+    moduleName: 'experiments.gateC_topology_robust.run',
+    args: moduleArgs,
+    pythonPathEntries: [cwtSimRoot],
+  });
+
+  if (invocation.pythonPath) {
+    env.PYTHONPATH = invocation.pythonPath;
   }
 
   let stdout = '';
   let stderr = '';
 
   await new Promise<void>((resolve, reject) => {
-    const child = spawn(pythonExe, args, { cwd: cwtSimRoot, env });
+    const child = spawn(invocation.command, invocation.args, { cwd: invocation.cwd, env });
     child.stdout.on('data', (chunk: Buffer) => {
       stdout += chunk.toString('utf-8');
     });
@@ -273,6 +258,9 @@ export const cmdGateCRobust = async (
     graphs,
     numTrials: Number.isFinite(numTrials) ? numTrials : undefined,
     loopSteps: Number.isFinite(loopSteps) ? loopSteps : undefined,
+    command: invocation.command,
+    args: invocation.args,
+    cli: invocation.cli,
   };
 };
 

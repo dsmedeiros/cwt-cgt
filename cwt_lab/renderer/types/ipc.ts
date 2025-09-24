@@ -40,6 +40,9 @@ export type GraphFamilyCommandResult = {
   seed: number;
   runtimeSeconds: number | null;
   families: GraphFamilySummary[];
+  command: string;
+  args: string[];
+  cli: string;
 };
 
 export type GraphFamilyCommandPayload = {
@@ -75,6 +78,9 @@ export type InverseDesignCommandResult = {
   baseline: InverseDesignPathSummary | null;
   optimised: InverseDesignOptimisedSummary | null;
   acceptance: string | null;
+  command: string;
+  args: string[];
+  cli: string;
 };
 
 export type InverseDesignCommandPayload = {
@@ -125,6 +131,9 @@ export type NoiseRobustCommandResult = {
   graphs: NoiseRobustGraph[];
   numTrials?: number;
   loopSteps?: number;
+  command: string;
+  args: string[];
+  cli: string;
 };
 
 export type NoiseRobustCommandPayload = {
@@ -156,6 +165,7 @@ export type CouplingTunerResult = {
   baselineConfig: string;
   variants: CouplingVariantSummary[];
   bestIndex: number | null;
+  commands: string[];
 };
 
 export type CouplingTunerPayload = {
@@ -231,6 +241,20 @@ export type RunCreatePayload = {
 
 export type RunCreateResult = {
   runId: string;
+};
+
+export type RunPreviewPayload = {
+  experiment: string;
+  args?: Record<string, unknown>;
+  workdir?: string;
+};
+
+export type RunPreviewResult = {
+  command: string;
+  args: string[];
+  cwd: string;
+  env: Record<string, string>;
+  cli: string;
 };
 
 export type RunAbortPayload = {
@@ -363,6 +387,7 @@ export interface RendererIpc {
   };
   run: {
     create: (payload: RunCreatePayload) => Promise<IpcEnvelope<RunCreateResult>>;
+    preview: (payload: RunPreviewPayload) => Promise<IpcEnvelope<RunPreviewResult>>;
     abort: (payload: RunAbortPayload) => Promise<IpcEnvelope<RunAbortResult>>;
     tail: (payload: RunTailPayload) => Promise<IpcEnvelope<RunTailChunk>>;
     openArtifacts: (payload: { runId: string }) => Promise<IpcEnvelope<ArtifactFile[]>>;
