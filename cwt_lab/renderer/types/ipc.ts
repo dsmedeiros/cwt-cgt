@@ -91,6 +91,13 @@ export type RunTailChunk = {
   status: string;
 };
 
+export type ArtifactFile = {
+  path: string;
+  relativePath: string;
+  updatedAt: number;
+  type: 'file' | 'directory';
+};
+
 export type LoopAtHotspotPayload = {
   hotspotsJson: string;
   axes: [string, string];
@@ -155,7 +162,10 @@ export interface RendererIpc {
     create: (payload: RunCreatePayload) => Promise<IpcEnvelope<RunCreateResult>>;
     abort: (payload: RunAbortPayload) => Promise<IpcEnvelope<RunAbortResult>>;
     tail: (payload: RunTailPayload) => Promise<IpcEnvelope<RunTailChunk>>;
-    openArtifacts: (payload: { runId: string }) => Promise<IpcEnvelope<unknown>>;
+    openArtifacts: (payload: { runId: string }) => Promise<IpcEnvelope<ArtifactFile[]>>;
+    readArtifact: (
+      payload: { runId: string; relativePath: string },
+    ) => Promise<IpcEnvelope<{ path: string; contents: string }>>;
   };
   phase1: {
     map: (params: Record<string, unknown>) => Promise<IpcEnvelope<RunCreateResult>>;

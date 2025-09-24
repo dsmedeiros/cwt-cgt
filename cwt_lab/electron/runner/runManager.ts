@@ -156,6 +156,7 @@ export class RunManager {
       env: {
         ...process.env,
         PYTHONPATH: this.buildPythonPath(),
+        CWT_OUTPUT_DIR: context.artifactsDir,
       },
     });
 
@@ -296,6 +297,22 @@ export class RunManager {
     }
 
     return scanArtifacts(context.artifactsDir);
+  }
+
+  async readArtifact(runId: string, relativePath: string) {
+    const context = this.runs.get(runId);
+    if (!context) {
+      throw new Error(`Run ${runId} not found`);
+    }
+
+    const safeRelative = relativePath.replace(/\\/g, '/');
+    const resolved = path.resolve(context.artifactsDir, safeRelative);
+    if (!resolved.startsWith(context.artifactsDir)) {
+      throw new Error('Invalid artifact path');
+    }
+
+    const contents = await fs.readFile(resolved, 'utf-8');
+    return { path: resolved, contents };
   }
 
   async fetchRegistry(query: RunQuery = {}): Promise<RunRecord[]> {
