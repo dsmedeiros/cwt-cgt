@@ -7,10 +7,10 @@
   "scripts": {
     "typecheck": "tsc --build",
     "lint": "eslint --ext .ts,.tsx renderer electron",
-    "dev": "cross-env NODE_ENV=development electron-vite dev",
-    "build": "cross-env NODE_ENV=production electron-vite build",
-    "dist": "cross-env NODE_ENV=production electron-builder",
-    "pack": "cross-env NODE_ENV=production electron-builder --dir",
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "dist": "electron-builder",
+    "pack": "electron-builder --dir",
     "postinstall": "electron-builder install-app-deps",
     "test": "vitest run"
   },
@@ -45,7 +45,6 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^14.3.1",
     "@vitejs/plugin-react": "^4.2.1",
-    "cross-env": "^7.0.3",
     "electron-builder": "^24.6.4",
     "electron-vite": "^2.0.0",
     "eslint": "^8.56.0",
