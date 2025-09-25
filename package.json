@@ -1,0 +1,16 @@
+{
+  "name": "cwt-cgt",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "npm run test:node && npm run test:lab",
+    "test:node": "jest",
+    "test:lab": "npm --prefix cwt_lab test"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.4.0"
+  }
+}

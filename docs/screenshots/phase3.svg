@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#0f172a"/>
+  <rect x="40" y="40" width="880" height="460" rx="24" fill="#0b1120" stroke="#38bdf8" stroke-width="3"/>
+  <text x="80" y="110" fill="#bae6fd" font-family="'Inter', sans-serif" font-size="32" font-weight="700">Phase 3 – Guided loops</text>
+  <text x="80" y="160" fill="#e0f2fe" font-family="'Inter', sans-serif" font-size="20">Loop traces and FS guard summary.</text>
+  <polyline points="120,420 200,360 260,280 340,260 420,200 520,230 640,180 780,220" fill="none" stroke="#38bdf8" stroke-width="6"/>
+  <rect x="600" y="200" width="260" height="220" rx="18" fill="#082f49" stroke="#0ea5e9"/>
+  <text x="630" y="250" fill="#bae6fd" font-family="'Inter', sans-serif" font-size="18">FS guard: 0.25</text>
+  <text x="630" y="290" fill="#bae6fd" font-family="'Inter', sans-serif" font-size="18">φ median: 0.61</text>
+  <text x="630" y="330" fill="#bae6fd" font-family="'Inter', sans-serif" font-size="18">R sync: 0.78</text>
+</svg>

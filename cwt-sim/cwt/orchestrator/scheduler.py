@@ -147,6 +147,43 @@ def _phi_edge_for_substrate(S: GraphSubstrate, lam: Mapping[str, float]) -> np.n
     return phi
 
 
+def _resolve_tau_scale(lam: Mapping[str, float], *, default: float = 1.0) -> float:
+    """Return a positive delay scale derived from ``lam``.
+
+    Parameters
+    ----------
+    lam:
+        Mapping containing optional ``tau`` (absolute) and ``tau_scale`` (relative)
+        knobs.
+    default:
+        Fallback value when neither knob provides a usable entry.
+    """
+
+    def _positive(name: str) -> float | None:
+        if name not in lam:
+            return None
+        try:
+            value = float(lam[name])
+        except (TypeError, ValueError):
+            return None
+        if not math.isfinite(value) or value <= 0.0:
+            return None
+        return value
+
+    tau_abs = _positive("tau")
+    tau_rel = _positive("tau_scale")
+
+    if tau_abs is None and tau_rel is None:
+        return float(default)
+    if tau_abs is None:
+        return tau_rel if tau_rel is not None else float(default)
+    if tau_rel is None:
+        return tau_abs
+    if math.isclose(tau_abs, tau_rel, rel_tol=1e-9, abs_tol=1e-12):
+        return tau_abs
+    return tau_abs * tau_rel
+
+
 def _psi_at(
     S: GraphSubstrate,
     lam: Mapping[str, float],
@@ -162,9 +199,7 @@ def _psi_at(
     theta = np.asarray(th0, dtype=float).copy()
 
     rho = float(lam.get("rho", 0.0))
-    tau_val = float(lam.get("tau", lam.get("tau_scale", 1.0)))
-    if tau_val <= 0.0:
-        tau_val = 1.0
+    tau_val = _resolve_tau_scale(lam)
     kappa = float(lam.get("kappa", 1.0))
     omega_scale = float(lam.get("omega_scale", cfg.omega_scale))
     zeta = float(lam.get("zeta", cfg.zeta))
@@ -621,14 +656,11 @@ def run_parameter_loop(
         delta_area_log.append(delta_area)
 
         rho = float(lambda_state.get("rho", 0.0))
-        tau_scale = float(lambda_state.get("tau", 1.0)) or 1.0
+        tau_scale = _resolve_tau_scale(lambda_state)
         kappa = float(lambda_state.get("kappa", 1.0))
         omega_scale_val = float(lambda_state.get("omega_scale", config.omega_scale))
         zeta_eff = float(lambda_state.get("zeta", config.zeta))
         phi_edge = _phi_edge_for_substrate(S, lambda_state)
-
-        if tau_scale <= 0.0:
-            tau_scale = 1.0
 
         if delay_sigma > 0.0:
             tau_jitter = rng.normal(0.0, delay_sigma)

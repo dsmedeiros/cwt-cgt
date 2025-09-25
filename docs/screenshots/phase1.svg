@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <rect width="960" height="540" fill="#f8fafc"/>
+  <rect x="40" y="40" width="880" height="460" rx="24" fill="#ffffff" stroke="#0f172a" stroke-width="3"/>
+  <text x="80" y="110" fill="#0f172a" font-family="'Inter', sans-serif" font-size="32" font-weight="700">Phase 1 – Mapping</text>
+  <text x="80" y="160" fill="#334155" font-family="'Inter', sans-serif" font-size="20">Heatmap of Ω gradients with percentile sliders.</text>
+  <rect x="80" y="200" width="520" height="300" rx="18" fill="url(#grad)"/>
+  <rect x="630" y="200" width="260" height="300" rx="18" fill="#f1f5f9" stroke="#cbd5f5"/>
+  <text x="660" y="250" fill="#0f172a" font-family="'Inter', sans-serif" font-size="20">Controls</text>
+  <text x="660" y="290" fill="#1e293b" font-family="'Inter', sans-serif" font-size="18">• Axes: ρ vs τ</text>
+  <text x="660" y="320" fill="#1e293b" font-family="'Inter', sans-serif" font-size="18">• Extent: 0.45</text>
+  <text x="660" y="350" fill="#1e293b" font-family="'Inter', sans-serif" font-size="18">• Percentile: 90</text>
+  <defs>
+    <linearGradient id="grad" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a8a"/>
+      <stop offset="45%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+  </defs>
+</svg>

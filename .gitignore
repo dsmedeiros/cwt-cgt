@@ -12,3 +12,8 @@ __pycache__/
 /cwt-sim/networkx
 /cwt-sim/runs
 /cwt-sim/.venv
+/cwt_lab/node_modules
+/cwt_lab/package-lock.json
+
+# Node
+node_modules/

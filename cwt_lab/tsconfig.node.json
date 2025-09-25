@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2021"],
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "resolveJsonModule": true,
+    "types": ["node", "electron-vite/node", "vitest"],
+    "noEmit": true
+  },
+  "include": ["electron/**/*.ts", "electron/**/*.d.ts", "shared/**/*.ts"],
+  "exclude": ["dist", "dist-electron", "node_modules"]
+}
