@@ -3,31 +3,33 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { parseMetricsFromLine } from '../parsers';
+import { parseLoopStdout } from '../parsers';
 
 const loadFixture = (name: string) =>
   readFileSync(path.join(__dirname, '..', '__fixtures__', name), 'utf-8');
 
-describe('parseMetricsFromLine', () => {
+describe('parseLoopStdout', () => {
   it('extracts key metrics from loop stdout fixtures', () => {
     const fixture = loadFixture('loop_sample.log');
-    const [firstLine] = fixture.split('\n');
 
-    const metrics = parseMetricsFromLine(firstLine);
+    const metrics = parseLoopStdout(fixture);
 
     expect(metrics).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ metric: 'fs_p95', value: 0.245 }),
-        expect.objectContaining({ metric: 'phi', value: 0.512 }),
-        expect.objectContaining({ metric: 'r_value', value: 0.732 }),
-        expect.objectContaining({ metric: 'overlap', value: 0.654 }),
-        expect.objectContaining({ metric: 'kappa1', value: 3.21 }),
-      ]),
+      expect.objectContaining({
+        fsP95: 0.245,
+        phi: 0.5123,
+        R: 0.7321,
+        overlapMin: 0.654,
+        kappaChange: 3.21,
+        guardExceeded: false,
+        rFlipError: 1.23,
+        phiFlipError: 4.56,
+      }),
     );
   });
 
-  it('returns an empty array when a line does not contain metrics', () => {
-    const metrics = parseMetricsFromLine('no metrics on this line');
-    expect(metrics).toEqual([]);
+  it('tolerates logs that do not contain metrics', () => {
+    const metrics = parseLoopStdout('no metrics on this line');
+    expect(metrics).toEqual({});
   });
 });
