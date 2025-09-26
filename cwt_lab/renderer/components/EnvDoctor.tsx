@@ -36,6 +36,13 @@ const strategyDescriptions: Record<PythonStrategy, string> = {
   py_path: 'Injects cwt onto PYTHONPATH before launching commands.',
 };
 
+const detectionProgressMessages = [
+  'Starting interpreter scan…',
+  'Checking interpreter locations…',
+  'Attempting imports from detected interpreters…',
+  'Wrapping up interpreter scan…',
+] as const;
+
 const parseCandidateErrors = (error?: string): string[] => {
   if (!error) {
     return [];
@@ -68,12 +75,19 @@ const EnvDoctor = () => {
   const [pathNotice, setPathNotice] = useState<PathNotice>(null);
   const [pathBusy, setPathBusy] = useState(false);
   const [manualPath, setManualPath] = useState('');
+  const [progressIndex, setProgressIndex] = useState(0);
+  const [lastScanSummary, setLastScanSummary] = useState<string | null>(null);
+  const [timeoutWarning, setTimeoutWarning] = useState<string | null>(null);
   const manualPathTouched = useRef(false);
   const isMounted = useRef(true);
+  const detectionTimeoutRef = useRef<number | null>(null);
 
   useEffect(
     () => () => {
       isMounted.current = false;
+      if (typeof window !== 'undefined' && detectionTimeoutRef.current !== null) {
+        window.clearTimeout(detectionTimeoutRef.current);
+      }
     },
     [],
   );
@@ -99,11 +113,13 @@ const EnvDoctor = () => {
         return;
       }
       try {
+        console.info('[EnvDoctor] Requesting environment configuration.');
         const response = await api.getConfig();
         if (!isMounted.current) {
           return;
         }
         if (response.ok) {
+          console.info('[EnvDoctor] Environment configuration loaded.');
           setConfig(response.data);
           setConfigError(null);
           const value = response.data.pythonPath ?? '';
@@ -111,6 +127,9 @@ const EnvDoctor = () => {
             updateManualPath(value, options);
           }
         } else {
+          console.warn('[EnvDoctor] Failed to load environment configuration.', {
+            error: response.error,
+          });
           setConfigError(response.error ?? 'Failed to load environment configuration.');
         }
       } catch (error) {
@@ -118,6 +137,7 @@ const EnvDoctor = () => {
           return;
         }
         const message = error instanceof Error ? error.message : String(error);
+        console.error('[EnvDoctor] Unexpected error while loading configuration.', error);
         setConfigError(message);
       }
     },
@@ -127,6 +147,7 @@ const EnvDoctor = () => {
   const runDetection = useCallback(async () => {
     const api = typeof window !== 'undefined' ? window?.CWT?.env : undefined;
     if (!api?.detect) {
+      console.warn('[EnvDoctor] Detection API unavailable.');
       if (isMounted.current) {
         setIpcAvailable(false);
         setCandidateState((prev) => ({ ...prev, loading: false }));
@@ -135,8 +156,25 @@ const EnvDoctor = () => {
     }
 
     if (isMounted.current) {
+      console.info('[EnvDoctor] Starting interpreter detection run.');
       setIpcAvailable(true);
+      setTimeoutWarning(null);
+      setProgressIndex(0);
       setCandidateState((prev) => ({ ...prev, loading: true, error: null }));
+      if (typeof window !== 'undefined') {
+        if (detectionTimeoutRef.current !== null) {
+          window.clearTimeout(detectionTimeoutRef.current);
+        }
+        detectionTimeoutRef.current = window.setTimeout(() => {
+          if (!isMounted.current) {
+            return;
+          }
+          console.warn('[EnvDoctor] Detection is taking longer than expected.');
+          setTimeoutWarning(
+            'Interpreter scanning is taking longer than expected. Ensure the laboratory Electron app remains open and check the developer tools console for detailed logs.',
+          );
+        }, 30000);
+      }
     }
 
     try {
@@ -144,32 +182,73 @@ const EnvDoctor = () => {
       if (!isMounted.current) {
         return;
       }
+      if (typeof window !== 'undefined' && detectionTimeoutRef.current !== null) {
+        window.clearTimeout(detectionTimeoutRef.current);
+        detectionTimeoutRef.current = null;
+      }
       if (response.ok) {
+        console.info('[EnvDoctor] Detection run completed successfully.', {
+          candidateCount: response.data.candidates.length,
+          selected: response.data.selected?.path ?? null,
+        });
         setCandidateState({
           loading: false,
           candidates: response.data.candidates,
           selected: response.data.selected,
           error: null,
         });
+        setLastScanSummary(
+          `Last scan completed successfully at ${new Date().toLocaleTimeString()}.`,
+        );
         if (response.data.selected?.path) {
           updateManualPath(response.data.selected.path);
         }
       } else {
+        console.warn('[EnvDoctor] Detection run completed with reported errors.', {
+          error: response.error,
+        });
         setCandidateState({
           loading: false,
           candidates: response.data?.candidates ?? [],
           selected: response.data?.selected ?? null,
           error: response.error ?? 'Failed to detect Python interpreters.',
         });
+        setLastScanSummary(
+          `Last scan completed with errors at ${new Date().toLocaleTimeString()}.`,
+        );
       }
     } catch (error) {
       if (!isMounted.current) {
         return;
       }
       const message = error instanceof Error ? error.message : String(error);
+      if (typeof window !== 'undefined' && detectionTimeoutRef.current !== null) {
+        window.clearTimeout(detectionTimeoutRef.current);
+        detectionTimeoutRef.current = null;
+      }
+      console.error('[EnvDoctor] Detection run failed due to an unexpected error.', error);
       setCandidateState((prev) => ({ ...prev, loading: false, error: message }));
+      setLastScanSummary(
+        `Last scan failed unexpectedly at ${new Date().toLocaleTimeString()}.`,
+      );
     }
   }, [updateManualPath]);
+
+  useEffect(() => {
+    if (!candidateState.loading) {
+      return;
+    }
+    setProgressIndex(0);
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const intervalId = window.setInterval(() => {
+      setProgressIndex((prev) => (prev + 1) % detectionProgressMessages.length);
+    }, 5000);
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [candidateState.loading]);
 
   useEffect(() => {
     void refreshConfig();
@@ -281,12 +360,24 @@ const EnvDoctor = () => {
         >
           {candidateState.loading ? 'Scanning interpreters…' : 'Refresh interpreters'}
         </button>
-        {candidateState.loading && (
+        {candidateState.loading ? (
           <span role="status" className="env-doctor__status">
-            Scanning interpreters and verifying imports…
+            {detectionProgressMessages[progressIndex]}
           </span>
+        ) : (
+          lastScanSummary && (
+            <span role="status" className="env-doctor__status env-doctor__status--idle">
+              {lastScanSummary}
+            </span>
+          )
         )}
       </div>
+
+      {timeoutWarning && (
+        <div role="alert" className="env-doctor__notice env-doctor__notice--info">
+          {timeoutWarning}
+        </div>
+      )}
 
       <form className="env-doctor__form" onSubmit={handleSetPythonPath}>
         <label className="env-doctor__label" htmlFor="env-doctor-python-path">
