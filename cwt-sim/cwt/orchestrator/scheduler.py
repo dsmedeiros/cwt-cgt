@@ -96,6 +96,39 @@ def _normalize_complex(vec: np.ndarray) -> np.ndarray:
     return vec / norm
 
 
+def _should_abort_fs(m_bad: int, n_seen: int, total_steps: int, q: float = 0.95) -> bool:
+    """Return ``True`` when the FS guard cannot be satisfied."""
+
+    if total_steps <= 0:
+        return False
+
+    remaining = max(total_steps - n_seen, 0)
+    denom = n_seen + remaining
+    if denom <= 0:
+        return False
+
+    return (float(m_bad) / float(denom)) > (1.0 - float(q))
+
+
+def _coerce_bool(value: Any, *, default: bool = False) -> bool:
+    """Return ``value`` interpreted as a boolean flag."""
+
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, np.integer)):
+        return bool(value)
+    if isinstance(value, str):
+        flag = value.strip().lower()
+        if flag in {"1", "true", "yes", "on"}:
+            return True
+        if flag in {"0", "false", "no", "off"}:
+            return False
+        return default
+    return default
+
+
 def _direction_from_label(label: str, size: int) -> np.ndarray:
     """Return a deterministic phase direction vector for ``label``."""
 
@@ -570,6 +603,9 @@ def run_parameter_loop(
     guard_action = str(guard_cfg.get("action", "warn")).lower()
     if guard_action not in {"warn", "slow", "none"}:
         guard_action = "warn"
+    guard_enforce_p95 = _coerce_bool(guard_cfg.get("enforce_p95"), default=False)
+    if not guard_enforce_p95:
+        guard_enforce_p95 = _coerce_bool(guard_cfg.get("abort"), default=False)
 
     try:
         guard_boundary = float(guard_cfg.get("boundary", 0.1))
@@ -601,6 +637,10 @@ def run_parameter_loop(
     guard_events: list[dict[str, float]] = []
     guard_last_trigger = -math.inf
     guard_peak_ratio = 0.0
+    fs_guard_bad_steps = 0
+    fs_guard_abort_step: int | None = None
+    fs_guard_abort_fraction = 0.0
+    guard_abort_pending = False
 
     direction_cache: dict[str, np.ndarray] = {}
     phase_cache: dict[tuple[str, float], np.ndarray] = {}
@@ -867,7 +907,34 @@ def run_parameter_loop(
                         )
                     fs_guard_history.clear()
 
-        if delta_frac_base and math.isfinite(fs_step) and fs_step > guard_boundary:
+        exceeds_boundary = math.isfinite(fs_step) and fs_step > guard_boundary
+        if exceeds_boundary:
+            fs_guard_bad_steps += 1
+
+        if guard_enforce_p95 and (
+            fs_guard_abort_step is None
+            and path.steps > 0
+            and _should_abort_fs(
+                fs_guard_bad_steps,
+                s + 1,
+                total_steps=int(path.steps),
+                q=0.95,
+            )
+        ):
+            fs_guard_abort_step = s + 1
+            fs_guard_abort_fraction = float(fs_guard_bad_steps) / float(max(path.steps, 1))
+            guard_abort_pending = True
+            warnings.warn(
+                (
+                    "Aborting parameter loop: FS guard cannot be satisfied; "
+                    f"{fs_guard_bad_steps} of {path.steps} steps already exceed "
+                    f"boundary {guard_boundary:.3f} rad."
+                ),
+                RuntimeWarning,
+                stacklevel=2,
+            )
+
+        if delta_frac_base and exceeds_boundary:
             throttle_pending = True
 
         psi_traj.append(psi_current.copy())
@@ -882,13 +949,18 @@ def run_parameter_loop(
 
         init_state.last_lambda = lambda_state
 
+        if guard_abort_pending:
+            break
+
     if collect_final:
         final_lambda = lambda_path[-1] if lambda_path else {}
         final_clip = clip_counts[-1] if clip_counts else 0
-        readouts.append(_collect_readout(path.steps, final_lambda, pQ, theta, final_clip))
+        readouts.append(_collect_readout(len(lambda_path), final_lambda, pQ, theta, final_clip))
 
-    if guard_enabled and fs_guard_history is not None and path.steps > 0:
-        overall_fraction = guard_exceedances / float(path.steps)
+    completed_steps = len(fs_steps)
+
+    if guard_enabled and fs_guard_history is not None and completed_steps > 0:
+        overall_fraction = guard_exceedances / float(completed_steps)
     else:
         overall_fraction = 0.0
 
@@ -920,6 +992,14 @@ def run_parameter_loop(
         "p95": float(fs_p95),
         "boundary": float(fs_boundary),
         "boundary_exceeded": bool(fs_boundary_exceeded),
+        "boundary_bad_steps": int(fs_guard_bad_steps),
+        "completed_steps": int(completed_steps),
+        "enforce_p95": bool(guard_enforce_p95),
+        "early_abort": bool(guard_enforce_p95 and fs_guard_abort_step is not None),
+        "early_abort_step": (
+            None if not guard_enforce_p95 or fs_guard_abort_step is None else int(fs_guard_abort_step)
+        ),
+        "early_abort_fraction": (float(fs_guard_abort_fraction) if guard_enforce_p95 else 0.0),
     }
 
     phi_flux_total = 0.0
@@ -943,7 +1023,7 @@ def run_parameter_loop(
 
     if readouts:
         final_entry = readouts[-1]
-        if isinstance(final_entry, dict) and final_entry.get("step") == path.steps:
+        if isinstance(final_entry, dict) and final_entry.get("step") == completed_steps:
             final_entry["phi_flux"] = float(phi_flux_total)
             final_entry["phi_flux_missing_tiles"] = bool(phi_flux_missing_tiles)
             memory_form_cfg = str(readout_cfg.get("memory_form", "")).lower()
@@ -990,7 +1070,11 @@ def run_parameter_loop(
         "steps": int(path.steps),
         "config": asdict(config),
         "substrate_size": int(N),
-        "path": {"kind": path.kind, "steps": path.steps},
+        "path": {
+            "kind": path.kind,
+            "steps": path.steps,
+            "completed": int(completed_steps),
+        },
     }
 
     meta["fs_step_guard"] = guard_meta
