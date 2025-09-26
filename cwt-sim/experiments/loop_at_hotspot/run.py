@@ -7,7 +7,7 @@ import json
 import math
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Mapping, Sequence
 
 import numpy as np
 
@@ -24,6 +24,9 @@ from cwt.orchestrator.scheduler import (
     run_parameter_loop,
 )
 
+if TYPE_CHECKING:
+    from cwt.orchestrator.scheduler import RunRecord
+
 
 @dataclass
 class HotspotSpec:
@@ -34,12 +37,115 @@ class HotspotSpec:
     metadata: dict[str, Any]
 
 
+@dataclass(frozen=True)
+class RectExtent:
+    """Axis-aligned rectangle extents for a two-axis loop."""
+
+    axes: tuple[str, str]
+    values: tuple[float, float]
+
+    def __post_init__(self) -> None:
+        if len(self.axes) != 2:
+            raise ValueError("RectExtent requires exactly two axes")
+        axis_i, axis_j = (str(axis) for axis in self.axes)
+        value_i, value_j = (float(self.values[0]), float(self.values[1]))
+        if axis_i == axis_j:
+            raise ValueError("RectExtent axes must be distinct")
+        object.__setattr__(self, "axes", (axis_i, axis_j))
+        object.__setattr__(self, "values", (value_i, value_j))
+
+    @classmethod
+    def from_scalar(cls, axes: tuple[str, str], value: float) -> "RectExtent":
+        val = float(value)
+        return cls(tuple(axes), (val, val))
+
+    @classmethod
+    def from_pair(cls, axes: tuple[str, str], values: tuple[float, float]) -> "RectExtent":
+        return cls(tuple(axes), (float(values[0]), float(values[1])))
+
+    def axis_value(self, axis: str) -> float:
+        axis_norm = str(axis)
+        if axis_norm == self.axes[0]:
+            return self.values[0]
+        if axis_norm == self.axes[1]:
+            return self.values[1]
+        raise KeyError(f"axis '{axis}' not present in RectExtent")
+
+    def as_dict(self) -> dict[str, float]:
+        return {self.axes[0]: self.values[0], self.axes[1]: self.values[1]}
+
+    def max_abs(self) -> float:
+        return max(abs(self.values[0]), abs(self.values[1]))
+
+    def replace(self, *, axis: str | None = None, value: float | None = None) -> "RectExtent":
+        if axis is None:
+            raise ValueError("axis must be provided when replacing a RectExtent value")
+        axis_norm = str(axis)
+        new_values = list(self.values)
+        if axis_norm == self.axes[0]:
+            new_values[0] = float(value if value is not None else self.values[0])
+        elif axis_norm == self.axes[1]:
+            new_values[1] = float(value if value is not None else self.values[1])
+        else:
+            raise KeyError(f"axis '{axis}' not present in RectExtent")
+        return RectExtent(self.axes, (new_values[0], new_values[1]))
+
+    def scale_axis(self, axis: str, factor: float) -> "RectExtent":
+        return self.replace(axis=axis, value=self.axis_value(axis) * float(factor))
+
+    def clamp_axis(
+        self,
+        axis: str,
+        *,
+        lower: float | None = None,
+        upper: float | None = None,
+    ) -> "RectExtent":
+        value = self.axis_value(axis)
+        if lower is not None:
+            value = max(float(lower), value)
+        if upper is not None:
+            value = min(float(upper), value)
+        return self.replace(axis=axis, value=value)
+
+    def scale(self, factor: float) -> "RectExtent":
+        scale_val = float(factor)
+        return RectExtent(
+            self.axes,
+            (self.values[0] * scale_val, self.values[1] * scale_val),
+        )
+
+    def clamp(self, *, lower: float | None = None, upper: float | None = None) -> "RectExtent":
+        result = self
+        for axis in self.axes:
+            result = result.clamp_axis(axis, lower=lower, upper=upper)
+        return result
+
+    def is_close(
+        self,
+        other: "RectExtent",
+        *,
+        rel_tol: float = 1e-9,
+        abs_tol: float = 1e-12,
+    ) -> bool:
+        if self.axes != other.axes:
+            return False
+        return all(
+            math.isclose(
+                self.axis_value(axis),
+                other.axis_value(axis),
+                rel_tol=rel_tol,
+                abs_tol=abs_tol,
+            )
+            for axis in self.axes
+        )
+
+
 @dataclass
 class OrientationRun:
     """Metrics recorded for a single loop orientation."""
 
     orientation: str
-    extent: float
+    extents: RectExtent
     steps: int
     area: float
     phi_flux: float
@@ -48,13 +154,16 @@ class OrientationRun:
     memory: list[float]
     fs_p95: float
     fs_guard_exceeded: bool
+    fs_edge_counts: dict[str, int]
+    fs_edge_exceedances: dict[str, int]
+    fs_edge_max: dict[str, float]
 
 
 @dataclass
 class ExtentSummary:
     """Paired CW/CCW loop statistics for a single extent."""
 
-    extent: float
+    extents: RectExtent
     ccw: OrientationRun
     cw: OrientationRun
     area_flip_error: float
@@ -76,11 +185,12 @@ class AutoExtentDecision:
     """Record of a single auto-extent pilot evaluation."""
 
     iteration: int
-    extent: float
+    extents: RectExtent
     pilot_steps: int
     steps: int
     fs_p95: float
     fs_guard_exceeded: bool
+    fs_edge_exceedances: dict[str, int]
     decision: str
 
 
@@ -88,7 +198,7 @@ class AutoExtentDecision:
 class AutoExtentResult:
     """Summary of the auto-extent calibration loop."""
 
-    extent: float
+    extent: RectExtent
     accepted: bool
     iterations: int
     decisions: list[AutoExtentDecision]
@@ -409,8 +519,8 @@ def _micro_scan_candidates(
     return selected_center, (base_prob_arr, base_theta_arr), scan_meta
 
 
-def _loop_steps_for_extent(extent: float, base_steps: int) -> int:
-    magnitude = abs(float(extent))
+def _loop_steps_for_extent(extent: RectExtent, base_steps: int) -> int:
+    magnitude = extent.max_abs()
     if magnitude == 0.0:
         raise ValueError("extent must be non-zero to form a loop region")
     scale = max(int(round(magnitude / 0.02)), 1)
@@ -448,6 +558,61 @@ def _extract_readout(
     return phi_value, memory, False
 
 
+def _edge_axis(delta: Mapping[str, float], axes: tuple[str, str]) -> str | None:
+    delta_i = float(delta.get(axes[0], 0.0))
+    delta_j = float(delta.get(axes[1], 0.0))
+    abs_i, abs_j = abs(delta_i), abs(delta_j)
+    if abs_i > abs_j and abs_i > 0.0:
+        return axes[0]
+    if abs_j > abs_i and abs_j > 0.0:
+        return axes[1]
+    if abs_i > 0.0 and abs_j == abs_i:
+        return axes[0]
+    if abs_j > 0.0 and abs_i == abs_j:
+        return axes[1]
+    return None
+
+
+def _fs_edge_statistics(
+    record: "RunRecord",
+    axes: tuple[str, str],
+    guard_meta: Mapping[str, Any],
+) -> tuple[dict[str, int], dict[str, int], dict[str, float]]:
+    counts = {axis: 0 for axis in axes}
+    exceedances = {axis: 0 for axis in axes}
+    maxima = {axis: 0.0 for axis in axes}
+
+    guard_limit: float | None = None
+    if bool(guard_meta.get("enabled", False)):
+        try:
+            guard_limit = float(guard_meta.get("threshold"))
+        except (TypeError, ValueError):
+            guard_limit = None
+        if guard_limit is None or not math.isfinite(guard_limit) or guard_limit <= 0.0:
+            try:
+                guard_limit = float(guard_meta.get("boundary"))
+            except (TypeError, ValueError):
+                guard_limit = None
+        if guard_limit is not None and (not math.isfinite(guard_limit) or guard_limit <= 0.0):
+            guard_limit = None
+
+    for index, fs_step in enumerate(record.fs_steps):
+        try:
+            delta = record.delta_lambda[index]
+        except IndexError:  # pragma: no cover - defensive guard
+            delta = {}
+        axis = _edge_axis(delta, axes)
+        if axis is None:
+            continue
+        counts[axis] += 1
+        if math.isfinite(fs_step):
+            maxima[axis] = max(maxima[axis], float(fs_step))
+            if guard_limit is not None and fs_step > guard_limit:
+                exceedances[axis] += 1
+
+    return counts, exceedances, maxima
+
+
 def _run_loop_once(
     substrate: GraphSubstrate,
     config: RunConfig,
@@ -455,14 +620,14 @@ def _run_loop_once(
     base_theta: np.ndarray,
     center: Mapping[str, float],
     axes: tuple[str, str],
-    extent: float,
+    extent: RectExtent,
     orientation: str,
     seed: int,
     *,
     steps: int,
 ) -> OrientationRun:
     center_dict = {axis: float(center[axis]) for axis in axes}
-    extent_dict = {axis: float(extent) for axis in axes}
+    extent_dict = extent.as_dict()
 
     path = ParameterPath(
         kind="rectangle",
@@ -492,9 +657,15 @@ def _run_loop_once(
         fs_p95 = float("nan")
     guard_exceeded = bool(guard_meta.get("boundary_exceeded", False))
 
+    edge_counts, edge_exceedances, edge_max = _fs_edge_statistics(
+        record,
+        axes,
+        guard_meta,
+    )
+
     return OrientationRun(
         orientation=orientation,
-        extent=float(extent),
+        extents=extent,
         steps=steps,
         area=area,
         phi_flux=phi_flux,
@@ -503,6 +674,9 @@ def _run_loop_once(
         memory=memory,
         fs_p95=fs_p95,
         fs_guard_exceeded=guard_exceeded,
+        fs_edge_counts=edge_counts,
+        fs_edge_exceedances=edge_exceedances,
+        fs_edge_max=edge_max,
     )
 
 
@@ -513,7 +687,7 @@ def _run_loop(
     base_theta: np.ndarray,
     center: Mapping[str, float],
     axes: tuple[str, str],
-    extent: float,
+    extent: RectExtent,
     orientation: str,
     seed: int,
     base_steps: int,
@@ -608,14 +782,16 @@ def _auto_calibrate_extent(
         pilot_frac = 0.125
     max_iters = max(1, int(max_iters))
 
-    current_min = lower
-    current_max = upper
-    extent = math.sqrt(current_min * current_max)
+    extent = RectExtent.from_scalar(axes, math.sqrt(lower * upper)).clamp(lower=lower, upper=upper)
     decisions: list[AutoExtentDecision] = []
-    accepted_extent: float | None = None
+    best_safe: RectExtent | None = None
+    accepted_flag = False
 
     lower_threshold = target_fs * (1.0 - fs_margin)
     upper_threshold = target_fs * (1.0 + fs_margin)
+
+    sqrt_two = math.sqrt(2.0)
+    inv_sqrt_two = 1.0 / sqrt_two
 
     for iteration in range(1, max_iters + 1):
         steps_full = _loop_steps_for_extent(extent, base_steps)
@@ -637,62 +813,98 @@ def _auto_calibrate_extent(
         )
         fs95 = pilot_run.fs_p95
         guard_exceeded = pilot_run.fs_guard_exceeded
+        edge_exceedances = {axis: int(pilot_run.fs_edge_exceedances.get(axis, 0)) for axis in axes}
 
-        if guard_exceeded or not math.isfinite(fs95):
-            decision = "too_large"
-            current_max = min(current_max, extent)
-        elif fs95 > upper_threshold:
-            decision = "too_large"
-            current_max = min(current_max, extent)
-        elif fs95 < lower_threshold:
-            decision = "too_small"
-            current_min = max(current_min, extent)
+        if not math.isfinite(fs95):
+            guard_exceeded = True
+        shrink_axes = {axis for axis, count in edge_exceedances.items() if count > 0}
+        if guard_exceeded:
+            shrink_axes.update(axes)
+
+        within_window = (
+            math.isfinite(fs95)
+            and lower_threshold <= fs95 <= upper_threshold
+            and not guard_exceeded
+            and not shrink_axes
+        )
+        safe_extent = (
+            math.isfinite(fs95) and fs95 <= upper_threshold and not guard_exceeded and not shrink_axes
+        )
+        if safe_extent:
+            best_safe = extent
+
+        decision_label: str
+        grow_axes: set[str] = set()
+        if within_window:
+            decision_label = "accept"
         else:
-            decision = "accept"
-            accepted_extent = extent
+            if not shrink_axes and math.isfinite(fs95) and fs95 > upper_threshold:
+                shrink_axes.update(axes)
+            if not shrink_axes and math.isfinite(fs95) and fs95 < lower_threshold:
+                grow_axes.update(axes)
+
+            if shrink_axes:
+                if shrink_axes == set(axes):
+                    decision_label = "shrink_all"
+                else:
+                    ordered = ",".join(str(axis) for axis in shrink_axes)
+                    decision_label = f"shrink[{ordered}]"
+            elif grow_axes:
+                decision_label = "expand"
+            else:
+                decision_label = "hold"
 
         decisions.append(
             AutoExtentDecision(
                 iteration=iteration,
-                extent=float(extent),
+                extents=extent,
                 pilot_steps=pilot_steps,
                 steps=steps_full,
                 fs_p95=float(fs95) if math.isfinite(fs95) else float("nan"),
                 fs_guard_exceeded=guard_exceeded,
-                decision=decision,
+                fs_edge_exceedances=edge_exceedances,
+                decision=decision_label,
             )
         )
 
-        if decision == "accept":
+        if within_window:
+            accepted_flag = True
+            best_safe = extent
             break
 
-        if current_max <= current_min:
-            break
+        new_extent = extent
+        changed = False
+        if shrink_axes:
+            for axis in axes:
+                if axis not in shrink_axes:
+                    continue
+                current_val = extent.axis_value(axis)
+                scaled = max(lower, current_val * inv_sqrt_two)
+                if not math.isclose(scaled, current_val, rel_tol=1e-12, abs_tol=1e-12):
+                    changed = True
+                new_extent = new_extent.replace(axis=axis, value=scaled)
+        elif grow_axes:
+            for axis in axes:
+                if axis not in grow_axes:
+                    continue
+                current_val = extent.axis_value(axis)
+                scaled = min(upper, current_val * sqrt_two)
+                if not math.isclose(scaled, current_val, rel_tol=1e-12, abs_tol=1e-12):
+                    changed = True
+                new_extent = new_extent.replace(axis=axis, value=scaled)
 
-        new_extent = math.sqrt(current_min * current_max)
-        if not math.isfinite(new_extent) or new_extent <= 0.0:
-            break
+        new_extent = new_extent.clamp(lower=lower, upper=upper)
 
-        if math.isclose(new_extent, extent, rel_tol=1e-9, abs_tol=1e-12):
-            extent = new_extent
+        if not changed or new_extent.is_close(extent):
             break
 
         extent = new_extent
 
-    if accepted_extent is not None:
-        final_extent = accepted_extent
-        accepted = True
-    else:
-        safe_extent = current_min
-        candidate = safe_extent * 1.1
-        candidate = min(candidate, current_max)
-        final_extent = max(safe_extent, candidate)
-        final_extent = min(max(final_extent, lower), upper)
-        accepted = False
+    final_extent = best_safe if best_safe is not None else extent
 
     return AutoExtentResult(
-        extent=float(final_extent),
-        accepted=accepted,
+        extent=final_extent,
+        accepted=accepted_flag,
         iterations=len(decisions),
         decisions=decisions,
     )
@@ -705,7 +917,7 @@ def evaluate_hotspot(
     substrate: GraphSubstrate,
     config: RunConfig,
     axes: tuple[str, str],
-    extents: Sequence[float],
+    extents: Sequence[RectExtent],
     seed: int,
     micro_scan: bool,
     base_steps: int,
@@ -756,17 +968,14 @@ def evaluate_hotspot(
         if not extents_to_run:
             extents_to_run = [auto_result.extent]
         else:
-            if not any(
-                math.isclose(auto_result.extent, value, rel_tol=1e-9, abs_tol=1e-12)
-                for value in extents_to_run
-            ):
+            if not any(auto_result.extent.is_close(value) for value in extents_to_run):
                 extents_to_run.append(auto_result.extent)
-            extents_to_run.sort(key=abs)
+            extents_to_run.sort(key=lambda item: item.max_abs())
         meta = spec.metadata.setdefault("auto_extent", {})
         meta.update(
             {
                 "accepted": bool(auto_result.accepted),
-                "extent": float(auto_result.extent),
+                "extent": auto_result.extent.as_dict(),
                 "iterations": int(auto_result.iterations),
                 "bracket": {"min": float(extent_bracket[0]), "max": float(extent_bracket[1])},
                 "target_fs": float(target_fs),
@@ -774,11 +983,12 @@ def evaluate_hotspot(
                 "decisions": [
                     {
                         "iteration": decision.iteration,
-                        "extent": decision.extent,
+                        "extents": decision.extents.as_dict(),
                         "pilot_steps": decision.pilot_steps,
                         "steps": decision.steps,
                         "fs_p95": decision.fs_p95,
                         "fs_guard_exceeded": decision.fs_guard_exceeded,
+                        "fs_edge_exceedances": decision.fs_edge_exceedances,
                         "decision": decision.decision,
                     }
                     for decision in auto_result.decisions
@@ -825,7 +1035,7 @@ def evaluate_hotspot(
             phi_flip = _relative_flip_error(ccw.phi_flux, cw.phi_flux)
         summaries.append(
             ExtentSummary(
-                extent=float(extent),
+                extents=extent,
                 ccw=ccw,
                 cw=cw,
                 area_flip_error=area_flip,
@@ -848,6 +1058,11 @@ def _format_memory(memory: Sequence[float]) -> str:
     return "[" + ", ".join(f"{value:.3f}" for value in memory) + "]"
 
 
+def _format_extent(extent: RectExtent) -> str:
+    axis_i, axis_j = extent.axes
+    return f"{axis_i}={extent.axis_value(axis_i):+.4f}, {axis_j}={extent.axis_value(axis_j):+.4f}"
+
+
 def render_summary(results: Sequence[HotspotSummary]) -> None:
     for summary in results:
         spec = summary.spec
@@ -855,10 +1070,10 @@ def render_summary(results: Sequence[HotspotSummary]) -> None:
         center_repr = ", ".join(f"{axis}={spec.center[axis]:+.4f}" for axis in spec.center)
         print(f"Hotspot #{summary.index + 1}: {center_repr} (|Ω|={omega_text})")
         for extent_summary in summary.extents:
-            extent = extent_summary.extent
+            extent = extent_summary.extents
             ccw = extent_summary.ccw
             cw = extent_summary.cw
-            print(f"  extent={extent:+.4f}")
+            print(f"  extent=({_format_extent(extent)})")
             ccw_flag = " ⚠️ missing Ω" if ccw.phi_missing else ""
             cw_flag = " ⚠️ missing Ω" if cw.phi_missing else ""
             print(
@@ -928,7 +1143,7 @@ def evaluate_acceptance(
             ):
                 failures.append(
                     (
-                        f"Hotspot {summary.index + 1} extent {extent_summary.extent:+.4f}: "
+                        f"Hotspot {summary.index + 1} extent ({_format_extent(extent_summary.extents)}): "
                         f"area flip error {extent_summary.area_flip_error:.3f}"
                     )
                 )
@@ -938,7 +1153,7 @@ def evaluate_acceptance(
             ):
                 failures.append(
                     (
-                        f"Hotspot {summary.index + 1} extent {extent_summary.extent:+.4f}: "
+                        f"Hotspot {summary.index + 1} extent ({_format_extent(extent_summary.extents)}): "
                         f"phi flip error {extent_summary.phi_flip_error:.3f}"
                     )
                 )
@@ -1075,9 +1290,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     axes = (str(args.axes[0]), str(args.axes[1]))
 
-    extents_input: list[float] = []
+    extents_input: list[RectExtent] = []
     if args.extents is not None:
-        extents_input = sorted((float(value) for value in args.extents), key=abs)
+        scalar_extents = sorted((float(value) for value in args.extents), key=abs)
+        extents_input = [RectExtent.from_scalar(axes, value) for value in scalar_extents]
 
     auto_extent_enabled = bool(args.auto_extent)
     if not auto_extent_enabled and not extents_input:
