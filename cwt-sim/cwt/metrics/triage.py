@@ -1,15 +1,18 @@
-"""Triage metrics scaffolding."""
+"""Triage metrics for prioritising simulation runs."""
 
 from __future__ import annotations
 
-from typing import Iterable
+import math
+from typing import Iterable, Mapping, Sequence
 
 import networkx as nx
 import numpy as np
 
 from ..graph.substrate import GraphSubstrate
+from .refine import geom_score
 
 __all__ = [
+    "triage_score",
     "placeholder_triage_score",
     "xi_static",
     "xi_dynamic",
@@ -17,10 +20,92 @@ __all__ = [
 ]
 
 
-def placeholder_triage_score() -> float:
-    """Return a neutral triage score."""
+def triage_score(
+    S: GraphSubstrate,
+    curvature_bias: Sequence[float],
+    *,
+    clip_counts: Sequence[int] | None = None,
+    susceptibility: np.ndarray | None = None,
+    geom_stats: Mapping[str, float] | None = None,
+) -> float:
+    """Rank the health of a run using graph, curvature, and geometric telemetry."""
 
-    return 0.0
+    if not isinstance(S, GraphSubstrate):
+        raise TypeError("S must be a GraphSubstrate instance.")
+
+    nodes = _ordered_nodes(S.node_index)
+    if not nodes:
+        raise ValueError("Graph substrate must contain at least one node.")
+
+    degrees = _degree_vector(S.G, nodes, "out")
+    degree_mean = float(np.mean(degrees))
+    if degree_mean <= 0.0:
+        degree_dispersion = 0.0
+    else:
+        degree_dispersion = float(np.std(degrees) / degree_mean)
+    degree_term = 1.0 / (1.0 + degree_dispersion)
+
+    eigen = _eigenvector_centrality(S, nodes)
+    if np.allclose(eigen, 0.0):
+        centrality_term = 1.0
+    else:
+        centrality_term = 1.0 / (1.0 + float(np.std(eigen)))
+
+    curvature_arr = np.asarray(curvature_bias, dtype=float)
+    if curvature_arr.ndim != 1 or curvature_arr.size == 0:
+        raise ValueError("curvature_bias must be a non-empty one-dimensional sequence.")
+    curvature_term = 1.0 / (1.0 + float(np.mean(np.abs(curvature_arr))))
+
+    clip_term = 1.0
+    if clip_counts is not None:
+        clip_arr = np.asarray(list(clip_counts), dtype=float)
+        if clip_arr.size:
+            clip_term = 1.0 / (1.0 + float(np.mean(np.clip(clip_arr, 0.0, None))))
+
+    susceptibility_term = 1.0
+    if susceptibility is not None:
+        xi = np.asarray(susceptibility, dtype=float)
+        if xi.ndim != 1:
+            raise ValueError("susceptibility must be one-dimensional when provided.")
+        if xi.size:
+            xi = np.clip(xi, 0.0, None)
+            total = float(np.sum(xi))
+            if total > 0.0 and np.isfinite(total):
+                xi = xi / total
+                entropy = -float(np.sum(xi * np.log2(np.clip(xi, 1e-12, None))))
+                max_entropy = math.log2(xi.size)
+                susceptibility_term = entropy / max_entropy if max_entropy > 0.0 else 1.0
+
+    geom_term = 1.0
+    if geom_stats:
+        tr_g = float(geom_stats.get("tr_g", 0.0))
+        det_g = float(geom_stats.get("det_g", 0.0))
+        omega = float(geom_stats.get("omega", 0.0))
+        alpha = float(geom_stats.get("alpha", 1.0))
+        beta = float(geom_stats.get("beta", 0.2))
+        gamma = float(geom_stats.get("gamma", 0.5))
+
+        raw_geom = geom_score(tr_g, det_g, omega, alpha=alpha, beta=beta, gamma=gamma)
+        raw_geom = max(raw_geom, 0.0)
+        geom_term = 1.0 - float(np.exp(-raw_geom)) if raw_geom > 0.0 else 0.0
+        geom_term = float(np.clip(geom_term, 0.0, 1.0))
+
+    score = (
+        0.25 * degree_term
+        + 0.15 * centrality_term
+        + 0.2 * curvature_term
+        + 0.1 * clip_term
+        + 0.1 * susceptibility_term
+        + 0.2 * geom_term
+    )
+
+    return float(np.clip(score, 0.0, 1.0))
+
+
+def placeholder_triage_score(*args, **kwargs) -> float:
+    """Compatibility shim delegating to :func:`triage_score`."""
+
+    return triage_score(*args, **kwargs)
 
 
 def _pow_with_zeros(values: np.ndarray, exponent: float) -> np.ndarray:
