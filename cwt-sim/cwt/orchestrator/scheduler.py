@@ -96,18 +96,32 @@ def _normalize_complex(vec: np.ndarray) -> np.ndarray:
     return vec / norm
 
 
-def _should_abort_fs(m_bad: int, n_seen: int, total_steps: int, q: float = 0.95) -> bool:
+def _should_abort_fs(
+    m_bad: int,
+    n_seen: int,
+    total_steps: int,
+    q: float = 0.95,
+    *,
+    start_fraction: float = 0.12,
+    cushion: float = 0.01,
+) -> bool:
     """Return ``True`` when the FS guard cannot be satisfied."""
 
     if total_steps <= 0:
         return False
 
-    remaining = max(total_steps - n_seen, 0)
-    denom = n_seen + remaining
-    if denom <= 0:
+    total = float(total_steps)
+    start_fraction = max(0.0, float(start_fraction))
+    min_seen = max(1, int(math.ceil(total * start_fraction)))
+    if n_seen < min_seen:
         return False
 
-    return (float(m_bad) / float(denom)) > (1.0 - float(q))
+    cushion = max(0.0, float(cushion))
+    threshold = max(0.0, 1.0 - float(q)) + cushion
+    if threshold >= 1.0:
+        threshold = 1.0
+
+    return (float(m_bad) / total) > threshold
 
 
 def _coerce_bool(value: Any, *, default: bool = False) -> bool:
