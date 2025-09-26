@@ -283,7 +283,31 @@ class ParameterPath:
         return 2.0 * value - 1.0
 
 
-def placeholder_param_path() -> list[float]:
-    """Return a trivial parameter path."""
+def placeholder_param_path(
+    kind: Literal["rectangle", "line", "lissajous", "torus_loop"] = "rectangle",
+    *,
+    center: dict[str, float] | None = None,
+    extents: dict[str, float] | None = None,
+    steps: int = 16,
+    orientation: Literal["CW", "CCW"] = "CCW",
+    periodic: dict[str, bool] | None = None,
+    corner_area_mode: bool = True,
+) -> list[dict[str, float]]:
+    """Construct a canonical parameter path and return its λ samples."""
 
-    return [0.0]
+    if center is None:
+        center = {"rho": 0.0, "tau": 0.0}
+    if extents is None:
+        extents = {"rho": 0.25, "tau": 0.15}
+
+    path = ParameterPath(
+        kind=kind,
+        center=center,
+        extents=extents,
+        steps=steps,
+        orientation=orientation,
+        periodic=periodic,
+        corner_area_mode=corner_area_mode,
+    )
+
+    return [path.step(index)[0] for index in range(path.steps)]
