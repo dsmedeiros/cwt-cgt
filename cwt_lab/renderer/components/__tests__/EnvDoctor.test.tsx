@@ -25,7 +25,7 @@ describe('EnvDoctor', () => {
   });
 
   afterEach(() => {
-    delete (window as typeof window & { CWT?: RendererIpc }).CWT;
+    Reflect.deleteProperty(window as typeof window & { CWT?: RendererIpc }, 'CWT');
   });
 
   it('renders detection results and highlights the active interpreter', async () => {
@@ -146,7 +146,7 @@ describe('EnvDoctor', () => {
 
     await waitFor(() => expect(detect).toHaveBeenCalledTimes(1));
 
-    const input = await screen.findByLabelText(/Python executable/i);
+    const input = (await screen.findByLabelText(/Python executable/i)) as HTMLInputElement;
     fireEvent.change(input, { target: { value: updatedCandidate.path } });
     const submit = screen.getByRole('button', { name: /Set Python Path/i });
     fireEvent.click(submit);

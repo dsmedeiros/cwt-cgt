@@ -5,12 +5,11 @@ import type { Data, Layout } from 'plotly.js';
 import { useDemoMode, type DemoRecipe } from '../demo/DemoModeContext';
 
 const buildRecipeLayout = (title: string): Partial<Layout> => ({
-  title,
+  title: { text: title },
   margin: { t: 40, r: 12, b: 40, l: 48 },
   height: 300,
   paper_bgcolor: 'transparent',
   plot_bgcolor: 'transparent',
-  template: 'plotly_dark',
   legend: { orientation: 'h', y: -0.2 },
   font: { family: 'Inter, sans-serif' },
 });
@@ -165,8 +164,8 @@ const RecipeComparison = () => {
                 data={buildRecipeData(leftRecipe)}
                 layout={{
                   ...buildRecipeLayout(leftRecipe.record.name),
-                  yaxis: { title: 'Φ flux' },
-                  yaxis2: { overlaying: 'y', side: 'right', title: 'Guard margin' },
+                  yaxis: { title: { text: 'Φ flux' } },
+                  yaxis2: { overlaying: 'y', side: 'right', title: { text: 'Guard margin' } },
                 }}
                 useResizeHandler
                 className="recipe-comparison__plot"
@@ -179,8 +178,8 @@ const RecipeComparison = () => {
                 data={buildRecipeData(rightRecipe)}
                 layout={{
                   ...buildRecipeLayout(rightRecipe.record.name),
-                  yaxis: { title: 'Φ flux' },
-                  yaxis2: { overlaying: 'y', side: 'right', title: 'Guard margin' },
+                  yaxis: { title: { text: 'Φ flux' } },
+                  yaxis2: { overlaying: 'y', side: 'right', title: { text: 'Guard margin' } },
                 }}
                 useResizeHandler
                 className="recipe-comparison__plot"
