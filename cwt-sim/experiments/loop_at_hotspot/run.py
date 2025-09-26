@@ -655,7 +655,10 @@ def _run_loop_once(
         fs_p95 = float(guard_meta.get("p95", float("nan")))
     except (TypeError, ValueError):
         fs_p95 = float("nan")
-    guard_exceeded = bool(guard_meta.get("boundary_exceeded", False))
+    early_abort = bool(guard_meta.get("early_abort", False))
+    if early_abort:
+        fs_p95 = float("nan")
+    guard_exceeded = bool(guard_meta.get("boundary_exceeded", False) or early_abort)
 
     edge_counts, edge_exceedances, edge_max = _fs_edge_statistics(
         record,
