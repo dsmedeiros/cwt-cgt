@@ -278,6 +278,7 @@ export type RunTailChunk = {
   totalBytes: number;
   hasMoreBefore: boolean;
   status: string;
+  failureDetails: string | null;
 };
 
 export type RunDiagnosticsBundle = {

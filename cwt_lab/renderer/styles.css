@@ -629,6 +629,57 @@ body {
   color: var(--color-danger-text);
 }
 
+.run-board__log {
+  margin-top: 1.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.run-board__log-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.run-board__log-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.run-board__log-output {
+  max-height: 18rem;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(148, 163, 184, 0.08);
+  font-size: 0.85rem;
+}
+
+.run-board__log-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.run-board__log-meta {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.run-board__log-failure {
+  margin: 0;
+  color: var(--color-danger-text);
+  font-weight: 600;
+}
+
 .run-board__actions {
   display: flex;
   justify-content: flex-start;

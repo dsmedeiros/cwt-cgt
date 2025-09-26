@@ -65,24 +65,26 @@ describe('RunBoard', () => {
 
   it('tails logs with pagination controls', async () => {
     const runs = [buildRun({ id: 'run-1', status: 'running' })];
-    const tail = vi
-      .fn()
-      .mockResolvedValueOnce({
-        output: 'tail chunk',
-        startFromByte: 7,
-        nextFromByte: 12,
-        totalBytes: 12,
-        hasMoreBefore: true,
-        status: 'running',
-      })
-      .mockResolvedValueOnce({
-        output: 'older ',
-        startFromByte: 0,
-        nextFromByte: 7,
-        totalBytes: 12,
-        hasMoreBefore: false,
-        status: 'running',
-      });
+  const tail = vi
+    .fn()
+    .mockResolvedValueOnce({
+      output: 'tail chunk',
+      startFromByte: 7,
+      nextFromByte: 12,
+      totalBytes: 12,
+      hasMoreBefore: true,
+      status: 'running',
+      failureDetails: null,
+    })
+    .mockResolvedValueOnce({
+      output: 'older ',
+      startFromByte: 0,
+      nextFromByte: 7,
+      totalBytes: 12,
+      hasMoreBefore: false,
+      status: 'running',
+      failureDetails: null,
+    });
     const api = {
       listRecent: vi.fn().mockResolvedValue(runs),
       collectDiagnostics: vi.fn(),
@@ -116,6 +118,42 @@ describe('RunBoard', () => {
     );
     await waitFor(() =>
       expect(screen.getByText(/older tail chunk/)).toBeInTheDocument(),
+    );
+  });
+
+  it('surfaces failure details when available', async () => {
+    const runs = [buildRun({ id: 'run-1', status: 'failed' })];
+    const api = {
+      listRecent: vi.fn().mockResolvedValue(runs),
+      collectDiagnostics: vi.fn(),
+      tail: vi.fn().mockResolvedValue({
+        output: '',
+        startFromByte: 0,
+        nextFromByte: 0,
+        totalBytes: 0,
+        hasMoreBefore: false,
+        status: 'failed',
+        failureDetails: 'Process exited with code 2.',
+      }),
+    };
+
+    render(<RunBoard api={api} />);
+
+    await waitFor(() => expect(api.listRecent).toHaveBeenCalled());
+
+    const viewButtons = screen.getAllByRole('button', { name: /View log/i });
+    fireEvent.click(viewButtons[0]);
+
+    await waitFor(() =>
+      expect(api.tail).toHaveBeenCalledWith({
+        runId: 'run-1',
+        fromByte: -LOG_CHUNK_BYTES,
+        maxBytes: LOG_CHUNK_BYTES,
+      }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText(/Failure details: Process exited with code 2\./i)).toBeInTheDocument(),
     );
   });
 });
