@@ -71,6 +71,29 @@ class HotspotSummary:
     kappa_scale_errors: list[float]
 
 
+@dataclass
+class AutoExtentDecision:
+    """Record of a single auto-extent pilot evaluation."""
+
+    iteration: int
+    extent: float
+    pilot_steps: int
+    steps: int
+    fs_p95: float
+    fs_guard_exceeded: bool
+    decision: str
+
+
+@dataclass
+class AutoExtentResult:
+    """Summary of the auto-extent calibration loop."""
+
+    extent: float
+    accepted: bool
+    iterations: int
+    decisions: list[AutoExtentDecision]
+
+
 def _relative_flip_error(value_ccw: float, value_cw: float) -> float:
     if not (math.isfinite(value_ccw) and math.isfinite(value_cw)):
         return float("nan")
@@ -554,6 +577,127 @@ def _run_loop(
     )
 
 
+def _auto_calibrate_extent(
+    substrate: GraphSubstrate,
+    config: RunConfig,
+    base_prob: np.ndarray,
+    base_theta: np.ndarray,
+    center: Mapping[str, float],
+    axes: tuple[str, str],
+    *,
+    base_steps: int,
+    extent_bracket: tuple[float, float],
+    target_fs: float,
+    pilot_frac: float,
+    fs_margin: float,
+    max_iters: int,
+    seed: int,
+) -> AutoExtentResult:
+    lower, upper = float(extent_bracket[0]), float(extent_bracket[1])
+    if not math.isfinite(lower) or not math.isfinite(upper):
+        raise ValueError("extent bracket must contain finite values")
+    if lower <= 0.0 or upper <= 0.0:
+        raise ValueError("extent bracket must be positive")
+    if lower >= upper:
+        raise ValueError("extent bracket lower bound must be smaller than upper bound")
+    if not math.isfinite(target_fs) or target_fs <= 0.0:
+        raise ValueError("target-fs must be a positive finite value when auto-extent is enabled")
+    fs_margin = max(0.0, float(fs_margin))
+    pilot_frac = float(pilot_frac) if math.isfinite(float(pilot_frac)) else 0.0
+    if pilot_frac <= 0.0:
+        pilot_frac = 0.125
+    max_iters = max(1, int(max_iters))
+
+    current_min = lower
+    current_max = upper
+    extent = math.sqrt(current_min * current_max)
+    decisions: list[AutoExtentDecision] = []
+    accepted_extent: float | None = None
+
+    lower_threshold = target_fs * (1.0 - fs_margin)
+    upper_threshold = target_fs * (1.0 + fs_margin)
+
+    for iteration in range(1, max_iters + 1):
+        steps_full = _loop_steps_for_extent(extent, base_steps)
+        pilot_steps = int(pilot_frac * steps_full)
+        pilot_steps = max(128, pilot_steps)
+        pilot_steps = min(steps_full, pilot_steps)
+
+        pilot_run = _run_loop_once(
+            substrate,
+            config,
+            base_prob,
+            base_theta,
+            center,
+            axes,
+            extent,
+            "CCW",
+            seed,
+            steps=pilot_steps,
+        )
+        fs95 = pilot_run.fs_p95
+        guard_exceeded = pilot_run.fs_guard_exceeded
+
+        if guard_exceeded or not math.isfinite(fs95):
+            decision = "too_large"
+            current_max = min(current_max, extent)
+        elif fs95 > upper_threshold:
+            decision = "too_large"
+            current_max = min(current_max, extent)
+        elif fs95 < lower_threshold:
+            decision = "too_small"
+            current_min = max(current_min, extent)
+        else:
+            decision = "accept"
+            accepted_extent = extent
+
+        decisions.append(
+            AutoExtentDecision(
+                iteration=iteration,
+                extent=float(extent),
+                pilot_steps=pilot_steps,
+                steps=steps_full,
+                fs_p95=float(fs95) if math.isfinite(fs95) else float("nan"),
+                fs_guard_exceeded=guard_exceeded,
+                decision=decision,
+            )
+        )
+
+        if decision == "accept":
+            break
+
+        if current_max <= current_min:
+            break
+
+        new_extent = math.sqrt(current_min * current_max)
+        if not math.isfinite(new_extent) or new_extent <= 0.0:
+            break
+
+        if math.isclose(new_extent, extent, rel_tol=1e-9, abs_tol=1e-12):
+            extent = new_extent
+            break
+
+        extent = new_extent
+
+    if accepted_extent is not None:
+        final_extent = accepted_extent
+        accepted = True
+    else:
+        safe_extent = current_min
+        candidate = safe_extent * 1.1
+        candidate = min(candidate, current_max)
+        final_extent = max(safe_extent, candidate)
+        final_extent = min(max(final_extent, lower), upper)
+        accepted = False
+
+    return AutoExtentResult(
+        extent=float(final_extent),
+        accepted=accepted,
+        iterations=len(decisions),
+        decisions=decisions,
+    )
+
+
 def evaluate_hotspot(
     index: int,
     spec: HotspotSpec,
@@ -567,6 +711,10 @@ def evaluate_hotspot(
     base_steps: int,
     target_fs: float | None,
     pilot_frac: float | None,
+    auto_extent: bool,
+    extent_bracket: tuple[float, float] | None,
+    fs_margin: float,
+    max_extent_iters: int,
 ) -> HotspotSummary:
     center = dict(spec.center)
     if micro_scan:
@@ -584,8 +732,64 @@ def evaluate_hotspot(
     else:
         base_prob, base_theta, _ = _initial_state(substrate, center, config)
         spec.center = center
+    extents_to_run = list(extents)
+    if auto_extent:
+        if target_fs is None:
+            raise ValueError("target-fs must be provided when auto-extent is enabled")
+        if extent_bracket is None:
+            raise ValueError("extent-bracket must be provided when auto-extent is enabled")
+        auto_result = _auto_calibrate_extent(
+            substrate,
+            config,
+            base_prob,
+            base_theta,
+            spec.center,
+            axes,
+            base_steps=base_steps,
+            extent_bracket=extent_bracket,
+            target_fs=float(target_fs),
+            pilot_frac=float(pilot_frac) if pilot_frac is not None else 0.0,
+            fs_margin=float(fs_margin),
+            max_iters=int(max_extent_iters),
+            seed=seed,
+        )
+        if not extents_to_run:
+            extents_to_run = [auto_result.extent]
+        else:
+            if not any(
+                math.isclose(auto_result.extent, value, rel_tol=1e-9, abs_tol=1e-12)
+                for value in extents_to_run
+            ):
+                extents_to_run.append(auto_result.extent)
+            extents_to_run.sort(key=abs)
+        meta = spec.metadata.setdefault("auto_extent", {})
+        meta.update(
+            {
+                "accepted": bool(auto_result.accepted),
+                "extent": float(auto_result.extent),
+                "iterations": int(auto_result.iterations),
+                "bracket": {"min": float(extent_bracket[0]), "max": float(extent_bracket[1])},
+                "target_fs": float(target_fs),
+                "fs_margin": float(fs_margin),
+                "decisions": [
+                    {
+                        "iteration": decision.iteration,
+                        "extent": decision.extent,
+                        "pilot_steps": decision.pilot_steps,
+                        "steps": decision.steps,
+                        "fs_p95": decision.fs_p95,
+                        "fs_guard_exceeded": decision.fs_guard_exceeded,
+                        "decision": decision.decision,
+                    }
+                    for decision in auto_result.decisions
+                ],
+            }
+        )
+    elif not extents_to_run:
+        raise ValueError("at least one extent must be provided")
+
     summaries: list[ExtentSummary] = []
-    for extent in extents:
+    for extent in extents_to_run:
         ccw = _run_loop(
             substrate,
             config,
@@ -597,8 +801,8 @@ def evaluate_hotspot(
             "CCW",
             seed,
             base_steps,
-            target_fs=target_fs,
-            pilot_frac=pilot_frac,
+            target_fs=None if auto_extent else target_fs,
+            pilot_frac=pilot_frac if not auto_extent else None,
         )
         cw = _run_loop(
             substrate,
@@ -611,8 +815,8 @@ def evaluate_hotspot(
             "CW",
             seed,
             base_steps,
-            target_fs=target_fs,
-            pilot_frac=pilot_frac,
+            target_fs=None if auto_extent else target_fs,
+            pilot_frac=pilot_frac if not auto_extent else None,
         )
         area_flip = _relative_flip_error(ccw.area, cw.area)
         if ccw.phi_missing or cw.phi_missing:
@@ -752,7 +956,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--extents",
         type=float,
         nargs="+",
-        required=True,
+        required=False,
         help="Loop extents to evaluate (applied to both axes)",
     )
     parser.add_argument(
@@ -790,6 +994,33 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         type=float,
         default=0.125,
         help="Fraction of baseline steps to use for the pilot run (set to 0 to disable).",
+    )
+    parser.add_argument(
+        "--auto-extent",
+        type=_parse_bool,
+        default=False,
+        metavar="true|false",
+        help="Enable auto-tuning of the loop extent within the provided bracket.",
+    )
+    parser.add_argument(
+        "--extent-bracket",
+        type=float,
+        nargs=2,
+        default=(5e-4, 2e-2),
+        metavar=("E_MIN", "E_MAX"),
+        help="Search range for auto-extent calibration (ignored when auto-extent is disabled).",
+    )
+    parser.add_argument(
+        "--fs-margin",
+        type=float,
+        default=0.05,
+        help="Relative tolerance when comparing pilot FS against the target during auto-extent.",
+    )
+    parser.add_argument(
+        "--max-extent-iters",
+        type=int,
+        default=6,
+        help="Maximum number of auto-extent iterations before falling back to the best safe loop.",
     )
     parser.add_argument(
         "--micro-scan",
@@ -844,9 +1075,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     axes = (str(args.axes[0]), str(args.axes[1]))
 
-    extents = sorted((float(value) for value in args.extents), key=abs)
-    if not extents:
-        raise ValueError("at least one extent must be provided")
+    extents_input: list[float] = []
+    if args.extents is not None:
+        extents_input = sorted((float(value) for value in args.extents), key=abs)
+
+    auto_extent_enabled = bool(args.auto_extent)
+    if not auto_extent_enabled and not extents_input:
+        raise ValueError("at least one extent must be provided when auto-extent is disabled")
+
+    extent_bracket: tuple[float, float] | None = None
+    if args.extent_bracket is not None:
+        extent_bracket = (float(args.extent_bracket[0]), float(args.extent_bracket[1]))
 
     hotspots = load_hotspots(args.hotspots, axes)
     if args.limit is not None:
@@ -872,6 +1111,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         config.adapt_levels = int(args.adapt_levels)
 
     micro_scan_enabled = bool(args.micro_scan)
+    target_fs_value = float(args.target_fs) if args.target_fs is not None else None
+    pilot_frac_value = float(args.pilot_frac) if args.pilot_frac is not None else None
+    fs_margin_value = float(args.fs_margin)
+    max_iters_value = int(args.max_extent_iters)
 
     results: list[HotspotSummary] = []
     for index, spec in enumerate(hotspots):
@@ -881,12 +1124,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             substrate=substrate,
             config=config,
             axes=axes,
-            extents=extents,
+            extents=extents_input,
             seed=int(args.seed),
             micro_scan=micro_scan_enabled,
             base_steps=int(args.base_steps),
-            target_fs=float(args.target_fs) if args.target_fs is not None else None,
-            pilot_frac=float(args.pilot_frac) if args.pilot_frac is not None else None,
+            target_fs=target_fs_value,
+            pilot_frac=pilot_frac_value,
+            auto_extent=auto_extent_enabled,
+            extent_bracket=extent_bracket if auto_extent_enabled else None,
+            fs_margin=fs_margin_value,
+            max_extent_iters=max_iters_value,
         )
         results.append(summary)
 
