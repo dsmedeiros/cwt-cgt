@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import Plot from 'react-plotly.js';
 import type { Layout, PlotData } from 'plotly.js';
 
 import type { ArtifactFile } from '../types/ipc';
+
+const { useEffect } = React;
 
 const DEFAULT_AXES: [string, string] = ['tau', 'zeta_phase'];
 const DEFAULT_GRID_SIZE = 33;
