@@ -20,17 +20,26 @@ const createWindow = async () => {
     webPreferences,
   });
 
-  const contentSecurityPolicy = [
-    "default-src 'self'",
-    "script-src 'self'",
-    "style-src 'self'",
-    "img-src 'self' data:",
-    "font-src 'self'",
-    "connect-src 'self'",
-    "object-src 'none'",
-    "base-uri 'self'",
-    "frame-ancestors 'none'",
-  ].join('; ');
+  const cspDirectives: Record<string, Set<string>> = {
+    'default-src': new Set(["'self'"]),
+    'script-src': new Set(["'self'", "'unsafe-inline'"]),
+    'style-src': new Set(["'self'", "'unsafe-inline'"]),
+    'img-src': new Set(["'self'", 'data:']),
+    'font-src': new Set(["'self'"]),
+    'connect-src': new Set(["'self'"]),
+    'object-src': new Set(["'none'"]),
+    'base-uri': new Set(["'self'"]),
+    'frame-ancestors': new Set(["'none'"]),
+  };
+
+  if (process.env['ELECTRON_RENDERER_URL']) {
+    cspDirectives['script-src'].add("'unsafe-inline'");
+    cspDirectives['connect-src'].add('ws://localhost:*');
+  }
+
+  const contentSecurityPolicy = Object.entries(cspDirectives)
+    .map(([key, value]) => `${key} ${Array.from(value).join(' ')}`)
+    .join('; ');
 
   mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     const responseHeaders = {
