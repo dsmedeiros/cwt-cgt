@@ -112,7 +112,6 @@ const Phase2Features = () => {
     if (dirs.length > 0) {
       setMetricsDirs((prev) => Array.from(new Set([...prev, ...dirs])));
     }
-    // reset input to allow selecting same directory again
     event.target.value = '';
   };
 
@@ -187,6 +186,7 @@ const Phase2Features = () => {
     setSummary(buildSummary(null));
     setError('Correlation aborted by user.');
   }, [isLoading]);
+
 
   useEffect(() => {
     return () => {
@@ -264,102 +264,62 @@ const Phase2Features = () => {
           type: 'scatter',
           mode: 'lines',
           name: 'Chance',
-          line: { dash: 'dot', color: '#999' },
-          hoverinfo: 'skip',
+          line: { dash: 'dash', color: 'rgba(107,114,128,0.6)' },
         } as Data,
       ],
       layout: {
-        margin: { t: 20, r: 10, b: 40, l: 40 },
-        xaxis: { title: { text: 'False positive rate' }, range: [0, 1] },
-        yaxis: { title: { text: 'True positive rate' }, range: [0, 1] },
-        height: 240,
-        legend: { orientation: 'h' },
+        margin: { t: 30, r: 10, b: 50, l: 45 },
+        xaxis: { title: { text: 'FPR' }, range: [0, 1] },
+        yaxis: { title: { text: 'TPR' }, range: [0, 1] },
+        height: 320,
       } as Partial<Layout>,
     };
   }, [result]);
 
-  const scatterPoints = useMemo(() => {
+  type ScatterPoint = { value: number; omega: number };
+  const scatterPoints = useMemo<ScatterPoint[] | null>(() => {
     if (!result || !scatterFeature) {
-      return [];
+      return null;
     }
-    return result.samples
+    const points = result.samples
       .map((sample) => {
+        const value = sample.features?.[scatterFeature] ?? null;
         const omega = sample.omegaAbs;
-        const featureValue = sample.features[scatterFeature] ?? null;
-        const hot = isFiniteNumber(result.threshold) && isFiniteNumber(omega)
-          ? (omega as number) >= (result.threshold as number)
-          : null;
-        return {
-          omega,
-          value: featureValue,
-          hot,
-        };
+        if (!Number.isFinite(value) || !Number.isFinite(omega)) {
+          return null;
+        }
+        return { value: value as number, omega: omega as number } satisfies ScatterPoint;
       })
-      .filter((entry) => isFiniteNumber(entry.omega) && isFiniteNumber(entry.value));
+      .filter((point): point is ScatterPoint => point !== null);
+    return points.length > 0 ? points : null;
   }, [result, scatterFeature]);
 
   const scatterTrace = useMemo(() => {
-    if (!scatterPoints.length || !scatterFeature) {
+    if (!scatterPoints?.length || !scatterFeature) {
       return null;
     }
-
-    const filtered = scatterPoints.filter((point) =>
-      scatterScale === 'log' ? (point.omega as number) > 0 : true,
-    );
-    if (filtered.length === 0) {
-      return null;
-    }
-    const colors = filtered.map((point) =>
-      point.hot === null
-        ? 'rgba(100,149,237,0.7)'
-        : point.hot
-        ? 'rgba(220,53,69,0.7)'
-        : 'rgba(65,105,225,0.7)',
-    );
-
     return {
       data: [
         {
-          x: filtered.map((point) => point.omega as number),
-          y: filtered.map((point) => point.value as number),
+          x: scatterPoints.map((point) => point.value),
+          y: scatterPoints.map((point) => point.omega),
           type: 'scatter',
           mode: 'markers',
-          marker: {
-            color: colors,
-            size: 8,
-            line: { color: '#fff', width: 1 },
-          },
+          marker: { size: 6, color: 'rgba(37,99,235,0.75)' },
           name: FEATURE_DISPLAY_NAMES[scatterFeature] ?? scatterFeature,
-          hovertemplate: '|Ω|=%{x:.3f}<br>Feature=%{y:.3f}<extra></extra>',
         } as Data,
       ],
       layout: {
-        margin: { t: 20, r: 10, b: 50, l: 60 },
+        margin: { t: 30, r: 10, b: 60, l: 60 },
         xaxis: {
-          title: { text: '|Ω|' },
-          type: scatterScale,
-          rangemode: scatterScale === 'log' ? 'tozero' : undefined,
-        },
-        yaxis: {
           title: { text: FEATURE_DISPLAY_NAMES[scatterFeature] ?? scatterFeature },
+          type: scatterScale,
         },
+        yaxis: { title: { text: '|Ω|' }, type: 'linear' },
         height: 320,
-        shapes:
-          isFiniteNumber(result?.threshold)
-            ? [
-                {
-                  type: 'line',
-                  x0: result?.threshold ?? undefined,
-                  x1: result?.threshold ?? undefined,
-                  y0: Math.min(...filtered.map((point) => point.value as number)),
-                  y1: Math.max(...filtered.map((point) => point.value as number)),
-                  line: { color: 'rgba(220,53,69,0.6)', width: 2, dash: 'dash' },
-                },
-              ]
-            : [],
       } as Partial<Layout>,
     };
-  }, [scatterPoints, scatterFeature, scatterScale, result]);
+  }, [scatterPoints, scatterFeature, scatterScale]);
 
   const handleSaveSnapshot = useCallback(async () => {
     if (!result) {
@@ -401,18 +361,28 @@ const Phase2Features = () => {
   ]);
 
   return (
-    <div className="panel">
-      <h2>Phase 2 – Feature Correlations</h2>
-      <p>
-        Load Phase‑1 metrics directories to inspect how engineered features correlate with thermal outcomes.
-        Choose a classification threshold on |Ω| and compare correlation strength, ROC/AUC estimates, and
-        per-sample scatter relationships.
-      </p>
+    <div className="panel phase2">
+      <header className="phase2__header">
+        <h2>Phase 2 – Feature Correlations</h2>
+        <p>
+          Load Phase‑1 metrics directories to inspect how engineered features correlate with thermal outcomes.
+          Tune the |Ω| decision threshold to explore correlation strength, ROC/AUC estimates, and per-sample
+          scatter relationships before advancing to subsequent phases.
+        </p>
+      </header>
 
-      <section className="controls">
-        <h3>Inputs</h3>
-        <div className="control-group">
-          <button type="button" onClick={handleBrowse} disabled={isLoading}>
+      <section className="phase2__inputs" aria-labelledby="phase2-inputs-heading">
+        <div className="phase2__inputs-heading">
+          <h3 id="phase2-inputs-heading">Inputs</h3>
+          <p className="field-hint">Select one or more Phase‑1 output directories produced by mapping runs.</p>
+        </div>
+        <div className="phase2__actions">
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={handleBrowse}
+            disabled={isLoading}
+          >
             Select Phase‑1 output directories
           </button>
           <input
@@ -423,84 +393,122 @@ const Phase2Features = () => {
             onChange={onFilesSelected}
           />
         </div>
-        {metricsDirs.length > 0 && (
-          <ul className="dir-list">
+        {metricsDirs.length > 0 ? (
+          <ul className="phase2__dir-list">
             {metricsDirs.map((dir) => (
-              <li key={dir}>
-                <span>{dir}</span>
-                <button type="button" onClick={() => removeDir(dir)} disabled={isLoading}>
-                  ×
+              <li key={dir} className="phase2__dir-item">
+                <span className="phase2__dir-label">{dir}</span>
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--small"
+                  onClick={() => removeDir(dir)}
+                  disabled={isLoading}
+                >
+                  Remove
                 </button>
               </li>
             ))}
           </ul>
+        ) : (
+          <p className="phase2__empty">No metrics directories selected yet.</p>
         )}
 
-        <div className="control-group threshold">
-          <label>
+        <fieldset className="phase2__threshold">
+          <legend>Classification threshold</legend>
+          <div className="phase2__threshold-options">
+            <label className="phase2__radio">
+              <input
+                type="radio"
+                name="thresholdMode"
+                value="absolute"
+                checked={thresholdMode === 'absolute'}
+                onChange={() => setThresholdMode('absolute')}
+                disabled={isLoading}
+              />
+              <span>Absolute |Ω|</span>
+            </label>
             <input
-              type="radio"
-              name="thresholdMode"
-              value="absolute"
-              checked={thresholdMode === 'absolute'}
-              onChange={() => setThresholdMode('absolute')}
-              disabled={isLoading}
+              type="number"
+              value={absoluteThreshold}
+              onChange={(event) => setAbsoluteThreshold(event.target.value)}
+              disabled={isLoading || thresholdMode !== 'absolute'}
+              step="0.01"
             />
-            Absolute |Ω|
-          </label>
-          <input
-            type="number"
-            value={absoluteThreshold}
-            onChange={(event) => setAbsoluteThreshold(event.target.value)}
-            disabled={isLoading || thresholdMode !== 'absolute'}
-            step="0.01"
-          />
 
-          <label>
+            <label className="phase2__radio">
+              <input
+                type="radio"
+                name="thresholdMode"
+                value="percentile"
+                checked={thresholdMode === 'percentile'}
+                onChange={() => setThresholdMode('percentile')}
+                disabled={isLoading}
+              />
+              <span>Percentile</span>
+            </label>
             <input
-              type="radio"
-              name="thresholdMode"
-              value="percentile"
-              checked={thresholdMode === 'percentile'}
-              onChange={() => setThresholdMode('percentile')}
-              disabled={isLoading}
+              type="number"
+              min="1"
+              max="99"
+              value={percentileThreshold}
+              onChange={(event) => setPercentileThreshold(event.target.value)}
+              disabled={isLoading || thresholdMode !== 'percentile'}
+              step="1"
             />
-            Percentile
-          </label>
-          <input
-            type="number"
-            min="1"
-            max="99"
-            value={percentileThreshold}
-            onChange={(event) => setPercentileThreshold(event.target.value)}
-            disabled={isLoading || thresholdMode !== 'percentile'}
-            step="1"
-          />
-          {thresholdMode === 'percentile' ? (
-            <small className="field-hint">
-              Keeps only the hottest percentile of tiles.
-              {percentileError ? <span className="field-error"> {percentileError}</span> : null}
-            </small>
-          ) : (
-            <small className="field-hint">Switch to percentile mode to clip noisy extremes.</small>
-          )}
-        </div>
+          </div>
+          <p className="field-hint">
+            {thresholdMode === 'percentile' ? (
+              <>
+                Keeps only the hottest percentile of tiles.
+                {percentileError ? <span className="field-error"> {percentileError}</span> : null}
+              </>
+            ) : (
+              'Switch to percentile mode to clip noisy extremes.'
+            )}
+          </p>
+        </fieldset>
 
-        <div className="control-group">
-          <button type="button" onClick={runCorrelation} disabled={isAnalyzeDisabled} title={analyzeTitle ?? undefined}>
+        <div className="phase2__actions">
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={runCorrelation}
+            disabled={isAnalyzeDisabled}
+            title={analyzeTitle ?? undefined}
+          >
             {isLoading ? 'Analyzing…' : 'Analyze correlations'}
           </button>
         </div>
+        {error ? <div className="phase2__error" role="alert">{error}</div> : null}
       </section>
 
-      {error && <div className="error">{error}</div>}
+      {result ? (
+        <section className="phase2__results" aria-live="polite">
+          <header className="phase2__results-header">
+            <h3>Feature selection</h3>
+            <div className="phase2__results-actions">
+              <button
+                type="button"
+                className="btn btn--ghost btn--small"
+                onClick={handleSaveSnapshot}
+                disabled={isLoading}
+              >
+                Save snapshot
+              </button>
+              {snapshotStatus ? (
+                <span
+                  className={`phase2__status${snapshotStatus.startsWith('Failed') ? ' phase2__status--error' : ''}`}
+                  role="status"
+                >
+                  {snapshotStatus}
+                </span>
+              ) : null}
+            </div>
+          </header>
 
-      {result && (
-        <section className="results">
-          <h3>Feature selection</h3>
-          <div className="feature-checkboxes">
+          <div className="phase2__feature-selector">
             {result.features.map((feature) => (
-              <label key={feature.name}>
+              <label key={feature.name} className="phase2__checkbox">
                 <input
                   type="checkbox"
                   checked={selectedFeatures.includes(feature.name)}
@@ -511,8 +519,8 @@ const Phase2Features = () => {
             ))}
           </div>
 
-          <div className="charts">
-            <div className="chart">
+          <div className="phase2__charts">
+            <article className="phase2__chart">
               <h4>Correlation strength</h4>
               {barData ? (
                 <Plot
@@ -525,30 +533,28 @@ const Phase2Features = () => {
                   config={{ displayModeBar: false }}
                 />
               ) : (
-                <p>No features selected.</p>
+                <p className="phase2__empty">Select at least one feature to render the bar chart.</p>
               )}
-            </div>
-            <div className="chart">
+            </article>
+            <article className="phase2__chart">
               <h4>ROC / AUC</h4>
               {rocCurve ? (
                 <Plot data={rocCurve.data} layout={rocCurve.layout} config={{ displayModeBar: false }} />
               ) : (
-                <p>ROC curve unavailable for the current selection.</p>
+                <p className="phase2__empty">ROC curve unavailable for the current selection.</p>
               )}
-              {isFiniteNumber(result.auc) && (
-                <p className="auc">AUC ≈ {formatNumber(result.auc, 3)}</p>
-              )}
-            </div>
+              {isFiniteNumber(result.auc) ? (
+                <p className="phase2__auc">AUC ≈ {formatNumber(result.auc, 3)}</p>
+              ) : null}
+            </article>
           </div>
 
-          <div className="scatter-controls">
+          <div className="phase2__scatter-controls">
             <label>
-              Feature for scatter plot
+              <span>Feature for scatter plot</span>
               <select
                 value={scatterFeature ?? ''}
-                onChange={(event) =>
-                  setScatterFeature((event.target.value as Phase2FeatureName) || null)
-                }
+                onChange={(event) => setScatterFeature((event.target.value as Phase2FeatureName) || null)}
               >
                 {result.features.map((feature) => (
                   <option key={feature.name} value={feature.name}>
@@ -558,7 +564,7 @@ const Phase2Features = () => {
               </select>
             </label>
             <label>
-              Scale
+              <span>Scale</span>
               <select value={scatterScale} onChange={(event) => setScatterScale(event.target.value as 'linear' | 'log')}>
                 <option value="linear">Linear</option>
                 <option value="log">Log</option>
@@ -566,57 +572,53 @@ const Phase2Features = () => {
             </label>
           </div>
 
-          <div className="chart">
+          <article className="phase2__chart phase2__chart--wide">
             <h4>Scatter (feature vs |Ω|)</h4>
             {scatterTrace ? (
-              <Plot
-                data={scatterTrace.data}
-                layout={scatterTrace.layout}
-                config={{ displayModeBar: false }}
-              />
+              <Plot data={scatterTrace.data} layout={scatterTrace.layout} config={{ displayModeBar: false }} />
             ) : (
-              <p>No scatter data available.</p>
+              <p className="phase2__empty">No scatter data available.</p>
             )}
-          </div>
+          </article>
 
-          <div className="summary">
-            <h4>Plain-English summary</h4>
+          <section className="phase2__summary">
+            <h4>Plain-language summary</h4>
             <p>{summary}</p>
-          </div>
+          </section>
 
-          <div className="snapshot">
-            <button type="button" onClick={handleSaveSnapshot} disabled={isLoading}>
-              Save snapshot
-            </button>
-            {snapshotStatus && <span className="status">{snapshotStatus}</span>}
-          </div>
-
-          <table className="stats-table">
-            <thead>
-              <tr>
-                <th>Feature</th>
-                <th>r</th>
-                <th>Samples</th>
-                <th>Hot mean</th>
-                <th>Cold mean</th>
-              </tr>
-            </thead>
-            <tbody>
-              {result.features.map((feature) => (
-                <tr key={feature.name}>
-                  <td>{FEATURE_DISPLAY_NAMES[feature.name] ?? feature.name}</td>
-                  <td>{formatNumber(feature.correlation, 3)}</td>
-                  <td>{feature.sampleSize}</td>
-                  <td>{formatNumber(feature.meanHot, 3)}</td>
-                  <td>{formatNumber(feature.meanCold, 3)}</td>
+          <div className="phase2__table-wrapper">
+            <table className="phase2__table">
+              <thead>
+                <tr>
+                  <th scope="col">Feature</th>
+                  <th scope="col">r</th>
+                  <th scope="col">Samples</th>
+                  <th scope="col">Hot mean</th>
+                  <th scope="col">Cold mean</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {result.features.map((feature) => (
+                  <tr key={feature.name}>
+                    <td>{FEATURE_DISPLAY_NAMES[feature.name] ?? feature.name}</td>
+                    <td>{formatNumber(feature.correlation, 3)}</td>
+                    <td>{feature.sampleSize}</td>
+                    <td>{formatNumber(feature.meanHot, 3)}</td>
+                    <td>{formatNumber(feature.meanCold, 3)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
+      ) : (
+        <p className="phase2__placeholder" role="status">
+          Run the correlation analysis to populate feature rankings, ROC curves, and scatter comparisons.
+        </p>
       )}
     </div>
   );
+
 };
 
 export default Phase2Features;

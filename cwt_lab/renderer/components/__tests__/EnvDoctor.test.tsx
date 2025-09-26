@@ -62,7 +62,7 @@ describe('EnvDoctor', () => {
     const activeHeading = await screen.findByRole('heading', { name: /Active interpreter/i });
     const activeSection = activeHeading.closest('.env-doctor__active');
     expect(activeSection).not.toBeNull();
-    if (!activeSection) {
+    if (!(activeSection instanceof HTMLElement)) {
       throw new Error('Active interpreter section missing');
     }
     expect(within(activeSection).getByText(candidates[0].path)).toBeInTheDocument();

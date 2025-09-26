@@ -76,6 +76,10 @@ const createDemoRunsApi = (runs: DemoRun[]): RunsApi => {
       return {
         ...slice,
         status: entry.record.status,
+        failureDetails:
+          entry.record.status === 'failed'
+            ? 'Demo mode does not include failure diagnostics.'
+            : null,
       };
     },
   };
