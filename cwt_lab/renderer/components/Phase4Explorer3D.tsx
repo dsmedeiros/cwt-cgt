@@ -298,7 +298,15 @@ const Phase4Explorer3D = () => {
       return 'Loop preview is empty; adjust amplitudes or steps.';
     }
     return undefined;
-  }, [axisCValidation, fsGuardValidation, handleStepsValidation, loopPoints.length, stepsValidation]);
+  }, [
+    axisAValidation,
+    axisBValidation,
+    axisCValidation,
+    fsGuardValidation,
+    handleStepsValidation,
+    loopPoints.length,
+    stepsValidation,
+  ]);
 
   const isRunDisabled = isRunning || Boolean(runDisabledReason);
   const runTitle = isRunning ? 'Explorer run in progress.' : runDisabledReason;

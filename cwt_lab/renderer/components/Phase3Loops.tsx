@@ -182,7 +182,7 @@ const previewGuidedCli = async (payload: GuidedLoopArgs): Promise<string> => {
     return 'Command preview unavailable in this environment.';
   }
 
-  const { stepsList, minPhi: _ignored, ...rest } = payload;
+  const { stepsList, ...rest } = payload;
   const baseParams: Record<string, unknown> = { ...rest };
   const previews: string[] = [];
 

@@ -12,7 +12,7 @@ const pythonExecutable = process.env.CWT_TEST_PYTHON ?? 'python3';
 const ensurePythonAvailable = () => {
   const probe = spawnSync(pythonExecutable, ['--version']);
   if (probe.error || probe.status !== 0) {
-    throw new Error(`Python executable \"${pythonExecutable}\" is required for integration tests.`);
+    throw new Error(`Python executable "${pythonExecutable}" is required for integration tests.`);
   }
 };
 

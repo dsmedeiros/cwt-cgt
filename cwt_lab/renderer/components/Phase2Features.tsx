@@ -172,10 +172,9 @@ const Phase2Features = () => {
       setSummary(buildSummary(null));
       setError(err instanceof Error ? err.message : String(err));
     } finally {
-      if (abortRef.current?.aborted) {
-        return;
+      if (!abortRef.current?.aborted) {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     }
   }, [metricsDirs, thresholdMode, validateThreshold]);
 
