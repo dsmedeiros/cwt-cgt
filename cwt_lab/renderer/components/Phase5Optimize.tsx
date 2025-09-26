@@ -4,11 +4,14 @@ import type {
   GraphFamilyCommandPayload,
   GraphFamilyCommandResult,
   GraphFamilySummary,
+  InverseDesignCommandPayload,
   InverseDesignCommandResult,
   NoiseRobustCommandResult,
   NoiseRobustGraph,
+  NoiseRobustCommandPayload,
   CouplingTunerResult,
   CouplingVariantSummary,
+  CouplingTunerPayload,
   RecipeRecord,
 } from '../types/ipc';
 
@@ -19,6 +22,8 @@ type FamilyOption = {
 };
 
 type Phase5Tab = 'graph' | 'inverse' | 'noise' | 'tuner' | 'recipes';
+
+type ValidationResult<T> = { payload: T | null; error: string | null };
 
 const familyOptions: FamilyOption[] = [
   { id: 'ring', label: 'Ring', description: 'Directed ring with heterogeneous delays.' },
@@ -338,6 +343,486 @@ const Phase5Optimize = () => {
   const [bestRecipe, setBestRecipe] = useState<RecipeRecord | null>(null);
   const [exportingRecipeId, setExportingRecipeId] = useState<string | null>(null);
 
+  const [artifactsRoot, setArtifactsRoot] = useState<string | null>(null);
+
+  const [graphPreview, setGraphPreview] = useState('');
+  const [graphPreviewError, setGraphPreviewError] = useState<string | null>(null);
+  const [invPreview, setInvPreview] = useState('');
+  const [invPreviewError, setInvPreviewError] = useState<string | null>(null);
+  const [noisePreview, setNoisePreview] = useState('');
+  const [noisePreviewError, setNoisePreviewError] = useState<string | null>(null);
+  const [tunerPreview, setTunerPreview] = useState<string[]>([]);
+  const [tunerPreviewError, setTunerPreviewError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchConfig = async () => {
+      if (typeof window === 'undefined' || !window?.CWT?.env?.getConfig) {
+        return;
+      }
+
+      try {
+        const response = await window.CWT.env.getConfig();
+        if (cancelled) {
+          return;
+        }
+        if (response.ok) {
+          setArtifactsRoot(response.data.artifactsRoot ?? null);
+        }
+      } catch {
+        if (!cancelled) {
+          setArtifactsRoot(null);
+        }
+      }
+    };
+
+    void fetchConfig();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const buildPreviewPath = useCallback(
+    (category: string, leaf = '<preview>'): string | null => {
+      if (!artifactsRoot) {
+        return null;
+      }
+      const root = artifactsRoot.replace(/[\\/]+$/, '');
+      const trimmedCategory = category.replace(/^[\\/]+/, '').replace(/[\\/]+$/, '');
+      const segments = [root];
+      if (trimmedCategory) {
+        segments.push(trimmedCategory);
+      }
+      if (leaf) {
+        segments.push(leaf);
+      }
+      return segments.filter(Boolean).join('/');
+    },
+    [artifactsRoot],
+  );
+
+  const buildGraphCommand = useCallback((): ValidationResult<GraphFamilyCommandPayload> => {
+    const trimmedAxisA = axisA.trim();
+    const trimmedAxisB = axisB.trim();
+    if (!trimmedAxisA || !trimmedAxisB) {
+      return { payload: null, error: 'Provide names for both loop axes.' };
+    }
+    if (trimmedAxisA.toLowerCase() === trimmedAxisB.toLowerCase()) {
+      return { payload: null, error: 'Axes must be distinct.' };
+    }
+
+    const families = new Set(
+      Array.from(selectedFamilies)
+        .map((item) => item.trim())
+        .filter((item): item is string => item.length > 0),
+    );
+    if (families.size === 0) {
+      return { payload: null, error: 'Select at least one graph family.' };
+    }
+
+    const gridSize = Number.parseInt(gridSizeInput, 10);
+    if (!Number.isFinite(gridSize) || gridSize <= 0) {
+      return { payload: null, error: 'Grid size must be a positive integer.' };
+    }
+
+    const extent = Number.parseFloat(extentInput);
+    if (!Number.isFinite(extent) || extent <= 0) {
+      return { payload: null, error: 'Extent must be a positive number.' };
+    }
+
+    const seed = Number.parseInt(seedInput, 10);
+    if (!Number.isFinite(seed)) {
+      return { payload: null, error: 'Seed must be numeric.' };
+    }
+
+    return {
+      payload: buildPayload(families, trimmedAxisA, trimmedAxisB, gridSize, extent, seed),
+      error: null,
+    };
+  }, [axisA, axisB, extentInput, gridSizeInput, seedInput, selectedFamilies]);
+
+  const buildInverseCommand = useCallback((): ValidationResult<InverseDesignCommandPayload> => {
+    const axesA = invAxisA.trim();
+    const axesB = invAxisB.trim();
+    if (!axesA || !axesB) {
+      return { payload: null, error: 'Provide names for both axes.' };
+    }
+    if (axesA.toLowerCase() === axesB.toLowerCase()) {
+      return { payload: null, error: 'Axes must be distinct.' };
+    }
+
+    const centerTau = Number.parseFloat(invCenterTau);
+    const centerZeta = Number.parseFloat(invCenterZeta);
+    if (!Number.isFinite(centerTau) || !Number.isFinite(centerZeta)) {
+      return { payload: null, error: 'Center coordinates must be numeric.' };
+    }
+
+    const extentTau = Number.parseFloat(invExtentTau);
+    const extentZeta = Number.parseFloat(invExtentZeta);
+    if (!Number.isFinite(extentTau) || !Number.isFinite(extentZeta)) {
+      return { payload: null, error: 'Extents must be numeric.' };
+    }
+
+    const budget = Number.parseInt(invBudgetSteps, 10);
+    if (!Number.isInteger(budget) || budget <= 0) {
+      return { payload: null, error: 'Step budget must be a positive integer.' };
+    }
+
+    const maxFs = Number.parseFloat(invMaxFs);
+    if (!Number.isFinite(maxFs) || maxFs <= 0) {
+      return { payload: null, error: 'FS max must be a positive number.' };
+    }
+
+    const target = Number.parseInt(invTargetIndex, 10);
+    if (!Number.isInteger(target) || target < 0) {
+      return { payload: null, error: 'Target index must be a non-negative integer.' };
+    }
+
+    return {
+      payload: {
+        axes: [axesA, axesB],
+        center: [centerTau, centerZeta],
+        extentPair: [extentTau, extentZeta],
+        budgetSteps: budget,
+        maxFs,
+        targetIndex: target,
+      },
+      error: null,
+    };
+  }, [invAxisA, invAxisB, invBudgetSteps, invCenterTau, invCenterZeta, invExtentTau, invExtentZeta, invMaxFs, invTargetIndex]);
+
+  const buildNoiseCommand = useCallback((): ValidationResult<NoiseRobustCommandPayload> => {
+    const trials = Number.parseInt(noiseTrials, 10);
+    if (!Number.isInteger(trials) || trials <= 0) {
+      return { payload: null, error: 'Trials must be a positive integer.' };
+    }
+
+    const steps = Number.parseInt(noiseSteps, 10);
+    if (!Number.isInteger(steps) || steps <= 0) {
+      return { payload: null, error: 'Loop steps must be a positive integer.' };
+    }
+
+    const gridSize = Number.parseInt(noiseGrid, 10);
+    if (!Number.isInteger(gridSize) || gridSize <= 0) {
+      return { payload: null, error: 'Grid size must be a positive integer.' };
+    }
+
+    const axesA = noiseAxesA.trim();
+    const axesB = noiseAxesB.trim();
+    if (!axesA || !axesB) {
+      return { payload: null, error: 'Provide names for both axes.' };
+    }
+
+    return {
+      payload: {
+        phaseStd: buildNoiseList(noisePhase),
+        ampStd: buildNoiseList(noiseAmp),
+        delayStd: buildNoiseList(noiseDelay, false),
+        numTrials: trials,
+        loopSteps: steps,
+        gridSize,
+        axes: [axesA, axesB],
+      },
+      error: null,
+    };
+  }, [noiseAmp, noiseAxesA, noiseAxesB, noiseDelay, noiseGrid, noisePhase, noiseSteps, noiseTrials]);
+
+  const buildTunerCommand = useCallback((): ValidationResult<CouplingTunerPayload> => {
+    const trimmedPath = configPathInput.trim();
+    if (!trimmedPath) {
+      return { payload: null, error: 'Provide a baseline YAML path.' };
+    }
+
+    const betaValues = betaInput
+      .split(',')
+      .map((value) => Number.parseFloat(value.trim()))
+      .filter((value) => Number.isFinite(value));
+    if (betaValues.length === 0) {
+      return { payload: null, error: 'Provide at least one β value (comma-separated).' };
+    }
+
+    const etaValues = etaInput
+      .split(',')
+      .map((value) => Number.parseFloat(value.trim()))
+      .filter((value) => Number.isFinite(value));
+
+    return {
+      payload: {
+        configPath: trimmedPath,
+        betas: betaValues,
+        etaQ: etaValues.length > 0 ? etaValues : undefined,
+      },
+      error: null,
+    };
+  }, [betaInput, configPathInput, etaInput]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const updatePreview = async () => {
+      if (typeof window === 'undefined' || !window?.CWT?.run?.preview) {
+        setGraphPreview('');
+        setGraphPreviewError('Command preview unavailable in this environment.');
+        return;
+      }
+
+      const { payload, error } = buildGraphCommand();
+      if (!payload) {
+        setGraphPreview('');
+        setGraphPreviewError(error);
+        return;
+      }
+
+      const previewOutDir = buildPreviewPath('graph_family') ?? 'artifacts/graph_family/<preview>';
+      const args: Record<string, unknown> = {
+        families: payload.families.join(','),
+        axes: payload.axes,
+        gridSize: payload.gridSize,
+        extents: payload.extents,
+        seed: payload.seed,
+        outDir: previewOutDir,
+      };
+
+      try {
+        const response = await window.CWT.run.preview({
+          experiment: 'experiments.graph_family.run',
+          args,
+        });
+        if (cancelled) {
+          return;
+        }
+        if (response.ok) {
+          setGraphPreview(response.data.cli);
+          setGraphPreviewError(null);
+        } else {
+          setGraphPreview('');
+          setGraphPreviewError(response.error ?? 'Unable to preview command.');
+        }
+      } catch (previewError) {
+        if (cancelled) {
+          return;
+        }
+        setGraphPreview('');
+        setGraphPreviewError(
+          previewError instanceof Error ? previewError.message : String(previewError),
+        );
+      }
+    };
+
+    void updatePreview();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [buildGraphCommand, buildPreviewPath]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const updatePreview = async () => {
+      if (typeof window === 'undefined' || !window?.CWT?.run?.preview) {
+        setInvPreview('');
+        setInvPreviewError('Command preview unavailable in this environment.');
+        return;
+      }
+
+      const { payload, error } = buildInverseCommand();
+      if (!payload) {
+        setInvPreview('');
+        setInvPreviewError(error);
+        return;
+      }
+
+      const args: Record<string, unknown> = {
+        axes: payload.axes,
+        center: payload.center,
+        extent: payload.extentPair.map((value) => Math.abs(value)),
+      };
+      if (payload.budgetSteps != null) {
+        args.budgetSteps = payload.budgetSteps;
+      }
+      if (payload.maxFs != null) {
+        args.maxFs = payload.maxFs;
+      }
+      if (payload.targetIndex != null) {
+        args.targetIndex = payload.targetIndex;
+      }
+
+      try {
+        const response = await window.CWT.run.preview({
+          experiment: 'experiments.inverse_design.run',
+          args,
+        });
+        if (cancelled) {
+          return;
+        }
+        if (response.ok) {
+          setInvPreview(response.data.cli);
+          setInvPreviewError(null);
+        } else {
+          setInvPreview('');
+          setInvPreviewError(response.error ?? 'Unable to preview command.');
+        }
+      } catch (previewError) {
+        if (cancelled) {
+          return;
+        }
+        setInvPreview('');
+        setInvPreviewError(
+          previewError instanceof Error ? previewError.message : String(previewError),
+        );
+      }
+    };
+
+    void updatePreview();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [buildInverseCommand]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const updatePreview = async () => {
+      if (typeof window === 'undefined' || !window?.CWT?.run?.preview) {
+        setNoisePreview('');
+        setNoisePreviewError('Command preview unavailable in this environment.');
+        return;
+      }
+
+      const { payload, error } = buildNoiseCommand();
+      if (!payload) {
+        setNoisePreview('');
+        setNoisePreviewError(error);
+        return;
+      }
+
+      const previewOutDir = buildPreviewPath('noise_robust') ?? 'artifacts/noise_robust/<preview>';
+      const args: Record<string, unknown> = {
+        phaseStd: payload.phaseStd,
+        ampStd: payload.ampStd,
+        delayStd: payload.delayStd,
+        numTrials: payload.numTrials,
+        loopSteps: payload.loopSteps,
+        gridSize: payload.gridSize,
+        axes: payload.axes,
+        outputDir: previewOutDir,
+      };
+
+      try {
+        const response = await window.CWT.run.preview({
+          experiment: 'experiments.gateC_topology_robust.run',
+          args,
+        });
+        if (cancelled) {
+          return;
+        }
+        if (response.ok) {
+          setNoisePreview(response.data.cli);
+          setNoisePreviewError(null);
+        } else {
+          setNoisePreview('');
+          setNoisePreviewError(response.error ?? 'Unable to preview command.');
+        }
+      } catch (previewError) {
+        if (cancelled) {
+          return;
+        }
+        setNoisePreview('');
+        setNoisePreviewError(
+          previewError instanceof Error ? previewError.message : String(previewError),
+        );
+      }
+    };
+
+    void updatePreview();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [buildNoiseCommand, buildPreviewPath]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const updatePreview = async () => {
+      if (typeof window === 'undefined' || !window?.CWT?.run?.preview) {
+        setTunerPreview([]);
+        setTunerPreviewError('Command preview unavailable in this environment.');
+        return;
+      }
+
+      const { payload, error } = buildTunerCommand();
+      if (!payload) {
+        setTunerPreview([]);
+        setTunerPreviewError(error);
+        return;
+      }
+
+      const previewOutDir = buildPreviewPath('coupling_tuner') ?? 'artifacts/coupling_tuner/<preview>';
+      const ensureDir = (value: string) => value.replace(/[\\/]+$/, '');
+      const joinPath = (base: string, segment: string) => `${ensureDir(base)}/${segment.replace(/^[\\/]+/, '')}`;
+      const resolveEta = (value: number | number[] | undefined, index: number): number | null => {
+        if (value == null) {
+          return null;
+        }
+        if (Array.isArray(value)) {
+          if (value.length === 0) {
+            return null;
+          }
+          const candidate = value[Math.min(index, value.length - 1)];
+          return Number.isFinite(candidate) ? Number(candidate) : null;
+        }
+        return Number.isFinite(value) ? Number(value) : null;
+      };
+
+      const previews: string[] = [];
+      try {
+        for (let index = 0; index < payload.betas.length; index += 1) {
+          const beta = payload.betas[index];
+          const etaValue = resolveEta(payload.etaQ, index);
+          const variantName = `beta_${beta.toFixed(3)}${
+            etaValue != null ? `_eta_${etaValue.toFixed(3)}` : ''
+          }`;
+          const args: Record<string, unknown> = {
+            config: joinPath(previewOutDir, `${variantName}.yaml`),
+            out: ensureDir(previewOutDir),
+          };
+          const response = await window.CWT.run.preview({
+            experiment: 'scripts.run_loop',
+            args,
+          });
+          if (!response.ok) {
+            throw new Error(response.error ?? `Unable to preview command for β=${beta}`);
+          }
+          previews.push(response.data.cli);
+        }
+        if (cancelled) {
+          return;
+        }
+        setTunerPreview(previews);
+        setTunerPreviewError(null);
+      } catch (previewError) {
+        if (cancelled) {
+          return;
+        }
+        setTunerPreview([]);
+        setTunerPreviewError(
+          previewError instanceof Error ? previewError.message : String(previewError),
+        );
+      }
+    };
+
+    void updatePreview();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [buildPreviewPath, buildTunerCommand]);
+
   const toggleFamily = (id: string) => {
     setSelectedFamilies((prev) => {
       const next = new Set(prev);
@@ -464,39 +949,9 @@ const Phase5Optimize = () => {
       return;
     }
 
-    const trimmedAxisA = axisA.trim();
-    const trimmedAxisB = axisB.trim();
-    if (!trimmedAxisA || !trimmedAxisB) {
-      setGraphError('Provide names for both loop axes.');
-      return;
-    }
-
-    if (trimmedAxisA.toLowerCase() === trimmedAxisB.toLowerCase()) {
-      setGraphError('Axes must be distinct.');
-      return;
-    }
-
-    const families = new Set(Array.from(selectedFamilies).map((item) => item.trim()).filter(Boolean));
-    if (families.size === 0) {
-      setGraphError('Select at least one graph family.');
-      return;
-    }
-
-    const gridSize = Number.parseInt(gridSizeInput, 10);
-    if (!Number.isFinite(gridSize) || gridSize <= 0) {
-      setGraphError('Grid size must be a positive integer.');
-      return;
-    }
-
-    const extent = Number.parseFloat(extentInput);
-    if (!Number.isFinite(extent) || extent <= 0) {
-      setGraphError('Extent must be a positive number.');
-      return;
-    }
-
-    const seed = Number.parseInt(seedInput, 10);
-    if (!Number.isFinite(seed)) {
-      setGraphError('Seed must be numeric.');
+    const { payload, error } = buildGraphCommand();
+    if (!payload) {
+      setGraphError(error ?? 'Provide valid graph parameters.');
       return;
     }
 
@@ -505,7 +960,6 @@ const Phase5Optimize = () => {
     setGraphResult(null);
 
     try {
-      const payload = buildPayload(families, trimmedAxisA, trimmedAxisB, gridSize, extent, seed);
       const response = await window.CWT.phase5.cmdGraphFamily(payload);
       if (!response.ok) {
         throw new Error(response.error ?? 'Graph family analysis failed');
@@ -524,43 +978,9 @@ const Phase5Optimize = () => {
       return;
     }
 
-    const axesA = invAxisA.trim();
-    const axesB = invAxisB.trim();
-    if (!axesA || !axesB) {
-      setInvError('Provide names for both axes.');
-      return;
-    }
-    if (axesA.toLowerCase() === axesB.toLowerCase()) {
-      setInvError('Axes must be distinct.');
-      return;
-    }
-
-    const centerTau = Number.parseFloat(invCenterTau);
-    const centerZeta = Number.parseFloat(invCenterZeta);
-    if (!Number.isFinite(centerTau) || !Number.isFinite(centerZeta)) {
-      setInvError('Center coordinates must be numeric.');
-      return;
-    }
-    const extentTau = Number.parseFloat(invExtentTau);
-    const extentZeta = Number.parseFloat(invExtentZeta);
-    if (!Number.isFinite(extentTau) || !Number.isFinite(extentZeta)) {
-      setInvError('Extents must be numeric.');
-      return;
-    }
-
-    const budget = Number.parseInt(invBudgetSteps, 10);
-    if (!Number.isInteger(budget) || budget <= 0) {
-      setInvError('Step budget must be a positive integer.');
-      return;
-    }
-    const maxFs = Number.parseFloat(invMaxFs);
-    if (!Number.isFinite(maxFs) || maxFs <= 0) {
-      setInvError('FS max must be a positive number.');
-      return;
-    }
-    const target = Number.parseInt(invTargetIndex, 10);
-    if (!Number.isInteger(target) || target < 0) {
-      setInvError('Target index must be a non-negative integer.');
+    const { payload, error } = buildInverseCommand();
+    if (!payload) {
+      setInvError(error ?? 'Provide valid inverse-design parameters.');
       return;
     }
 
@@ -569,14 +989,7 @@ const Phase5Optimize = () => {
     setInvResult(null);
 
     try {
-      const response = await window.CWT.phase5.cmdInverseDesign({
-        axes: [axesA, axesB],
-        center: [centerTau, centerZeta],
-        extentPair: [extentTau, extentZeta],
-        budgetSteps: budget,
-        maxFs,
-        targetIndex: target,
-      });
+      const response = await window.CWT.phase5.cmdInverseDesign(payload);
       if (!response.ok) {
         throw new Error(response.error ?? 'Inverse design failed');
       }
@@ -594,26 +1007,9 @@ const Phase5Optimize = () => {
       return;
     }
 
-    const trials = Number.parseInt(noiseTrials, 10);
-    if (!Number.isInteger(trials) || trials <= 0) {
-      setNoiseError('Trials must be a positive integer.');
-      return;
-    }
-    const steps = Number.parseInt(noiseSteps, 10);
-    if (!Number.isInteger(steps) || steps <= 0) {
-      setNoiseError('Loop steps must be a positive integer.');
-      return;
-    }
-    const gridSize = Number.parseInt(noiseGrid, 10);
-    if (!Number.isInteger(gridSize) || gridSize <= 0) {
-      setNoiseError('Grid size must be a positive integer.');
-      return;
-    }
-
-    const axesA = noiseAxesA.trim();
-    const axesB = noiseAxesB.trim();
-    if (!axesA || !axesB) {
-      setNoiseError('Provide names for both axes.');
+    const { payload, error } = buildNoiseCommand();
+    if (!payload) {
+      setNoiseError(error ?? 'Provide valid noise robustness parameters.');
       return;
     }
 
@@ -622,15 +1018,7 @@ const Phase5Optimize = () => {
     setNoiseResult(null);
 
     try {
-      const response = await window.CWT.phase5.cmdNoiseRobust({
-        phaseStd: buildNoiseList(noisePhase),
-        ampStd: buildNoiseList(noiseAmp),
-        delayStd: buildNoiseList(noiseDelay, false),
-        numTrials: trials,
-        loopSteps: steps,
-        gridSize,
-        axes: [axesA, axesB],
-      });
+      const response = await window.CWT.phase5.cmdNoiseRobust(payload);
       if (!response.ok) {
         throw new Error(response.error ?? 'Noise sweep failed');
       }
@@ -651,36 +1039,18 @@ const Phase5Optimize = () => {
       return;
     }
 
-    const trimmedPath = configPathInput.trim();
-    if (!trimmedPath) {
-      setTunerError('Provide a baseline YAML path.');
+    const { payload, error } = buildTunerCommand();
+    if (!payload) {
+      setTunerError(error ?? 'Provide valid coupling tuner parameters.');
       return;
     }
-
-    const betaValues = betaInput
-      .split(',')
-      .map((value) => Number.parseFloat(value.trim()))
-      .filter((value) => Number.isFinite(value));
-    if (betaValues.length === 0) {
-      setTunerError('Provide at least one β value (comma-separated).');
-      return;
-    }
-
-    const etaValues = etaInput
-      .split(',')
-      .map((value) => Number.parseFloat(value.trim()))
-      .filter((value) => Number.isFinite(value));
 
     setTunerRunning(true);
     setTunerError(null);
     setTunerResult(null);
 
     try {
-      const response = await window.CWT.phase5.couplingTuner({
-        configPath: trimmedPath,
-        betas: betaValues,
-        etaQ: etaValues.length > 0 ? etaValues : undefined,
-      });
+      const response = await window.CWT.phase5.couplingTuner(payload);
       if (!response.ok) {
         throw new Error(response.error ?? 'Coupling tuner failed');
       }
@@ -886,6 +1256,22 @@ const Phase5Optimize = () => {
           </label>
         </div>
 
+        <div className="phase5__preview">
+          <h4>Command preview</h4>
+          <pre className="phase5__preview-code">{graphPreview || 'Preview unavailable'}</pre>
+          {graphPreviewError ? <p className="phase5__error">{graphPreviewError}</p> : null}
+          <div className="phase5__preview-actions">
+            <button
+              type="button"
+              className="btn btn--ghost btn--small"
+              disabled={!graphPreview}
+              onClick={() => copyToClipboard(graphPreview)}
+            >
+              Copy command
+            </button>
+          </div>
+        </div>
+
         <button className="phase5__run" onClick={runGraphAnalysis} disabled={graphIsRunning}>
           {graphIsRunning ? 'Running…' : 'Run topology sweep'}
         </button>
@@ -1044,6 +1430,22 @@ const Phase5Optimize = () => {
             Target index
             <input value={invTargetIndex} onChange={(event) => setInvTargetIndex(event.target.value)} />
           </label>
+        </div>
+
+        <div className="phase5__preview">
+          <h4>Command preview</h4>
+          <pre className="phase5__preview-code">{invPreview || 'Preview unavailable'}</pre>
+          {invPreviewError ? <p className="phase5__error">{invPreviewError}</p> : null}
+          <div className="phase5__preview-actions">
+            <button
+              type="button"
+              className="btn btn--ghost btn--small"
+              disabled={!invPreview}
+              onClick={() => copyToClipboard(invPreview)}
+            >
+              Copy command
+            </button>
+          </div>
         </div>
 
         <button className="phase5__run" onClick={runInverseDesign} disabled={invRunning}>
@@ -1217,6 +1619,22 @@ const Phase5Optimize = () => {
           </label>
         </div>
 
+        <div className="phase5__preview">
+          <h4>Command preview</h4>
+          <pre className="phase5__preview-code">{noisePreview || 'Preview unavailable'}</pre>
+          {noisePreviewError ? <p className="phase5__error">{noisePreviewError}</p> : null}
+          <div className="phase5__preview-actions">
+            <button
+              type="button"
+              className="btn btn--ghost btn--small"
+              disabled={!noisePreview}
+              onClick={() => copyToClipboard(noisePreview)}
+            >
+              Copy command
+            </button>
+          </div>
+        </div>
+
         <button className="phase5__run" onClick={runNoiseSweep} disabled={noiseRunning}>
           {noiseRunning ? 'Running…' : 'Run noise sweep'}
         </button>
@@ -1334,6 +1752,26 @@ const Phase5Optimize = () => {
               placeholder="Comma-separated"
             />
           </label>
+        </div>
+
+        <div className="phase5__preview">
+          <h4>Command preview</h4>
+          {tunerPreview.length > 0 ? (
+            <pre className="phase5__preview-code">{tunerPreview.join('\n')}</pre>
+          ) : (
+            <pre className="phase5__preview-code">Preview unavailable</pre>
+          )}
+          {tunerPreviewError ? <p className="phase5__error">{tunerPreviewError}</p> : null}
+          <div className="phase5__preview-actions">
+            <button
+              type="button"
+              className="btn btn--ghost btn--small"
+              disabled={tunerPreview.length === 0}
+              onClick={() => copyToClipboard(tunerPreview.join('\n'))}
+            >
+              Copy commands
+            </button>
+          </div>
         </div>
 
         <button className="phase5__run" onClick={runCouplingTuner} disabled={tunerRunning}>

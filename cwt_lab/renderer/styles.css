@@ -1410,6 +1410,40 @@ body {
   font-size: 0.95rem;
 }
 
+.phase5__preview {
+  background: #ffffff;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+}
+
+.phase5__preview h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.phase5__preview-code {
+  background: rgba(15, 23, 42, 0.08);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  font-family: 'Fira Mono', 'SFMono-Regular', ui-monospace, monospace;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.phase5__preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .phase5__run {
   background: #2563eb;
   color: #ffffff;
