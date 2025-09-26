@@ -6,6 +6,8 @@ export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
     build: {
+      outDir: resolve(__dirname, 'dist-electron/main'),
+      emptyOutDir: true,
       sourcemap: true,
       rollupOptions: {
         input: {
@@ -17,6 +19,8 @@ export default defineConfig({
   preload: {
     plugins: [externalizeDepsPlugin()],
     build: {
+      outDir: resolve(__dirname, 'dist-electron/preload'),
+      emptyOutDir: false,
       sourcemap: true,
       rollupOptions: {
         input: {

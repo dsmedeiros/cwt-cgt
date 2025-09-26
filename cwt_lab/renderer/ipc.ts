@@ -3,6 +3,7 @@ import type {
   Phase2CorrelatePayload,
   Phase2CorrelateResult,
   RegistryRunRecord,
+  RunCreateResult,
   RunDiagnosticsBundle,
   RunTailChunk,
   RunTailPayload,
@@ -33,6 +34,15 @@ export const phase2 = {
     return unwrap(
       window?.CWT?.phase2?.saveSnapshot?.(payload),
       'Phase-2 snapshot IPC is unavailable',
+    );
+  },
+};
+
+export const phase1 = {
+  async map(params: Record<string, unknown>): Promise<RunCreateResult> {
+    return unwrap(
+      window?.CWT?.phase1?.map?.(params),
+      'Phase-1 mapping IPC is unavailable',
     );
   },
 };

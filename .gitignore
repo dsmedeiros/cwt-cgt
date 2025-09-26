@@ -14,6 +14,12 @@ __pycache__/
 /cwt-sim/.venv
 /cwt_lab/node_modules
 /cwt_lab/package-lock.json
+/cwt_lab/dist/
+/cwt_lab/dist-electron/
+/cwt_lab/out/
+
+# Electron build output at repo root
+/dist/
 
 # Node
 node_modules/
