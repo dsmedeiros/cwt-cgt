@@ -386,12 +386,12 @@ def _micro_scan_candidates(
     return selected_center, (base_prob_arr, base_theta_arr), scan_meta
 
 
-def _loop_steps_for_extent(extent: float, base_steps: int = 2048) -> int:
+def _loop_steps_for_extent(extent: float, base_steps: int) -> int:
     magnitude = abs(float(extent))
     if magnitude == 0.0:
         raise ValueError("extent must be non-zero to form a loop region")
     scale = max(int(round(magnitude / 0.02)), 1)
-    return base_steps * scale
+    return max(16, base_steps * scale)
 
 
 def _extract_readout(
@@ -425,7 +425,7 @@ def _extract_readout(
     return phi_value, memory, False
 
 
-def _run_loop(
+def _run_loop_once(
     substrate: GraphSubstrate,
     config: RunConfig,
     base_prob: np.ndarray,
@@ -435,8 +435,9 @@ def _run_loop(
     extent: float,
     orientation: str,
     seed: int,
+    *,
+    steps: int,
 ) -> OrientationRun:
-    steps = _loop_steps_for_extent(extent)
     center_dict = {axis: float(center[axis]) for axis in axes}
     extent_dict = {axis: float(extent) for axis in axes}
 
@@ -482,6 +483,77 @@ def _run_loop(
     )
 
 
+def _run_loop(
+    substrate: GraphSubstrate,
+    config: RunConfig,
+    base_prob: np.ndarray,
+    base_theta: np.ndarray,
+    center: Mapping[str, float],
+    axes: tuple[str, str],
+    extent: float,
+    orientation: str,
+    seed: int,
+    base_steps: int,
+    *,
+    target_fs: float | None,
+    pilot_frac: float | None,
+) -> OrientationRun:
+    baseline_steps = _loop_steps_for_extent(extent, base_steps)
+    final_steps = baseline_steps
+    pilot_result: OrientationRun | None = None
+
+    if (
+        pilot_frac is not None
+        and pilot_frac > 0.0
+        and target_fs is not None
+        and target_fs > 0.0
+        and baseline_steps > 16
+    ):
+        pilot_steps = int(pilot_frac * baseline_steps)
+        pilot_steps = max(16, pilot_steps)
+        pilot_steps = max(128, pilot_steps)
+        pilot_steps = min(baseline_steps, pilot_steps)
+
+        if pilot_steps < baseline_steps:
+            pilot_result = _run_loop_once(
+                substrate,
+                config,
+                base_prob,
+                base_theta,
+                center,
+                axes,
+                extent,
+                orientation,
+                seed,
+                steps=pilot_steps,
+            )
+            fs_p95_pilot = pilot_result.fs_p95
+            if math.isfinite(fs_p95_pilot) and fs_p95_pilot > 0.0 and not pilot_result.fs_guard_exceeded:
+                safety_margin = 1.25
+                predicted = int(math.ceil(pilot_steps * (fs_p95_pilot / float(target_fs)) * safety_margin))
+                min_steps = 16
+                max_steps = baseline_steps
+                final_steps = max(min_steps, min(max_steps, predicted))
+            else:
+                final_steps = baseline_steps
+
+    if pilot_result is not None and pilot_result.steps == final_steps:
+        return pilot_result
+
+    return _run_loop_once(
+        substrate,
+        config,
+        base_prob,
+        base_theta,
+        center,
+        axes,
+        extent,
+        orientation,
+        seed,
+        steps=final_steps,
+    )
+
+
 def evaluate_hotspot(
     index: int,
     spec: HotspotSpec,
@@ -492,6 +564,9 @@ def evaluate_hotspot(
     extents: Sequence[float],
     seed: int,
     micro_scan: bool,
+    base_steps: int,
+    target_fs: float | None,
+    pilot_frac: float | None,
 ) -> HotspotSummary:
     center = dict(spec.center)
     if micro_scan:
@@ -511,8 +586,34 @@ def evaluate_hotspot(
         spec.center = center
     summaries: list[ExtentSummary] = []
     for extent in extents:
-        ccw = _run_loop(substrate, config, base_prob, base_theta, spec.center, axes, extent, "CCW", seed)
-        cw = _run_loop(substrate, config, base_prob, base_theta, spec.center, axes, extent, "CW", seed)
+        ccw = _run_loop(
+            substrate,
+            config,
+            base_prob,
+            base_theta,
+            spec.center,
+            axes,
+            extent,
+            "CCW",
+            seed,
+            base_steps,
+            target_fs=target_fs,
+            pilot_frac=pilot_frac,
+        )
+        cw = _run_loop(
+            substrate,
+            config,
+            base_prob,
+            base_theta,
+            spec.center,
+            axes,
+            extent,
+            "CW",
+            seed,
+            base_steps,
+            target_fs=target_fs,
+            pilot_frac=pilot_frac,
+        )
         area_flip = _relative_flip_error(ccw.area, cw.area)
         if ccw.phi_missing or cw.phi_missing:
             phi_flip = float("nan")
@@ -673,6 +774,24 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Optional FS guard threshold in radians (enables CLI enforcement when set)",
     )
     parser.add_argument(
+        "--base-steps",
+        type=int,
+        default=2048,
+        help="Baseline integration steps for a 0.02-extent loop; scaled up for larger loops.",
+    )
+    parser.add_argument(
+        "--target-fs",
+        type=float,
+        default=0.10,
+        help="Target FS guard p95 threshold in radians for adaptive step selection.",
+    )
+    parser.add_argument(
+        "--pilot-frac",
+        type=float,
+        default=0.125,
+        help="Fraction of baseline steps to use for the pilot run (set to 0 to disable).",
+    )
+    parser.add_argument(
         "--micro-scan",
         type=_parse_bool,
         default=False,
@@ -745,6 +864,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             extents=extents,
             seed=int(args.seed),
             micro_scan=micro_scan_enabled,
+            base_steps=int(args.base_steps),
+            target_fs=float(args.target_fs) if args.target_fs is not None else None,
+            pilot_frac=float(args.pilot_frac) if args.pilot_frac is not None else None,
         )
         results.append(summary)
 
