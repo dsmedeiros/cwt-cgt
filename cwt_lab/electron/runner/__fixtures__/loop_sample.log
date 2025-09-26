@@ -1,2 +1,2 @@
-[loop] iteration=1 fs_p95:0.245 phi=0.512 r=0.732 overlap=0.654 kappa_1=3.21
-[loop] iteration=2 fs_p95:0.180 phi=0.420 r=0.810 overlap=0.712 kappa_1=2.98
+[loop] iteration=1 FS p95=0.245 rad Φ=0.5123 R=0.7321 overlap=0.654 κ₁ scale change: 3.21% guard_exceeded=False flip error: area=1.23% phi=4.56%
+[loop] iteration=2 FS p95=0.180 rad Φ=0.4200 R=0.8100 overlap=0.712 κ₁ scale change: 2.98% guard_exceeded=False flip error: area=0.98% phi=3.21%
