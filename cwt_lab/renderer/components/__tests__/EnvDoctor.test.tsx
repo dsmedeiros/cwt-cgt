@@ -146,9 +146,9 @@ describe('EnvDoctor', () => {
 
     await waitFor(() => expect(detect).toHaveBeenCalledTimes(1));
 
-    const input = (await screen.findByLabelText(/Python executable/i)) as HTMLInputElement;
+    const input = await screen.findByLabelText<HTMLInputElement>(/Python executable/i);
     fireEvent.change(input, { target: { value: updatedCandidate.path } });
-    const submit = screen.getByRole('button', { name: /Set Python Path/i });
+    const submit = screen.getByRole<HTMLButtonElement>('button', { name: /Set Python Path/i });
     fireEvent.click(submit);
 
     await waitFor(() => expect(setPythonPath).toHaveBeenCalledWith(updatedCandidate.path));
