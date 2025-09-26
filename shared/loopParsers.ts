@@ -1,4 +1,9 @@
 export interface LoopStdoutMetrics {
+  /**
+   * Generic calibration score emitted by legacy runners.
+   * Maintained for compatibility with the calibrator state machine.
+   */
+  value?: number;
   fsP95?: number;
   phi?: number;
   R?: number;

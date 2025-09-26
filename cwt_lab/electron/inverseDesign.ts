@@ -61,29 +61,6 @@ const parseScalar = (value: string | undefined): number | null => {
   return Number.isFinite(numeric) ? numeric : null;
 };
 
-const buildPythonPath = (strategy: PythonStrategy): string | undefined => {
-  const pieces = new Set<string>();
-  const existing = process.env.PYTHONPATH ?? '';
-  if (existing) {
-    for (const entry of existing.split(path.delimiter)) {
-      const trimmed = entry.trim();
-      if (trimmed.length > 0) {
-        pieces.add(trimmed);
-      }
-    }
-  }
-
-  if (strategy === 'py_path') {
-    pieces.add(cwtSimRoot);
-  }
-
-  const values = Array.from(pieces);
-  if (values.length === 0) {
-    return undefined;
-  }
-  return values.join(path.delimiter);
-};
-
 const parseBaseline = (stdout: string): InverseDesignPathSummary | null => {
   const baselineRegex = /Baseline rectangle:[\s\S]*?\|R\|=([^\s]+)\s+guard_fraction=([^\s]+)\s+length=([^\s]+)/;
   const missingRegex = /Baseline rectangle:[\s\S]*?Missing curvature tiles/;

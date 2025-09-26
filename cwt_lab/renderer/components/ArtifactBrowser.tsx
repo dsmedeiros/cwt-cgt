@@ -15,10 +15,9 @@ const buildTraceData = (artifact: DemoArtifact): Data[] =>
   }));
 
 const layoutForArtifact = (artifact: DemoArtifact): Partial<Layout> => ({
-  title: artifact.title,
+  title: { text: artifact.title },
   margin: { t: 36, r: 12, b: 36, l: 48 },
   height: 320,
-  template: 'plotly_dark',
   paper_bgcolor: 'transparent',
   plot_bgcolor: 'transparent',
   font: { family: 'Inter, sans-serif' },

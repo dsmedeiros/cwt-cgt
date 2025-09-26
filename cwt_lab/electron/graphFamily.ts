@@ -54,29 +54,6 @@ const ensureUniquePath = async (dir: string) => {
   await fs.mkdir(dir, { recursive: true });
 };
 
-const buildPythonPath = (strategy: PythonStrategy): string | undefined => {
-  const parts = new Set<string>();
-  const existing = process.env.PYTHONPATH;
-  if (existing) {
-    for (const segment of existing.split(path.delimiter)) {
-      const trimmed = segment.trim();
-      if (trimmed.length > 0) {
-        parts.add(trimmed);
-      }
-    }
-  }
-
-  if (strategy === 'py_path') {
-    parts.add(cwtSimRoot);
-  }
-
-  const values = Array.from(parts);
-  if (values.length === 0) {
-    return undefined;
-  }
-  return values.join(path.delimiter);
-};
-
 const collectOutput = (buffer: string, chunk: Buffer) => buffer + chunk.toString('utf-8');
 
 const toDataUrl = (buffer: Buffer) => `data:image/png;base64,${buffer.toString('base64')}`;

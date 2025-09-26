@@ -1,8 +1,429 @@
+import {
+  type ChangeEvent,
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+
+import type { EnvCandidate, EnvConfig, PythonStrategy } from '../types/ipc';
+
+type ManualPathUpdateOptions = { fromUser?: boolean; force?: boolean };
+
+type CandidateState = {
+  loading: boolean;
+  candidates: EnvCandidate[];
+  selected: EnvCandidate | null;
+  error: string | null;
+};
+
+type PathNotice =
+  | { kind: 'success'; message: string }
+  | { kind: 'error'; message: string }
+  | null;
+
+const strategyLabels: Record<PythonStrategy, string> = {
+  installed: 'installed',
+  module: 'module',
+  py_path: 'py_path',
+};
+
+const strategyDescriptions: Record<PythonStrategy, string> = {
+  installed: 'Imports the cwt package directly from site-packages.',
+  module: 'Loads the experiments module from cwt-sim as a package.',
+  py_path: 'Injects cwt onto PYTHONPATH before launching commands.',
+};
+
+const parseCandidateErrors = (error?: string): string[] => {
+  if (!error) {
+    return [];
+  }
+  return error
+    .split('|')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+};
+
+const formatStrategy = (strategy: PythonStrategy | null) => {
+  if (!strategy) {
+    return '—';
+  }
+  return strategyLabels[strategy];
+};
+
 const EnvDoctor = () => {
+  const [ipcAvailable, setIpcAvailable] = useState(
+    () => typeof window !== 'undefined' && Boolean(window?.CWT?.env?.detect),
+  );
+  const [candidateState, setCandidateState] = useState<CandidateState>(() => ({
+    loading: false,
+    candidates: [],
+    selected: null,
+    error: null,
+  }));
+  const [config, setConfig] = useState<EnvConfig | null>(null);
+  const [configError, setConfigError] = useState<string | null>(null);
+  const [pathNotice, setPathNotice] = useState<PathNotice>(null);
+  const [pathBusy, setPathBusy] = useState(false);
+  const [manualPath, setManualPath] = useState('');
+  const manualPathTouched = useRef(false);
+  const isMounted = useRef(true);
+
+  useEffect(
+    () => () => {
+      isMounted.current = false;
+    },
+    [],
+  );
+
+  const updateManualPath = useCallback(
+    (value: string, options: ManualPathUpdateOptions = {}) => {
+      if (options.fromUser) {
+        manualPathTouched.current = true;
+        setManualPath(value);
+        return;
+      }
+      if (!manualPathTouched.current || options.force) {
+        setManualPath(value);
+      }
+    },
+    [],
+  );
+
+  const refreshConfig = useCallback(
+    async (options: ManualPathUpdateOptions = {}) => {
+      const api = typeof window !== 'undefined' ? window?.CWT?.env : undefined;
+      if (!api?.getConfig) {
+        return;
+      }
+      try {
+        const response = await api.getConfig();
+        if (!isMounted.current) {
+          return;
+        }
+        if (response.ok) {
+          setConfig(response.data);
+          setConfigError(null);
+          const value = response.data.pythonPath ?? '';
+          if (value || options.force) {
+            updateManualPath(value, options);
+          }
+        } else {
+          setConfigError(response.error ?? 'Failed to load environment configuration.');
+        }
+      } catch (error) {
+        if (!isMounted.current) {
+          return;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        setConfigError(message);
+      }
+    },
+    [updateManualPath],
+  );
+
+  const runDetection = useCallback(async () => {
+    const api = typeof window !== 'undefined' ? window?.CWT?.env : undefined;
+    if (!api?.detect) {
+      if (isMounted.current) {
+        setIpcAvailable(false);
+        setCandidateState((prev) => ({ ...prev, loading: false }));
+      }
+      return;
+    }
+
+    if (isMounted.current) {
+      setIpcAvailable(true);
+      setCandidateState((prev) => ({ ...prev, loading: true, error: null }));
+    }
+
+    try {
+      const response = await api.detect();
+      if (!isMounted.current) {
+        return;
+      }
+      if (response.ok) {
+        setCandidateState({
+          loading: false,
+          candidates: response.data.candidates,
+          selected: response.data.selected,
+          error: null,
+        });
+        if (response.data.selected?.path) {
+          updateManualPath(response.data.selected.path);
+        }
+      } else {
+        setCandidateState({
+          loading: false,
+          candidates: response.data?.candidates ?? [],
+          selected: response.data?.selected ?? null,
+          error: response.error ?? 'Failed to detect Python interpreters.',
+        });
+      }
+    } catch (error) {
+      if (!isMounted.current) {
+        return;
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      setCandidateState((prev) => ({ ...prev, loading: false, error: message }));
+    }
+  }, [updateManualPath]);
+
+  useEffect(() => {
+    void refreshConfig();
+  }, [refreshConfig]);
+
+  useEffect(() => {
+    void runDetection();
+  }, [runDetection]);
+
+  const activeCandidate = useMemo(() => {
+    if (!candidateState.selected) {
+      return null;
+    }
+    return (
+      candidateState.candidates.find(
+        (candidate) => candidate.path === candidateState.selected?.path,
+      ) ?? candidateState.selected
+    );
+  }, [candidateState.candidates, candidateState.selected]);
+
+  const handleRefresh = useCallback(() => {
+    void runDetection();
+  }, [runDetection]);
+
+  const handleManualPathChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      updateManualPath(event.target.value, { fromUser: true });
+    },
+    [updateManualPath],
+  );
+
+  const handleSetPythonPath = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      setPathNotice(null);
+
+      const api = typeof window !== 'undefined' ? window?.CWT?.env : undefined;
+      if (!api?.setPythonPath) {
+        setPathNotice({
+          kind: 'error',
+          message: 'Python path configuration is unavailable in this build.',
+        });
+        return;
+      }
+
+      const trimmed = manualPath.trim();
+      if (!trimmed) {
+        setPathNotice({ kind: 'error', message: 'Provide the path to a Python executable.' });
+        return;
+      }
+
+      setPathBusy(true);
+      try {
+        const response = await api.setPythonPath(trimmed);
+        if (!isMounted.current) {
+          return;
+        }
+        if (response.ok) {
+          const candidate = response.data;
+          updateManualPath(candidate.path ?? trimmed, { force: true });
+          setPathNotice({ kind: 'success', message: `Interpreter set to ${candidate.path}.` });
+          await runDetection();
+          await refreshConfig({ force: true });
+        } else {
+          setPathNotice({
+            kind: 'error',
+            message: response.error ?? 'Failed to set Python path.',
+          });
+        }
+      } catch (error) {
+        if (!isMounted.current) {
+          return;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        setPathNotice({ kind: 'error', message });
+      } finally {
+        if (isMounted.current) {
+          setPathBusy(false);
+        }
+      }
+    },
+    [manualPath, refreshConfig, runDetection, updateManualPath],
+  );
+
   return (
-    <div className="panel">
-      <h2>Environment Doctor</h2>
-      <p>Diagnose Python installations and virtual environment configuration.</p>
+    <div className="panel env-doctor">
+      <div className="env-doctor__header">
+        <h2>Environment Doctor</h2>
+        <p>Diagnose Python installations and virtual environment configuration.</p>
+      </div>
+
+      <p className="env-doctor__intro">
+        Run a scan to inspect local Python interpreters. Green badges mark environments that can import
+        <code> cwt</code>, while red cards explain which checks failed.
+      </p>
+
+      {!ipcAvailable && (
+        <div className="env-doctor__notice env-doctor__notice--info">
+          Desktop IPC bridge unavailable. Launch the laboratory Electron app to run interpreter diagnostics.
+        </div>
+      )}
+
+      <div className="env-doctor__actions">
+        <button
+          type="button"
+          className="env-doctor__button"
+          onClick={handleRefresh}
+          disabled={!ipcAvailable || candidateState.loading}
+        >
+          {candidateState.loading ? 'Scanning interpreters…' : 'Refresh interpreters'}
+        </button>
+        {candidateState.loading && (
+          <span role="status" className="env-doctor__status">
+            Scanning interpreters and verifying imports…
+          </span>
+        )}
+      </div>
+
+      <form className="env-doctor__form" onSubmit={handleSetPythonPath}>
+        <label className="env-doctor__label" htmlFor="env-doctor-python-path">
+          Python executable
+        </label>
+        <div className="env-doctor__form-row">
+          <input
+            id="env-doctor-python-path"
+            type="text"
+            className="env-doctor__input"
+            placeholder="/path/to/.venv/bin/python"
+            value={manualPath}
+            onChange={handleManualPathChange}
+            disabled={!ipcAvailable || pathBusy}
+          />
+          <button
+            type="submit"
+            className="env-doctor__button"
+            disabled={!ipcAvailable || pathBusy || manualPath.trim().length === 0}
+          >
+            Set Python Path
+          </button>
+        </div>
+        <p className="env-doctor__hint">
+          Point to the Python executable inside the virtual environment prepared with
+          <code> pip install -r requirements.txt</code> and
+          <code> pip install -r requirements.test.txt</code>.
+        </p>
+      </form>
+
+      {pathNotice && (
+        <div
+          role={pathNotice.kind === 'success' ? 'status' : 'alert'}
+          className={`env-doctor__notice env-doctor__notice--${pathNotice.kind}`}
+        >
+          {pathNotice.message}
+        </div>
+      )}
+
+      {candidateState.error && (
+        <div role="alert" className="env-doctor__notice env-doctor__notice--error">
+          {candidateState.error}
+        </div>
+      )}
+
+      {configError && (
+        <div role="alert" className="env-doctor__notice env-doctor__notice--error">
+          {configError}
+        </div>
+      )}
+
+      {activeCandidate && (
+        <div className="env-doctor__active">
+          <h3>Active interpreter</h3>
+          <code className="env-doctor__mono">{activeCandidate.path}</code>
+          <dl className="env-doctor__meta">
+            <div>
+              <dt>Version</dt>
+              <dd>{activeCandidate.version ?? 'Unknown'}</dd>
+            </div>
+            <div>
+              <dt>Strategy</dt>
+              <dd>{formatStrategy(activeCandidate.strategy)}</dd>
+            </div>
+          </dl>
+        </div>
+      )}
+
+      <div className="env-doctor__candidates">
+        {candidateState.candidates.map((candidate) => {
+          const ok = candidate.ok;
+          const selected = candidateState.selected?.path === candidate.path;
+          const errors = parseCandidateErrors(candidate.error);
+          return (
+            <div
+              key={`${candidate.path}-${candidate.version ?? 'unknown'}`}
+              className={`env-doctor__candidate env-doctor__candidate--${ok ? 'ok' : 'bad'}${
+                selected ? ' env-doctor__candidate--selected' : ''
+              }`}
+            >
+              <div className="env-doctor__candidate-header">
+                <span className={`env-doctor__badge env-doctor__badge--${ok ? 'ok' : 'bad'}`}>
+                  {ok ? 'Healthy' : 'Needs attention'}
+                </span>
+                {selected && <span className="env-doctor__badge env-doctor__badge--active">Active</span>}
+              </div>
+              <code className="env-doctor__candidate-path">{candidate.path}</code>
+              <dl className="env-doctor__meta">
+                <div>
+                  <dt>Version</dt>
+                  <dd>{candidate.version ?? 'Unknown'}</dd>
+                </div>
+                <div>
+                  <dt>Strategy</dt>
+                  <dd>{formatStrategy(candidate.strategy)}</dd>
+                </div>
+              </dl>
+              {ok && candidate.strategy ? (
+                <p className="env-doctor__candidate-message">{strategyDescriptions[candidate.strategy]}</p>
+              ) : null}
+              {!ok && errors.length > 0 ? (
+                <ul className="env-doctor__candidate-errors">
+                  {errors.map((entry, index) => (
+                    <li key={`${candidate.path}-error-${index}`}>{entry}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+
+      {candidateState.candidates.length === 0 && !candidateState.loading && (
+        <p className="env-doctor__empty">
+          No interpreters recorded yet. Run detection or set the Python path manually to bootstrap the toolchain.
+        </p>
+      )}
+
+      {config && (
+        <div className="env-doctor__config">
+          <h3>Environment context</h3>
+          <dl>
+            <div>
+              <dt>Repository root</dt>
+              <dd className="env-doctor__mono">{config.repoRoot}</dd>
+            </div>
+            <div>
+              <dt>Artifacts root</dt>
+              <dd className="env-doctor__mono">{config.artifactsRoot}</dd>
+            </div>
+            <div>
+              <dt>Preferred strategy</dt>
+              <dd>{config.strategy ? strategyLabels[config.strategy] : 'Not set'}</dd>
+            </div>
+          </dl>
+        </div>
+      )}
     </div>
   );
 };

@@ -23,6 +23,7 @@ export type DemoArtifact = {
     unit?: string;
     delta?: number;
     higherIsBetter?: boolean;
+    direction?: 'up' | 'down';
   }>;
   traces: Array<{
     name: string;

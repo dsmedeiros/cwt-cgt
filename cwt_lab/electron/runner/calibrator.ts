@@ -1,8 +1,8 @@
-import type { MetricParseResult } from './parsers';
+import type { LoopStdoutMetrics } from './parsers';
 
 export type CalibrationState = {
   runId: string;
-  metrics: MetricParseResult[];
+  metrics: LoopStdoutMetrics[];
   iteration: number;
 };
 
@@ -14,7 +14,7 @@ export const createCalibrationState = (runId: string): CalibrationState => ({
 
 export const updateCalibration = (
   state: CalibrationState,
-  metrics: MetricParseResult[],
+  metrics: LoopStdoutMetrics[],
 ): CalibrationState => ({
   ...state,
   metrics: [...state.metrics, ...metrics],
@@ -27,7 +27,7 @@ export const pickNextPhase = (state: CalibrationState): number => {
   }
 
   const lastMetric = state.metrics[state.metrics.length - 1];
-  if (lastMetric.value < 0.5) {
+  if (lastMetric.value != null && lastMetric.value < 0.5) {
     return 5;
   }
 
