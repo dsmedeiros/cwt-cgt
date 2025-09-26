@@ -816,6 +816,18 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         default=0,
         help="Node index selected by the one-hot susceptibility vector",
     )
+    parser.add_argument(
+        "--neighbor-settle-steps",
+        type=int,
+        default=None,
+        help="Override the settle steps used when relaxing neighbour samples",
+    )
+    parser.add_argument(
+        "--adapt-levels",
+        type=int,
+        default=None,
+        help="Maximum depth for adaptive curvature refinement",
+    )
     return parser.parse_args(argv)
 
 
@@ -850,6 +862,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             "window": 64,
             "throttle": 0.9,
         }
+    if args.neighbor_settle_steps is not None:
+        if int(args.neighbor_settle_steps) <= 0:
+            raise ValueError("neighbor-settle-steps must be positive")
+        config.neighbor_settle_steps = int(args.neighbor_settle_steps)
+    if args.adapt_levels is not None:
+        if int(args.adapt_levels) <= 0:
+            raise ValueError("adapt-levels must be positive")
+        config.adapt_levels = int(args.adapt_levels)
 
     micro_scan_enabled = bool(args.micro_scan)
 

@@ -18,6 +18,18 @@ export const stepsSchema = z
   .min(16, { message: 'Steps must be at least 16.' })
   .max(2000, { message: 'Steps cannot exceed 2000.' });
 
+export const settleStepsSchema = z
+  .number({ invalid_type_error: 'Settle steps must be a number.' })
+  .int('Settle steps must be a whole number.')
+  .min(1, { message: 'Settle steps must be at least 1.' })
+  .max(2000, { message: 'Settle steps cannot exceed 2000.' });
+
+export const adaptLevelsSchema = z
+  .number({ invalid_type_error: 'Adaptive levels must be a number.' })
+  .int('Adaptive levels must be a whole number.')
+  .min(1, { message: 'Adaptive levels must be at least 1.' })
+  .max(6, { message: 'Adaptive levels must be no more than 6.' });
+
 export const percentileSchema = z
   .number({ invalid_type_error: 'Percentile must be a number.' })
   .int('Percentile must be a whole number.')
@@ -93,6 +105,8 @@ const wrapNumberValidation = (schema: z.ZodType<number, z.ZodTypeDef, number>) =
 export const validateExtent = wrapNumberValidation(extentSchema);
 export const validateFsGuard = wrapNumberValidation(fsGuardSchema);
 export const validateSteps = wrapNumberValidation(stepsSchema);
+export const validateSettleSteps = wrapNumberValidation(settleStepsSchema);
+export const validateAdaptLevels = wrapNumberValidation(adaptLevelsSchema);
 export const validatePercentile = wrapNumberValidation(percentileSchema);
 
 export const validateAxis = (phase: Phase, value: string): ValidationResult<string> => {

@@ -7,6 +7,8 @@ import {
   formatValidationMessage,
   validateExtent,
   validateFsGuard,
+  validateAdaptLevels,
+  validateSettleSteps,
   validateSteps,
 } from '../../shared/validators';
 
@@ -135,6 +137,8 @@ const buildSimplePayload = (
   fsGuard: number,
   limit: number,
   seed: number,
+  neighborSettleSteps: number,
+  adaptLevels: number,
 ): LoopAtHotspotPayload => ({
   hotspotsJson: JSON.stringify([
     {
@@ -149,6 +153,8 @@ const buildSimplePayload = (
   graph,
   limit,
   seed,
+  neighborSettleSteps,
+  adaptLevels,
 });
 
 const buildGuidedPayload = (
@@ -271,6 +277,8 @@ const Phase3Loops = () => {
   const [extentB, setExtentB] = useState(0.4);
   const [fsGuardInput, setFsGuardInput] = useState('0.1');
   const [simpleLimitInput, setSimpleLimitInput] = useState('300');
+  const [neighborSettleInput, setNeighborSettleInput] = useState('40');
+  const [adaptLevelsInput, setAdaptLevelsInput] = useState('1');
   const [simpleSeed, setSimpleSeed] = useState(42);
   const [simpleRuns, setSimpleRuns] = useState<SimpleLoopResult[]>([]);
   const [isSimpleRunning, setIsSimpleRunning] = useState(false);
@@ -310,12 +318,22 @@ const Phase3Loops = () => {
   const extentBValidation = useMemo(() => validateExtent(extentB), [extentB]);
   const fsGuardValidation = useMemo(() => validateFsGuard(fsGuardInput), [fsGuardInput]);
   const simpleLimitValidation = useMemo(() => validateSteps(simpleLimitInput), [simpleLimitInput]);
+  const neighborSettleValidation = useMemo(
+    () => validateSettleSteps(neighborSettleInput),
+    [neighborSettleInput],
+  );
+  const adaptLevelsValidation = useMemo(
+    () => validateAdaptLevels(adaptLevelsInput),
+    [adaptLevelsInput],
+  );
   const fsGuardNumber = fsGuardValidation.ok ? fsGuardValidation.value : null;
   const guidedStepValidation = useMemo(() => guidedSteps.map((step) => validateSteps(step)), [guidedSteps]);
   const guidedStepError = guidedStepValidation.find((result) => !result.ok);
   const guidedStepErrorMessage = guidedStepError && !guidedStepError.ok ? guidedStepError.message : undefined;
   const fsGuardError = formatValidationMessage(fsGuardValidation);
   const simpleLimitError = formatValidationMessage(simpleLimitValidation);
+  const settleStepsError = formatValidationMessage(neighborSettleValidation);
+  const adaptLevelsError = formatValidationMessage(adaptLevelsValidation);
 
   const simpleRunDisabledReason = useMemo(() => {
     if (!extentAValidation.ok) {
@@ -330,8 +348,21 @@ const Phase3Loops = () => {
     if (!simpleLimitValidation.ok) {
       return simpleLimitValidation.message;
     }
+    if (!neighborSettleValidation.ok) {
+      return neighborSettleValidation.message;
+    }
+    if (!adaptLevelsValidation.ok) {
+      return adaptLevelsValidation.message;
+    }
     return undefined;
-  }, [extentAValidation, extentBValidation, fsGuardValidation, simpleLimitValidation]);
+  }, [
+    extentAValidation,
+    extentBValidation,
+    fsGuardValidation,
+    simpleLimitValidation,
+    neighborSettleValidation,
+    adaptLevelsValidation,
+  ]);
 
   const guidedRunDisabledReason = useMemo(() => {
     if (!fsGuardValidation.ok) {
@@ -373,13 +404,17 @@ const Phase3Loops = () => {
       !extentAValidation.ok ||
       !extentBValidation.ok ||
       !fsGuardValidation.ok ||
-      !simpleLimitValidation.ok
+      !simpleLimitValidation.ok ||
+      !neighborSettleValidation.ok ||
+      !adaptLevelsValidation.ok
     ) {
       return;
     }
 
     const extents: [number, number] = [extentAValidation.value, extentBValidation.value];
     const guardValue = fsGuardValidation.value;
+    const settleSteps = neighborSettleValidation.value;
+    const adaptLevels = adaptLevelsValidation.value;
     const payload = buildSimplePayload(
       selectedHotspot,
       graph,
@@ -387,6 +422,8 @@ const Phase3Loops = () => {
       guardValue,
       simpleLimitValidation.value,
       simpleSeed,
+      settleSteps,
+      adaptLevels,
     );
 
     setIsSimpleRunning(true);
@@ -428,6 +465,8 @@ const Phase3Loops = () => {
     extentBValidation,
     fsGuardValidation,
     graph,
+    neighborSettleValidation,
+    adaptLevelsValidation,
     selectedHotspot,
     simpleLimitValidation,
     simpleSeed,
@@ -823,6 +862,36 @@ const Phase3Loops = () => {
                     {simpleLimitError ? (
                       <span className="field-error"> {simpleLimitError}</span>
                     ) : null}
+                  </small>
+                </label>
+                <label>
+                  <span>Settle steps</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="2000"
+                    step="1"
+                    value={neighborSettleInput}
+                    onChange={(event) => setNeighborSettleInput(event.target.value)}
+                  />
+                  <small className="field-hint">
+                    Relax neighbours between loop samples. Drop to 8–16 for tiny loops.
+                    {settleStepsError ? <span className="field-error"> {settleStepsError}</span> : null}
+                  </small>
+                </label>
+                <label>
+                  <span>Adaptive levels</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="6"
+                    step="1"
+                    value={adaptLevelsInput}
+                    onChange={(event) => setAdaptLevelsInput(event.target.value)}
+                  />
+                  <small className="field-hint">
+                    Limit adaptive curvature depth. Lower to 1 when extents stay small.
+                    {adaptLevelsError ? <span className="field-error"> {adaptLevelsError}</span> : null}
                   </small>
                 </label>
                 <label>

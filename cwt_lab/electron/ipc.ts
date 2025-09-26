@@ -736,6 +736,8 @@ ipcMain.handle('cwt:phase3:loop-at-hotspot', (_event, params) =>
     delete passthrough.seed;
     delete passthrough.microScan;
     delete passthrough.readoutTarget;
+    delete passthrough.neighborSettleSteps;
+    delete passthrough.adaptLevels;
 
     let microScan: boolean | undefined;
     const rawMicroScan = (params as { microScan?: unknown }).microScan;
@@ -763,6 +765,26 @@ ipcMain.handle('cwt:phase3:loop-at-hotspot', (_event, params) =>
       }
     }
 
+    const settleRaw = (params as { neighborSettleSteps?: unknown }).neighborSettleSteps;
+    let neighborSettleSteps: number | null = null;
+    if (settleRaw !== undefined && settleRaw !== null) {
+      const parsed = Number(settleRaw);
+      if (!Number.isInteger(parsed) || parsed <= 0) {
+        throw new Error('neighborSettleSteps must be a positive integer when provided');
+      }
+      neighborSettleSteps = parsed;
+    }
+
+    const adaptRaw = (params as { adaptLevels?: unknown }).adaptLevels;
+    let adaptLevels: number | null = null;
+    if (adaptRaw !== undefined && adaptRaw !== null) {
+      const parsed = Number(adaptRaw);
+      if (!Number.isInteger(parsed) || parsed <= 0) {
+        throw new Error('adaptLevels must be a positive integer when provided');
+      }
+      adaptLevels = parsed;
+    }
+
     const runParams: Record<string, unknown> = {
       ...passthrough,
       hotspots: hotspotsPath,
@@ -779,6 +801,12 @@ ipcMain.handle('cwt:phase3:loop-at-hotspot', (_event, params) =>
     }
     if (readoutTarget !== null) {
       runParams.readoutTarget = readoutTarget;
+    }
+    if (neighborSettleSteps !== null) {
+      runParams.neighborSettleSteps = neighborSettleSteps;
+    }
+    if (adaptLevels !== null) {
+      runParams.adaptLevels = adaptLevels;
     }
 
     return launchPhase('experiments.loop_at_hotspot.run', runParams, {
