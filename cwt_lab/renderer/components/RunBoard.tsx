@@ -29,6 +29,7 @@ type LogState = {
   status: string | null;
   loading: boolean;
   error: string | null;
+  failureDetails: string | null;
   hasMoreBefore: boolean;
   startByte: number | null;
   nextByte: number | null;
@@ -41,6 +42,7 @@ const makeEmptyLogState = (): LogState => ({
   status: null,
   loading: false,
   error: null,
+  failureDetails: null,
   hasMoreBefore: false,
   startByte: null,
   nextByte: null,
@@ -126,6 +128,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
           status: chunk.status,
           loading: false,
           error: null,
+          failureDetails: chunk.failureDetails ?? null,
           hasMoreBefore,
           startByte: earliestStart,
           nextByte,
@@ -385,6 +388,11 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
                 </span>
               ) : null}
             </div>
+            {logState.status === 'failed' && logState.failureDetails ? (
+              <p className="run-board__log-failure" role="status">
+                Failure details: {logState.failureDetails}
+              </p>
+            ) : null}
           </header>
           {logState.error ? (
             <div className="run-board__notice run-board__notice--error" role="alert">

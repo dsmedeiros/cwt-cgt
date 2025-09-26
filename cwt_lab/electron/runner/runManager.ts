@@ -24,6 +24,7 @@ export type RunTailChunk = {
   totalBytes: number;
   hasMoreBefore: boolean;
   status: RunStatus;
+  failureDetails: string | null;
 };
 
 export type RunCreateResult = {
@@ -502,6 +503,36 @@ export class RunManager {
     return plan;
   }
 
+  private describeFailure(context: RunContext): string | null {
+    if (context.status !== 'failed') {
+      return null;
+    }
+
+    if (context.timeoutTriggered || context.diagnostics.error === 'timeout') {
+      if (context.timeoutMs && context.timeoutMs > 0) {
+        return `Run timed out after ${context.timeoutMs} ms.`;
+      }
+      return 'Run timed out.';
+    }
+
+    if (context.diagnostics.error) {
+      return context.diagnostics.error;
+    }
+
+    const { exitCode, signal } = context.diagnostics;
+    if (exitCode !== null && signal) {
+      return `Process exited with code ${exitCode} after signal ${signal}.`;
+    }
+    if (exitCode !== null) {
+      return `Process exited with code ${exitCode}.`;
+    }
+    if (signal) {
+      return `Process terminated by signal ${signal}.`;
+    }
+
+    return 'Run failed for an unknown reason.';
+  }
+
   async tail(runId: string, fromByte = 0, maxBytes?: number): Promise<RunTailChunk> {
     const context = this.runs.get(runId);
     if (!context) {
@@ -532,6 +563,7 @@ export class RunManager {
       totalBytes,
       hasMoreBefore: start > 0,
       status: context.status,
+      failureDetails: this.describeFailure(context),
     };
   }
 
