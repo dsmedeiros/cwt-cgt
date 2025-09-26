@@ -317,6 +317,8 @@ export type LoopAtHotspotPayload = {
   seed: number;
   microScan?: boolean;
   readoutTarget?: number;
+  neighborSettleSteps?: number;
+  adaptLevels?: number;
   [extra: string]: unknown;
 };
 
