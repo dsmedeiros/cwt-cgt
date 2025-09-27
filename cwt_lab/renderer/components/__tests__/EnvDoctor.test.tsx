@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -26,6 +28,21 @@ const assignEnvApi = (overrides: Partial<RendererIpc['env']>) => {
   return env;
 };
 
+const samplePythonPath =
+  process.platform === 'win32'
+    ? path.win32.join('C:\\tmp', '.venv', 'Scripts', 'python.exe')
+    : path.posix.join('/tmp', '.venv', 'bin', 'python');
+
+const updatedPythonPath =
+  process.platform === 'win32'
+    ? path.win32.join('D:\\Python', 'python.exe')
+    : '/opt/python';
+
+const browsedPythonPath =
+  process.platform === 'win32'
+    ? path.win32.join('C:\\Python', 'python.exe')
+    : path.posix.join('/usr', 'local', 'bin', 'python3');
+
 describe('EnvDoctor', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -37,7 +54,7 @@ describe('EnvDoctor', () => {
 
   it('renders detection results and highlights the active interpreter', async () => {
     const candidates: EnvCandidate[] = [
-      { path: '/tmp/.venv/bin/python', version: 'Python 3.11.4', ok: true, strategy: 'installed' },
+      { path: samplePythonPath, version: 'Python 3.11.4', ok: true, strategy: 'installed' },
       {
         path: '/usr/bin/python3',
         version: 'Python 3.10.8',
@@ -112,10 +129,10 @@ describe('EnvDoctor', () => {
 
   it('allows manually configuring the python path and refreshes the scan', async () => {
     const initialCandidates: EnvCandidate[] = [
-      { path: '/tmp/.venv/bin/python', version: 'Python 3.11.4', ok: true, strategy: 'installed' },
+      { path: samplePythonPath, version: 'Python 3.11.4', ok: true, strategy: 'installed' },
     ];
     const updatedCandidate: EnvCandidate = {
-      path: '/opt/python',
+      path: updatedPythonPath,
       version: 'Python 3.11.6',
       ok: true,
       strategy: 'installed',
@@ -194,7 +211,7 @@ describe('EnvDoctor', () => {
       .fn()
       .mockResolvedValue({
         ok: true,
-        data: { canceled: false, path: 'C:/Python/python.exe' },
+        data: { canceled: false, path: browsedPythonPath },
       } satisfies EnvEnvelope<EnvBrowseResult>);
 
     assignEnvApi({ detect, getConfig, browsePythonExecutable });
@@ -207,6 +224,6 @@ describe('EnvDoctor', () => {
     await waitFor(() => expect(browsePythonExecutable).toHaveBeenCalled());
 
     const input = await screen.findByLabelText<HTMLInputElement>(/Python executable/i);
-    await waitFor(() => expect(input.value).toBe('C:/Python/python.exe'));
+    await waitFor(() => expect(input.value).toBe(browsedPythonPath));
   });
 });
