@@ -46,6 +46,9 @@ const detectionProgressMessages = [
 const formatTimestampedSummary = (detail: string) =>
   `Last scan at ${new Date().toLocaleTimeString()}: ${detail}`;
 
+const idleStatusMessage =
+  'No interpreter scan has been run yet — click "Start interpreter scan" to begin.';
+
 const buildScanSummary = (result: EnvDetectResult | null, error?: string) => {
   if (!result) {
     return formatTimestampedSummary(
@@ -111,6 +114,7 @@ const EnvDoctor = () => {
   const [configError, setConfigError] = useState<string | null>(null);
   const [pathNotice, setPathNotice] = useState<PathNotice>(null);
   const [pathBusy, setPathBusy] = useState(false);
+  const [browseBusy, setBrowseBusy] = useState(false);
   const [manualPath, setManualPath] = useState('');
   const [progressIndex, setProgressIndex] = useState(0);
   const [lastScanSummary, setLastScanSummary] = useState<string | null>(null);
@@ -307,6 +311,21 @@ const EnvDoctor = () => {
     );
   }, [candidateState.candidates, candidateState.selected]);
 
+  const statusMessage = useMemo(() => {
+    if (candidateState.loading) {
+      return detectionProgressMessages[progressIndex];
+    }
+    return lastScanSummary ?? idleStatusMessage;
+  }, [candidateState.loading, lastScanSummary, progressIndex]);
+
+  const statusClassName = useMemo(
+    () =>
+      candidateState.loading
+        ? 'env-doctor__status env-doctor__status--running'
+        : 'env-doctor__status env-doctor__status--idle',
+    [candidateState.loading],
+  );
+
   const handleRefresh = useCallback(() => {
     void runDetection();
   }, [runDetection]);
@@ -317,6 +336,50 @@ const EnvDoctor = () => {
     },
     [updateManualPath],
   );
+
+  const handleBrowseForInterpreter = useCallback(async () => {
+    const api = typeof window !== 'undefined' ? window?.CWT?.env : undefined;
+    if (!api?.browsePythonExecutable) {
+      setPathNotice({
+        kind: 'error',
+        message: 'Python path browsing is unavailable in this build.',
+      });
+      return;
+    }
+    if (browseBusy) {
+      return;
+    }
+
+    setPathNotice(null);
+    setBrowseBusy(true);
+    try {
+      const response = await api.browsePythonExecutable();
+      if (!isMounted.current) {
+        return;
+      }
+      if (response.ok) {
+        if (!response.data.canceled && response.data.path) {
+          manualPathTouched.current = true;
+          updateManualPath(response.data.path, { force: true });
+        }
+      } else {
+        setPathNotice({
+          kind: 'error',
+          message: response.error ?? 'Failed to open file picker.',
+        });
+      }
+    } catch (error) {
+      if (!isMounted.current) {
+        return;
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      setPathNotice({ kind: 'error', message });
+    } finally {
+      if (isMounted.current) {
+        setBrowseBusy(false);
+      }
+    }
+  }, [browseBusy, updateManualPath]);
 
   const handleSetPythonPath = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
@@ -375,13 +438,23 @@ const EnvDoctor = () => {
     <div className="panel env-doctor">
       <div className="env-doctor__header">
         <h2>Environment Doctor</h2>
-        <p>Diagnose Python installations and virtual environment configuration.</p>
+        <p>
+          Diagnose Python installations and virtual environment configuration before launching
+          experiments.
+        </p>
       </div>
 
       <p className="env-doctor__intro">
-        Run a scan to inspect local Python interpreters. Green badges mark environments that can import
-        <code> cwt</code>, while red cards explain which checks failed.
+        Environment Doctor inspects available Python interpreters, verifies that{' '}
+        <code>cwt</code> loads correctly, and highlights fixes when something goes wrong.
       </p>
+      <ul className="env-doctor__list">
+        <li>Discovers interpreters from PATH, virtual environments, and configured locations.</li>
+        <li>
+          Runs import checks against <code>cwt</code> to confirm required dependencies.
+        </li>
+        <li>Captures detailed failure messages so you know how to repair your setup.</li>
+      </ul>
 
       {!ipcAvailable && (
         <div className="env-doctor__notice env-doctor__notice--info">
@@ -392,23 +465,25 @@ const EnvDoctor = () => {
       <div className="env-doctor__actions">
         <button
           type="button"
-          className="env-doctor__button"
+          className={
+            candidateState.loading
+              ? 'env-doctor__button env-doctor__button--busy'
+              : 'env-doctor__button'
+          }
           onClick={handleRefresh}
           disabled={!ipcAvailable || candidateState.loading}
+          aria-busy={candidateState.loading}
         >
           {candidateState.loading ? 'Scanning interpreters…' : 'Start interpreter scan'}
         </button>
-        {candidateState.loading ? (
-          <span role="status" className="env-doctor__status">
-            {detectionProgressMessages[progressIndex]}
-          </span>
-        ) : (
-          lastScanSummary && (
-            <span role="status" className="env-doctor__status env-doctor__status--idle">
-              {lastScanSummary}
-            </span>
-          )
-        )}
+        <span
+          role="status"
+          className={statusClassName}
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {statusMessage}
+        </span>
       </div>
 
       {timeoutWarning && (
@@ -432,9 +507,23 @@ const EnvDoctor = () => {
             disabled={!ipcAvailable || pathBusy}
           />
           <button
+            type="button"
+            className={
+              browseBusy ? 'env-doctor__button env-doctor__button--busy' : 'env-doctor__button'
+            }
+            onClick={handleBrowseForInterpreter}
+            disabled={!ipcAvailable || pathBusy || browseBusy}
+            aria-busy={browseBusy}
+          >
+            Browse…
+          </button>
+          <button
             type="submit"
-            className="env-doctor__button"
+            className={
+              pathBusy ? 'env-doctor__button env-doctor__button--busy' : 'env-doctor__button'
+            }
             disabled={!ipcAvailable || pathBusy || manualPath.trim().length === 0}
+            aria-busy={pathBusy}
           >
             Set Python Path
           </button>

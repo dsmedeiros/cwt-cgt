@@ -232,6 +232,11 @@ export type EnvConfig = {
   strategy: PythonStrategy | null;
 };
 
+export type EnvBrowseResult = {
+  canceled: boolean;
+  path: string | null;
+};
+
 export type RunCreatePayload = {
   experiment: string;
   args?: Record<string, unknown>;
@@ -395,6 +400,7 @@ export interface RendererIpc {
     detect: () => Promise<IpcEnvelope<EnvDetectResult>>;
     setPythonPath: (path: string) => Promise<IpcEnvelope<EnvCandidate>>;
     getConfig: () => Promise<IpcEnvelope<EnvConfig>>;
+    browsePythonExecutable: () => Promise<IpcEnvelope<EnvBrowseResult>>;
   };
   run: {
     create: (payload: RunCreatePayload) => Promise<IpcEnvelope<RunCreateResult>>;

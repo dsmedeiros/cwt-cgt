@@ -69,7 +69,10 @@ results once improvements plateau to avoid drift.
 ![Environment doctor](docs/screenshots/env-doctor.svg)
 
 The Env Doctor inspects candidate Python interpreters. Green badges mark interpreters that can import `cwt` or
-fall back to the module-based strategy. Orange/red cards detail what failed so you can patch dependencies.
+fall back to the module-based strategy. Orange/red cards detail what failed so you can patch dependencies. While
+the scan runs the status line at the top of the panel cycles through each diagnostic step so you know the
+application is still working. Use **Browse…** next to the Python executable field to pick the interpreter on
+disk—handy when pointing the lab at a Windows virtual environment or a freshly-installed interpreter.
 
 ## Troubleshooting
 
