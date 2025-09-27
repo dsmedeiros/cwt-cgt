@@ -14,7 +14,12 @@ const SIM_DIRECTORY = 'cwt-sim';
 
 const quoteShellArg = (value: string): string => {
   if (value.length === 0) {
-    return "''";
+    return process.platform === 'win32' ? '""' : "''";
+  }
+
+  if (process.platform === 'win32') {
+    const escaped = value.replace(/"/g, '""');
+    return `"${escaped}"`;
   }
 
   if (!/[\s"'\\]/.test(value)) {
