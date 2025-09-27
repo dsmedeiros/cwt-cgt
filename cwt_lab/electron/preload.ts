@@ -19,6 +19,7 @@ const api = {
     tail: (payload) => invoke('cwt:run:tail', payload),
     openArtifacts: (payload) => invoke('cwt:run:open-artifacts', payload),
     collectDiagnostics: (payload) => invoke('cwt:run:collect-diagnostics', payload),
+    delete: (payload) => invoke('cwt:run:delete', payload),
     readArtifact: (payload) => invoke('cwt:run:read-artifact', payload),
   },
   phase1: {

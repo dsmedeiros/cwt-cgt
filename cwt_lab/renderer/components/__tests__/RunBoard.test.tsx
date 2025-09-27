@@ -32,6 +32,7 @@ describe('RunBoard', () => {
         .fn()
         .mockResolvedValue({ zipPath: '/tmp/demo.zip', files: ['/tmp/demo/stdout.log'] }),
       tail: vi.fn(),
+      deleteRun: vi.fn(),
     };
 
     render(<RunBoard api={api} />);
@@ -55,6 +56,7 @@ describe('RunBoard', () => {
       listRecent: vi.fn().mockRejectedValue(new Error('IPC unavailable')),
       collectDiagnostics: vi.fn(),
       tail: vi.fn(),
+      deleteRun: vi.fn(),
     };
 
     render(<RunBoard api={api} />);
@@ -89,6 +91,7 @@ describe('RunBoard', () => {
       listRecent: vi.fn().mockResolvedValue(runs),
       collectDiagnostics: vi.fn(),
       tail,
+      deleteRun: vi.fn(),
     };
 
     render(<RunBoard api={api} />);
@@ -135,6 +138,7 @@ describe('RunBoard', () => {
         status: 'failed',
         failureDetails: 'Process exited with code 2.',
       }),
+      deleteRun: vi.fn(),
     };
 
     render(<RunBoard api={api} />);
@@ -155,5 +159,34 @@ describe('RunBoard', () => {
     await waitFor(() =>
       expect(screen.getByText(/Failure details: Process exited with code 2\./i)).toBeInTheDocument(),
     );
+  });
+
+  it('deletes runs after confirmation', async () => {
+    const run1 = buildRun({ id: 'run-1', updatedAt: Date.now() });
+    const run2 = buildRun({ id: 'run-2', updatedAt: Date.now() - 10 });
+    const listRecent = vi
+      .fn<[], Promise<RegistryRunRecord[]>>()
+      .mockResolvedValueOnce([run1, run2])
+      .mockResolvedValueOnce([run2]);
+    const api = {
+      listRecent,
+      collectDiagnostics: vi.fn(),
+      tail: vi.fn(),
+      deleteRun: vi.fn().mockResolvedValue({ runId: 'run-1' }),
+    };
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    render(<RunBoard api={api} />);
+
+    await waitFor(() => expect(listRecent).toHaveBeenCalledTimes(1));
+
+    const deleteButton = screen.getByRole('button', { name: /delete run run-1/i });
+    fireEvent.click(deleteButton);
+
+    await waitFor(() => expect(api.deleteRun).toHaveBeenCalledWith('run-1'));
+    await waitFor(() => expect(listRecent).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByText('run-1')).not.toBeInTheDocument());
+
+    confirmSpy.mockRestore();
   });
 });

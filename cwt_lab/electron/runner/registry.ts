@@ -196,3 +196,8 @@ export const fetchRuns = (db: BetterSqlite3Database, query: RunQuery): RunRecord
     } satisfies RunRecord;
   });
 };
+
+export const deleteRunRecord = (db: BetterSqlite3Database, runId: string) => {
+  const stmt = db.prepare('DELETE FROM runs WHERE id = @id');
+  stmt.run({ id: runId });
+};

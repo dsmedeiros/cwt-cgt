@@ -271,6 +271,14 @@ export type RunTailPayload = {
   maxBytes?: number;
 };
 
+export type RunDeletePayload = {
+  runId: string;
+};
+
+export type RunDeleteResult = {
+  runId: string;
+};
+
 export type RunTailChunk = {
   output: string;
   nextFromByte: number;
@@ -395,6 +403,7 @@ export interface RendererIpc {
     tail: (payload: RunTailPayload) => Promise<IpcEnvelope<RunTailChunk>>;
     openArtifacts: (payload: { runId: string }) => Promise<IpcEnvelope<ArtifactFile[]>>;
     collectDiagnostics: (payload: { runId: string }) => Promise<IpcEnvelope<RunDiagnosticsBundle>>;
+    delete: (payload: RunDeletePayload) => Promise<IpcEnvelope<RunDeleteResult>>;
     readArtifact: (
       payload: { runId: string; relativePath: string },
     ) => Promise<IpcEnvelope<{ path: string; contents: string }>>;

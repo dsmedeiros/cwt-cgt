@@ -82,6 +82,16 @@ const createDemoRunsApi = (runs: DemoRun[]): RunsApi => {
             : null,
       };
     },
+    async deleteRun(runId) {
+      await new Promise((resolve) => setTimeout(resolve, 60));
+      const index = runs.findIndex((entry) => entry.record.id === runId);
+      if (index === -1) {
+        throw new Error(`Run ${runId} not found in demo catalog.`);
+      }
+      const [removed] = runs.splice(index, 1);
+      byId.delete(runId);
+      return { runId: removed.record.id };
+    },
   };
 };
 
