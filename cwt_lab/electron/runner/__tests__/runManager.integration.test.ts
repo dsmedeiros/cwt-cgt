@@ -110,4 +110,31 @@ let skipSuite = false;
     expect(bundle.zipPath).toMatch(/diagnostics-\d+\.zip$/);
     expect(existsSync(bundle.zipPath)).toBe(true);
   });
+
+  it('throws a descriptive error when the configured Python interpreter disappears', async () => {
+    if (skipSuite) {
+      return;
+    }
+
+    const artifactsRootMissing = path.join(tmpRoot, 'artifacts-missing');
+    const registryMissing = path.join(tmpRoot, 'registry-missing.sqlite');
+    const missingManager = new RunManager({
+      repoRoot,
+      artifactsRoot: artifactsRootMissing,
+      registryPath: registryMissing,
+      pythonPathEntries: [],
+    });
+
+    const missingInterpreterPath = path.join(tmpRoot, 'missing', 'python.exe');
+    missingManager.setPythonEnv({ executable: missingInterpreterPath, version: null, strategy: 'module' });
+
+    expect(() =>
+      missingManager.previewCommand('experiments.fake', [], repoRoot),
+    ).toThrowError(
+      `Configured Python interpreter not found at ${missingInterpreterPath}. ` +
+        'Re-run environment detection to select a valid interpreter.',
+    );
+
+    await missingManager.shutdown();
+  });
 });

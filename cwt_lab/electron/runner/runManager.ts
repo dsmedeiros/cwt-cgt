@@ -533,8 +533,18 @@ export class RunManager {
       };
     }
 
+    const pythonExe = this.pythonEnv.executable;
+
+    if (path.isAbsolute(pythonExe) && !existsSync(pythonExe)) {
+      this.pythonEnv = null;
+      throw new Error(
+        `Configured Python interpreter not found at ${pythonExe}. ` +
+          'Re-run environment detection to select a valid interpreter.',
+      );
+    }
+
     const plan = planModuleInvocation({
-      pythonExe: this.pythonEnv.executable,
+      pythonExe,
       strategy: this.pythonEnv.strategy,
       repoRoot: this.config.repoRoot,
       moduleName: requestedCommand,
