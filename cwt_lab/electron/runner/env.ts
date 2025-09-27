@@ -7,6 +7,8 @@ import {
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { artifactsRoot, cwtSimRoot, repoRoot } from '../paths';
+
 export type PythonStrategy = 'module' | 'py_path' | 'installed';
 
 export type PythonCandidate = {
@@ -53,9 +55,6 @@ type CandidateEvaluation = {
   environment: PythonEnvironment | null;
 };
 
-const repoRoot = path.resolve(__dirname, '..', '..', '..');
-const artifactsRoot = path.join(repoRoot, 'artifacts');
-const cwtSimRoot = path.join(repoRoot, 'cwt-sim');
 const configPath = path.join(repoRoot, 'cwt_lab', 'config.json');
 
 const BUNDLED_PACKAGES = ['networkx'];
