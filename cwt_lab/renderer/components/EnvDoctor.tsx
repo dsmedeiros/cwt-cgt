@@ -296,10 +296,6 @@ const EnvDoctor = () => {
     void refreshConfig();
   }, [refreshConfig]);
 
-  useEffect(() => {
-    void runDetection();
-  }, [runDetection]);
-
   const activeCandidate = useMemo(() => {
     if (!candidateState.selected) {
       return null;
@@ -400,7 +396,7 @@ const EnvDoctor = () => {
           onClick={handleRefresh}
           disabled={!ipcAvailable || candidateState.loading}
         >
-          {candidateState.loading ? 'Scanning interpreters…' : 'Refresh interpreters'}
+          {candidateState.loading ? 'Scanning interpreters…' : 'Start interpreter scan'}
         </button>
         {candidateState.loading ? (
           <span role="status" className="env-doctor__status">
