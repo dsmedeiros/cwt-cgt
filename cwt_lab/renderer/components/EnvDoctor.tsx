@@ -158,6 +158,11 @@ const EnvDoctor = () => {
 
   const updateManualPath = useCallback(
     (value: string, options: ManualPathUpdateOptions = {}) => {
+      console.debug('[EnvDoctor] Updating manual Python path.', {
+        value,
+        fromUser: Boolean(options.fromUser),
+        force: Boolean(options.force),
+      });
       if (options.fromUser) {
         manualPathTouched.current = true;
         setManualPath(value);
@@ -349,19 +354,25 @@ const EnvDoctor = () => {
   );
 
   const handleRefresh = useCallback(() => {
+    console.info('[EnvDoctor] Interpreter scan requested via UI.');
     void runDetection();
   }, [runDetection]);
 
   const handleManualPathChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
+      console.debug('[EnvDoctor] Manual Python path input changed.', {
+        value: event.target.value,
+      });
       updateManualPath(event.target.value, { fromUser: true });
     },
     [updateManualPath],
   );
 
   const handleBrowseForInterpreter = useCallback(async () => {
+    console.info('[EnvDoctor] Browse for Python executable requested.');
     const api = typeof window !== 'undefined' ? window?.CWT?.env : undefined;
     if (!api?.browsePythonExecutable) {
+      console.warn('[EnvDoctor] Browse API unavailable in this build.');
       setPathNotice({
         kind: 'error',
         message: 'Python path browsing is unavailable in this build.',
@@ -376,6 +387,12 @@ const EnvDoctor = () => {
     setBrowseBusy(true);
     try {
       const response = await api.browsePythonExecutable();
+      console.debug('[EnvDoctor] Browse result received.', {
+        ok: response.ok,
+        canceled: response.data?.canceled ?? null,
+        path: response.data?.path ?? null,
+        error: response.error ?? null,
+      });
       if (!isMounted.current) {
         return;
       }
@@ -410,6 +427,7 @@ const EnvDoctor = () => {
 
       const api = typeof window !== 'undefined' ? window?.CWT?.env : undefined;
       if (!api?.setPythonPath) {
+        console.warn('[EnvDoctor] Set Python path API unavailable in this build.');
         setPathNotice({
           kind: 'error',
           message: 'Python path configuration is unavailable in this build.',
@@ -418,6 +436,7 @@ const EnvDoctor = () => {
       }
 
       const trimmed = manualPath.trim();
+      console.info('[EnvDoctor] Attempting to set Python path.', { trimmed });
       if (!trimmed) {
         setPathNotice({ kind: 'error', message: 'Provide the path to a Python executable.' });
         return;
@@ -426,16 +445,27 @@ const EnvDoctor = () => {
       setPathBusy(true);
       try {
         const response = await api.setPythonPath(trimmed);
+        console.debug('[EnvDoctor] Set Python path response received.', {
+          ok: response.ok,
+          candidate: response.data ?? null,
+          error: response.error ?? null,
+        });
         if (!isMounted.current) {
           return;
         }
         if (response.ok) {
           const candidate = response.data;
+          console.info('[EnvDoctor] Python path updated successfully.', {
+            path: candidate.path ?? trimmed,
+          });
           updateManualPath(candidate.path ?? trimmed, { force: true });
           setPathNotice({ kind: 'success', message: `Interpreter set to ${candidate.path}.` });
           await runDetection();
           await refreshConfig({ force: true });
         } else {
+          console.warn('[EnvDoctor] Failed to set Python path.', {
+            error: response.error,
+          });
           setPathNotice({
             kind: 'error',
             message: response.error ?? 'Failed to set Python path.',
@@ -446,6 +476,7 @@ const EnvDoctor = () => {
           return;
         }
         const message = error instanceof Error ? error.message : String(error);
+        console.error('[EnvDoctor] Unexpected error while setting Python path.', error);
         setPathNotice({ kind: 'error', message });
       } finally {
         if (isMounted.current) {
