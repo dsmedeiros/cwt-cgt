@@ -263,7 +263,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     summary_path = output_dir / "summary.json"
     with summary_path.open("w", encoding="utf-8") as handle:
-        json.dump(summary, handle, indent=2)
+        json.dump(summary, handle, indent=2, ensure_ascii=False)
 
     report_lines = [
         "# Wilson loop in three dimensions",

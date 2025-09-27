@@ -417,7 +417,10 @@ def main() -> None:
 
     if output_dir is not None:
         summary_path = output_dir / "summary.json"
-        summary_path.write_text(json.dumps(summary_payload, indent=2), encoding="utf-8")
+        summary_path.write_text(
+            json.dumps(summary_payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
         print(f"Summary written to {summary_path}")
 
 

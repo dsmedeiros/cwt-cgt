@@ -477,7 +477,10 @@ def _write_json(results: Stage0Results, path: Path) -> None:
         },
     }
 
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True))
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False),
+        encoding="utf-8",
+    )
 
 
 def _pyarrow_available() -> bool:
@@ -656,7 +659,10 @@ def _write_results_markdown(results: Stage0Results, path: Path) -> None:
         ]
     )
 
-    path.write_text("\n".join(lines))
+    path.write_text(
+        "\n".join(lines),
+        encoding="utf-8",
+    )
 
 
 # ---------------------------------------------------------------------------
