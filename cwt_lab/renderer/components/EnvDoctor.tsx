@@ -100,6 +100,28 @@ const formatStrategy = (strategy: PythonStrategy | null) => {
   return strategyLabels[strategy];
 };
 
+const isWindowsEnvironment = (): boolean => {
+  const globalProcess = (globalThis as { process?: { platform?: string } }).process;
+  if (typeof globalProcess?.platform === 'string') {
+    return globalProcess.platform === 'win32';
+  }
+
+  if (typeof navigator !== 'undefined') {
+    const platform =
+      (navigator as { userAgentData?: { platform?: string } }).userAgentData?.platform ??
+      navigator.platform ??
+      '';
+    return platform.toLowerCase().includes('win');
+  }
+
+  return false;
+};
+
+const getPythonPathPlaceholder = (): string =>
+  isWindowsEnvironment()
+    ? 'C:\\\\path\\\\to\\\\.venv\\\\Scripts\\\\python.exe'
+    : '/path/to/.venv/bin/python';
+
 const EnvDoctor = () => {
   const [ipcAvailable, setIpcAvailable] = useState(
     () => typeof window !== 'undefined' && Boolean(window?.CWT?.env?.detect),
@@ -434,6 +456,8 @@ const EnvDoctor = () => {
     [manualPath, refreshConfig, runDetection, updateManualPath],
   );
 
+  const pythonPathPlaceholder = useMemo(() => getPythonPathPlaceholder(), []);
+
   return (
     <div className="panel env-doctor">
       <div className="env-doctor__header">
@@ -501,7 +525,7 @@ const EnvDoctor = () => {
             id="env-doctor-python-path"
             type="text"
             className="env-doctor__input"
-            placeholder="/path/to/.venv/bin/python"
+            placeholder={pythonPathPlaceholder}
             value={manualPath}
             onChange={handleManualPathChange}
             disabled={!ipcAvailable || pathBusy}
