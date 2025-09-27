@@ -1035,8 +1035,14 @@ def main(argv: Sequence[str] | None = None) -> None:
     records_path = output_dir / "records.json"
     report_path = output_dir / "REPORT.md"
 
-    records_path.write_text(json.dumps(results.to_dict(), indent=2))
-    report_path.write_text(_render_report(results))
+    records_path.write_text(
+        json.dumps(results.to_dict(), indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    report_path.write_text(
+        _render_report(results),
+        encoding="utf-8",
+    )
 
     _render_phase_slices(results, output_dir)
 

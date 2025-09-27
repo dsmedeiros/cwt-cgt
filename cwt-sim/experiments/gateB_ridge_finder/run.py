@@ -713,7 +713,12 @@ def save_numpy_bundle(result: GraphScanResult, out_dir: Path) -> None:
     )
 
     with (out_dir / "summary.json").open("w", encoding="utf-8") as fh:
-        json.dump(result.detection.to_json(), fh, indent=2)
+        json.dump(
+            result.detection.to_json(),
+            fh,
+            indent=2,
+            ensure_ascii=False,
+        )
 
 
 def save_metrics_csv(result: GraphScanResult, out_dir: Path, sim_config: SimulationConfig) -> None:
@@ -808,7 +813,12 @@ def save_top_omega_tiles(result: GraphScanResult, out_dir: Path, top_k: int) -> 
     }
 
     with (out_dir / "top_omega_tiles.json").open("w", encoding="utf-8") as handle:
-        json.dump(data, handle, indent=2)
+        json.dump(
+            data,
+            handle,
+            indent=2,
+            ensure_ascii=False,
+        )
 
 
 def scan_graph(
@@ -1246,10 +1256,14 @@ def main(argv: Sequence[str] | None = None) -> None:
             {result.name: result.detection.to_json() for result in results},
             fh,
             indent=2,
+            ensure_ascii=False,
         )
 
     report_path = output_dir / "REPORT.md"
-    report_path.write_text(_render_report(results, sim_config, args.bootstrap))
+    report_path.write_text(
+        _render_report(results, sim_config, args.bootstrap),
+        encoding="utf-8",
+    )
 
     for result in results:
         print(f"Graph: {result.name}")

@@ -351,7 +351,10 @@ def _write_histograms(path: Path, samples: Sequence[SampleResult]) -> None:
     for sample in samples:
         key = f"extent={sample.extent:.4f}|steps={sample.steps}"
         payload[key] = sample.fs_hist
-    path.write_text(json.dumps(payload, indent=2))
+    path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
 
 
 def _write_boundary(path: Path, boundary: Sequence[BoundaryPoint]) -> None:

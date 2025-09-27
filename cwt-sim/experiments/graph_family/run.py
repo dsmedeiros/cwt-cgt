@@ -473,7 +473,10 @@ def _write_summary(
 
     out_dir.mkdir(parents=True, exist_ok=True)
     summary_path = out_dir / "summary.json"
-    summary_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    summary_path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
     return summary_path
 
 

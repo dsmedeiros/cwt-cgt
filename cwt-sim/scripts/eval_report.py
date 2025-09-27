@@ -230,7 +230,7 @@ def main(
         markdown = _build_markdown(entries, statuses, pair_ok)
         if report is not None:
             report.parent.mkdir(parents=True, exist_ok=True)
-            report.write_text(markdown, encoding="utf8")
+            report.write_text(markdown, encoding="utf-8")
         typer.echo(markdown)
         return
 
