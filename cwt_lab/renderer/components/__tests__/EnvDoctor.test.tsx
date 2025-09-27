@@ -57,6 +57,11 @@ describe('EnvDoctor', () => {
 
     render(<EnvDoctor />);
 
+    expect(detect).not.toHaveBeenCalled();
+
+    const startButton = await screen.findByRole('button', { name: /Start interpreter scan/i });
+    fireEvent.click(startButton);
+
     await waitFor(() => expect(detect).toHaveBeenCalled());
 
     const activeHeading = await screen.findByRole('heading', { name: /Active interpreter/i });
@@ -89,6 +94,9 @@ describe('EnvDoctor', () => {
     assignEnvApi({ detect, getConfig });
 
     render(<EnvDoctor />);
+
+    const startButton = await screen.findByRole('button', { name: /Start interpreter scan/i });
+    fireEvent.click(startButton);
 
     await waitFor(() => expect(detect).toHaveBeenCalled());
 
@@ -143,6 +151,9 @@ describe('EnvDoctor', () => {
     assignEnvApi({ detect, getConfig, setPythonPath });
 
     render(<EnvDoctor />);
+
+    const startButton = await screen.findByRole('button', { name: /Start interpreter scan/i });
+    fireEvent.click(startButton);
 
     await waitFor(() => expect(detect).toHaveBeenCalledTimes(1));
 
