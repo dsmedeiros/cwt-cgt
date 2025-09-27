@@ -5,6 +5,7 @@ import path from 'node:path';
 import type { GraphFamilyCommandResult } from '../renderer/types/ipc';
 import type { PythonStrategy } from './runner/env';
 import { planModuleInvocation } from './runner/pythonInvoker';
+import { cwtSimRoot, repoRoot } from './paths';
 
 type GraphFamilyCommandParams = {
   families: string[];
@@ -36,8 +37,6 @@ type RawFamilyEntry = {
   thumbnail?: string | null;
 };
 
-const repoRoot = path.resolve(__dirname, '..', '..');
-const cwtSimRoot = path.join(repoRoot, 'cwt-sim');
 
 const toNumber = (value: unknown): number | null => {
   if (value == null) {

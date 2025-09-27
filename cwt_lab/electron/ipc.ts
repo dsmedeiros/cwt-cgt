@@ -14,6 +14,7 @@ import {
   type PythonCandidate,
 } from './runner/env';
 import { RunManager, type RunMetadata } from './runner/runManager';
+import { artifactsRoot, cwtSimRoot, repoRoot } from './paths';
 import type { GuidedLoopArgs, LoopAtHotspotPayload } from '../renderer/types/ipc';
 import { runAdiabaticBoundary } from './adiabaticBoundary';
 import { cmdGraphFamily } from './graphFamily';
@@ -26,9 +27,6 @@ import { scanArtifacts } from './runner/files';
 
 type Envelope<T> = { ok: true; data: T } | { ok: false; error: string; data?: T };
 
-const repoRoot = path.resolve(__dirname, '..', '..');
-const cwtSimRoot = path.join(repoRoot, 'cwt-sim');
-const artifactsRoot = path.join(repoRoot, 'artifacts');
 const registryPath = path.join(artifactsRoot, 'registry.sqlite');
 const recipesPath = path.join(artifactsRoot, 'recipes.json');
 const exportsRoot = path.join(artifactsRoot, '_exports');

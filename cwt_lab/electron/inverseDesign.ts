@@ -4,6 +4,7 @@ import path from 'node:path';
 
 import type { PythonStrategy } from './runner/env';
 import { planModuleInvocation } from './runner/pythonInvoker';
+import { cwtSimRoot, repoRoot } from './paths';
 
 export type InverseDesignParams = {
   axes: [string, string];
@@ -46,8 +47,6 @@ export type InverseDesignResult = {
   acceptance: string | null;
 };
 
-const repoRoot = path.resolve(__dirname, '..', '..');
-const cwtSimRoot = path.join(repoRoot, 'cwt-sim');
 
 const ensureDir = async (dir: string) => {
   await fs.mkdir(dir, { recursive: true });

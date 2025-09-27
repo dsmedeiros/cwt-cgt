@@ -5,6 +5,7 @@ import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 
 import type { PythonStrategy } from './runner/env';
 import { planModuleInvocation } from './runner/pythonInvoker';
+import { cwtSimRoot, repoRoot } from './paths';
 
 export type CouplingVariantRequest = {
   configPath: string;
@@ -36,8 +37,6 @@ export type CouplingTunerResult = {
   commands: string[];
 };
 
-const repoRoot = path.resolve(__dirname, '..', '..');
-const cwtSimRoot = path.join(repoRoot, 'cwt-sim');
 
 const ensureDir = async (dir: string) => {
   await fs.mkdir(dir, { recursive: true });
