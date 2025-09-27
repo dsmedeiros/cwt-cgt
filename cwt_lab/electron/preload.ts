@@ -11,6 +11,7 @@ const api = {
     detect: () => invoke('cwt:env:detect'),
     setPythonPath: (path: string) => invoke('cwt:env:set-python-path', path),
     getConfig: () => invoke('cwt:env:get-config'),
+    browsePythonExecutable: () => invoke('cwt:env:browse-python'),
   },
   run: {
     create: (payload) => invoke('cwt:run:create', payload),

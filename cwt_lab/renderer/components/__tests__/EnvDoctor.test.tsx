@@ -2,7 +2,13 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import EnvDoctor from '../EnvDoctor';
-import type { EnvCandidate, EnvConfig, EnvDetectResult, RendererIpc } from '../../types/ipc';
+import type {
+  EnvBrowseResult,
+  EnvCandidate,
+  EnvConfig,
+  EnvDetectResult,
+  RendererIpc,
+} from '../../types/ipc';
 
 type EnvEnvelope<T> = { ok: true; data: T } | { ok: false; error: string; data?: T };
 
@@ -11,6 +17,7 @@ const assignEnvApi = (overrides: Partial<RendererIpc['env']>) => {
     detect: vi.fn(),
     setPythonPath: vi.fn(),
     getConfig: vi.fn(),
+    browsePythonExecutable: vi.fn(),
     ...overrides,
   } as RendererIpc['env'];
   (window as typeof window & { CWT: RendererIpc }).CWT = {
@@ -167,5 +174,39 @@ describe('EnvDoctor', () => {
     await waitFor(() => expect(getConfig).toHaveBeenCalledTimes(2));
 
     expect(await screen.findByText(`Interpreter set to ${updatedCandidate.path}.`)).toBeInTheDocument();
+  });
+
+  it('allows browsing for a python executable and updates the input field', async () => {
+    const detect = vi.fn().mockResolvedValue({
+      ok: true,
+      data: { candidates: [], selected: null },
+    } satisfies EnvEnvelope<EnvDetectResult>);
+    const getConfig = vi.fn().mockResolvedValue({
+      ok: true,
+      data: {
+        repoRoot: '/repo',
+        artifactsRoot: '/repo/artifacts',
+        pythonPath: null,
+        strategy: null,
+      } satisfies EnvConfig,
+    } satisfies EnvEnvelope<EnvConfig>);
+    const browsePythonExecutable = vi
+      .fn()
+      .mockResolvedValue({
+        ok: true,
+        data: { canceled: false, path: 'C:/Python/python.exe' },
+      } satisfies EnvEnvelope<EnvBrowseResult>);
+
+    assignEnvApi({ detect, getConfig, browsePythonExecutable });
+
+    render(<EnvDoctor />);
+
+    const browseButton = await screen.findByRole('button', { name: /browse/i });
+    fireEvent.click(browseButton);
+
+    await waitFor(() => expect(browsePythonExecutable).toHaveBeenCalled());
+
+    const input = await screen.findByLabelText<HTMLInputElement>(/Python executable/i);
+    await waitFor(() => expect(input.value).toBe('C:/Python/python.exe'));
   });
 });
