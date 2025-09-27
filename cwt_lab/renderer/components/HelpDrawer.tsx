@@ -51,7 +51,7 @@ const HelpDrawer = ({ open, title, analogy, bullets, onClose }: HelpDrawerProps)
         </button>
       </header>
       <p className="help-drawer__analogy">{analogy}</p>
-      <h3>How to read these numbers</h3>
+      <h3>How to interpret the scan</h3>
       <ul>
         {bullets.map((bullet, index) => (
           <li key={index}>{bullet}</li>

@@ -8,7 +8,7 @@ import {
   useState,
 } from 'react';
 
-import type { EnvCandidate, EnvConfig, PythonStrategy } from '../types/ipc';
+import type { EnvCandidate, EnvConfig, EnvDetectResult, PythonStrategy } from '../types/ipc';
 
 type ManualPathUpdateOptions = { fromUser?: boolean; force?: boolean };
 
@@ -42,6 +42,43 @@ const detectionProgressMessages = [
   'Attempting imports from detected interpreters…',
   'Wrapping up interpreter scan…',
 ] as const;
+
+const formatTimestampedSummary = (detail: string) =>
+  `Last scan at ${new Date().toLocaleTimeString()}: ${detail}`;
+
+const buildScanSummary = (result: EnvDetectResult | null, error?: string) => {
+  if (!result) {
+    return formatTimestampedSummary(
+      error ? `scan failed — ${error}` : 'scan completed but returned no data.',
+    );
+  }
+
+  const total = result.candidates.length;
+  const interpreterLabel = `${total} interpreter${total === 1 ? '' : 's'}`;
+
+  if (error) {
+    if (total === 0) {
+      return formatTimestampedSummary(`no interpreters were detected — ${error}`);
+    }
+    return formatTimestampedSummary(`detected ${interpreterLabel}, but none usable — ${error}`);
+  }
+
+  if (result.selected) {
+    return formatTimestampedSummary(
+      `detected ${interpreterLabel}; active environment ${result.selected.path}.`,
+    );
+  }
+
+  if (total === 0) {
+    return formatTimestampedSummary(
+      'no interpreters were detected. Configure a Python path and rerun the scan.',
+    );
+  }
+
+  return formatTimestampedSummary(
+    `detected ${interpreterLabel}, but none passed validation. Review the errors below.`,
+  );
+};
 
 const parseCandidateErrors = (error?: string): string[] => {
   if (!error) {
@@ -81,6 +118,7 @@ const EnvDoctor = () => {
   const manualPathTouched = useRef(false);
   const isMounted = useRef(true);
   const detectionTimeoutRef = useRef<number | null>(null);
+  const detectionInFlightRef = useRef(false);
 
   useEffect(
     () => () => {
@@ -151,9 +189,21 @@ const EnvDoctor = () => {
       if (isMounted.current) {
         setIpcAvailable(false);
         setCandidateState((prev) => ({ ...prev, loading: false }));
+        setLastScanSummary(
+          formatTimestampedSummary(
+            'interpreter scan unavailable — launch the laboratory Electron app to run diagnostics.',
+          ),
+        );
       }
       return;
     }
+
+    if (detectionInFlightRef.current) {
+      console.info('[EnvDoctor] Detection request ignored because a scan is already running.');
+      return;
+    }
+
+    detectionInFlightRef.current = true;
 
     if (isMounted.current) {
       console.info('[EnvDoctor] Starting interpreter detection run.');
@@ -182,10 +232,6 @@ const EnvDoctor = () => {
       if (!isMounted.current) {
         return;
       }
-      if (typeof window !== 'undefined' && detectionTimeoutRef.current !== null) {
-        window.clearTimeout(detectionTimeoutRef.current);
-        detectionTimeoutRef.current = null;
-      }
       if (response.ok) {
         console.info('[EnvDoctor] Detection run completed successfully.', {
           candidateCount: response.data.candidates.length,
@@ -197,9 +243,7 @@ const EnvDoctor = () => {
           selected: response.data.selected,
           error: null,
         });
-        setLastScanSummary(
-          `Last scan completed successfully at ${new Date().toLocaleTimeString()}.`,
-        );
+        setLastScanSummary(buildScanSummary(response.data));
         if (response.data.selected?.path) {
           updateManualPath(response.data.selected.path);
         }
@@ -213,24 +257,22 @@ const EnvDoctor = () => {
           selected: response.data?.selected ?? null,
           error: response.error ?? 'Failed to detect Python interpreters.',
         });
-        setLastScanSummary(
-          `Last scan completed with errors at ${new Date().toLocaleTimeString()}.`,
-        );
+        setLastScanSummary(buildScanSummary(response.data ?? null, response.error));
       }
     } catch (error) {
       if (!isMounted.current) {
         return;
       }
       const message = error instanceof Error ? error.message : String(error);
+      console.error('[EnvDoctor] Detection run failed due to an unexpected error.', error);
+      setCandidateState((prev) => ({ ...prev, loading: false, error: message }));
+      setLastScanSummary(buildScanSummary(null, message));
+    } finally {
+      detectionInFlightRef.current = false;
       if (typeof window !== 'undefined' && detectionTimeoutRef.current !== null) {
         window.clearTimeout(detectionTimeoutRef.current);
         detectionTimeoutRef.current = null;
       }
-      console.error('[EnvDoctor] Detection run failed due to an unexpected error.', error);
-      setCandidateState((prev) => ({ ...prev, loading: false, error: message }));
-      setLastScanSummary(
-        `Last scan failed unexpectedly at ${new Date().toLocaleTimeString()}.`,
-      );
     }
   }, [updateManualPath]);
 
