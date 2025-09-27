@@ -171,6 +171,15 @@ export class RunManager {
     const runArtifactsDir = path.join(this.config.artifactsRoot, runId);
     await ensureDir(runArtifactsDir);
 
+    const argsSummary = JSON.stringify(args);
+    console.info(
+      '[RunManager] Received run request %s: command=%s args=%s cwd=%s',
+      runId,
+      command,
+      argsSummary,
+      runCwd,
+    );
+
     let resolveCompletion: (result: RunCompletion) => void = () => undefined;
     const completion = new Promise<RunCompletion>((resolve) => {
       resolveCompletion = resolve;
@@ -308,6 +317,14 @@ export class RunManager {
       env.PYTHONPATH = pythonPathValue;
     }
 
+    const cliForLog = formatCli({
+      command: invocation.command,
+      args: invocation.args,
+      cwd: invocation.cwd,
+      pythonPath: pythonPathValue ?? null,
+    });
+    console.info(`[RunManager] Launching run ${context.id}: ${cliForLog}`);
+
     context.diagnostics.command = invocation.command;
     context.diagnostics.args = [...invocation.args];
     context.diagnostics.cwd = invocation.cwd;
@@ -357,6 +374,11 @@ export class RunManager {
       context.updatedAt = Date.now();
       await writeLog(context.logPath, context.buffer);
 
+      const exitDescriptor = `code=${code ?? 'null'} signal=${signal ?? 'null'}`;
+      console.info(
+        `[RunManager] Run ${context.id} exited with status ${context.status} (${exitDescriptor}).`,
+      );
+
       context.diagnostics.status = context.status;
       context.diagnostics.exitCode = code ?? null;
       context.diagnostics.signal = signal ?? null;
@@ -383,6 +405,11 @@ export class RunManager {
         metrics,
       });
 
+      const failureMessage = this.describeFailure(context);
+      if (failureMessage) {
+        console.error(`[RunManager] ${context.id}: ${failureMessage}`);
+      }
+
       context.resolveCompletion({
         runId: context.id,
         status: context.status,
@@ -396,6 +423,7 @@ export class RunManager {
       context.status = 'failed';
       context.updatedAt = Date.now();
       await writeLog(context.logPath, context.buffer);
+      console.error(`[RunManager] Failed to start run ${context.id}:`, error);
       upsertRun(this.registry, {
         id: context.id,
         createdAt: context.createdAt,
@@ -433,6 +461,11 @@ export class RunManager {
       return;
     }
 
+    if (!context.timeoutTriggered) {
+      console.warn(
+        `[RunManager] Run ${context.id} exceeded timeout of ${context.timeoutMs ?? 0} ms. Sending SIGTERM.`,
+      );
+    }
     context.timeoutTriggered = true;
     context.diagnostics.error = 'timeout';
     context.diagnostics.updatedAtUtc = new Date().toISOString();
