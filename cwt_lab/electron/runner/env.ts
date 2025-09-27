@@ -115,14 +115,37 @@ const ensureConfigDir = () => {
   }
 };
 
+const looksLikeWindowsPath = (value: string): boolean => /^(?:[a-zA-Z]:\\|\\\\)/.test(value);
+
+const looksLikePosixPath = (value: string): boolean => value.startsWith('/');
+
+export const sanitizeStoredConfig = (
+  config: StoredConfig,
+  platform: NodeJS.Platform = process.platform,
+): StoredConfig => {
+  const pythonPath = config.pythonPath?.trim() ?? null;
+  const strategy = config.strategy ?? null;
+
+  if (!pythonPath) {
+    return { pythonPath: null, strategy: null } satisfies StoredConfig;
+  }
+
+  if (platform !== 'win32' && looksLikeWindowsPath(pythonPath)) {
+    return { pythonPath: null, strategy: null } satisfies StoredConfig;
+  }
+
+  if (platform === 'win32' && looksLikePosixPath(pythonPath)) {
+    return { pythonPath: null, strategy: null } satisfies StoredConfig;
+  }
+
+  return { pythonPath, strategy } satisfies StoredConfig;
+};
+
 const readConfig = (): StoredConfig => {
   try {
     const raw = readFileSync(configPath, 'utf-8');
     const parsed = JSON.parse(raw) as StoredConfig;
-    return {
-      pythonPath: parsed.pythonPath ?? null,
-      strategy: parsed.strategy ?? null,
-    };
+    return sanitizeStoredConfig(parsed);
   } catch {
     return { ...defaultConfig };
   }
