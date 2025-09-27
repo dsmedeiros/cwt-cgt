@@ -98,12 +98,21 @@ const recipePayloadSchema = z.object({
   envInfo: z.unknown().optional(),
 });
 
-const wrap = async <T>(fn: () => Promise<T> | T): Promise<Envelope<T>> => {
+const wrap = async <T>(
+  fn: () => Promise<T> | T,
+  options: { label?: string } = {},
+): Promise<Envelope<T>> => {
   try {
     const data = await fn();
     return { ok: true as const, data };
   } catch (error) {
-    return { ok: false as const, error: error instanceof Error ? error.message : String(error) };
+    const message = error instanceof Error ? error.message : String(error);
+    if (options.label) {
+      console.error(`[IPC:${options.label}] handler failed:`, error);
+    } else {
+      console.error('[IPC] handler failed:', error);
+    }
+    return { ok: false as const, error: message };
   }
 };
 
@@ -597,7 +606,7 @@ ipcMain.handle(
         },
         { timeoutMs: payload.timeoutMs },
       );
-    }),
+    }, { label: 'cwt:run:create' }),
 );
 
 ipcMain.handle(
@@ -614,7 +623,7 @@ ipcMain.handle(
       const args = buildArgsFromParams(payload.args);
       const cwd = payload.workdir ? path.resolve(payload.workdir) : cwtSimRoot;
       return runManager.previewCommand(payload.experiment, args, cwd);
-    }),
+    }, { label: 'cwt:run:preview' }),
 );
 
 ipcMain.handle('cwt:run:abort', (_event, payload: { runId: string }) =>
@@ -624,7 +633,7 @@ ipcMain.handle('cwt:run:abort', (_event, payload: { runId: string }) =>
     }
     await runManager.abort(payload.runId);
     return { runId: payload.runId };
-  }),
+  }, { label: 'cwt:run:abort' }),
 );
 
 ipcMain.handle('cwt:run:tail', (_event, payload: { runId: string; fromByte?: number }) =>
@@ -634,7 +643,7 @@ ipcMain.handle('cwt:run:tail', (_event, payload: { runId: string; fromByte?: num
     }
 
     return runManager.tail(payload.runId, payload.fromByte ?? 0, (payload as { maxBytes?: number }).maxBytes);
-  }),
+  }, { label: 'cwt:run:tail' }),
 );
 
 ipcMain.handle('cwt:run:open-artifacts', (_event, payload: { runId: string }) =>
@@ -644,7 +653,7 @@ ipcMain.handle('cwt:run:open-artifacts', (_event, payload: { runId: string }) =>
     }
 
     return runManager.listArtifacts(payload.runId);
-  }),
+  }, { label: 'cwt:run:open-artifacts' }),
 );
 
 ipcMain.handle('cwt:run:collect-diagnostics', (_event, payload: { runId: string }) =>
@@ -654,7 +663,7 @@ ipcMain.handle('cwt:run:collect-diagnostics', (_event, payload: { runId: string 
     }
 
     return runManager.collectDiagnosticsBundle(payload.runId);
-  }),
+  }, { label: 'cwt:run:collect-diagnostics' }),
 );
 
 ipcMain.handle('cwt:run:delete', (_event, payload: { runId: string }) =>
@@ -664,7 +673,7 @@ ipcMain.handle('cwt:run:delete', (_event, payload: { runId: string }) =>
     }
 
     return runManager.deleteRun(payload.runId);
-  }),
+  }, { label: 'cwt:run:delete' }),
 );
 
 ipcMain.handle('cwt:run:read-artifact', (_event, payload: { runId: string; relativePath: string }) =>
@@ -677,7 +686,7 @@ ipcMain.handle('cwt:run:read-artifact', (_event, payload: { runId: string; relat
     }
 
     return runManager.readArtifact(payload.runId, payload.relativePath);
-  }),
+  }, { label: 'cwt:run:read-artifact' }),
 );
 
 const launchPhase = (
@@ -1546,7 +1555,7 @@ ipcMain.handle('cwt:recipes:run', (_event, payload: { id: string }) =>
       experiment: recipe.command,
       label: `Recipe: ${recipe.name}`,
     });
-  }),
+  }, { label: 'cwt:recipes:run' }),
 );
 
 ipcMain.handle('cwt:recipes:export', (_event, payload: { id: string }) =>
