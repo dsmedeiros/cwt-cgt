@@ -63,6 +63,9 @@ export const runs = {
   async tail(payload: RunTailPayload): Promise<RunTailChunk> {
     return unwrap(window?.CWT?.run?.tail?.(payload), 'Run tail IPC is unavailable');
   },
+  async deleteRun(runId: string): Promise<{ runId: string }> {
+    return unwrap(window?.CWT?.run?.delete?.({ runId }), 'Run delete IPC is unavailable');
+  },
 };
 
 export type { Phase2CorrelatePayload, Phase2CorrelateResult } from './types/ipc';

@@ -637,6 +637,16 @@ ipcMain.handle('cwt:run:collect-diagnostics', (_event, payload: { runId: string 
   }),
 );
 
+ipcMain.handle('cwt:run:delete', (_event, payload: { runId: string }) =>
+  wrap(async () => {
+    if (!payload?.runId) {
+      throw new Error('runId is required');
+    }
+
+    return runManager.deleteRun(payload.runId);
+  }),
+);
+
 ipcMain.handle('cwt:run:read-artifact', (_event, payload: { runId: string; relativePath: string }) =>
   wrap(async () => {
     if (!payload?.runId) {

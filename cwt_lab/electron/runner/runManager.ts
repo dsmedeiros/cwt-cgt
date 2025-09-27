@@ -13,7 +13,14 @@ import type { Database as BetterSqlite3Database } from 'better-sqlite3';
 import { scanArtifacts } from './files';
 import type { PythonEnvironment } from './env';
 import { planModuleInvocation, formatCli } from './pythonInvoker';
-import { openRegistry, upsertRun, fetchRuns, type RunRecord, type RunQuery } from './registry';
+import {
+  openRegistry,
+  upsertRun,
+  fetchRuns,
+  deleteRunRecord,
+  type RunRecord,
+  type RunQuery,
+} from './registry';
 
 export type RunStatus = 'pending' | 'running' | 'complete' | 'failed' | 'aborted';
 
@@ -359,6 +366,7 @@ export class RunManager {
       context.diagnostics.updatedAtUtc = new Date().toISOString();
       await this.writeDiagnostics(context);
 
+      context.process = null;
       const metrics = await this.collectRunMetrics(context.id);
       upsertRun(this.registry, {
         id: context.id,
@@ -409,6 +417,7 @@ export class RunManager {
       context.diagnostics.updatedAtUtc = new Date().toISOString();
       await this.writeDiagnostics(context);
 
+      context.process = null;
       context.resolveCompletion({
         runId: context.id,
         status: 'failed',
@@ -691,6 +700,35 @@ export class RunManager {
     await fs.writeFile(toFsPath(zipPath), zipBuffer);
 
     return { zipPath, files: attachments };
+  }
+
+  async deleteRun(runId: string): Promise<{ runId: string }> {
+    const context = this.runs.get(runId);
+    if (context && (context.status === 'running' || context.status === 'pending')) {
+      throw new Error('Cannot delete a run while it is in progress. Abort it first.');
+    }
+
+    let artifactsDir: string;
+    try {
+      artifactsDir = await this.resolveArtifactsDir(runId);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Unable to locate run ${runId}: ${message}`);
+    }
+
+    try {
+      await fs.rm(toFsPath(artifactsDir), { recursive: true, force: true });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to delete run directory ${artifactsDir}: ${message}`);
+    }
+
+    deleteRunRecord(this.registry, runId);
+    if (context) {
+      this.runs.delete(runId);
+    }
+
+    return { runId };
   }
 
   private snapshotEnv(env: NodeJS.ProcessEnv): Record<string, string> {

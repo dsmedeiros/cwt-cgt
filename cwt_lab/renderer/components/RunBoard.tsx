@@ -8,6 +8,7 @@ export type RunsApi = {
   listRecent: (limit?: number) => Promise<RegistryRunRecord[]>;
   collectDiagnostics: (runId: string) => Promise<RunDiagnosticsBundle>;
   tail: (payload: { runId: string; fromByte?: number; maxBytes?: number }) => Promise<RunTailChunk>;
+  deleteRun: (runId: string) => Promise<{ runId: string } | void>;
 };
 
 type RunBoardProps = {
@@ -91,6 +92,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeState>(null);
   const [collectingId, setCollectingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [logState, setLogState] = useState<LogState>(() => makeEmptyLogState());
   const [logAbortable, setLogAbortable] = useState(false);
 
@@ -276,6 +278,31 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
     [api],
   );
 
+  const handleDeleteRun = useCallback(
+    async (runId: string) => {
+      if (!window.confirm(`Delete run ${runId}? This will remove all artifacts.`)) {
+        return;
+      }
+
+      setDeletingId(runId);
+      setNotice(null);
+      try {
+        await api.deleteRun(runId);
+        if (logState.runId === runId) {
+          resetLogState();
+        }
+        await fetchRuns();
+        setNotice({ kind: 'success', message: `Run ${runId} deleted.` });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        setNotice({ kind: 'error', message });
+      } finally {
+        setDeletingId(null);
+      }
+    },
+    [api, fetchRuns, logState.runId, resetLogState],
+  );
+
   return (
     <div className="panel run-board">
       <div className="run-board__header">
@@ -368,6 +395,17 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
                       disabled={collectingId === run.id}
                     >
                       {collectingId === run.id ? 'Collecting…' : 'Collect diagnostics'}
+                    </button>
+                    <button
+                      type="button"
+                      className="run-board__button run-board__delete-button"
+                      onClick={() => handleDeleteRun(run.id)}
+                      disabled={deletingId === run.id}
+                      aria-label={`Delete run ${run.id}`}
+                    >
+                      <span aria-hidden="true" role="img">
+                        🗑️
+                      </span>
                     </button>
                   </td>
                 </tr>
