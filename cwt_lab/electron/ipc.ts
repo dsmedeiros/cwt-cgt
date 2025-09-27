@@ -1,4 +1,4 @@
-import { app, ipcMain } from 'electron';
+import { app, ipcMain, dialog, BrowserWindow } from 'electron';
 import { spawn } from 'node:child_process';
 import { promises as fs, existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
@@ -554,6 +554,26 @@ ipcMain.handle('cwt:env:set-python-path', (_event, executable: string) =>
 );
 
 ipcMain.handle('cwt:env:get-config', () => wrap(() => getEnvironmentConfig()));
+
+ipcMain.handle('cwt:env:browse-python', () =>
+  wrap(async () => {
+    const window = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+    const filters = process.platform === 'win32'
+      ? [{ name: 'Python executables', extensions: ['exe'] }]
+      : undefined;
+    const { canceled, filePaths } = await dialog.showOpenDialog(window ?? undefined, {
+      title: 'Select Python executable',
+      properties: ['openFile'],
+      buttonLabel: 'Use interpreter',
+      filters,
+    });
+
+    return {
+      canceled,
+      path: canceled || filePaths.length === 0 ? null : filePaths[0],
+    };
+  }),
+);
 
 ipcMain.handle(
   'cwt:run:create',

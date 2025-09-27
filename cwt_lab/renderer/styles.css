@@ -237,6 +237,15 @@ body {
   color: var(--color-muted);
 }
 
+.env-doctor__list {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--color-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
 .env-doctor__actions {
   display: flex;
   flex-wrap: wrap;
@@ -255,6 +264,26 @@ body {
   transition: background 0.2s ease, color 0.2s ease, border 0.2s ease;
 }
 
+.env-doctor__button--busy {
+  padding-left: 2rem;
+  position: relative;
+}
+
+.env-doctor__button--busy::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0.75rem;
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-top: -0.45rem;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  opacity: 0.75;
+  animation: env-doctor-spin 0.8s linear infinite;
+}
+
 .env-doctor__button:hover,
 .env-doctor__button:focus-visible {
   outline: none;
@@ -271,6 +300,25 @@ body {
 .env-doctor__status {
   font-size: 0.9rem;
   color: var(--color-muted);
+  min-height: 1.2rem;
+}
+
+.env-doctor__status--running {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.env-doctor__status--idle {
+  color: var(--color-muted);
+}
+
+@keyframes env-doctor-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .env-doctor__form {
