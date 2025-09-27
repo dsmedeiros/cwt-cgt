@@ -115,26 +115,60 @@ const ensureConfigDir = () => {
   }
 };
 
-const looksLikeWindowsPath = (value: string): boolean => /^(?:[a-zA-Z]:\\|\\\\)/.test(value);
+const looksLikeWindowsPath = (value: string): boolean => /^(?:[a-zA-Z]:[\\/]|\\\\)/.test(value);
 
 const looksLikePosixPath = (value: string): boolean => value.startsWith('/');
+
+const stripInterpreterValue = (value: string | null | undefined): string => {
+  if (!value) {
+    return '';
+  }
+
+  let trimmed = value.trim();
+  if (trimmed.length === 0) {
+    return '';
+  }
+
+  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+    trimmed = trimmed.slice(1, -1);
+  }
+
+  return trimmed.trim();
+};
+
+const normalizeInterpreterPath = (
+  value: string | null | undefined,
+  platform: NodeJS.Platform = process.platform,
+): string => {
+  const stripped = stripInterpreterValue(value);
+  if (stripped.length === 0) {
+    return '';
+  }
+
+  if (platform === 'win32') {
+    return path.win32.normalize(stripped);
+  }
+
+  return path.normalize(stripped);
+};
 
 export const sanitizeStoredConfig = (
   config: StoredConfig,
   platform: NodeJS.Platform = process.platform,
 ): StoredConfig => {
-  const pythonPath = config.pythonPath?.trim() ?? null;
+  const stripped = stripInterpreterValue(config.pythonPath);
+  const pythonPath = normalizeInterpreterPath(stripped, platform) || null;
   const strategy = config.strategy ?? null;
 
   if (!pythonPath) {
     return { pythonPath: null, strategy: null } satisfies StoredConfig;
   }
 
-  if (platform !== 'win32' && looksLikeWindowsPath(pythonPath)) {
+  if (platform !== 'win32' && (looksLikeWindowsPath(stripped) || looksLikeWindowsPath(pythonPath))) {
     return { pythonPath: null, strategy: null } satisfies StoredConfig;
   }
 
-  if (platform === 'win32' && looksLikePosixPath(pythonPath)) {
+  if (platform === 'win32' && looksLikePosixPath(stripped)) {
     return { pythonPath: null, strategy: null } satisfies StoredConfig;
   }
 
@@ -423,15 +457,15 @@ export const detectPython = (): DetectPythonResult => {
 };
 
 export const setPythonPath = (pythonPath: string): { candidate: PythonCandidate; environment: PythonEnvironment } => {
-  const trimmed = pythonPath?.trim();
-  if (!trimmed) {
+  const normalized = normalizeInterpreterPath(pythonPath);
+  if (!normalized) {
     throw new Error('Python path is required');
   }
 
-  const evaluation = evaluateCandidate({ label: trimmed, command: trimmed, args: [] });
+  const evaluation = evaluateCandidate({ label: normalized, command: normalized, args: [] });
   if (!evaluation.environment || !evaluation.candidate.ok) {
     throw new Error(
-      evaluation.candidate.error || `Interpreter at ${trimmed} is not a valid CWT environment`,
+      evaluation.candidate.error || `Interpreter at ${normalized} is not a valid CWT environment`,
     );
   }
 

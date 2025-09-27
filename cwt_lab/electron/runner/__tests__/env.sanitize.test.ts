@@ -7,7 +7,7 @@ type StoredConfig = Parameters<typeof sanitizeStoredConfig>[0];
 describe('sanitizeStoredConfig', () => {
   it('clears stored Windows paths when running on non-Windows platforms', () => {
     const config: StoredConfig = {
-      pythonPath: 'D:\\\\repos\\\\cwt-cgt\\\\.venv\\\\Scripts\\\\python.exe',
+      pythonPath: 'D:\\repos\\cwt-cgt\\.venv\\Scripts\\python.exe',
       strategy: 'module',
     };
     const sanitized = sanitizeStoredConfig(config, 'linux');
@@ -28,16 +28,34 @@ describe('sanitizeStoredConfig', () => {
 
   it('retains Windows paths on Windows platforms', () => {
     const config: StoredConfig = {
-      pythonPath: 'C:\\\\cwt\\\\.venv\\\\Scripts\\\\python.exe',
+      pythonPath: 'C:\\cwt\\.venv\\Scripts\\python.exe',
       strategy: 'module',
     };
     const sanitized = sanitizeStoredConfig(config, 'win32');
-    expect(sanitized).toEqual({ pythonPath: 'C:\\\\cwt\\\\.venv\\\\Scripts\\\\python.exe', strategy: 'module' });
+    expect(sanitized).toEqual({ pythonPath: 'C:\\cwt\\.venv\\Scripts\\python.exe', strategy: 'module' });
   });
 
   it('trims whitespace around stored paths', () => {
     const config: StoredConfig = { pythonPath: '  /opt/cwt/.venv/bin/python  ', strategy: 'module' };
     const sanitized = sanitizeStoredConfig(config, 'linux');
     expect(sanitized).toEqual({ pythonPath: '/opt/cwt/.venv/bin/python', strategy: 'module' });
+  });
+
+  it('converts quoted Windows paths when running on Windows', () => {
+    const config: StoredConfig = {
+      pythonPath: '"C:\\cwt\\.venv\\Scripts\\python.exe"',
+      strategy: 'module',
+    };
+    const sanitized = sanitizeStoredConfig(config, 'win32');
+    expect(sanitized).toEqual({ pythonPath: 'C:\\cwt\\.venv\\Scripts\\python.exe', strategy: 'module' });
+  });
+
+  it('accepts Windows paths that use forward slashes', () => {
+    const config: StoredConfig = {
+      pythonPath: 'C:/cwt/.venv/Scripts/python.exe',
+      strategy: 'module',
+    };
+    const sanitized = sanitizeStoredConfig(config, 'win32');
+    expect(sanitized).toEqual({ pythonPath: 'C:\\cwt\\.venv\\Scripts\\python.exe', strategy: 'module' });
   });
 });
