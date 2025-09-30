@@ -1426,6 +1426,25 @@ ipcMain.handle('cwt:phase5:coupling-tuner', (_event, payload: Record<string, unk
 );
 
 
+ipcMain.handle('cwt:phase2:browse-metrics-dirs', () =>
+  wrap(
+    async () => {
+      const window = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+      const { canceled, filePaths } = await dialog.showOpenDialog(window ?? undefined, {
+        title: 'Select Phase-1 output directories',
+        properties: ['openDirectory', 'multiSelections'],
+        buttonLabel: 'Use directories',
+      });
+
+      return {
+        canceled,
+        directories: canceled ? [] : filePaths.map((entry) => path.resolve(entry)),
+      } satisfies { canceled: boolean; directories: string[] };
+    },
+    { label: 'cwt:phase2:browse-metrics-dirs' },
+  ),
+);
+
 ipcMain.handle(
   'cwt:phase2:correlate',
   (

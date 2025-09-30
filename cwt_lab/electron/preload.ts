@@ -27,6 +27,7 @@ const api = {
     map: (params) => invoke('cwt:phase1:map', params),
   },
   phase2: {
+    browseMetricsDirs: () => invoke('cwt:phase2:browse-metrics-dirs'),
     correlate: (payload) => invoke('cwt:phase2:correlate', payload),
     saveSnapshot: (payload) => invoke('cwt:phase2:save-snapshot', payload),
   },

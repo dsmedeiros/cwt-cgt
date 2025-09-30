@@ -1,4 +1,4 @@
-import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Plot from 'react-plotly.js';
 import type { Data, Layout } from 'plotly.js';
 
@@ -23,25 +23,6 @@ const formatNumber = (value: number | null | undefined, digits = 3) => {
 
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
-
-const uniqueDirsFromFiles = (files: FileList | null): string[] => {
-  if (!files) {
-    return [];
-  }
-  const dirs = new Set<string>();
-  Array.from(files).forEach((file) => {
-    if (file.name.toLowerCase() !== 'metrics.csv') {
-      return;
-    }
-    const candidate = (file as File & { path?: string }).path;
-    if (!candidate) {
-      return;
-    }
-    const slashIndex = Math.max(candidate.lastIndexOf('/'), candidate.lastIndexOf('\\'));
-    dirs.add(slashIndex >= 0 ? candidate.slice(0, slashIndex) : candidate);
-  });
-  return Array.from(dirs);
-};
 
 const buildSummary = (result: Phase2CorrelateResult | null): string => {
   if (!result || result.features.length === 0) {
@@ -72,7 +53,6 @@ const buildSummary = (result: Phase2CorrelateResult | null): string => {
 };
 
 const Phase2Features = () => {
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [metricsDirs, setMetricsDirs] = useState<string[]>([]);
   const [thresholdMode, setThresholdMode] = useState<'absolute' | 'percentile'>('absolute');
   const [absoluteThreshold, setAbsoluteThreshold] = useState('1.0');
@@ -96,24 +76,39 @@ const Phase2Features = () => {
       ? percentileValidation.message
       : undefined;
 
-  useEffect(() => {
-    if (fileInputRef.current) {
-      fileInputRef.current.setAttribute('webkitdirectory', 'true');
-      fileInputRef.current.setAttribute('directory', 'true');
-    }
-  }, []);
+  const handleBrowse = useCallback(async () => {
+    try {
+      const { canceled, directories } = await phase2.browseMetricsDirs();
+      if (canceled) {
+        return;
+      }
 
-  const handleBrowse = () => {
-    fileInputRef.current?.click();
-  };
+      const sanitized = Array.from(
+        new Set(
+          directories
+            .map((dir) => dir.trim())
+            .filter((dir): dir is string => dir.length > 0),
+        ),
+      );
 
-  const onFilesSelected = (event: ChangeEvent<HTMLInputElement>) => {
-    const dirs = uniqueDirsFromFiles(event.target.files);
-    if (dirs.length > 0) {
-      setMetricsDirs((prev) => Array.from(new Set([...prev, ...dirs])));
+      if (sanitized.length === 0) {
+        return;
+      }
+
+      setMetricsDirs((prev) => {
+        const next = [...prev];
+        sanitized.forEach((dir) => {
+          if (!next.includes(dir)) {
+            next.push(dir);
+          }
+        });
+        return next;
+      });
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     }
-    event.target.value = '';
-  };
+  }, [setError, setMetricsDirs]);
 
   const removeDir = (dir: string) => {
     setMetricsDirs((prev) => prev.filter((entry) => entry !== dir));
@@ -385,13 +380,6 @@ const Phase2Features = () => {
           >
             Select Phase‑1 output directories
           </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            style={{ display: 'none' }}
-            onChange={onFilesSelected}
-          />
         </div>
         {metricsDirs.length > 0 ? (
           <ul className="phase2__dir-list">
