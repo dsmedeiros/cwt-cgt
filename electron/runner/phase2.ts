@@ -57,8 +57,71 @@ const FEATURE_NAMES: FeatureName[] = [
   'trace_g',
 ];
 
+const METRICS_FILENAME = 'metrics.csv';
+const MAX_DIRECTORY_DEPTH = 4;
+
+const isMetricsFile = (filePath: string): boolean =>
+  path.basename(filePath).toLowerCase() === METRICS_FILENAME;
+
+function discoverMetricsFiles(root: string, maxDepth = MAX_DIRECTORY_DEPTH): string[] {
+  const matches = new Set<string>();
+  const resolvedRoot = path.resolve(root);
+
+  if (!fs.existsSync(resolvedRoot)) {
+    return [];
+  }
+
+  try {
+    const stat = fs.statSync(resolvedRoot);
+    if (stat.isFile()) {
+      return isMetricsFile(resolvedRoot) ? [resolvedRoot] : [];
+    }
+    if (!stat.isDirectory()) {
+      return [];
+    }
+  } catch {
+    return [];
+  }
+
+  const stack: Array<{ dir: string; depth: number }> = [{ dir: resolvedRoot, depth: 0 }];
+
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current) {
+      continue;
+    }
+
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(current.dir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+
+    for (const entry of entries) {
+      const entryPath = path.join(current.dir, entry.name);
+      if (entry.isFile()) {
+        if (isMetricsFile(entryPath)) {
+          matches.add(path.resolve(entryPath));
+        }
+      } else if (entry.isDirectory() && current.depth < maxDepth) {
+        stack.push({ dir: entryPath, depth: current.depth + 1 });
+      }
+    }
+  }
+
+  return [...matches];
+}
+
 export function correlate({ metricsDirs, threshold }: CorrelateOptions): CorrelateResult {
-  const rows = loadMetrics(metricsDirs);
+  const { rows, sources } = loadMetrics(metricsDirs);
+
+  if (sources.length === 0) {
+    throw new Error(
+      'No metrics.csv files were found under the selected directories. ' +
+        'Confirm the Phase-1 run completed and select the graph-level output folders.',
+    );
+  }
 
   if (rows.length === 0) {
     return {
@@ -167,25 +230,29 @@ export function correlate({ metricsDirs, threshold }: CorrelateOptions): Correla
   } satisfies CorrelateResult;
 }
 
-function loadMetrics(metricsDirs: string[]): MetricsRow[] {
+function loadMetrics(metricsDirs: string[]): { rows: MetricsRow[]; sources: string[] } {
   const rows: MetricsRow[] = [];
+  const sources = new Set<string>();
 
   metricsDirs.forEach((dir) => {
-    const metricsPath = path.join(dir, 'metrics.csv');
+    const metricsFiles = discoverMetricsFiles(dir);
 
-    if (!fs.existsSync(metricsPath)) {
-      return;
-    }
+    metricsFiles.forEach((metricsPath) => {
+      if (sources.has(metricsPath)) {
+        return;
+      }
+      sources.add(metricsPath);
 
-    try {
-      const content = fs.readFileSync(metricsPath, 'utf8');
-      rows.push(...parseMetricsCsv(content));
-    } catch (error) {
-      // Skip unreadable files but continue processing other directories.
-    }
+      try {
+        const content = fs.readFileSync(metricsPath, 'utf8');
+        rows.push(...parseMetricsCsv(content));
+      } catch {
+        // Skip unreadable files but continue processing other directories.
+      }
+    });
   });
 
-  return rows;
+  return { rows, sources: Array.from(sources) };
 }
 
 function parseMetricsCsv(content: string): MetricsRow[] {

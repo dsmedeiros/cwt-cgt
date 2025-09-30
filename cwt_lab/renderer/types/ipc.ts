@@ -205,6 +205,11 @@ export type Phase2CorrelateResult = {
   samples: Phase2Sample[];
 };
 
+export type Phase2BrowseResult = {
+  canceled: boolean;
+  directories: string[];
+};
+
 export type Phase2CorrelatePayload = {
   metricsDirs: string[];
   thresholdMode: 'absolute' | 'percentile';
@@ -418,6 +423,7 @@ export interface RendererIpc {
     map: (params: Record<string, unknown>) => Promise<IpcEnvelope<RunCreateResult>>;
   };
   phase2: {
+    browseMetricsDirs: () => Promise<IpcEnvelope<Phase2BrowseResult>>;
     correlate: (payload: Phase2CorrelatePayload) => Promise<IpcEnvelope<Phase2CorrelateResult>>;
     saveSnapshot: (payload: unknown) => Promise<IpcEnvelope<{ path: string }>>;
   };

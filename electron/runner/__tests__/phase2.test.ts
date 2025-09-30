@@ -35,26 +35,15 @@ describe('correlate', () => {
     });
   });
 
-  it('returns empty statistics when no metrics are available', () => {
+  it('throws a helpful error when no metrics files are present', () => {
     const emptyDir = createTempMetricsDir(false);
 
-    const result = correlate({
-      metricsDirs: [emptyDir],
-      threshold: { mode: 'absolute', value: 1 },
-    });
-
-    expect(result.features).toHaveLength(4);
-    expect(result.samples).toHaveLength(0);
-    expect(result.threshold).toBeNull();
-    result.features.forEach((feature) => {
-      expect(feature.correlation).toBeNull();
-      expect(feature.sampleSize).toBe(0);
-      expect(feature.hotCount).toBe(0);
-      expect(feature.coldCount).toBe(0);
-      expect(feature.meanHot).toBeNull();
-      expect(feature.meanCold).toBeNull();
-    });
-    expect(result.auc).toBeUndefined();
+    expect(() =>
+      correlate({
+        metricsDirs: [emptyDir],
+        threshold: { mode: 'absolute', value: 1 },
+      }),
+    ).toThrow('No metrics.csv files were found under the selected directories');
   });
 
   it('computes point-biserial correlations with an absolute threshold', () => {
@@ -108,5 +97,20 @@ describe('correlate', () => {
     expect(result.auc).toBeDefined();
     expect(result.auc ?? 0).toBeCloseTo(1.0, 6);
     expect(result.threshold).not.toBeNull();
+  });
+
+  it('recursively discovers metrics.csv files within nested run directories', () => {
+    const rootDir = createTempMetricsDir(false);
+    const nestedDir = path.join(rootDir, 'subrun', 'graphA');
+    fs.mkdirSync(nestedDir, { recursive: true });
+    fs.writeFileSync(path.join(nestedDir, 'metrics.csv'), csvContent, 'utf8');
+
+    const result = correlate({
+      metricsDirs: [rootDir],
+      threshold: { mode: 'absolute', value: 1.0 },
+    });
+
+    expect(result.features.find((feature) => feature.name === 'spectral_gap')?.sampleSize).toBe(4);
+    expect(result.threshold).toBeCloseTo(1.0, 6);
   });
 });

@@ -1,5 +1,6 @@
 import type {
   IpcEnvelope,
+  Phase2BrowseResult,
   Phase2CorrelatePayload,
   Phase2CorrelateResult,
   RegistryRunRecord,
@@ -24,6 +25,12 @@ const unwrap = async <T>(
 };
 
 export const phase2 = {
+  async browseMetricsDirs(): Promise<Phase2BrowseResult> {
+    return unwrap(
+      window?.CWT?.phase2?.browseMetricsDirs?.(),
+      'Phase-2 directory browser IPC is unavailable',
+    );
+  },
   async correlate(payload: Phase2CorrelatePayload): Promise<Phase2CorrelateResult> {
     return unwrap(
       window?.CWT?.phase2?.correlate?.(payload),
