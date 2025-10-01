@@ -6,6 +6,7 @@ import argparse
 import csv
 import json
 import math
+import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -53,6 +54,7 @@ except ImportError:  # pragma: no cover - fallback when run as a script
 
 VALID_AXES = ("rho", "tau", "zeta", "zeta_phase", "kappa")
 AVAILABLE_GRAPHS = ("ring3", "random_regular", "small_world", "scale_free")
+DEFAULT_ARTIFACTS_DIR = Path(__file__).resolve().parent / "artifacts"
 
 
 @dataclass(frozen=True)
@@ -626,6 +628,26 @@ def ensure_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
 
 
+def resolve_output_dir(cli_value: Path | None) -> Path:
+    """Determine the artifact output directory for the run.
+
+    Preference order:
+
+    1. An explicit ``--output-dir`` value passed on the CLI.
+    2. The ``CWT_OUTPUT_DIR`` environment variable provided by the launcher.
+    3. The historical default ``artifacts`` folder next to this module.
+    """
+
+    if cli_value is not None:
+        return cli_value
+
+    env_value = os.environ.get("CWT_OUTPUT_DIR")
+    if env_value:
+        return Path(env_value)
+
+    return DEFAULT_ARTIFACTS_DIR
+
+
 def save_heatmaps(
     result: GraphScanResult,
     out_dir: Path,
@@ -1151,7 +1173,15 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--bootstrap", type=int, default=256, help="Bootstrap replicates for the AUC CI")
     parser.add_argument("--seed", type=int, default=7, help="Base seed controlling RNG usage")
-    parser.add_argument("--output-dir", type=Path, default=Path(__file__).resolve().parent / "artifacts")
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help=(
+            "Directory to store run artifacts. Defaults to $CWT_OUTPUT_DIR when set, "
+            "otherwise the module's ./artifacts folder."
+        ),
+    )
     parser.add_argument(
         "--transient-steps",
         type=int,
@@ -1209,7 +1239,8 @@ def _parse_graphs(text: str) -> list[str]:
 
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv)
-    output_dir = Path(args.output_dir)
+    cli_output_dir: Path | None = args.output_dir
+    output_dir = resolve_output_dir(cli_output_dir)
     ensure_dir(output_dir)
 
     rho_base = float(args.rho_base) if args.rho_base is not None else float(np.mean(args.rho_range))
