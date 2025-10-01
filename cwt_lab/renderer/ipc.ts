@@ -3,6 +3,7 @@ import type {
   Phase2BrowseResult,
   Phase2CorrelatePayload,
   Phase2CorrelateResult,
+  Phase3BrowseHotspotsResult,
   RegistryRunRecord,
   RunCreateResult,
   RunDiagnosticsBundle,
@@ -50,6 +51,15 @@ export const phase1 = {
     return unwrap(
       window?.CWT?.phase1?.map?.(params),
       'Phase-1 mapping IPC is unavailable',
+    );
+  },
+};
+
+export const phase3 = {
+  async browseHotspots(): Promise<Phase3BrowseHotspotsResult> {
+    return unwrap(
+      window?.CWT?.phase3?.browseHotspots?.(),
+      'Phase-3 hotspot browser IPC is unavailable',
     );
   },
 };

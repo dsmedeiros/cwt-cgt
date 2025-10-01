@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { GuidedLoopArgs, LoopAtHotspotPayload } from '../types/ipc';
+import type { GuidedLoopArgs, LoopAtHotspotPayload, RegistryRunRecord } from '../types/ipc';
+import { phase3 as phase3Ipc, runs } from '../ipc';
 import AdiabaticBoundaryViewer from './AdiabaticBoundaryViewer';
 import { createDecisionGateEngine } from '../decisionGate';
 import {
@@ -95,9 +96,21 @@ const defaultHotspots: Hotspot[] = [
 ];
 
 const graphOptions = [
-  { id: 'flux', label: 'Flux Linkage' },
-  { id: 'energy', label: 'Energy Capture' },
-  { id: 'phase', label: 'Phase Portrait' },
+  {
+    id: 'flux',
+    label: 'Flux Linkage',
+    help: 'Shows how magnetic flux threads through the loop so you can see where the ridge couples most strongly.',
+  },
+  {
+    id: 'energy',
+    label: 'Energy Capture',
+    help: 'Estimates how much energy the loop would soak up at this hotspot, helpful for ranking promising ridges.',
+  },
+  {
+    id: 'phase',
+    label: 'Phase Portrait',
+    help: 'Plots the oscillator phases over the loop to reveal timing alignment and phase slips.',
+  },
 ];
 
 const safeNumber = (value: number) => Number(value.toFixed(4));
@@ -106,6 +119,104 @@ const toCliValue = (value: number) => value.toFixed(4).replace(/\.0+$/, '');
 
 const normalizeOrigin = (value: string | null | undefined) =>
   value ? value.replace(/\\/g, '/').trim() : '';
+
+type Phase1HotspotEntry = {
+  tau: number;
+  zeta: number;
+  omegaAbs: number | null;
+};
+
+const parsePhase1Hotspots = (raw: string): Phase1HotspotEntry[] => {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    throw new Error('Selected file is not valid JSON.');
+  }
+
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('Hotspot file contents are not a JSON object.');
+  }
+
+  const axesRaw = Array.isArray((parsed as { axes?: unknown }).axes)
+    ? ((parsed as { axes?: unknown }).axes as unknown[])
+    : [];
+  const axes = axesRaw
+    .map((axis) => String(axis ?? '').trim())
+    .filter((axis) => axis.length > 0)
+    .map((axis) => ({ original: axis, normalized: axis.toLowerCase() }));
+
+  const tauAxis = axes.find((axis) => axis.normalized === 'tau');
+  const zetaAxis = axes.find((axis) => axis.normalized === 'zeta');
+
+  if (!tauAxis || !zetaAxis) {
+    throw new Error('Hotspot file must contain τ and ζ coordinates.');
+  }
+
+  const tilesRaw = (parsed as { top_tiles?: unknown; topTiles?: unknown }).top_tiles ?? (
+    parsed as { topTiles?: unknown }
+  ).topTiles;
+  const tiles = Array.isArray(tilesRaw) ? tilesRaw : [];
+
+  if (tiles.length === 0) {
+    throw new Error('Hotspot file does not list any ridge selections.');
+  }
+
+  const entries: Phase1HotspotEntry[] = [];
+
+  for (const tile of tiles) {
+    if (!tile || typeof tile !== 'object') {
+      continue;
+    }
+
+    const coordinates = (tile as { coordinates?: unknown }).coordinates;
+    if (!coordinates || typeof coordinates !== 'object') {
+      continue;
+    }
+
+    const tauValue = Number((coordinates as Record<string, unknown>)[tauAxis.original]);
+    const zetaValue = Number((coordinates as Record<string, unknown>)[zetaAxis.original]);
+
+    if (!Number.isFinite(tauValue) || !Number.isFinite(zetaValue)) {
+      continue;
+    }
+
+    const omegaRaw = (tile as { omega_abs?: unknown }).omega_abs ??
+      (tile as Record<string, unknown>).omegaAbs;
+    const omegaAbs = Number(omegaRaw);
+
+    entries.push({
+      tau: tauValue,
+      zeta: zetaValue,
+      omegaAbs: Number.isFinite(omegaAbs) ? omegaAbs : null,
+    });
+  }
+
+  if (entries.length === 0) {
+    throw new Error('No usable hotspots were found in the selected file.');
+  }
+
+  return entries;
+};
+
+const toImportId = (origin: string, index: number) => {
+  const safeOrigin = origin
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  const base = safeOrigin.length > 0 ? safeOrigin : 'phase1-hotspot';
+  return `${base}-${index + 1}`;
+};
+
+const formatOmega = (value: number | null) => {
+  if (value == null) {
+    return null;
+  }
+  if (!Number.isFinite(value)) {
+    return null;
+  }
+  return value.toFixed(3);
+};
 
 const hotspotKey = (hotspot: Hotspot) => {
   const axes = hotspot.axes ?? ['tau', 'zeta'];
@@ -270,6 +381,14 @@ const Phase3Loops = () => {
   const [graph, setGraph] = useState(graphOptions[0].id);
   const [activeTab, setActiveTab] = useState<'simple' | 'guided'>('guided');
 
+  const [phase1Runs, setPhase1Runs] = useState<RegistryRunRecord[]>([]);
+  const [selectedPhase1RunId, setSelectedPhase1RunId] = useState('');
+  const [isLoadingPhase1Runs, setIsLoadingPhase1Runs] = useState(false);
+  const [phase1RunError, setPhase1RunError] = useState<string | null>(null);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [isImportingHotspots, setIsImportingHotspots] = useState(false);
+
   const decisionGate = useMemo(() => createDecisionGateEngine(), []);
   const [tipMessage, setTipMessage] = useState<string | null>(null);
 
@@ -296,6 +415,7 @@ const Phase3Loops = () => {
   const [saveInFlight, setSaveInFlight] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
+  const isMountedRef = useRef(true);
   const modalRef = useRef<HTMLDivElement | null>(null);
 
   const upsertHotspot = useCallback(
@@ -313,6 +433,163 @@ const Phase3Loops = () => {
     () => hotspots.find((hotspot) => hotspot.id === selectedHotspotId) ?? hotspots[0],
     [hotspots, selectedHotspotId],
   );
+
+  useEffect(
+    () => () => {
+      isMountedRef.current = false;
+    },
+    [],
+  );
+
+  const refreshPhase1Runs = useCallback(async () => {
+    if (!isMountedRef.current) {
+      return;
+    }
+
+    if (typeof window === 'undefined' || !window?.CWT?.registry?.query) {
+      setPhase1RunError('Phase 1 runs are unavailable outside the desktop application.');
+      setPhase1Runs([]);
+      setSelectedPhase1RunId('');
+      return;
+    }
+
+    setIsLoadingPhase1Runs(true);
+    try {
+      const records = await runs.listRecent(50);
+      if (!isMountedRef.current) {
+        return;
+      }
+      const relevant = records
+        .filter((run) => run.phase === 'phase1' && run.status === 'complete')
+        .sort((a, b) => b.updatedAt - a.updatedAt);
+      setPhase1Runs(relevant);
+      if (!relevant.some((run) => run.id === selectedPhase1RunId)) {
+        setSelectedPhase1RunId(relevant[0]?.id ?? '');
+      }
+      setPhase1RunError(null);
+    } catch (error) {
+      if (!isMountedRef.current) {
+        return;
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      setPhase1RunError(message);
+    } finally {
+      if (isMountedRef.current) {
+        setIsLoadingPhase1Runs(false);
+      }
+    }
+  }, [selectedPhase1RunId]);
+
+  useEffect(() => {
+    void refreshPhase1Runs();
+  }, [refreshPhase1Runs]);
+
+  const applyImportedHotspots = useCallback(
+    (entries: Phase1HotspotEntry[], originKey: string, sourceLabel: string) => {
+      const normalizedOrigin = normalizeOrigin(originKey) || originKey;
+      const effectiveOrigin = normalizedOrigin || originKey;
+      const created: Hotspot[] = entries.map((entry, index) => {
+        const omegaLabel = formatOmega(entry.omegaAbs);
+        const suffix = omegaLabel ? ` (|Ω| ${omegaLabel})` : '';
+        return {
+          id: toImportId(effectiveOrigin || sourceLabel, index),
+          name: `Phase 1 ridge #${index + 1}${suffix}`,
+          tau: entry.tau,
+          zeta: entry.zeta,
+          axes: ['tau', 'zeta'],
+          graph: null,
+          originPath: effectiveOrigin,
+        } satisfies Hotspot;
+      });
+
+      setHotspots((prev) => {
+        if (!effectiveOrigin) {
+          return [...created, ...prev];
+        }
+        const filtered = prev.filter((item) => item.originPath !== effectiveOrigin);
+        return [...created, ...filtered];
+      });
+
+      if (created.length > 0) {
+        setSelectedHotspotId(created[0].id);
+      }
+      setImportError(null);
+      setImportMessage(`Loaded ${created.length} hotspots from ${sourceLabel}.`);
+    },
+    [setHotspots],
+  );
+
+  const importFromPhase1Run = useCallback(async () => {
+    if (!selectedPhase1RunId) {
+      setImportError('Select a completed Phase 1 run to import its hotspots.');
+      setImportMessage(null);
+      return;
+    }
+
+    if (!window?.CWT?.run?.readArtifact) {
+      setImportError('Phase 1 artifacts are unavailable in this environment.');
+      setImportMessage(null);
+      return;
+    }
+
+    setImportError(null);
+    setImportMessage(null);
+    setIsImportingHotspots(true);
+    try {
+      const response = await window.CWT.run.readArtifact({
+        runId: selectedPhase1RunId,
+        relativePath: 'top_omega_tiles.json',
+      });
+      if (!response.ok) {
+        throw new Error(response.error ?? 'Failed to load Phase 1 hotspot file.');
+      }
+      if (!response.data?.contents) {
+        throw new Error('Phase 1 hotspot file was empty.');
+      }
+      const entries = parsePhase1Hotspots(response.data.contents);
+      const run = phase1Runs.find((item) => item.id === selectedPhase1RunId);
+      const label = run?.label ?? run?.experiment ?? run?.command ?? 'Phase 1 run';
+      applyImportedHotspots(entries, `run:${selectedPhase1RunId}`, label);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setImportError(message);
+      setImportMessage(null);
+    } finally {
+      setIsImportingHotspots(false);
+    }
+  }, [
+    selectedPhase1RunId,
+    phase1Runs,
+    applyImportedHotspots,
+  ]);
+
+  const browseHotspotFile = useCallback(async () => {
+    if (!window?.CWT?.phase3?.browseHotspots) {
+      setImportError('Hotspot browsing is only available inside the desktop lab.');
+      setImportMessage(null);
+      return;
+    }
+
+    setImportError(null);
+    setImportMessage(null);
+    setIsImportingHotspots(true);
+    try {
+      const result = await phase3Ipc.browseHotspots();
+      if (result.canceled || !result.path || !result.contents) {
+        return;
+      }
+      const entries = parsePhase1Hotspots(result.contents);
+      const normalizedPath = normalizeOrigin(result.path);
+      const baseName = normalizedPath.split('/').pop() ?? normalizedPath;
+      applyImportedHotspots(entries, `file:${normalizedPath}`, baseName);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setImportError(message);
+      setImportMessage(null);
+    } finally {
+      setIsImportingHotspots(false);
+    }
+  }, [applyImportedHotspots]);
 
   const extentAValidation = useMemo(() => validateExtent(extentA), [extentA]);
   const extentBValidation = useMemo(() => validateExtent(extentB), [extentB]);
@@ -728,6 +1005,73 @@ const Phase3Loops = () => {
           </section>
 
           <section className="phase3__section">
+            <h3>Phase 1 ridge map</h3>
+            <div className="phase3__import-controls">
+              <button
+                type="button"
+                className="btn"
+                onClick={() => void browseHotspotFile()}
+                disabled={isImportingHotspots}
+              >
+                {isImportingHotspots ? 'Loading…' : 'Browse ridge file'}
+              </button>
+              <div>
+                <label htmlFor="phase3-phase1-run">Completed Phase 1 runs</label>
+                <div className="phase3__import-run">
+                  <select
+                    id="phase3-phase1-run"
+                    value={selectedPhase1RunId}
+                    onChange={(event) => setSelectedPhase1RunId(event.target.value)}
+                    disabled={isLoadingPhase1Runs || phase1Runs.length === 0}
+                  >
+                    {phase1Runs.map((run) => {
+                      const date = new Date(run.updatedAt);
+                      const label = run.label ?? run.experiment ?? run.command ?? run.id;
+                      const timestamp = Number.isFinite(date.getTime())
+                        ? date.toLocaleString()
+                        : '';
+                      const optionLabel = timestamp ? `${label} – ${timestamp}` : label;
+                      return (
+                        <option key={run.id} value={run.id}>
+                          {optionLabel}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <button
+                    type="button"
+                    className="btn btn--ghost"
+                    onClick={() => void refreshPhase1Runs()}
+                    disabled={isLoadingPhase1Runs}
+                  >
+                    {isLoadingPhase1Runs ? 'Refreshing…' : 'Refresh'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => void importFromPhase1Run()}
+                    disabled={isImportingHotspots || !selectedPhase1RunId}
+                  >
+                    {isImportingHotspots ? 'Loading…' : 'Load hotspots'}
+                  </button>
+                </div>
+              </div>
+            </div>
+            {phase1RunError ? (
+              <p className="phase3__error" role="alert">{phase1RunError}</p>
+            ) : null}
+            {importError ? (
+              <p className="phase3__error" role="alert">{importError}</p>
+            ) : null}
+            {importMessage ? (
+              <p className="phase3__hint" role="status">{importMessage}</p>
+            ) : null}
+            {!phase1RunError && phase1Runs.length === 0 && !isLoadingPhase1Runs ? (
+              <p className="phase3__hint">Run Phase 1 mapping to populate this list.</p>
+            ) : null}
+          </section>
+
+          <section className="phase3__section">
             <h3>Manual center</h3>
             <div className="phase3__field-grid">
               <label>
@@ -758,7 +1102,7 @@ const Phase3Loops = () => {
             <h3>Graph</h3>
             <select value={graph} onChange={(event) => setGraph(event.target.value)}>
               {graphOptions.map((option) => (
-                <option key={option.id} value={option.id}>
+                <option key={option.id} value={option.id} title={option.help}>
                   {option.label}
                 </option>
               ))}

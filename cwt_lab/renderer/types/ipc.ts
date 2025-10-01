@@ -341,6 +341,12 @@ export type LoopAtHotspotPayload = {
   [extra: string]: unknown;
 };
 
+export type Phase3BrowseHotspotsResult = {
+  canceled: boolean;
+  path: string | null;
+  contents: string | null;
+};
+
 export type GuidedLoopArgs = {
   axes3: [string, string, string];
   center: [number, number, number];
@@ -428,6 +434,7 @@ export interface RendererIpc {
     saveSnapshot: (payload: unknown) => Promise<IpcEnvelope<{ path: string }>>;
   };
   phase3: {
+    browseHotspots: () => Promise<IpcEnvelope<Phase3BrowseHotspotsResult>>;
     loopAtHotspot: (params: LoopAtHotspotPayload) => Promise<IpcEnvelope<RunCreateResult>>;
     guidedLoop: (
       params: GuidedLoopArgs,
