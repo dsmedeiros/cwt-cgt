@@ -233,7 +233,7 @@ describe('EnvDoctor', () => {
     await waitFor(() => expect(input.value).toBe(browsedPythonPath));
   });
 
-  it('allows configuring the Phase-2 artifacts root', async () => {
+  it('allows configuring the artifacts workspace root', async () => {
     const detect = vi.fn().mockResolvedValue({
       ok: true,
       data: { candidates: [], selected: null },
@@ -269,14 +269,14 @@ describe('EnvDoctor', () => {
 
     render(<EnvDoctor />);
 
-    const input = await screen.findByLabelText<HTMLInputElement>(/Phase-2 artifacts root/i);
+    const input = await screen.findByLabelText<HTMLInputElement>(/Artifacts workspace root/i);
     fireEvent.change(input, { target: { value: '/custom/metrics' } });
-    const submit = screen.getByRole<HTMLButtonElement>('button', { name: /Save Phase-2 root/i });
+    const submit = screen.getByRole<HTMLButtonElement>('button', { name: /Save workspace root/i });
     fireEvent.click(submit);
 
     await waitFor(() => expect(setPhase2MetricsRoot).toHaveBeenCalledWith({ path: '/custom/metrics' }));
     await waitFor(() => expect(getConfig).toHaveBeenCalledTimes(2));
 
-    expect(await screen.findByText(/Phase-2 artifacts root set to/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Artifacts workspace root set to/i)).toBeInTheDocument();
   });
 });

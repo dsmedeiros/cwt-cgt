@@ -55,6 +55,7 @@ const api = {
   },
   artifacts: {
     list: (payload) => invoke('cwt:artifacts:list', payload),
+    readFile: (payload) => invoke('cwt:artifacts:read-file', payload),
   },
   registry: {
     query: (payload) => invoke('cwt:registry:query', payload),

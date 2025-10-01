@@ -627,7 +627,7 @@ const EnvDoctor = () => {
         setPhase2RootNotice({
           kind: 'error',
           message:
-            'Updating the Phase-2 artifacts root is unavailable in this build. Launch the Electron app for full configuration.',
+            'Updating the artifacts workspace root is unavailable in this build. Launch the Electron app for full configuration.',
         });
         return;
       }
@@ -647,14 +647,14 @@ const EnvDoctor = () => {
           setPhase2RootNotice({
             kind: 'success',
             message: effective
-              ? `Phase-2 artifacts root set to ${effective}.`
-              : 'Phase-2 artifacts root cleared. Using the default artifacts folder.',
+              ? `Artifacts workspace root set to ${effective}.`
+              : 'Artifacts workspace root cleared. Using the default artifacts folder.',
           });
           await refreshConfig();
         } else {
           setPhase2RootNotice({
             kind: 'error',
-            message: response.error ?? 'Failed to update Phase-2 artifacts root.',
+            message: response.error ?? 'Failed to update artifacts workspace root.',
           });
         }
       } catch (error) {
@@ -886,7 +886,7 @@ const EnvDoctor = () => {
               <dd className="env-doctor__mono">{config.artifactsRoot}</dd>
             </div>
             <div>
-              <dt>Phase-2 artifacts root</dt>
+              <dt>Artifacts workspace root</dt>
               <dd className="env-doctor__mono">
                 {config.phase2MetricsRoot ?? config.artifactsRoot}
                 {!config.phase2MetricsRoot ? ' (default)' : ''}
@@ -899,7 +899,7 @@ const EnvDoctor = () => {
           </dl>
           <form className="env-doctor__form" onSubmit={handleSetPhase2Root}>
             <label className="env-doctor__label" htmlFor="env-doctor-phase2-root">
-              Phase-2 artifacts root
+              Artifacts workspace root
             </label>
             <div className="env-doctor__form-row">
               <input
@@ -928,11 +928,11 @@ const EnvDoctor = () => {
                 disabled={!ipcAvailable || phase2RootBusy}
                 aria-busy={phase2RootBusy}
               >
-                Save Phase-2 root
+                Save workspace root
               </button>
             </div>
             <p className="env-doctor__hint">
-              Configure the base directory Phase 2 uses when listing Phase-1 outputs. Leave this blank to
+              Configure the base directory used when listing artifacts like Phase-1 outputs. Leave this blank to
               fall back to the default artifacts folder.
             </p>
           </form>

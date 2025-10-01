@@ -370,6 +370,10 @@ export type ArtifactsListPayload = {
   under?: string;
 };
 
+export type ArtifactsReadFilePayload = {
+  path: string;
+};
+
 export type RegistryQueryPayload = {
   phase?: string;
   experiment?: string;
@@ -489,6 +493,9 @@ export interface RendererIpc {
   };
   artifacts: {
     list: (payload?: ArtifactsListPayload) => Promise<IpcEnvelope<unknown>>;
+    readFile: (
+      payload: ArtifactsReadFilePayload,
+    ) => Promise<IpcEnvelope<{ path: string; contents: string }>>;
   };
   registry: {
     query: (
