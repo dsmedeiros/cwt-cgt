@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { GuidedLoopArgs, LoopAtHotspotPayload, RegistryRunRecord } from '../types/ipc';
-import { phase3 as phase3Ipc, runs } from '../ipc';
+import { runs } from '../ipc';
 import AdiabaticBoundaryViewer from './AdiabaticBoundaryViewer';
 import { createDecisionGateEngine } from '../decisionGate';
 import {
@@ -12,6 +12,12 @@ import {
   validateSettleSteps,
   validateSteps,
 } from '../../shared/validators';
+import {
+  ArtifactNode,
+  findArtifactNodeByName,
+  isGuidLike,
+  sanitizeArtifactNodes,
+} from '../utils/artifacts';
 
 type Hotspot = {
   id: string;
@@ -381,6 +387,16 @@ const Phase3Loops = () => {
   const [graph, setGraph] = useState(graphOptions[0].id);
   const [activeTab, setActiveTab] = useState<'simple' | 'guided'>('guided');
 
+  const [artifactsRoot, setArtifactsRoot] = useState<string | null>(null);
+  const [experiments, setExperiments] = useState<ArtifactNode[]>([]);
+  const [experimentsLoading, setExperimentsLoading] = useState(false);
+  const [experimentsError, setExperimentsError] = useState<string | null>(null);
+  const [selectedExperimentPath, setSelectedExperimentPath] = useState<string | null>(null);
+  const [substrates, setSubstrates] = useState<ArtifactNode[]>([]);
+  const [substratesLoading, setSubstratesLoading] = useState(false);
+  const [substratesError, setSubstratesError] = useState<string | null>(null);
+  const [selectedSubstratePath, setSelectedSubstratePath] = useState<string | null>(null);
+
   const [phase1Runs, setPhase1Runs] = useState<RegistryRunRecord[]>([]);
   const [selectedPhase1RunId, setSelectedPhase1RunId] = useState('');
   const [isLoadingPhase1Runs, setIsLoadingPhase1Runs] = useState(false);
@@ -440,6 +456,204 @@ const Phase3Loops = () => {
     },
     [],
   );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadConfig = async () => {
+      if (typeof window === 'undefined' || !window?.CWT?.env?.getConfig) {
+        setArtifactsRoot(null);
+        return;
+      }
+
+      try {
+        const response = await window.CWT.env.getConfig();
+        if (cancelled) {
+          return;
+        }
+        if (response.ok) {
+          setArtifactsRoot(response.data.phase2MetricsRoot ?? response.data.artifactsRoot ?? null);
+        } else {
+          setArtifactsRoot(null);
+        }
+      } catch {
+        if (!cancelled) {
+          setArtifactsRoot(null);
+        }
+      }
+    };
+
+    void loadConfig();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!artifactsRoot) {
+      setExperiments([]);
+      setSelectedExperimentPath(null);
+      setExperimentsError(
+        'Artifacts workspace root not configured. Open Env Doctor to set a base directory.',
+      );
+      setExperimentsLoading(false);
+      setSubstrates([]);
+      setSelectedSubstratePath(null);
+      setSubstratesError(null);
+      setSubstratesLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const api = typeof window !== 'undefined' ? window?.CWT?.artifacts : undefined;
+    if (!api?.list) {
+      setExperiments([]);
+      setSelectedExperimentPath(null);
+      setExperimentsError('Artifact listing is unavailable in this build.');
+      setExperimentsLoading(false);
+      setSubstrates([]);
+      setSelectedSubstratePath(null);
+      setSubstratesError('Artifact listing is unavailable in this build.');
+      setSubstratesLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const fetchExperiments = async () => {
+      setExperimentsLoading(true);
+      setExperimentsError(null);
+      try {
+        const response = await api.list({ under: artifactsRoot });
+        if (cancelled) {
+          return;
+        }
+        if (!response.ok) {
+          setExperiments([]);
+          setSelectedExperimentPath(null);
+          setExperimentsError(response.error ?? 'Failed to list experiments.');
+          return;
+        }
+
+        const nodes = sanitizeArtifactNodes(response.data);
+        const directories = nodes.filter(
+          (node) => node.type === 'directory' && isGuidLike(node.relativePath),
+        );
+        setExperiments(directories);
+        if (directories.length === 0) {
+          setSelectedExperimentPath(null);
+          setExperimentsError('No experiment folders with GUID names found under the configured root.');
+        } else {
+          setExperimentsError(null);
+          setSelectedExperimentPath((prev) => {
+            if (prev && directories.some((dir) => dir.path === prev)) {
+              return prev;
+            }
+            return directories[0]?.path ?? null;
+          });
+        }
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        setExperiments([]);
+        setSelectedExperimentPath(null);
+        setExperimentsError(message);
+      } finally {
+        if (!cancelled) {
+          setExperimentsLoading(false);
+        }
+      }
+    };
+
+    void fetchExperiments();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [artifactsRoot]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!selectedExperimentPath) {
+      setSubstrates([]);
+      setSelectedSubstratePath(null);
+      setSubstratesError(experiments.length === 0 ? null : 'Select an experiment to list substrates.');
+      setSubstratesLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const api = typeof window !== 'undefined' ? window?.CWT?.artifacts : undefined;
+    if (!api?.list) {
+      setSubstrates([]);
+      setSelectedSubstratePath(null);
+      setSubstratesError('Artifact listing is unavailable in this build.');
+      setSubstratesLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const fetchSubstrates = async () => {
+      setSubstratesLoading(true);
+      setSubstratesError(null);
+      setSelectedSubstratePath(null);
+      try {
+        const response = await api.list({ under: selectedExperimentPath });
+        if (cancelled) {
+          return;
+        }
+        if (!response.ok) {
+          setSubstrates([]);
+          setSelectedSubstratePath(null);
+          setSubstratesError(response.error ?? 'Failed to list substrates.');
+          return;
+        }
+
+        const nodes = sanitizeArtifactNodes(response.data);
+        const directories = nodes.filter((node) => node.type === 'directory');
+        setSubstrates(directories);
+        if (directories.length === 0) {
+          setSelectedSubstratePath(null);
+          setSubstratesError('No substrate directories found under this experiment.');
+        } else {
+          setSubstratesError(null);
+          setSelectedSubstratePath((prev) => {
+            if (prev && directories.some((dir) => dir.path === prev)) {
+              return prev;
+            }
+            return directories[0]?.path ?? null;
+          });
+        }
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        setSubstrates([]);
+        setSelectedSubstratePath(null);
+        setSubstratesError(message);
+      } finally {
+        if (!cancelled) {
+          setSubstratesLoading(false);
+        }
+      }
+    };
+
+    void fetchSubstrates();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [experiments, selectedExperimentPath]);
 
   const refreshPhase1Runs = useCallback(async () => {
     if (!isMountedRef.current) {
@@ -563,9 +777,21 @@ const Phase3Loops = () => {
     applyImportedHotspots,
   ]);
 
-  const browseHotspotFile = useCallback(async () => {
-    if (!window?.CWT?.phase3?.browseHotspots) {
-      setImportError('Hotspot browsing is only available inside the desktop lab.');
+  const loadHotspotsFromSubstrate = useCallback(async () => {
+    if (!selectedSubstratePath) {
+      setImportError('Select a substrate to load hotspots.');
+      setImportMessage(null);
+      return;
+    }
+
+    const api = typeof window !== 'undefined' ? window?.CWT?.artifacts : undefined;
+    if (!api?.list) {
+      setImportError('Artifact listing is unavailable in this build.');
+      setImportMessage(null);
+      return;
+    }
+    if (!window?.CWT?.artifacts?.readFile) {
+      setImportError('Artifact file reading is unavailable in this build.');
       setImportMessage(null);
       return;
     }
@@ -574,14 +800,32 @@ const Phase3Loops = () => {
     setImportMessage(null);
     setIsImportingHotspots(true);
     try {
-      const result = await phase3Ipc.browseHotspots();
-      if (result.canceled || !result.path || !result.contents) {
-        return;
+      const listResponse = await api.list({ under: selectedSubstratePath });
+      if (!listResponse.ok) {
+        throw new Error(listResponse.error ?? 'Failed to inspect substrate directory.');
       }
-      const entries = parsePhase1Hotspots(result.contents);
-      const normalizedPath = normalizeOrigin(result.path);
-      const baseName = normalizedPath.split('/').pop() ?? normalizedPath;
-      applyImportedHotspots(entries, `file:${normalizedPath}`, baseName);
+      const nodes = sanitizeArtifactNodes(listResponse.data);
+      const fileNode = findArtifactNodeByName(nodes, 'top_omega_tiles.json');
+      if (!fileNode) {
+        throw new Error('top_omega_tiles.json not found in the selected substrate.');
+      }
+      const fileResponse = await window.CWT.artifacts.readFile({ path: fileNode.path });
+      if (!fileResponse.ok) {
+        throw new Error(fileResponse.error ?? 'Failed to load Phase 1 hotspot file.');
+      }
+      const payload = fileResponse.data as { contents?: unknown } | null;
+      const contents = typeof payload?.contents === 'string' ? payload.contents : '';
+      if (!contents) {
+        throw new Error('Phase 1 hotspot file was empty.');
+      }
+
+      const entries = parsePhase1Hotspots(contents);
+      const experiment = experiments.find((node) => node.path === selectedExperimentPath);
+      const substrate = substrates.find((node) => node.path === selectedSubstratePath);
+      const experimentLabel = experiment?.relativePath ?? 'experiment';
+      const substrateLabel = substrate?.name ?? 'substrate';
+      applyImportedHotspots(entries, fileNode.path, `${experimentLabel}/${substrateLabel}`);
+      setImportMessage(`Loaded ${entries.length} hotspots from ${experimentLabel}/${substrateLabel}.`);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setImportError(message);
@@ -589,7 +833,13 @@ const Phase3Loops = () => {
     } finally {
       setIsImportingHotspots(false);
     }
-  }, [applyImportedHotspots]);
+  }, [
+    selectedSubstratePath,
+    experiments,
+    selectedExperimentPath,
+    substrates,
+    applyImportedHotspots,
+  ]);
 
   const extentAValidation = useMemo(() => validateExtent(extentA), [extentA]);
   const extentBValidation = useMemo(() => validateExtent(extentB), [extentB]);
@@ -982,39 +1232,80 @@ const Phase3Loops = () => {
           <p>Select a hotspot and tune loop calibration strategies.</p>
 
           <section className="phase3__section">
-            <h3>Hotspot List</h3>
-            <div className="phase3__hotspot-list">
-              {hotspots.map((hotspot) => (
-                <label key={hotspot.id} className="phase3__hotspot-item">
-                  <input
-                    type="radio"
-                    name="hotspot"
-                    value={hotspot.id}
-                    checked={selectedHotspotId === hotspot.id}
-                    onChange={() => setSelectedHotspotId(hotspot.id)}
-                  />
-                  <span>
-                    {hotspot.name}
-                    <small>
-                      τ {toCliValue(hotspot.tau)} / ζ {toCliValue(hotspot.zeta)}
-                    </small>
-                  </span>
-                </label>
-              ))}
-            </div>
-          </section>
-
-          <section className="phase3__section">
             <h3>Phase 1 ridge map</h3>
+            <div className="phase3__import-controls phase3__import-controls--artifacts">
+              <div>
+                <label htmlFor="phase3-artifact-experiment">Experiments</label>
+                <select
+                  id="phase3-artifact-experiment"
+                  value={selectedExperimentPath ?? ''}
+                  onChange={(event) => setSelectedExperimentPath(event.target.value || null)}
+                  disabled={experimentsLoading || experiments.length === 0}
+                >
+                  {experiments.map((experiment) => (
+                    <option key={experiment.path} value={experiment.path}>
+                      {experiment.relativePath}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="phase3-artifact-substrate">Substrates</label>
+                <select
+                  id="phase3-artifact-substrate"
+                  value={selectedSubstratePath ?? ''}
+                  onChange={(event) => setSelectedSubstratePath(event.target.value || null)}
+                  disabled={
+                    substratesLoading || substrates.length === 0 || !selectedExperimentPath
+                  }
+                >
+                  {substrates.map((substrate) => (
+                    <option key={substrate.path} value={substrate.path}>
+                      {substrate.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="phase3__import-run">
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => void loadHotspotsFromSubstrate()}
+                  disabled={
+                    isImportingHotspots ||
+                    !selectedSubstratePath ||
+                    substratesLoading ||
+                    experimentsLoading
+                  }
+                >
+                  {isImportingHotspots ? 'Loading…' : 'Load hotspots'}
+                </button>
+              </div>
+            </div>
+            {experimentsLoading ? (
+              <p className="phase3__hint" role="status">
+                Loading experiments…
+              </p>
+            ) : null}
+            {substratesLoading ? (
+              <p className="phase3__hint" role="status">
+                Loading substrates…
+              </p>
+            ) : null}
+            {experimentsError ? (
+              <p className="phase3__error" role="alert">
+                {experimentsError}
+              </p>
+            ) : null}
+            {substratesError ? (
+              <p className="phase3__error" role="alert">
+                {substratesError}
+              </p>
+            ) : null}
+            {!experimentsLoading && !experimentsError && experiments.length === 0 ? (
+              <p className="phase3__hint">Run Phase 1 mapping to populate experiments.</p>
+            ) : null}
             <div className="phase3__import-controls">
-              <button
-                type="button"
-                className="btn"
-                onClick={() => void browseHotspotFile()}
-                disabled={isImportingHotspots}
-              >
-                {isImportingHotspots ? 'Loading…' : 'Browse ridge file'}
-              </button>
               <div>
                 <label htmlFor="phase3-phase1-run">Completed Phase 1 runs</label>
                 <div className="phase3__import-run">
@@ -1069,6 +1360,29 @@ const Phase3Loops = () => {
             {!phase1RunError && phase1Runs.length === 0 && !isLoadingPhase1Runs ? (
               <p className="phase3__hint">Run Phase 1 mapping to populate this list.</p>
             ) : null}
+          </section>
+
+          <section className="phase3__section">
+            <h3>Hotspot List</h3>
+            <div className="phase3__hotspot-list">
+              {hotspots.map((hotspot) => (
+                <label key={hotspot.id} className="phase3__hotspot-item">
+                  <input
+                    type="radio"
+                    name="hotspot"
+                    value={hotspot.id}
+                    checked={selectedHotspotId === hotspot.id}
+                    onChange={() => setSelectedHotspotId(hotspot.id)}
+                  />
+                  <span>
+                    {hotspot.name}
+                    <small>
+                      τ {toCliValue(hotspot.tau)} / ζ {toCliValue(hotspot.zeta)}
+                    </small>
+                  </span>
+                </label>
+              ))}
+            </div>
           </section>
 
           <section className="phase3__section">

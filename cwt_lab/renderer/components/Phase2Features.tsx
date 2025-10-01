@@ -6,6 +6,11 @@ import { phase2 } from '../ipc';
 import { formatValidationMessage, validatePercentile } from '../../shared/validators';
 import type { Phase2CorrelateResult, Phase2FeatureName, Phase2RocPoint } from '../types/ipc';
 import { useCommandRegistration } from '../commandCenter';
+import {
+  ArtifactNode,
+  isGuidLike,
+  sanitizeArtifactNodes,
+} from '../utils/artifacts';
 
 const FEATURE_DISPLAY_NAMES: Record<Phase2FeatureName, string> = {
   spectral_gap: 'Spectral gap',
@@ -30,44 +35,6 @@ const SCALE_DESCRIPTIONS: Record<'linear' | 'log', string> = {
     'Linear keeps equal spacing between values so you can see raw differences. It is best when feature values cover a narrow range.',
   log:
     'Log compresses very large numbers and stretches small ones. Use it when a few outliers hide the structure near zero.',
-};
-
-type ArtifactNode = {
-  name: string;
-  path: string;
-  type: 'file' | 'directory';
-  relativePath: string;
-  children?: ArtifactNode[];
-};
-
-const sanitizeArtifactNodes = (value: unknown): ArtifactNode[] => {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-  return value
-    .map((entry) => {
-      if (!entry || typeof entry !== 'object') {
-        return null;
-      }
-      const node = entry as Partial<ArtifactNode>;
-      if (
-        typeof node.name !== 'string' ||
-        typeof node.path !== 'string' ||
-        typeof node.relativePath !== 'string' ||
-        (node.type !== 'file' && node.type !== 'directory')
-      ) {
-        return null;
-      }
-      const children = node.type === 'directory' ? sanitizeArtifactNodes(node.children) : [];
-      return {
-        name: node.name,
-        path: node.path,
-        type: node.type,
-        relativePath: node.relativePath,
-        children,
-      } satisfies ArtifactNode;
-    })
-    .filter((entry): entry is ArtifactNode => entry !== null);
 };
 
 const formatNumber = (value: number | null | undefined, digits = 3) => {
@@ -136,11 +103,6 @@ const buildSummary = (result: Phase2CorrelateResult | null): string => {
   return `Predictive markers: ${fragments.join(' ')}${thresholdSummary}${strengthSummary}${aucSummary}${nextSteps}`;
 };
 
-const GUID_PATTERN =
-  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-
-const isGuidLike = (value: string) => GUID_PATTERN.test(value.trim());
-
 const Phase2Features = () => {
   const [phase2Root, setPhase2Root] = useState<string | null>(null);
   const [experiments, setExperiments] = useState<ArtifactNode[]>([]);
@@ -204,7 +166,7 @@ const Phase2Features = () => {
       setSelectedExperimentPath(null);
       setSelectedRunPaths([]);
       setExperimentsError(
-        'Phase-2 artifacts root not configured. Open Env Doctor to set a base directory.',
+        'Artifacts workspace root not configured. Open Env Doctor to set a base directory.',
       );
       setExperimentsLoading(false);
       return () => {

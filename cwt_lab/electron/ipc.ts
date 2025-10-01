@@ -1574,6 +1574,20 @@ ipcMain.handle('cwt:artifacts:list', (_event, payload: { under?: string }) =>
   }),
 );
 
+ipcMain.handle('cwt:artifacts:read-file', (_event, payload: { path?: string }) =>
+  wrap(async () => {
+    const target = payload?.path ? path.resolve(payload.path) : '';
+    if (!target) {
+      throw new Error('path is required');
+    }
+    if (!existsSync(target)) {
+      throw new Error('File not found.');
+    }
+    const contents = await fs.readFile(target, 'utf-8');
+    return { path: target, contents };
+  }),
+);
+
 ipcMain.handle('cwt:registry:query', (_event, payload?: { phase?: string; experiment?: string; limit?: number }) =>
   wrap(() => runManager.fetchRegistry(payload ?? {})),
 );
