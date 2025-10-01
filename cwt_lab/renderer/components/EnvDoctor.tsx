@@ -138,6 +138,9 @@ const EnvDoctor = () => {
   const [pathBusy, setPathBusy] = useState(false);
   const [browseBusy, setBrowseBusy] = useState(false);
   const [manualPath, setManualPath] = useState('');
+  const [phase2RootInput, setPhase2RootInput] = useState('');
+  const [phase2RootNotice, setPhase2RootNotice] = useState<PathNotice>(null);
+  const [phase2RootBusy, setPhase2RootBusy] = useState(false);
   const [progressIndex, setProgressIndex] = useState(0);
   const [lastScanSummary, setLastScanSummary] = useState<string | null>(null);
   const [timeoutWarning, setTimeoutWarning] = useState<string | null>(null);
@@ -195,6 +198,9 @@ const EnvDoctor = () => {
           if (value || options.force) {
             updateManualPath(value, options);
           }
+          setPhase2RootInput(
+            response.data.phase2MetricsRoot ?? response.data.artifactsRoot ?? '',
+          );
         } else {
           console.warn('[EnvDoctor] Failed to load environment configuration.', {
             error: response.error,
@@ -491,6 +497,68 @@ const EnvDoctor = () => {
 
   const pythonPathPlaceholder = useMemo(() => getPythonPathPlaceholder(), []);
 
+  const handlePhase2RootChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    setPhase2RootInput(event.target.value);
+  }, []);
+
+  const handleResetPhase2Root = useCallback(() => {
+    setPhase2RootInput('');
+    setPhase2RootNotice(null);
+  }, []);
+
+  const handleSetPhase2Root = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const api = typeof window !== 'undefined' ? window?.CWT?.env : undefined;
+      if (!api?.setPhase2MetricsRoot) {
+        setPhase2RootNotice({
+          kind: 'error',
+          message:
+            'Updating the Phase-2 artifacts root is unavailable in this build. Launch the Electron app for full configuration.',
+        });
+        return;
+      }
+      if (phase2RootBusy) {
+        return;
+      }
+      setPhase2RootBusy(true);
+      setPhase2RootNotice(null);
+      try {
+        const trimmed = phase2RootInput.trim();
+        const response = await api.setPhase2MetricsRoot({ path: trimmed.length > 0 ? trimmed : null });
+        if (!isMounted.current) {
+          return;
+        }
+        if (response.ok) {
+          const effective = response.data.path;
+          setPhase2RootNotice({
+            kind: 'success',
+            message: effective
+              ? `Phase-2 artifacts root set to ${effective}.`
+              : 'Phase-2 artifacts root cleared. Using the default artifacts folder.',
+          });
+          await refreshConfig();
+        } else {
+          setPhase2RootNotice({
+            kind: 'error',
+            message: response.error ?? 'Failed to update Phase-2 artifacts root.',
+          });
+        }
+      } catch (error) {
+        if (!isMounted.current) {
+          return;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        setPhase2RootNotice({ kind: 'error', message });
+      } finally {
+        if (isMounted.current) {
+          setPhase2RootBusy(false);
+        }
+      }
+    },
+    [phase2RootBusy, phase2RootInput, refreshConfig],
+  );
+
   return (
     <div className="panel env-doctor">
       <div className="env-doctor__header">
@@ -693,10 +761,64 @@ const EnvDoctor = () => {
               <dd className="env-doctor__mono">{config.artifactsRoot}</dd>
             </div>
             <div>
+              <dt>Phase-2 artifacts root</dt>
+              <dd className="env-doctor__mono">
+                {config.phase2MetricsRoot ?? config.artifactsRoot}
+                {!config.phase2MetricsRoot ? ' (default)' : ''}
+              </dd>
+            </div>
+            <div>
               <dt>Preferred strategy</dt>
               <dd>{config.strategy ? strategyLabels[config.strategy] : 'Not set'}</dd>
             </div>
           </dl>
+          <form className="env-doctor__form" onSubmit={handleSetPhase2Root}>
+            <label className="env-doctor__label" htmlFor="env-doctor-phase2-root">
+              Phase-2 artifacts root
+            </label>
+            <div className="env-doctor__form-row">
+              <input
+                id="env-doctor-phase2-root"
+                type="text"
+                className="env-doctor__input"
+                value={phase2RootInput}
+                onChange={handlePhase2RootChange}
+                disabled={!ipcAvailable || phase2RootBusy}
+              />
+              <button
+                type="button"
+                className="env-doctor__button"
+                onClick={handleResetPhase2Root}
+                disabled={!ipcAvailable || phase2RootBusy || phase2RootInput.trim().length === 0}
+              >
+                Reset
+              </button>
+              <button
+                type="submit"
+                className={
+                  phase2RootBusy
+                    ? 'env-doctor__button env-doctor__button--busy'
+                    : 'env-doctor__button'
+                }
+                disabled={!ipcAvailable || phase2RootBusy}
+                aria-busy={phase2RootBusy}
+              >
+                Save Phase-2 root
+              </button>
+            </div>
+            <p className="env-doctor__hint">
+              Configure the base directory Phase 2 uses when listing Phase-1 outputs. Leave this blank to
+              fall back to the default artifacts folder.
+            </p>
+          </form>
+          {phase2RootNotice && (
+            <div
+              role={phase2RootNotice.kind === 'success' ? 'status' : 'alert'}
+              className={`env-doctor__notice env-doctor__notice--${phase2RootNotice.kind}`}
+            >
+              {phase2RootNotice.message}
+            </div>
+          )}
         </div>
       )}
     </div>

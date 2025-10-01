@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Plot from 'react-plotly.js';
 import type { Data, Layout } from 'plotly.js';
 
@@ -30,6 +30,44 @@ const SCALE_DESCRIPTIONS: Record<'linear' | 'log', string> = {
     'Linear keeps equal spacing between values so you can see raw differences. It is best when feature values cover a narrow range.',
   log:
     'Log compresses very large numbers and stretches small ones. Use it when a few outliers hide the structure near zero.',
+};
+
+type ArtifactNode = {
+  name: string;
+  path: string;
+  type: 'file' | 'directory';
+  relativePath: string;
+  children?: ArtifactNode[];
+};
+
+const sanitizeArtifactNodes = (value: unknown): ArtifactNode[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map((entry) => {
+      if (!entry || typeof entry !== 'object') {
+        return null;
+      }
+      const node = entry as Partial<ArtifactNode>;
+      if (
+        typeof node.name !== 'string' ||
+        typeof node.path !== 'string' ||
+        typeof node.relativePath !== 'string' ||
+        (node.type !== 'file' && node.type !== 'directory')
+      ) {
+        return null;
+      }
+      const children = node.type === 'directory' ? sanitizeArtifactNodes(node.children) : [];
+      return {
+        name: node.name,
+        path: node.path,
+        type: node.type,
+        relativePath: node.relativePath,
+        children,
+      } satisfies ArtifactNode;
+    })
+    .filter((entry): entry is ArtifactNode => entry !== null);
 };
 
 const formatNumber = (value: number | null | undefined, digits = 3) => {
@@ -99,7 +137,13 @@ const buildSummary = (result: Phase2CorrelateResult | null): string => {
 };
 
 const Phase2Features = () => {
-  const [metricsDirs, setMetricsDirs] = useState<string[]>([]);
+  const [phase2Root, setPhase2Root] = useState<string | null>(null);
+  const [experiments, setExperiments] = useState<ArtifactNode[]>([]);
+  const [experimentsError, setExperimentsError] = useState<string | null>(null);
+  const [experimentsLoading, setExperimentsLoading] = useState(false);
+  const [selectedExperimentPath, setSelectedExperimentPath] = useState<string | null>(null);
+  const [selectedRunPaths, setSelectedRunPaths] = useState<string[]>([]);
+  const [refreshExperimentsTick, setRefreshExperimentsTick] = useState(0);
   const [thresholdMode, setThresholdMode] = useState<'absolute' | 'percentile'>('absolute');
   const [absoluteThreshold, setAbsoluteThreshold] = useState('1.0');
   const [percentileThreshold, setPercentileThreshold] = useState('90');
@@ -113,52 +157,194 @@ const Phase2Features = () => {
   const [snapshotStatus, setSnapshotStatus] = useState<string | null>(null);
   const abortRef = useRef<{ aborted: boolean } | null>(null);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadConfig = async () => {
+      if (typeof window === 'undefined' || !window?.CWT?.env?.getConfig) {
+        return;
+      }
+
+      try {
+        const response = await window.CWT.env.getConfig();
+        if (cancelled) {
+          return;
+        }
+        if (response.ok) {
+          setPhase2Root(response.data.phase2MetricsRoot ?? response.data.artifactsRoot ?? null);
+        } else {
+          setPhase2Root(null);
+        }
+      } catch {
+        if (!cancelled) {
+          setPhase2Root(null);
+        }
+      }
+    };
+
+    void loadConfig();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const refreshExperiments = useCallback(
+    () => setRefreshExperimentsTick((prev) => prev + 1),
+    [],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!phase2Root) {
+      setExperiments([]);
+      setSelectedExperimentPath(null);
+      setSelectedRunPaths([]);
+      setExperimentsError(
+        'Phase-2 artifacts root not configured. Open Env Doctor to set a base directory.',
+      );
+      setExperimentsLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const api = typeof window !== 'undefined' ? window?.CWT?.artifacts : undefined;
+    if (!api?.list) {
+      setExperiments([]);
+      setSelectedExperimentPath(null);
+      setSelectedRunPaths([]);
+      setExperimentsError('Artifact listing is unavailable in this build.');
+      setExperimentsLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const fetchExperiments = async () => {
+      setExperimentsLoading(true);
+      setExperimentsError(null);
+      try {
+        const response = await api.list({ under: phase2Root });
+        if (cancelled) {
+          return;
+        }
+        if (!response.ok) {
+          setExperiments([]);
+          setSelectedExperimentPath(null);
+          setSelectedRunPaths([]);
+          setExperimentsError(response.error ?? 'Failed to list experiments.');
+          return;
+        }
+
+        const nodes = sanitizeArtifactNodes(response.data);
+        const directories = nodes.filter((node) => node.type === 'directory');
+        setExperiments(directories);
+
+        if (directories.length === 0) {
+          setSelectedExperimentPath(null);
+          setSelectedRunPaths([]);
+          setExperimentsError('No experiment folders found under the configured root.');
+        } else {
+          setExperimentsError(null);
+          setSelectedExperimentPath((prev) => {
+            if (prev && directories.some((dir) => dir.path === prev)) {
+              return prev;
+            }
+            return directories[0]?.path ?? null;
+          });
+        }
+      } catch (err) {
+        if (cancelled) {
+          return;
+        }
+        const message = err instanceof Error ? err.message : String(err);
+        setExperiments([]);
+        setSelectedExperimentPath(null);
+        setSelectedRunPaths([]);
+        setExperimentsError(message);
+      } finally {
+        if (!cancelled) {
+          setExperimentsLoading(false);
+        }
+      }
+    };
+
+    void fetchExperiments();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [phase2Root, refreshExperimentsTick]);
+
+  const selectedExperiment = useMemo(
+    () => experiments.find((entry) => entry.path === selectedExperimentPath) ?? null,
+    [experiments, selectedExperimentPath],
+  );
+
+  const availableRunDirs = useMemo(() => {
+    if (!selectedExperiment || selectedExperiment.type !== 'directory') {
+      return [] as ArtifactNode[];
+    }
+    return Array.isArray(selectedExperiment.children) ? selectedExperiment.children : [];
+  }, [selectedExperiment]);
+
+  useEffect(() => {
+    const childDirs = availableRunDirs;
+    const availableSet = new Set(childDirs.map((child) => child.relativePath));
+    setSelectedRunPaths((prev) => {
+      if (childDirs.length === 0) {
+        return prev.length === 0 ? prev : [];
+      }
+      const valid = prev.filter((value) => availableSet.has(value));
+      if (valid.length > 0) {
+        if (valid.length === prev.length && valid.every((value, index) => value === prev[index])) {
+          return prev;
+        }
+        return valid;
+      }
+      return [childDirs[0].relativePath];
+    });
+  }, [availableRunDirs]);
+
+  const selectedRunNodes = useMemo(() => {
+    if (!availableRunDirs.length) {
+      return [] as ArtifactNode[];
+    }
+    const map = new Map(availableRunDirs.map((child) => [child.relativePath, child]));
+    return selectedRunPaths
+      .map((relative) => map.get(relative) ?? null)
+      .filter((node): node is ArtifactNode => node !== null);
+  }, [availableRunDirs, selectedRunPaths]);
+
+  const metricsDirs = useMemo(
+    () => selectedRunNodes.map((node) => node.path),
+    [selectedRunNodes],
+  );
+
+  const handleRunSelectionChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
+    const options = Array.from(event.target.selectedOptions).map((option) => option.value);
+    setSelectedRunPaths(options);
+  }, []);
+
+  const handleRemoveRun = useCallback((relativePath: string) => {
+    setSelectedRunPaths((prev) => prev.filter((value) => value !== relativePath));
+  }, []);
+
   const percentileValidation = useMemo(() => validatePercentile(percentileThreshold), [percentileThreshold]);
   const percentileError = thresholdMode === 'percentile' ? formatValidationMessage(percentileValidation) : null;
-  const isAnalyzeDisabled = isLoading || (thresholdMode === 'percentile' && !percentileValidation.ok);
+  const isAnalyzeDisabled =
+    isLoading ||
+    metricsDirs.length === 0 ||
+    (thresholdMode === 'percentile' && !percentileValidation.ok);
   const analyzeTitle = isLoading
     ? 'Correlation analysis already running.'
-    : thresholdMode === 'percentile' && !percentileValidation.ok
-      ? percentileValidation.message
-      : undefined;
-
-  const handleBrowse = useCallback(async () => {
-    try {
-      const { canceled, directories } = await phase2.browseMetricsDirs();
-      if (canceled) {
-        return;
-      }
-
-      const sanitized = Array.from(
-        new Set(
-          directories
-            .map((dir) => dir.trim())
-            .filter((dir): dir is string => dir.length > 0),
-        ),
-      );
-
-      if (sanitized.length === 0) {
-        return;
-      }
-
-      setMetricsDirs((prev) => {
-        const next = [...prev];
-        sanitized.forEach((dir) => {
-          if (!next.includes(dir)) {
-            next.push(dir);
-          }
-        });
-        return next;
-      });
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    }
-  }, [setError, setMetricsDirs]);
-
-  const removeDir = (dir: string) => {
-    setMetricsDirs((prev) => prev.filter((entry) => entry !== dir));
-  };
+    : metricsDirs.length === 0
+      ? 'Select at least one Phase-1 run directory to analyze.'
+      : thresholdMode === 'percentile' && !percentileValidation.ok
+        ? percentileValidation.message
+        : undefined;
 
   const validateThreshold = useCallback((): number | null => {
     if (thresholdMode === 'absolute') {
@@ -178,7 +364,7 @@ const Phase2Features = () => {
 
   const runCorrelation = useCallback(async () => {
     if (metricsDirs.length === 0) {
-      setError('Select at least one Phase-1 output directory.');
+      setError('Select at least one Phase-1 run directory.');
       return;
     }
     const thresholdValue = validateThreshold();
@@ -406,36 +592,76 @@ const Phase2Features = () => {
       <header className="phase2__header">
         <h2>Phase 2 – Feature Correlations</h2>
         <p>
-          Load Phase‑1 metrics directories to inspect how engineered features correlate with thermal outcomes.
-          Tune the |Ω| decision threshold to explore correlation strength, ROC/AUC estimates, and per-sample
-          scatter relationships before advancing to subsequent phases.
+          Load Phase‑1 run outputs from your artifacts workspace to inspect how engineered features correlate with
+          thermal outcomes. Tune the |Ω| decision threshold to explore correlation strength, ROC/AUC estimates,
+          and per-sample scatter relationships before advancing to subsequent phases.
         </p>
       </header>
 
       <section className="phase2__inputs" aria-labelledby="phase2-inputs-heading">
         <div className="phase2__inputs-heading">
           <h3 id="phase2-inputs-heading">Inputs</h3>
-          <p className="field-hint">Select one or more Phase‑1 output directories produced by mapping runs.</p>
+          <p className="field-hint">
+            Choose a Phase‑1 experiment and select one or more run folders for correlation analysis. Update the
+            base path in Env Doctor if your artifacts live elsewhere.
+          </p>
         </div>
-        <div className="phase2__actions">
+        <p className="field-hint">
+          Base directory: <code>{phase2Root ?? 'Not configured'}</code>
+        </p>
+        <div className="phase2__selectors">
+          <label className="phase2__selector">
+            <span>Experiment</span>
+            <select
+              value={selectedExperimentPath ?? ''}
+              onChange={(event) => setSelectedExperimentPath(event.target.value || null)}
+              disabled={experimentsLoading || isLoading || experiments.length === 0}
+            >
+              {experiments.map((experiment) => (
+                <option key={experiment.path} value={experiment.path}>
+                  {experiment.relativePath}
+                </option>
+              ))}
+            </select>
+          </label>
           <button
             type="button"
-            className="btn btn--primary"
-            onClick={handleBrowse}
-            disabled={isLoading}
+            className="btn btn--ghost btn--small"
+            onClick={refreshExperiments}
+            disabled={experimentsLoading}
           >
-            Select Phase‑1 output directories
+            {experimentsLoading ? 'Refreshing…' : 'Refresh list'}
           </button>
         </div>
+        <label className="phase2__selector">
+          <span>Phase-1 runs</span>
+          <select
+            multiple
+            size={Math.min(8, Math.max(availableRunDirs.length || 0, 4))}
+            value={selectedRunPaths}
+            onChange={handleRunSelectionChange}
+            disabled={experimentsLoading || isLoading || availableRunDirs.length === 0}
+          >
+            {availableRunDirs.map((run) => (
+              <option key={run.relativePath} value={run.relativePath}>
+                {run.relativePath}
+              </option>
+            ))}
+          </select>
+          <p className="field-hint">
+            Hold Ctrl (or ⌘ on macOS) to select multiple runs. Remove entries below to adjust the selection.
+          </p>
+        </label>
+        {experimentsError ? <div className="phase2__error" role="alert">{experimentsError}</div> : null}
         {metricsDirs.length > 0 ? (
           <ul className="phase2__dir-list">
-            {metricsDirs.map((dir) => (
-              <li key={dir} className="phase2__dir-item">
-                <span className="phase2__dir-label">{dir}</span>
+            {selectedRunNodes.map((node) => (
+              <li key={node.path} className="phase2__dir-item">
+                <span className="phase2__dir-label">{node.relativePath}</span>
                 <button
                   type="button"
                   className="btn btn--ghost btn--small"
-                  onClick={() => removeDir(dir)}
+                  onClick={() => handleRemoveRun(node.relativePath)}
                   disabled={isLoading}
                 >
                   Remove
@@ -444,7 +670,7 @@ const Phase2Features = () => {
             ))}
           </ul>
         ) : (
-          <p className="phase2__empty">No metrics directories selected yet.</p>
+          <p className="phase2__empty">No Phase‑1 runs selected yet.</p>
         )}
 
         <fieldset className="phase2__threshold">

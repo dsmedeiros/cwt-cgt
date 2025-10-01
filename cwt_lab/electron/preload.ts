@@ -12,6 +12,7 @@ const api = {
     setPythonPath: (path: string) => invoke('cwt:env:set-python-path', path),
     getConfig: () => invoke('cwt:env:get-config'),
     browsePythonExecutable: () => invoke('cwt:env:browse-python'),
+    setPhase2MetricsRoot: (payload) => invoke('cwt:env:set-phase2-root', payload),
   },
   run: {
     create: (payload) => invoke('cwt:run:create', payload),

@@ -20,6 +20,7 @@ const assignEnvApi = (overrides: Partial<RendererIpc['env']>) => {
     setPythonPath: vi.fn(),
     getConfig: vi.fn(),
     browsePythonExecutable: vi.fn(),
+    setPhase2MetricsRoot: vi.fn(),
     ...overrides,
   } as RendererIpc['env'];
   (window as typeof window & { CWT: RendererIpc }).CWT = {
@@ -72,6 +73,7 @@ describe('EnvDoctor', () => {
       data: {
         repoRoot: '/repo',
         artifactsRoot: '/repo/artifacts',
+        phase2MetricsRoot: '/repo/artifacts',
         pythonPath: candidates[0].path,
         strategy: 'installed',
       } satisfies EnvConfig,
@@ -110,6 +112,7 @@ describe('EnvDoctor', () => {
       data: {
         repoRoot: '/repo',
         artifactsRoot: '/repo/artifacts',
+        phase2MetricsRoot: '/repo/artifacts',
         pythonPath: null,
         strategy: null,
       } satisfies EnvConfig,
@@ -153,21 +156,23 @@ describe('EnvDoctor', () => {
       .fn()
       .mockResolvedValueOnce({
         ok: true,
-        data: {
-          repoRoot: '/repo',
-          artifactsRoot: '/repo/artifacts',
-          pythonPath: initialCandidates[0].path,
-          strategy: 'installed',
-        } satisfies EnvConfig,
+      data: {
+        repoRoot: '/repo',
+        artifactsRoot: '/repo/artifacts',
+        phase2MetricsRoot: '/repo/artifacts',
+        pythonPath: initialCandidates[0].path,
+        strategy: 'installed',
+      } satisfies EnvConfig,
       } satisfies EnvEnvelope<EnvConfig>)
       .mockResolvedValueOnce({
         ok: true,
-        data: {
-          repoRoot: '/repo',
-          artifactsRoot: '/repo/artifacts',
-          pythonPath: updatedCandidate.path,
-          strategy: 'installed',
-        } satisfies EnvConfig,
+      data: {
+        repoRoot: '/repo',
+        artifactsRoot: '/repo/artifacts',
+        phase2MetricsRoot: '/repo/artifacts',
+        pythonPath: updatedCandidate.path,
+        strategy: 'installed',
+      } satisfies EnvConfig,
       } satisfies EnvEnvelope<EnvConfig>);
 
     const setPythonPath = vi.fn().mockResolvedValue({ ok: true, data: updatedCandidate } satisfies EnvEnvelope<EnvCandidate>);
@@ -203,6 +208,7 @@ describe('EnvDoctor', () => {
       data: {
         repoRoot: '/repo',
         artifactsRoot: '/repo/artifacts',
+        phase2MetricsRoot: '/repo/artifacts',
         pythonPath: null,
         strategy: null,
       } satisfies EnvConfig,
@@ -225,5 +231,52 @@ describe('EnvDoctor', () => {
 
     const input = await screen.findByLabelText<HTMLInputElement>(/Python executable/i);
     await waitFor(() => expect(input.value).toBe(browsedPythonPath));
+  });
+
+  it('allows configuring the Phase-2 artifacts root', async () => {
+    const detect = vi.fn().mockResolvedValue({
+      ok: true,
+      data: { candidates: [], selected: null },
+    } satisfies EnvEnvelope<EnvDetectResult>);
+    const getConfig = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        data: {
+          repoRoot: '/repo',
+          artifactsRoot: '/repo/artifacts',
+          phase2MetricsRoot: null,
+          pythonPath: null,
+          strategy: null,
+        } satisfies EnvConfig,
+      } satisfies EnvEnvelope<EnvConfig>)
+      .mockResolvedValueOnce({
+        ok: true,
+        data: {
+          repoRoot: '/repo',
+          artifactsRoot: '/repo/artifacts',
+          phase2MetricsRoot: '/custom/metrics',
+          pythonPath: null,
+          strategy: null,
+        } satisfies EnvConfig,
+      } satisfies EnvEnvelope<EnvConfig>);
+
+    const setPhase2MetricsRoot = vi
+      .fn()
+      .mockResolvedValue({ ok: true, data: { path: '/custom/metrics' } } satisfies EnvEnvelope<{ path: string | null }>);
+
+    assignEnvApi({ detect, getConfig, setPhase2MetricsRoot });
+
+    render(<EnvDoctor />);
+
+    const input = await screen.findByLabelText<HTMLInputElement>(/Phase-2 artifacts root/i);
+    fireEvent.change(input, { target: { value: '/custom/metrics' } });
+    const submit = screen.getByRole<HTMLButtonElement>('button', { name: /Save Phase-2 root/i });
+    fireEvent.click(submit);
+
+    await waitFor(() => expect(setPhase2MetricsRoot).toHaveBeenCalledWith({ path: '/custom/metrics' }));
+    await waitFor(() => expect(getConfig).toHaveBeenCalledTimes(2));
+
+    expect(await screen.findByText(/Phase-2 artifacts root set to/i)).toBeInTheDocument();
   });
 });
