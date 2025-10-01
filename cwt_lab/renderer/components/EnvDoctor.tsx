@@ -145,19 +145,20 @@ const EnvDoctor = () => {
   const [lastScanSummary, setLastScanSummary] = useState<string | null>(null);
   const [timeoutWarning, setTimeoutWarning] = useState<string | null>(null);
   const manualPathTouched = useRef(false);
-  const isMounted = useRef(true);
+  const isMounted = useRef(false);
   const detectionTimeoutRef = useRef<number | null>(null);
   const detectionInFlightRef = useRef(false);
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
       isMounted.current = false;
       if (typeof window !== 'undefined' && detectionTimeoutRef.current !== null) {
         window.clearTimeout(detectionTimeoutRef.current);
+        detectionTimeoutRef.current = null;
       }
-    },
-    [],
-  );
+    };
+  }, []);
 
   const updateManualPath = useCallback(
     (value: string, options: ManualPathUpdateOptions = {}) => {
