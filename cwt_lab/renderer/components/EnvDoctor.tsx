@@ -387,11 +387,12 @@ const EnvDoctor = () => {
     setBrowseBusy(true);
     try {
       const response = await api.browsePythonExecutable();
+      const browseError = response.ok ? null : response.error ?? null;
       console.debug('[EnvDoctor] Browse result received.', {
         ok: response.ok,
         canceled: response.data?.canceled ?? null,
         path: response.data?.path ?? null,
-        error: response.error ?? null,
+        error: browseError,
       });
       if (!isMounted.current) {
         return;
@@ -445,10 +446,11 @@ const EnvDoctor = () => {
       setPathBusy(true);
       try {
         const response = await api.setPythonPath(trimmed);
+        const responseError = response.ok ? null : response.error ?? null;
         console.debug('[EnvDoctor] Set Python path response received.', {
           ok: response.ok,
           candidate: response.data ?? null,
-          error: response.error ?? null,
+          error: responseError,
         });
         if (!isMounted.current) {
           return;
