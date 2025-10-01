@@ -14,6 +14,24 @@ const FEATURE_DISPLAY_NAMES: Record<Phase2FeatureName, string> = {
   trace_g: 'Trace g',
 };
 
+const FEATURE_DESCRIPTIONS: Record<Phase2FeatureName, string> = {
+  spectral_gap:
+    'Shows how separated the two dominant signal modes are. Large gaps imply cleaner contrast between hot and cold behaviour.',
+  kuramoto_r:
+    'Measures how strongly the readout phases align. Higher R suggests the system locked into a coherent hot state.',
+  grad_r:
+    'Captures how quickly the readout bias changes across the layout. Steep gradients can hint at unstable or localized heating.',
+  trace_g:
+    'Summarises the total strength of the coupling matrix. Higher trace g can mean the system transfers heat more efficiently.',
+};
+
+const SCALE_DESCRIPTIONS: Record<'linear' | 'log', string> = {
+  linear:
+    'Linear keeps equal spacing between values so you can see raw differences. It is best when feature values cover a narrow range.',
+  log:
+    'Log compresses very large numbers and stretches small ones. Use it when a few outliers hide the structure near zero.',
+};
+
 const formatNumber = (value: number | null | undefined, digits = 3) => {
   if (value === null || value === undefined || Number.isNaN(value)) {
     return '–';
@@ -23,6 +41,26 @@ const formatNumber = (value: number | null | undefined, digits = 3) => {
 
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
+
+const describeCorrelationStrength = (value: number) => {
+  if (value >= 0.6) {
+    return 'strong separation between hot and cold tiles';
+  }
+  if (value >= 0.3) {
+    return 'some predictive power, though additional data could help';
+  }
+  return 'weak separation—consider gathering more samples or adjusting the threshold';
+};
+
+const describeNextSteps = (value: number) => {
+  if (value >= 0.6) {
+    return 'The signal is clear enough to move into Phase 3 unless other checks disagree.';
+  }
+  if (value >= 0.3) {
+    return 'You can explore Phase 3, but plan to confirm by rerunning Phase 1 if resources allow.';
+  }
+  return 'Hold on Phase 3 for now; re-run Phase 1 with different settings or more samples to firm up the trend.';
+};
 
 const buildSummary = (result: Phase2CorrelateResult | null): string => {
   if (!result || result.features.length === 0) {
@@ -49,7 +87,15 @@ const buildSummary = (result: Phase2CorrelateResult | null): string => {
     ? ` Threshold applied at |Ω| ≈ ${formatNumber(result.threshold, 2)}.`
     : '';
 
-  return `Predictive markers: ${fragments.join(' ')}${thresholdSummary}`;
+  const strongest = ranked[0];
+  const maxAbs = Math.abs(strongest?.correlation ?? 0);
+  const strengthSummary = maxAbs > 0 ? ` Overall this indicates ${describeCorrelationStrength(maxAbs)}.` : '';
+  const nextSteps = maxAbs > 0 ? ` ${describeNextSteps(maxAbs)}` : '';
+  const aucSummary = isFiniteNumber(result.auc)
+    ? ` The ROC/AUC estimate (≈${formatNumber(result.auc, 2)}) shows how reliably the chosen threshold separates hot from cold outcomes.`
+    : '';
+
+  return `Predictive markers: ${fragments.join(' ')}${thresholdSummary}${strengthSummary}${aucSummary}${nextSteps}`;
 };
 
 const Phase2Features = () => {
@@ -502,14 +548,20 @@ const Phase2Features = () => {
                   checked={selectedFeatures.includes(feature.name)}
                   onChange={() => toggleFeature(feature.name)}
                 />
-                {FEATURE_DISPLAY_NAMES[feature.name] ?? feature.name}
+                <span title={FEATURE_DESCRIPTIONS[feature.name] ?? undefined}>
+                  {FEATURE_DISPLAY_NAMES[feature.name] ?? feature.name}
+                </span>
               </label>
             ))}
           </div>
 
           <div className="phase2__charts">
             <article className="phase2__chart">
-              <h4>Correlation strength</h4>
+              <h4>
+                <span title="Shows how tightly each feature tracks the hot-vs-cold outcome. Bars near ±1 signal a strong link, while values near 0 mean the feature has little predictive value.">
+                  Correlation strength
+                </span>
+              </h4>
               {barData ? (
                 <Plot
                   data={[barData]}
@@ -525,7 +577,11 @@ const Phase2Features = () => {
               )}
             </article>
             <article className="phase2__chart">
-              <h4>ROC / AUC</h4>
+              <h4>
+                <span title="Compares the true-positive and false-positive rates across thresholds. Curves that bow toward the top-left and AUC values near 1.0 indicate reliable hot/cold separation.">
+                  ROC / AUC
+                </span>
+              </h4>
               {rocCurve ? (
                 <Plot data={rocCurve.data} layout={rocCurve.layout} config={{ displayModeBar: false }} />
               ) : (
@@ -539,24 +595,47 @@ const Phase2Features = () => {
 
           <div className="phase2__scatter-controls">
             <label>
-              <span>Feature for scatter plot</span>
+              <span title="Highlight how an individual feature changes as tile temperatures cross your |Ω| cut. Use the descriptions below or hover over each option for more context.">
+                Feature for scatter plot
+              </span>
               <select
                 value={scatterFeature ?? ''}
                 onChange={(event) => setScatterFeature((event.target.value as Phase2FeatureName) || null)}
+                aria-describedby="scatter-feature-hint"
               >
                 {result.features.map((feature) => (
-                  <option key={feature.name} value={feature.name}>
+                  <option
+                    key={feature.name}
+                    value={feature.name}
+                    title={FEATURE_DESCRIPTIONS[feature.name] ?? undefined}
+                  >
                     {FEATURE_DISPLAY_NAMES[feature.name] ?? feature.name}
                   </option>
                 ))}
               </select>
+              <p className="field-hint" id="scatter-feature-hint">
+                {scatterFeature ? FEATURE_DESCRIPTIONS[scatterFeature] : 'Select a feature to view its relationship to |Ω|.'}
+              </p>
             </label>
             <label>
-              <span>Scale</span>
-              <select value={scatterScale} onChange={(event) => setScatterScale(event.target.value as 'linear' | 'log')}>
-                <option value="linear">Linear</option>
-                <option value="log">Log</option>
+              <span title="Switch between linear and logarithmic x-axes. Each view keeps the same story but emphasises different parts of the feature range.">
+                Scale
+              </span>
+              <select
+                value={scatterScale}
+                onChange={(event) => setScatterScale(event.target.value as 'linear' | 'log')}
+                aria-describedby="scatter-scale-hint"
+              >
+                <option value="linear" title={SCALE_DESCRIPTIONS.linear}>
+                  Linear
+                </option>
+                <option value="log" title={SCALE_DESCRIPTIONS.log}>
+                  Log
+                </option>
               </select>
+              <p className="field-hint" id="scatter-scale-hint">
+                {SCALE_DESCRIPTIONS[scatterScale]}
+              </p>
             </label>
           </div>
 
