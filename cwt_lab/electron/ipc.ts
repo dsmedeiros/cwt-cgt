@@ -1087,7 +1087,15 @@ ipcMain.handle('cwt:phase3:adiabatic-boundary', (_event, payload) =>
 );
 
 ipcMain.handle('cwt:phase3:adiabatic-boundary:analyze', (_event, params) =>
-  wrap(() => runAdiabaticBoundary(runManager, cwtSimRoot, artifactsRoot, params as Record<string, unknown> | undefined)),
+  wrap(() => {
+    ensurePythonEnvironment();
+    return runAdiabaticBoundary(
+      runManager,
+      cwtSimRoot,
+      artifactsRoot,
+      params as Record<string, unknown> | undefined,
+    );
+  }),
 );
 
 ipcMain.handle('cwt:phase4:wilson3d', (_event, params) =>
