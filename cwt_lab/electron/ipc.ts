@@ -52,6 +52,22 @@ const runManager = new RunManager({
   pythonPathEntries,
 });
 
+const ensurePythonEnvironment = () => {
+  const existing = runManager.getPythonEnv();
+  if (existing) {
+    return existing;
+  }
+
+  const detection = detectPython();
+  if (detection.environment) {
+    runManager.setPythonEnv(detection.environment);
+    return detection.environment;
+  }
+
+  runManager.setPythonEnv(null);
+  throw new Error(detection.error ?? 'Python environment not configured. Run env.detect() first.');
+};
+
 let shuttingDown = false;
 const requestRunnerShutdown = async () => {
   if (shuttingDown) {
@@ -593,6 +609,7 @@ ipcMain.handle(
         throw new Error('experiment is required');
       }
 
+      ensurePythonEnvironment();
       const args = buildArgsFromParams(payload.args);
       const cwd = payload.workdir ? path.resolve(payload.workdir) : cwtSimRoot;
       return runManager.createRun(
@@ -618,6 +635,7 @@ ipcMain.handle(
         throw new Error('experiment is required');
       }
 
+      ensurePythonEnvironment();
       const args = buildArgsFromParams(payload.args);
       const cwd = payload.workdir ? path.resolve(payload.workdir) : cwtSimRoot;
       return runManager.previewCommand(payload.experiment, args, cwd);
@@ -692,6 +710,7 @@ const launchPhase = (
   params: Record<string, unknown> | undefined,
   metadata: RunMetadata,
 ) => {
+  ensurePythonEnvironment();
   const args = buildArgsFromParams(params);
   return runManager.createRun(module, args, cwtSimRoot, metadata);
 };
@@ -972,6 +991,7 @@ ipcMain.handle('cwt:phase3:guided-loop', (_event, params) =>
       baseRunParams.seed = seed;
     }
 
+    ensurePythonEnvironment();
     const runs: Array<{
       runId: string;
       steps: number;
@@ -1102,10 +1122,7 @@ ipcMain.handle('cwt:phase5:graph-family', (_event, params) =>
 
 ipcMain.handle('cwt:phase5:graph-family:analyze', (_event, payload) =>
   wrap(async () => {
-    const env = runManager.getPythonEnv();
-    if (!env) {
-      throw new Error('Python environment not configured. Run environment detection first.');
-    }
+    const env = ensurePythonEnvironment();
 
     const familiesRaw = Array.isArray(payload?.families)
       ? payload?.families
@@ -1166,10 +1183,7 @@ ipcMain.handle('cwt:phase5:graph-family:analyze', (_event, payload) =>
 
 ipcMain.handle('cwt:phase5:inverse-design:command', (_event, payload: Record<string, unknown> | undefined) =>
   wrap(async () => {
-    const env = runManager.getPythonEnv();
-    if (!env) {
-      throw new Error('Python environment not configured. Run env.detect first.');
-    }
+    const env = ensurePythonEnvironment();
 
     const axesRaw = Array.isArray(payload?.axes) ? payload.axes : [];
     if (axesRaw.length !== 2) {
@@ -1235,10 +1249,7 @@ ipcMain.handle('cwt:phase5:inverse-design:command', (_event, payload: Record<str
 
 ipcMain.handle('cwt:phase5:noise-robust:command', (_event, payload: Record<string, unknown> | undefined) =>
   wrap(async () => {
-    const env = runManager.getPythonEnv();
-    if (!env) {
-      throw new Error('Python environment not configured. Run env.detect first.');
-    }
+    const env = ensurePythonEnvironment();
 
     const toNumericArray = (value: unknown): number[] => {
       if (!Array.isArray(value)) {
@@ -1325,6 +1336,7 @@ ipcMain.handle('cwt:phase5:beta-sweep', (_event, params: { configPath: string; b
       throw new Error('config file must contain a YAML object');
     }
 
+    ensurePythonEnvironment();
     const tempDir = await fs.mkdtemp(path.join(artifactsRoot, 'beta-sweep-'));
     const runs: Array<{ beta: number; runId: string; status: string }> = [];
 
@@ -1368,10 +1380,7 @@ ipcMain.handle('cwt:phase5:beta-sweep', (_event, params: { configPath: string; b
 
 ipcMain.handle('cwt:phase5:coupling-tuner', (_event, payload: Record<string, unknown> | undefined) =>
   wrap(async () => {
-    const env = runManager.getPythonEnv();
-    if (!env) {
-      throw new Error('Python environment not configured. Run env.detect first.');
-    }
+    const env = ensurePythonEnvironment();
 
     const configPathRaw = typeof payload?.configPath === 'string' ? payload.configPath.trim() : '';
     if (!configPathRaw) {
@@ -1567,6 +1576,7 @@ ipcMain.handle('cwt:recipes:run', (_event, payload: { id: string }) =>
       throw new Error(`Recipe ${payload.id} not found`);
     }
 
+    ensurePythonEnvironment();
     const args = buildArgsFromParams(recipe.params);
     return runManager.createRun(recipe.command, args, cwtSimRoot, {
       experiment: recipe.command,
