@@ -49,6 +49,62 @@ const formatTimestampedSummary = (detail: string) =>
 const idleStatusMessage =
   'No interpreter scan has been run yet — click "Start interpreter scan" to begin.';
 
+const STORAGE_KEY = 'env-doctor-state';
+
+type PersistedEnvDoctorState = {
+  candidates: EnvCandidate[];
+  selected: EnvCandidate | null;
+  error: string | null;
+  lastScanSummary: string | null;
+  manualPath: string;
+  manualPathTouched: boolean;
+  phase2RootInput: string;
+};
+
+const loadPersistedState = (): PersistedEnvDoctorState | null => {
+  if (typeof window === 'undefined' || !window.sessionStorage) {
+    return null;
+  }
+
+  try {
+    const raw = window.sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw) as Partial<PersistedEnvDoctorState> | null;
+    if (!parsed || typeof parsed !== 'object') {
+      return null;
+    }
+
+    const candidates = Array.isArray(parsed.candidates) ? parsed.candidates : [];
+    const selected =
+      parsed.selected && typeof parsed.selected === 'object'
+        ? (parsed.selected as EnvCandidate)
+        : null;
+    const error = typeof parsed.error === 'string' ? parsed.error : null;
+    const lastScanSummary =
+      typeof parsed.lastScanSummary === 'string' ? parsed.lastScanSummary : null;
+    const manualPath = typeof parsed.manualPath === 'string' ? parsed.manualPath : '';
+    const manualPathTouched = Boolean(parsed.manualPathTouched);
+    const phase2RootInput =
+      typeof parsed.phase2RootInput === 'string' ? parsed.phase2RootInput : '';
+
+    return {
+      candidates,
+      selected,
+      error,
+      lastScanSummary,
+      manualPath,
+      manualPathTouched,
+      phase2RootInput,
+    };
+  } catch (error) {
+    console.warn('[EnvDoctor] Failed to load persisted state.', error);
+    return null;
+  }
+};
+
 const buildScanSummary = (result: EnvDetectResult | null, error?: string) => {
   if (!result) {
     return formatTimestampedSummary(
@@ -123,28 +179,35 @@ const getPythonPathPlaceholder = (): string =>
     : '/path/to/.venv/bin/python';
 
 const EnvDoctor = () => {
+  const persistedState = useMemo(() => loadPersistedState(), []);
   const [ipcAvailable, setIpcAvailable] = useState(
     () => typeof window !== 'undefined' && Boolean(window?.CWT?.env?.detect),
   );
   const [candidateState, setCandidateState] = useState<CandidateState>(() => ({
     loading: false,
-    candidates: [],
-    selected: null,
-    error: null,
+    candidates: persistedState?.candidates ?? [],
+    selected: persistedState?.selected ?? null,
+    error: persistedState?.error ?? null,
   }));
   const [config, setConfig] = useState<EnvConfig | null>(null);
   const [configError, setConfigError] = useState<string | null>(null);
   const [pathNotice, setPathNotice] = useState<PathNotice>(null);
   const [pathBusy, setPathBusy] = useState(false);
   const [browseBusy, setBrowseBusy] = useState(false);
-  const [manualPath, setManualPath] = useState('');
-  const [phase2RootInput, setPhase2RootInput] = useState('');
+  const [manualPath, setManualPath] = useState(persistedState?.manualPath ?? '');
+  const [phase2RootInput, setPhase2RootInput] = useState(
+    persistedState?.phase2RootInput ?? '',
+  );
   const [phase2RootNotice, setPhase2RootNotice] = useState<PathNotice>(null);
   const [phase2RootBusy, setPhase2RootBusy] = useState(false);
   const [progressIndex, setProgressIndex] = useState(0);
-  const [lastScanSummary, setLastScanSummary] = useState<string | null>(null);
+  const [lastScanSummary, setLastScanSummary] = useState<string | null>(
+    persistedState?.lastScanSummary ?? null,
+  );
   const [timeoutWarning, setTimeoutWarning] = useState<string | null>(null);
-  const manualPathTouched = useRef(false);
+  const [manualPathTouched, setManualPathTouched] = useState(
+    persistedState?.manualPathTouched ?? false,
+  );
   const isMounted = useRef(false);
   const detectionTimeoutRef = useRef<number | null>(null);
   const detectionInFlightRef = useRef(false);
@@ -168,15 +231,15 @@ const EnvDoctor = () => {
         force: Boolean(options.force),
       });
       if (options.fromUser) {
-        manualPathTouched.current = true;
+        setManualPathTouched(true);
         setManualPath(value);
         return;
       }
-      if (!manualPathTouched.current || options.force) {
+      if (!manualPathTouched || options.force) {
         setManualPath(value);
       }
     },
-    [],
+    [manualPathTouched],
   );
 
   const refreshConfig = useCallback(
@@ -334,6 +397,36 @@ const EnvDoctor = () => {
     void refreshConfig();
   }, [refreshConfig]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.sessionStorage) {
+      return;
+    }
+
+    const payload: PersistedEnvDoctorState = {
+      candidates: candidateState.candidates,
+      selected: candidateState.selected,
+      error: candidateState.error,
+      lastScanSummary,
+      manualPath,
+      manualPathTouched,
+      phase2RootInput,
+    };
+
+    try {
+      window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    } catch (error) {
+      console.warn('[EnvDoctor] Failed to persist state.', error);
+    }
+  }, [
+    candidateState.candidates,
+    candidateState.selected,
+    candidateState.error,
+    lastScanSummary,
+    manualPath,
+    phase2RootInput,
+    manualPathTouched,
+  ]);
+
   const activeCandidate = useMemo(() => {
     if (!candidateState.selected) {
       return null;
@@ -406,7 +499,7 @@ const EnvDoctor = () => {
       }
       if (response.ok) {
         if (!response.data.canceled && response.data.path) {
-          manualPathTouched.current = true;
+          setManualPathTouched(true);
           updateManualPath(response.data.path, { force: true });
         }
       } else {
@@ -700,13 +793,13 @@ const EnvDoctor = () => {
       )}
 
       <div className="env-doctor__candidates">
-        {candidateState.candidates.map((candidate) => {
+        {candidateState.candidates.map((candidate, index) => {
           const ok = candidate.ok;
           const selected = candidateState.selected?.path === candidate.path;
           const errors = parseCandidateErrors(candidate.error);
           return (
             <div
-              key={`${candidate.path}-${candidate.version ?? 'unknown'}`}
+              key={`${candidate.path}-${candidate.version ?? 'unknown'}-${index}`}
               className={`env-doctor__candidate env-doctor__candidate--${ok ? 'ok' : 'bad'}${
                 selected ? ' env-doctor__candidate--selected' : ''
               }`}
@@ -808,7 +901,7 @@ const EnvDoctor = () => {
               </button>
             </div>
             <p className="env-doctor__hint">
-              Configure the base directory Phase 2 uses when listing Phase-1 outputs. Leave this blank to
+              Configure the base directory Phase 2 uses when listing Phase-1 outputs. Leave this blank to
               fall back to the default artifacts folder.
             </p>
           </form>
