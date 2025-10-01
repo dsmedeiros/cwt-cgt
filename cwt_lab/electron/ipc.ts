@@ -725,6 +725,32 @@ ipcMain.handle('cwt:phase1:map', (_event, params) =>
   ),
 );
 
+ipcMain.handle('cwt:phase3:browse-hotspots', () =>
+  wrap(
+    async () => {
+      const window = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+      const { canceled, filePaths } = await dialog.showOpenDialog(window ?? undefined, {
+        title: 'Select Phase 1 ridge map',
+        properties: ['openFile'],
+        buttonLabel: 'Load hotspots',
+        filters: [
+          { name: 'Phase 1 ridge map (top_omega_tiles.json)', extensions: ['json'] },
+          { name: 'JSON files', extensions: ['json'] },
+        ],
+      });
+
+      if (canceled || filePaths.length === 0) {
+        return { canceled: true, path: null, contents: null };
+      }
+
+      const filePath = path.resolve(filePaths[0]);
+      const contents = await fs.readFile(filePath, 'utf-8');
+      return { canceled: false, path: filePath, contents };
+    },
+    { label: 'cwt:phase3:browse-hotspots' },
+  ),
+);
+
 ipcMain.handle('cwt:phase3:loop-at-hotspot', (_event, params) =>
   wrap(() => {
     if (!params || typeof params !== 'object') {

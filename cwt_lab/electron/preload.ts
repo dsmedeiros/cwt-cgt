@@ -32,6 +32,7 @@ const api = {
     saveSnapshot: (payload) => invoke('cwt:phase2:save-snapshot', payload),
   },
   phase3: {
+    browseHotspots: () => invoke('cwt:phase3:browse-hotspots'),
     loopAtHotspot: (params) => invoke('cwt:phase3:loop-at-hotspot', params),
     guidedLoop: (params) => invoke('cwt:phase3:guided-loop', params),
     adiabaticBoundary: (params) => invoke('cwt:phase3:adiabatic-boundary', params),

@@ -799,6 +799,32 @@ body {
   color: var(--color-muted);
 }
 
+.phase3__import-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.phase3__import-controls > .btn {
+  align-self: flex-start;
+}
+
+.phase3__import-run {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.25rem;
+}
+
+.phase3__import-run select {
+  flex: 1;
+  min-width: 0;
+}
+
+.phase3__import-run button {
+  white-space: nowrap;
+}
+
 .phase3__field-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1050,6 +1076,16 @@ body {
 .phase3__hint {
   color: var(--color-muted);
   margin: 0;
+}
+
+.phase3__error {
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(220, 53, 69, 0.12);
+  border: 1px solid rgba(220, 53, 69, 0.35);
+  color: #a61c2c;
+  font-size: 0.9rem;
 }
 
 .phase3__notice {
