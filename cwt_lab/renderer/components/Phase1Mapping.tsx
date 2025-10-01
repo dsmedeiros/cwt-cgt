@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import { formatValidationMessage, validateAxis, validateExtent } from '../../shared/validators';
+import { formatValidationMessage, validateAxis, validateExtent, validateSeed } from '../../shared/validators';
 import { useCommandRegistration } from '../commandCenter';
 import { phase1 } from '../ipc';
 
@@ -55,7 +55,7 @@ const Phase1Mapping = () => {
   const [axisPrimary, setAxisPrimary] = useState<AxisOption>(AXIS_OPTIONS[0]);
   const [axisSecondary, setAxisSecondary] = useState<AxisOption>(AXIS_OPTIONS[1]);
   const [extent, setExtent] = useState(0.6);
-  const [seed, setSeed] = useState(2024);
+  const [seedInput, setSeedInput] = useState('2024');
   const [isRunning, setIsRunning] = useState(false);
   const [maxOmega, setMaxOmega] = useState<number | null>(null);
   const [coverage, setCoverage] = useState<number | null>(null);
@@ -71,29 +71,50 @@ const Phase1Mapping = () => {
   const axisPrimaryValidation = useMemo(() => validateAxis('phase1', axisPrimary), [axisPrimary]);
   const axisSecondaryValidation = useMemo(() => validateAxis('phase1', axisSecondary), [axisSecondary]);
   const extentValidation = useMemo(() => validateExtent(extent), [extent]);
+  const seedValidation = useMemo(() => validateSeed(seedInput), [seedInput]);
   const extentError = formatValidationMessage(extentValidation);
+  const seedError = formatValidationMessage(seedValidation);
   const axisPairError = axisPrimary === axisSecondary ? 'Select two distinct axes.' : null;
 
-  const runDisabledReason = extentValidation.ok
-    ? axisPairError ?? (axisPrimaryValidation.ok && axisSecondaryValidation.ok ? undefined : 'Invalid axis selection.')
-    : extentValidation.message;
+  const runDisabledReason = (() => {
+    if (!extentValidation.ok) {
+      return extentValidation.message;
+    }
+    if (!seedValidation.ok) {
+      return seedValidation.message;
+    }
+    if (axisPairError) {
+      return axisPairError;
+    }
+    if (!axisPrimaryValidation.ok || !axisSecondaryValidation.ok) {
+      return 'Invalid axis selection.';
+    }
+    return undefined;
+  })();
   const isRunDisabled = isRunning || Boolean(runDisabledReason);
   const runTitle = isRunning ? 'Mapping already running.' : runDisabledReason;
 
   const runMapping = useCallback(async () => {
-    if (!extentValidation.ok || !axisPrimaryValidation.ok || !axisSecondaryValidation.ok || axisPairError) {
+    if (
+      !extentValidation.ok ||
+      !seedValidation.ok ||
+      !axisPrimaryValidation.ok ||
+      !axisSecondaryValidation.ok ||
+      axisPairError
+    ) {
       return;
     }
 
     const primaryAxis = axisPrimaryValidation.value as AxisOption;
     const secondaryAxis = axisSecondaryValidation.value as AxisOption;
     const extentValue = extentValidation.value;
+    const seedValue = seedValidation.value;
 
     const primaryRange = scaleRange(primaryAxis, extentValue);
     const secondaryRange = scaleRange(secondaryAxis, extentValue);
     const payload: Record<string, unknown> = {
       axes: [primaryAxis, secondaryAxis],
-      seed,
+      seed: seedValue,
       [`${primaryAxis}Range`]: primaryRange,
       [`${secondaryAxis}Range`]: secondaryRange,
     };
@@ -130,13 +151,7 @@ const Phase1Mapping = () => {
     } finally {
       setIsRunning(false);
     }
-  }, [
-    axisPairError,
-    axisPrimaryValidation,
-    axisSecondaryValidation,
-    extentValidation,
-    seed,
-  ]);
+  }, [axisPairError, axisPrimaryValidation, axisSecondaryValidation, extentValidation, seedValidation]);
 
   const runRegistration = useMemo(
     () => ({ handler: () => void runMapping(), description: 'Run Phase-1 mapping' }),
@@ -234,10 +249,13 @@ const Phase1Mapping = () => {
           <input
             id="phase1-seed"
             type="number"
-            value={seed}
-            onChange={(event) => setSeed(Number(event.target.value))}
+            value={seedInput}
+            onChange={(event) => setSeedInput(event.target.value)}
           />
-          <small className="field-hint">Tweak to sample a different pseudo-map.</small>
+          <small className="field-hint">
+            Tweak to sample a different pseudo-map.
+            {seedError ? <span className="field-error"> {seedError}</span> : null}
+          </small>
         </div>
         <div className="phase1__actions">
           <button

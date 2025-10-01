@@ -6,6 +6,11 @@ export const extentSchema = z
     message: 'Extent must be greater than 0 and no more than 1.',
   });
 
+export const seedSchema = z
+  .number({ invalid_type_error: 'Seed must be a number.' })
+  .int('Seed must be a whole number.')
+  .min(0, { message: 'Seed cannot be negative.' });
+
 export const fsGuardSchema = z
   .number({ invalid_type_error: 'FS guard must be a number.' })
   .refine((value) => value > 0.01 && value <= 0.5, {
@@ -103,6 +108,7 @@ const wrapNumberValidation = (schema: z.ZodType<number, z.ZodTypeDef, number>) =
   };
 
 export const validateExtent = wrapNumberValidation(extentSchema);
+export const validateSeed = wrapNumberValidation(seedSchema);
 export const validateFsGuard = wrapNumberValidation(fsGuardSchema);
 export const validateSteps = wrapNumberValidation(stepsSchema);
 export const validateSettleSteps = wrapNumberValidation(settleStepsSchema);
