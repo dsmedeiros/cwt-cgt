@@ -1259,6 +1259,29 @@ body {
   padding: 1.25rem;
 }
 
+.phase2__selectors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.phase2__selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 220px;
+}
+
+.phase2__selector select {
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 0.95rem;
+}
+
 .phase2__inputs-heading h3 {
   margin: 0;
 }
@@ -1292,6 +1315,25 @@ body {
   border: 1px solid var(--color-border);
   border-radius: 0.75rem;
   background: var(--color-surface);
+}
+
+.phase2__dir-item--pulse {
+  animation: phase2-dir-pulse 1.6s ease-out;
+}
+
+@keyframes phase2-dir-pulse {
+  0% {
+    background: rgba(65, 105, 225, 0.25);
+    box-shadow: 0 0 0 0 rgba(65, 105, 225, 0.25);
+  }
+  60% {
+    background: rgba(65, 105, 225, 0.1);
+    box-shadow: 0 0 0 6px rgba(65, 105, 225, 0);
+  }
+  100% {
+    background: var(--color-surface);
+    box-shadow: none;
+  }
 }
 
 .phase2__dir-label {

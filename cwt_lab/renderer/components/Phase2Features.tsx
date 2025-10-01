@@ -136,6 +136,11 @@ const buildSummary = (result: Phase2CorrelateResult | null): string => {
   return `Predictive markers: ${fragments.join(' ')}${thresholdSummary}${strengthSummary}${aucSummary}${nextSteps}`;
 };
 
+const GUID_PATTERN =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+const isGuidLike = (value: string) => GUID_PATTERN.test(value.trim());
+
 const Phase2Features = () => {
   const [phase2Root, setPhase2Root] = useState<string | null>(null);
   const [experiments, setExperiments] = useState<ArtifactNode[]>([]);
@@ -143,7 +148,7 @@ const Phase2Features = () => {
   const [experimentsLoading, setExperimentsLoading] = useState(false);
   const [selectedExperimentPath, setSelectedExperimentPath] = useState<string | null>(null);
   const [selectedRunPaths, setSelectedRunPaths] = useState<string[]>([]);
-  const [refreshExperimentsTick, setRefreshExperimentsTick] = useState(0);
+  const [runDropdownValue, setRunDropdownValue] = useState('');
   const [thresholdMode, setThresholdMode] = useState<'absolute' | 'percentile'>('absolute');
   const [absoluteThreshold, setAbsoluteThreshold] = useState('1.0');
   const [percentileThreshold, setPercentileThreshold] = useState('90');
@@ -155,7 +160,9 @@ const Phase2Features = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [snapshotStatus, setSnapshotStatus] = useState<string | null>(null);
+  const [pulsingRuns, setPulsingRuns] = useState<Record<string, boolean>>({});
   const abortRef = useRef<{ aborted: boolean } | null>(null);
+  const pulseTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   useEffect(() => {
     let cancelled = false;
@@ -188,11 +195,6 @@ const Phase2Features = () => {
       cancelled = true;
     };
   }, []);
-
-  const refreshExperiments = useCallback(
-    () => setRefreshExperimentsTick((prev) => prev + 1),
-    [],
-  );
 
   useEffect(() => {
     let cancelled = false;
@@ -239,13 +241,15 @@ const Phase2Features = () => {
         }
 
         const nodes = sanitizeArtifactNodes(response.data);
-        const directories = nodes.filter((node) => node.type === 'directory');
+        const directories = nodes.filter(
+          (node) => node.type === 'directory' && isGuidLike(node.relativePath),
+        );
         setExperiments(directories);
 
         if (directories.length === 0) {
           setSelectedExperimentPath(null);
           setSelectedRunPaths([]);
-          setExperimentsError('No experiment folders found under the configured root.');
+          setExperimentsError('No experiment folders with GUID names found under the configured root.');
         } else {
           setExperimentsError(null);
           setSelectedExperimentPath((prev) => {
@@ -276,7 +280,7 @@ const Phase2Features = () => {
     return () => {
       cancelled = true;
     };
-  }, [phase2Root, refreshExperimentsTick]);
+  }, [phase2Root]);
 
   const selectedExperiment = useMemo(
     () => experiments.find((entry) => entry.path === selectedExperimentPath) ?? null,
@@ -287,24 +291,31 @@ const Phase2Features = () => {
     if (!selectedExperiment || selectedExperiment.type !== 'directory') {
       return [] as ArtifactNode[];
     }
-    return Array.isArray(selectedExperiment.children) ? selectedExperiment.children : [];
+    const children = Array.isArray(selectedExperiment.children)
+      ? selectedExperiment.children
+      : [];
+    return children.filter((child) => child.type === 'directory');
   }, [selectedExperiment]);
 
   useEffect(() => {
     const childDirs = availableRunDirs;
     const availableSet = new Set(childDirs.map((child) => child.relativePath));
     setSelectedRunPaths((prev) => {
-      if (childDirs.length === 0) {
-        return prev.length === 0 ? prev : [];
-      }
       const valid = prev.filter((value) => availableSet.has(value));
-      if (valid.length > 0) {
-        if (valid.length === prev.length && valid.every((value, index) => value === prev[index])) {
-          return prev;
-        }
-        return valid;
+      if (valid.length === prev.length && valid.every((value, index) => value === prev[index])) {
+        return prev;
       }
-      return [childDirs[0].relativePath];
+      return valid;
+    });
+    setPulsingRuns((prev) => {
+      const entries = Object.entries(prev).filter(([key]) => availableSet.has(key));
+      if (entries.length === Object.keys(prev).length) {
+        return prev;
+      }
+      return entries.reduce<Record<string, boolean>>((acc, [key, value]) => {
+        acc[key] = value;
+        return acc;
+      }, {});
     });
   }, [availableRunDirs]);
 
@@ -323,13 +334,62 @@ const Phase2Features = () => {
     [selectedRunNodes],
   );
 
-  const handleRunSelectionChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
-    const options = Array.from(event.target.selectedOptions).map((option) => option.value);
-    setSelectedRunPaths(options);
+  const triggerPulse = useCallback((relativePath: string) => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    setPulsingRuns((prev) => ({ ...prev, [relativePath]: true }));
+    const existing = pulseTimeoutsRef.current.get(relativePath);
+    if (existing) {
+      clearTimeout(existing);
+    }
+    const timeout = window.setTimeout(() => {
+      setPulsingRuns((prev) => {
+        if (!prev[relativePath]) {
+          return prev;
+        }
+        const next = { ...prev };
+        delete next[relativePath];
+        return next;
+      });
+      pulseTimeoutsRef.current.delete(relativePath);
+    }, 1600);
+    pulseTimeoutsRef.current.set(relativePath, timeout);
   }, []);
+
+  const handleRunSelect = useCallback(
+    (event: ChangeEvent<HTMLSelectElement>) => {
+      const value = event.target.value;
+      if (!value) {
+        return;
+      }
+      setRunDropdownValue('');
+      setSelectedRunPaths((prev) => {
+        if (prev.includes(value)) {
+          triggerPulse(value);
+          return prev;
+        }
+        return [...prev, value];
+      });
+    },
+    [triggerPulse],
+  );
 
   const handleRemoveRun = useCallback((relativePath: string) => {
     setSelectedRunPaths((prev) => prev.filter((value) => value !== relativePath));
+    setPulsingRuns((prev) => {
+      if (!prev[relativePath]) {
+        return prev;
+      }
+      const next = { ...prev };
+      delete next[relativePath];
+      return next;
+    });
+    const timeout = pulseTimeoutsRef.current.get(relativePath);
+    if (timeout) {
+      clearTimeout(timeout);
+      pulseTimeoutsRef.current.delete(relativePath);
+    }
   }, []);
 
   const percentileValidation = useMemo(() => validatePercentile(percentileThreshold), [percentileThreshold]);
@@ -341,7 +401,7 @@ const Phase2Features = () => {
   const analyzeTitle = isLoading
     ? 'Correlation analysis already running.'
     : metricsDirs.length === 0
-      ? 'Select at least one Phase-1 run directory to analyze.'
+      ? 'Select at least one substrate directory to analyze.'
       : thresholdMode === 'percentile' && !percentileValidation.ok
         ? percentileValidation.message
         : undefined;
@@ -364,7 +424,7 @@ const Phase2Features = () => {
 
   const runCorrelation = useCallback(async () => {
     if (metricsDirs.length === 0) {
-      setError('Select at least one Phase-1 run directory.');
+      setError('Select at least one substrate directory.');
       return;
     }
     const thresholdValue = validateThreshold();
@@ -420,8 +480,14 @@ const Phase2Features = () => {
       if (abortRef.current) {
         abortRef.current.aborted = true;
       }
+      pulseTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
+      pulseTimeoutsRef.current.clear();
     };
   }, []);
+
+  useEffect(() => {
+    setRunDropdownValue('');
+  }, [selectedExperimentPath]);
 
   const runRegistration = useMemo(
     () => ({ handler: () => void runCorrelation(), description: 'Run Phase-2 correlation' }),
@@ -624,24 +690,17 @@ const Phase2Features = () => {
               ))}
             </select>
           </label>
-          <button
-            type="button"
-            className="btn btn--ghost btn--small"
-            onClick={refreshExperiments}
-            disabled={experimentsLoading}
-          >
-            {experimentsLoading ? 'Refreshing…' : 'Refresh list'}
-          </button>
         </div>
         <label className="phase2__selector">
-          <span>Phase-1 runs</span>
+          <span>Substrates</span>
           <select
-            multiple
-            size={Math.min(8, Math.max(availableRunDirs.length || 0, 4))}
-            value={selectedRunPaths}
-            onChange={handleRunSelectionChange}
+            value={runDropdownValue}
+            onChange={handleRunSelect}
             disabled={experimentsLoading || isLoading || availableRunDirs.length === 0}
           >
+            <option value="">
+              {availableRunDirs.length === 0 ? 'No substrate directories found' : 'Select a substrate…'}
+            </option>
             {availableRunDirs.map((run) => (
               <option key={run.relativePath} value={run.relativePath}>
                 {run.relativePath}
@@ -649,14 +708,17 @@ const Phase2Features = () => {
             ))}
           </select>
           <p className="field-hint">
-            Hold Ctrl (or ⌘ on macOS) to select multiple runs. Remove entries below to adjust the selection.
+            Click to add substrates. Selecting one again highlights it in the list below so you can spot existing choices.
           </p>
         </label>
         {experimentsError ? <div className="phase2__error" role="alert">{experimentsError}</div> : null}
         {metricsDirs.length > 0 ? (
           <ul className="phase2__dir-list">
             {selectedRunNodes.map((node) => (
-              <li key={node.path} className="phase2__dir-item">
+              <li
+                key={node.path}
+                className={`phase2__dir-item${pulsingRuns[node.relativePath] ? ' phase2__dir-item--pulse' : ''}`}
+              >
                 <span className="phase2__dir-label">{node.relativePath}</span>
                 <button
                   type="button"
@@ -670,7 +732,7 @@ const Phase2Features = () => {
             ))}
           </ul>
         ) : (
-          <p className="phase2__empty">No Phase‑1 runs selected yet.</p>
+          <p className="phase2__empty">No substrates selected yet.</p>
         )}
 
         <fieldset className="phase2__threshold">
