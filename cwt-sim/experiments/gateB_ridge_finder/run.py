@@ -803,12 +803,29 @@ def save_metrics_csv(result: GraphScanResult, out_dir: Path, sim_config: Simulat
                 writer.writerow(row)
 
 
-def save_top_omega_tiles(result: GraphScanResult, out_dir: Path, top_k: int) -> None:
+def save_top_omega_tiles(
+    result: GraphScanResult, out_dir: Path, top_k: int, config: SimulationConfig
+) -> None:
     ensure_dir(out_dir)
     curvature = np.asarray(result.curvature_abs, dtype=float)
     mask = np.isfinite(curvature)
     axis0_name, axis1_name = result.axes
+    axis0_values = np.asarray(result.axis0_values, dtype=float)
+    axis1_values = np.asarray(result.axis1_values, dtype=float)
     entries: list[dict[str, object]] = []
+
+    base_coordinates: dict[str, float] = {
+        "rho": float(config.rho_base),
+        "tau": float(config.tau_base),
+        "zeta": float(config.zeta),
+        "zeta_phase": float(config.zeta_phase),
+        "kappa": 1.0,
+    }
+
+    coordinate_keys = list(base_coordinates.keys())
+    for axis_name in (axis0_name, axis1_name):
+        if axis_name not in base_coordinates:
+            coordinate_keys.append(axis_name)
 
     if mask.any():
         indices = np.argwhere(mask)
@@ -817,13 +834,15 @@ def save_top_omega_tiles(result: GraphScanResult, out_dir: Path, top_k: int) -> 
         limit = min(max(int(top_k), 0), order.size)
         for idx in order[:limit]:
             i, j = indices[idx]
+            coordinates = base_coordinates.copy()
+            if 0 <= i < axis0_values.size:
+                coordinates[axis0_name] = float(axis0_values[i])
+            if 0 <= j < axis1_values.size:
+                coordinates[axis1_name] = float(axis1_values[j])
             entries.append(
                 {
                     "indices": [int(i), int(j)],
-                    "coordinates": {
-                        axis0_name: float(result.axis0_values[i]),
-                        axis1_name: float(result.axis1_values[j]),
-                    },
+                    "coordinates": {name: coordinates[name] for name in coordinate_keys},
                     "omega_abs": float(values[idx]),
                 }
             )
@@ -1041,7 +1060,7 @@ def run_experiment(
         save_roc_curve(result, graph_dir)
         save_numpy_bundle(result, graph_dir)
         save_metrics_csv(result, graph_dir, sim_config)
-        save_top_omega_tiles(result, graph_dir, top_k=top_k)
+        save_top_omega_tiles(result, graph_dir, top_k=top_k, config=sim_config)
         results.append(result)
     return results
 

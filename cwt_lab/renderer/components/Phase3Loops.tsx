@@ -152,13 +152,6 @@ const parsePhase1Hotspots = (raw: string): Phase1HotspotEntry[] => {
     .filter((axis) => axis.length > 0)
     .map((axis) => ({ original: axis, normalized: axis.toLowerCase() }));
 
-  const tauAxis = axes.find((axis) => axis.normalized === 'tau');
-  const zetaAxis = axes.find((axis) => axis.normalized === 'zeta');
-
-  if (!tauAxis || !zetaAxis) {
-    throw new Error('Hotspot file must contain τ and ζ coordinates.');
-  }
-
   const tilesRaw = (parsed as { top_tiles?: unknown; topTiles?: unknown }).top_tiles ?? (
     parsed as { topTiles?: unknown }
   ).topTiles;
@@ -170,6 +163,34 @@ const parsePhase1Hotspots = (raw: string): Phase1HotspotEntry[] => {
 
   const entries: Phase1HotspotEntry[] = [];
 
+  const readCoordinate = (record: Record<string, unknown>, candidates: (string | null | undefined)[]) => {
+    for (const key of candidates) {
+      const name = String(key ?? '').trim();
+      if (!name) {
+        continue;
+      }
+      const value = Number(record[name]);
+      if (Number.isFinite(value)) {
+        return value;
+      }
+    }
+    return null;
+  };
+
+  const tauCandidates = [
+    axes.find((axis) => axis.normalized === 'tau')?.original,
+    'tau',
+    'τ',
+  ];
+  const zetaCandidates = [
+    axes.find((axis) => axis.normalized === 'zeta')?.original,
+    'zeta',
+    'ζ',
+  ];
+
+  let sawTauCoordinate = false;
+  let sawZetaCoordinate = false;
+
   for (const tile of tiles) {
     if (!tile || typeof tile !== 'object') {
       continue;
@@ -180,10 +201,18 @@ const parsePhase1Hotspots = (raw: string): Phase1HotspotEntry[] => {
       continue;
     }
 
-    const tauValue = Number((coordinates as Record<string, unknown>)[tauAxis.original]);
-    const zetaValue = Number((coordinates as Record<string, unknown>)[zetaAxis.original]);
+    const coordinateRecord = coordinates as Record<string, unknown>;
+    const tauValue = readCoordinate(coordinateRecord, tauCandidates);
+    const zetaValue = readCoordinate(coordinateRecord, zetaCandidates);
 
-    if (!Number.isFinite(tauValue) || !Number.isFinite(zetaValue)) {
+    if (tauValue != null) {
+      sawTauCoordinate = true;
+    }
+    if (zetaValue != null) {
+      sawZetaCoordinate = true;
+    }
+
+    if (tauValue == null || zetaValue == null) {
       continue;
     }
 
@@ -196,6 +225,19 @@ const parsePhase1Hotspots = (raw: string): Phase1HotspotEntry[] => {
       zeta: zetaValue,
       omegaAbs: Number.isFinite(omegaAbs) ? omegaAbs : null,
     });
+  }
+
+  if (entries.length === 0 && tiles.length > 0) {
+    const missing: string[] = [];
+    if (!sawTauCoordinate) {
+      missing.push('τ');
+    }
+    if (!sawZetaCoordinate) {
+      missing.push('ζ');
+    }
+    if (missing.length > 0) {
+      throw new Error(`Hotspot file must contain ${missing.join(' and ')} coordinates.`);
+    }
   }
 
   if (entries.length === 0) {
