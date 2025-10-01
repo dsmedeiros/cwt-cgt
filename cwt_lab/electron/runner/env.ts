@@ -4,7 +4,7 @@ import {
   type SpawnSyncOptionsWithStringEncoding,
   type SpawnSyncReturns,
 } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { artifactsRoot, cwtSimRoot, repoRoot } from '../paths';
@@ -35,6 +35,7 @@ export type DetectPythonResult = {
 export type EnvironmentConfig = {
   repoRoot: string;
   artifactsRoot: string;
+  phase2MetricsRoot: string | null;
   pythonPath: string | null;
   strategy: PythonStrategy | null;
 };
@@ -42,6 +43,7 @@ export type EnvironmentConfig = {
 type StoredConfig = {
   pythonPath: string | null;
   strategy: PythonStrategy | null;
+  phase2MetricsRoot: string | null;
 };
 
 type CandidateSpec = {
@@ -64,6 +66,7 @@ let currentEnvironment: PythonEnvironment | null = null;
 const defaultConfig: StoredConfig = {
   pythonPath: null,
   strategy: null,
+  phase2MetricsRoot: null,
 };
 
 const candidatePythonRoots = (): string[] => [
@@ -151,6 +154,17 @@ const normalizeInterpreterPath = (
   return path.normalize(stripped);
 };
 
+const sanitizePhase2MetricsRoot = (value: unknown): string | null => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return path.resolve(trimmed);
+};
+
 export const sanitizeStoredConfig = (
   config: StoredConfig,
   platform: NodeJS.Platform = process.platform,
@@ -158,20 +172,21 @@ export const sanitizeStoredConfig = (
   const stripped = stripInterpreterValue(config.pythonPath);
   const pythonPath = normalizeInterpreterPath(stripped, platform) || null;
   const strategy = config.strategy ?? null;
+  const phase2MetricsRoot = sanitizePhase2MetricsRoot(config.phase2MetricsRoot);
 
   if (!pythonPath) {
-    return { pythonPath: null, strategy: null } satisfies StoredConfig;
+    return { pythonPath: null, strategy: null, phase2MetricsRoot } satisfies StoredConfig;
   }
 
   if (platform !== 'win32' && (looksLikeWindowsPath(stripped) || looksLikeWindowsPath(pythonPath))) {
-    return { pythonPath: null, strategy: null } satisfies StoredConfig;
+    return { pythonPath: null, strategy: null, phase2MetricsRoot } satisfies StoredConfig;
   }
 
   if (platform === 'win32' && looksLikePosixPath(stripped)) {
-    return { pythonPath: null, strategy: null } satisfies StoredConfig;
+    return { pythonPath: null, strategy: null, phase2MetricsRoot } satisfies StoredConfig;
   }
 
-  return { pythonPath, strategy } satisfies StoredConfig;
+  return { pythonPath, strategy, phase2MetricsRoot } satisfies StoredConfig;
 };
 
 const readConfig = (): StoredConfig => {
@@ -399,6 +414,7 @@ const selectCandidate = (
             ? {
                 pythonPath: match.candidate.path,
                 strategy: match.candidate.strategy,
+                phase2MetricsRoot: preferred.phase2MetricsRoot,
               }
             : null,
       };
@@ -417,6 +433,7 @@ const selectCandidate = (
     updatedConfig: {
       pythonPath: match.candidate.path,
       strategy: match.candidate.strategy,
+      phase2MetricsRoot: preferred.phase2MetricsRoot,
     },
   };
 };
@@ -461,6 +478,7 @@ export const setPythonPath = (pythonPath: string): { candidate: PythonCandidate;
     throw new Error('Python path is required');
   }
 
+  const existing = readConfig();
   const evaluation = evaluateCandidate({ label: normalized, command: normalized, args: [] });
   if (!evaluation.environment || !evaluation.candidate.ok) {
     throw new Error(
@@ -471,6 +489,7 @@ export const setPythonPath = (pythonPath: string): { candidate: PythonCandidate;
   const stored: StoredConfig = {
     pythonPath: evaluation.candidate.path,
     strategy: evaluation.candidate.strategy,
+    phase2MetricsRoot: existing.phase2MetricsRoot,
   };
   writeConfig(stored);
   currentEnvironment = evaluation.environment;
@@ -481,11 +500,40 @@ export const setPythonPath = (pythonPath: string): { candidate: PythonCandidate;
   };
 };
 
+export const setPhase2MetricsRoot = (root: string | null): string | null => {
+  const trimmed = typeof root === 'string' ? root.trim() : '';
+  const stored = readConfig();
+  const next: StoredConfig = {
+    pythonPath: stored.pythonPath,
+    strategy: stored.strategy,
+    phase2MetricsRoot: null,
+  };
+
+  if (!trimmed) {
+    writeConfig(next);
+    return null;
+  }
+
+  const resolved = path.resolve(trimmed);
+  if (!existsSync(resolved)) {
+    throw new Error(`Directory ${resolved} does not exist`);
+  }
+  const stats = statSync(resolved);
+  if (!stats.isDirectory()) {
+    throw new Error(`${resolved} is not a directory`);
+  }
+
+  next.phase2MetricsRoot = resolved;
+  writeConfig(next);
+  return resolved;
+};
+
 export const getEnvironmentConfig = (): EnvironmentConfig => {
   const stored = readConfig();
   return {
     repoRoot,
     artifactsRoot,
+    phase2MetricsRoot: stored.phase2MetricsRoot,
     pythonPath: stored.pythonPath,
     strategy: stored.strategy,
   };

@@ -233,6 +233,7 @@ export type EnvDetectResult = {
 export type EnvConfig = {
   repoRoot: string;
   artifactsRoot: string;
+  phase2MetricsRoot: string | null;
   pythonPath: string | null;
   strategy: PythonStrategy | null;
 };
@@ -412,6 +413,9 @@ export interface RendererIpc {
     setPythonPath: (path: string) => Promise<IpcEnvelope<EnvCandidate>>;
     getConfig: () => Promise<IpcEnvelope<EnvConfig>>;
     browsePythonExecutable: () => Promise<IpcEnvelope<EnvBrowseResult>>;
+    setPhase2MetricsRoot: (
+      payload: { path: string | null },
+    ) => Promise<IpcEnvelope<{ path: string | null }>>;
   };
   run: {
     create: (payload: RunCreatePayload) => Promise<IpcEnvelope<RunCreateResult>>;

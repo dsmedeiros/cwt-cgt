@@ -10,6 +10,7 @@ import {
   detectPython,
   getBundledPythonPathEntries,
   getEnvironmentConfig,
+  setPhase2MetricsRoot,
   setPythonPath,
   type PythonCandidate,
 } from './runner/env';
@@ -573,6 +574,15 @@ ipcMain.handle('cwt:env:set-python-path', (_event, executable: string) =>
     const { candidate, environment } = setPythonPath(executable);
     runManager.setPythonEnv(environment);
     return candidate;
+  }),
+);
+
+ipcMain.handle('cwt:env:set-phase2-root', (_event, payload?: { path?: unknown }) =>
+  wrap(() => {
+    const raw = payload?.path;
+    const value = typeof raw === 'string' ? raw : null;
+    const result = setPhase2MetricsRoot(value);
+    return { path: result } satisfies { path: string | null };
   }),
 );
 
