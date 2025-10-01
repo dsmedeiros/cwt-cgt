@@ -104,6 +104,8 @@ type RunDiagnostics = {
   env: Record<string, string>;
 };
 
+type StoredDiagnostics = Partial<RunDiagnostics> & { timeoutMs?: unknown };
+
 const LONG_PATH_THRESHOLD = 240;
 
 const toFsPath = (value: string) => {
@@ -405,7 +407,12 @@ export class RunManager {
         metrics,
       });
 
-      const failureMessage = this.describeFailure(context);
+      const failureMessage = this.describeFailureDetails({
+        status: context.status,
+        timeoutMs: context.timeoutMs,
+        timeoutTriggered: context.timeoutTriggered,
+        diagnostics: context.diagnostics,
+      });
       if (failureMessage) {
         console.error(`[RunManager] ${context.id}: ${failureMessage}`);
       }
@@ -555,23 +562,48 @@ export class RunManager {
     return plan;
   }
 
-  private describeFailure(context: RunContext): string | null {
-    if (context.status !== 'failed') {
+  private describeFailureDetails({
+    status,
+    timeoutMs,
+    timeoutTriggered,
+    diagnostics,
+  }: {
+    status: RunStatus;
+    timeoutMs: number | null;
+    timeoutTriggered: boolean;
+    diagnostics: Partial<RunDiagnostics> | null;
+  }): string | null {
+    if (status !== 'failed') {
       return null;
     }
 
-    if (context.timeoutTriggered || context.diagnostics.error === 'timeout') {
-      if (context.timeoutMs && context.timeoutMs > 0) {
-        return `Run timed out after ${context.timeoutMs} ms.`;
+    const diagnosticsError =
+      typeof diagnostics?.error === 'string' ? diagnostics.error : null;
+
+    const effectiveTimeoutMs = (() => {
+      if (Number.isFinite(timeoutMs)) {
+        return timeoutMs;
+      }
+      const candidate = (diagnostics as { timeoutMs?: unknown } | null)?.timeoutMs;
+      const numeric = typeof candidate === 'number' ? candidate : Number(candidate);
+      return Number.isFinite(numeric) ? numeric : null;
+    })();
+
+    if (timeoutTriggered || diagnosticsError === 'timeout') {
+      if (effectiveTimeoutMs && effectiveTimeoutMs > 0) {
+        return `Run timed out after ${effectiveTimeoutMs} ms.`;
       }
       return 'Run timed out.';
     }
 
-    if (context.diagnostics.error) {
-      return context.diagnostics.error;
+    if (diagnosticsError) {
+      return diagnosticsError;
     }
 
-    const { exitCode, signal } = context.diagnostics;
+    const exitCodeRaw = diagnostics?.exitCode;
+    const exitCode = Number.isFinite(exitCodeRaw as number) ? (exitCodeRaw as number) : null;
+    const signal = typeof diagnostics?.signal === 'string' ? diagnostics.signal : null;
+
     if (exitCode !== null && signal) {
       return `Process exited with code ${exitCode} after signal ${signal}.`;
     }
@@ -587,36 +619,52 @@ export class RunManager {
 
   async tail(runId: string, fromByte = 0, maxBytes?: number): Promise<RunTailChunk> {
     const context = this.runs.get(runId);
-    if (!context) {
-      throw new Error(`Run ${runId} not found`);
+    if (context) {
+      return this.formatTailChunk({
+        buffer: context.buffer,
+        fromByte,
+        maxBytes,
+        status: context.status,
+        failureDetails: this.describeFailureDetails({
+          status: context.status,
+          timeoutMs: context.timeoutMs,
+          timeoutTriggered: context.timeoutTriggered,
+          diagnostics: context.diagnostics,
+        }),
+      });
     }
 
-    const totalBytes = context.buffer.byteLength;
-    let start = Math.trunc(fromByte);
-    if (!Number.isFinite(start)) {
-      start = 0;
-    }
-    if (maxBytes && start < 0) {
-      start = Math.max(totalBytes - maxBytes, 0);
-    } else if (start < 0) {
-      start = Math.max(totalBytes + start, 0);
-    }
-    if (start > totalBytes) {
-      start = totalBytes;
+    const record = this.resolveRunRecord(runId);
+    const artifactsDir = record.artifactsDir;
+    const logPath = path.join(artifactsDir, 'stdout.log');
+    let buffer = Buffer.alloc(0);
+
+    if (existsSync(toFsPath(logPath))) {
+      try {
+        buffer = await fs.readFile(toFsPath(logPath));
+      } catch (error) {
+        console.warn(`Failed to read stdout for run ${runId}:`, error);
+      }
     }
 
-    const effectiveMax = maxBytes && maxBytes > 0 ? Math.min(maxBytes, totalBytes) : null;
-    const end = effectiveMax ? Math.min(start + effectiveMax, totalBytes) : totalBytes;
-    const slice = context.buffer.subarray(start, end);
-    return {
-      output: slice.toString('utf-8'),
-      nextFromByte: start + slice.byteLength,
-      startFromByte: start,
-      totalBytes,
-      hasMoreBefore: start > 0,
-      status: context.status,
-      failureDetails: this.describeFailure(context),
-    };
+    const diagnostics = await this.loadStoredDiagnostics(runId, artifactsDir);
+    const timeoutMs = diagnostics
+      ? this.extractTimeoutMs(diagnostics.timeoutMs)
+      : null;
+    const failureDetails = this.describeFailureDetails({
+      status: record.status,
+      timeoutMs,
+      timeoutTriggered: diagnostics?.error === 'timeout',
+      diagnostics,
+    });
+
+    return this.formatTailChunk({
+      buffer,
+      fromByte,
+      maxBytes,
+      status: record.status,
+      failureDetails,
+    });
   }
 
   async abort(runId: string) {
@@ -629,23 +677,24 @@ export class RunManager {
   }
 
   async listArtifacts(runId: string) {
-    const context = this.runs.get(runId);
-    if (!context) {
-      throw new Error(`Run ${runId} not found`);
+    const artifactsDir = await this.resolveArtifactsDir(runId);
+    if (!existsSync(toFsPath(artifactsDir))) {
+      throw new Error(`Artifacts for run ${runId} not found`);
     }
 
-    return scanArtifacts(context.artifactsDir);
+    try {
+      return await scanArtifacts(artifactsDir);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to scan artifacts for run ${runId}: ${message}`);
+    }
   }
 
   async readArtifact(runId: string, relativePath: string) {
-    const context = this.runs.get(runId);
-    if (!context) {
-      throw new Error(`Run ${runId} not found`);
-    }
-
+    const artifactsDir = await this.resolveArtifactsDir(runId);
     const safeRelative = relativePath.replace(/\\/g, '/');
-    const resolved = path.resolve(context.artifactsDir, safeRelative);
-    if (!resolved.startsWith(context.artifactsDir)) {
+    const resolved = path.resolve(artifactsDir, safeRelative);
+    if (!resolved.startsWith(artifactsDir)) {
       throw new Error('Invalid artifact path');
     }
 
@@ -654,7 +703,29 @@ export class RunManager {
   }
 
   async fetchRegistry(query: RunQuery = {}): Promise<RunRecord[]> {
-    return fetchRuns(this.registry, query);
+    const records = fetchRuns(this.registry, query);
+    const enriched = await Promise.all(
+      records.map(async (record) => {
+        if (record.metrics && Object.keys(record.metrics).length > 0) {
+          return record;
+        }
+
+        try {
+          const metrics = await this.collectRunMetrics(record.id);
+          if (metrics && Object.keys(metrics).length > 0) {
+            const updated: RunRecord = { ...record, metrics };
+            upsertRun(this.registry, updated);
+            return updated;
+          }
+        } catch (error) {
+          console.warn(`Failed to collect metrics for run ${record.id}:`, error);
+        }
+
+        return record;
+      }),
+    );
+
+    return enriched;
   }
 
   async waitForCompletion(runId: string): Promise<RunCompletion> {
@@ -689,27 +760,13 @@ export class RunManager {
   async collectRunMetrics(runId: string): Promise<Record<string, number | null> | null> {
     const artifactsDir = await this.resolveArtifactsDir(runId);
 
-    const summaryPath = path.join(artifactsDir, 'summary.json');
-    if (!existsSync(toFsPath(summaryPath))) {
-      return null;
+    const summaryMetrics = await this.collectSummaryMetrics(runId, artifactsDir);
+    if (summaryMetrics && Object.keys(summaryMetrics).length > 0) {
+      return summaryMetrics;
     }
 
-    try {
-      const raw = await fs.readFile(toFsPath(summaryPath), 'utf-8');
-      const parsed = JSON.parse(raw) as Record<string, unknown>;
-      const metrics: Record<string, number | null> = {};
-      for (const [key, value] of Object.entries(parsed)) {
-        if (typeof value === 'number') {
-          metrics[key] = Number.isFinite(value) ? value : null;
-        } else if (typeof value === 'boolean') {
-          metrics[key] = value ? 1 : 0;
-        }
-      }
-      return Object.keys(metrics).length > 0 ? metrics : null;
-    } catch (error) {
-      console.warn(`Failed to parse summary metrics for run ${runId}:`, error);
-      return null;
-    }
+    const csvMetrics = await this.collectMetricsFromCsv(runId, artifactsDir);
+    return csvMetrics && Object.keys(csvMetrics).length > 0 ? csvMetrics : null;
   }
 
   async collectDiagnosticsBundle(runId: string): Promise<{ zipPath: string; files: string[] }> {
@@ -861,16 +918,250 @@ export class RunManager {
   }
 
   private async resolveArtifactsDir(runId: string): Promise<string> {
-    const context = this.runs.get(runId);
-    if (context) {
-      return context.artifactsDir;
+    const record = this.resolveRunRecord(runId);
+    return record.artifactsDir;
+  }
+
+  private extractTimeoutMs(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+    return null;
+  }
+
+  private async loadStoredDiagnostics(
+    runId: string,
+    artifactsDir: string,
+  ): Promise<StoredDiagnostics | null> {
+    const diagnosticsPath = path.join(artifactsDir, 'diagnostics.json');
+    if (!existsSync(toFsPath(diagnosticsPath))) {
+      return null;
     }
 
+    try {
+      const raw = await fs.readFile(toFsPath(diagnosticsPath), 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') {
+        return null;
+      }
+      return parsed as StoredDiagnostics;
+    } catch (error) {
+      console.warn(`Failed to read diagnostics for run ${runId}:`, error);
+      return null;
+    }
+  }
+
+  private formatTailChunk({
+    buffer,
+    fromByte,
+    maxBytes,
+    status,
+    failureDetails,
+  }: {
+    buffer: Buffer;
+    fromByte: number;
+    maxBytes?: number;
+    status: RunStatus;
+    failureDetails: string | null;
+  }): RunTailChunk {
+    const totalBytes = buffer.byteLength;
+    let start = Math.trunc(fromByte);
+    if (!Number.isFinite(start)) {
+      start = 0;
+    }
+    if (maxBytes && maxBytes > 0 && start < 0) {
+      start = Math.max(totalBytes - maxBytes, 0);
+    } else if (start < 0) {
+      start = Math.max(totalBytes + start, 0);
+    }
+    if (start > totalBytes) {
+      start = totalBytes;
+    }
+
+    const effectiveMax = maxBytes && maxBytes > 0 ? Math.min(maxBytes, totalBytes) : null;
+    const end = effectiveMax ? Math.min(start + effectiveMax, totalBytes) : totalBytes;
+    const slice = buffer.subarray(start, end);
+
+    return {
+      output: slice.toString('utf-8'),
+      nextFromByte: start + slice.byteLength,
+      startFromByte: start,
+      totalBytes,
+      hasMoreBefore: start > 0,
+      status,
+      failureDetails,
+    } satisfies RunTailChunk;
+  }
+
+  private async collectSummaryMetrics(
+    runId: string,
+    artifactsDir: string,
+  ): Promise<Record<string, number | null> | null> {
+    const summaryPath = path.join(artifactsDir, 'summary.json');
+    if (!existsSync(toFsPath(summaryPath))) {
+      return null;
+    }
+
+    try {
+      const raw = await fs.readFile(toFsPath(summaryPath), 'utf-8');
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      const metrics = this.extractNumericMetrics(parsed);
+      return Object.keys(metrics).length > 0 ? metrics : null;
+    } catch (error) {
+      console.warn(`Failed to parse summary metrics for run ${runId}:`, error);
+      return null;
+    }
+  }
+
+  private async collectMetricsFromCsv(
+    runId: string,
+    artifactsDir: string,
+  ): Promise<Record<string, number | null> | null> {
+    let entries: Awaited<ReturnType<typeof scanArtifacts>>;
+    try {
+      entries = await scanArtifacts(artifactsDir);
+    } catch (error) {
+      console.warn(`Failed to enumerate artifacts for run ${runId}:`, error);
+      return null;
+    }
+
+    const csvFiles = entries.filter(
+      (entry) => entry.type === 'file' && entry.relativePath.toLowerCase().endsWith('metrics.csv'),
+    );
+    if (csvFiles.length === 0) {
+      return null;
+    }
+
+    const aggregates = new Map<string, { sum: number; count: number }>();
+    for (const file of csvFiles) {
+      try {
+        const content = await fs.readFile(toFsPath(file.path), 'utf-8');
+        this.accumulateCsvMetrics(content, aggregates);
+      } catch (error) {
+        console.warn(`Failed to parse metrics file ${file.path} for run ${runId}:`, error);
+      }
+    }
+
+    const metrics: Record<string, number | null> = {};
+    for (const [key, aggregate] of aggregates.entries()) {
+      if (aggregate.count === 0) {
+        continue;
+      }
+      metrics[key] = aggregate.sum / aggregate.count;
+    }
+
+    return Object.keys(metrics).length > 0 ? metrics : null;
+  }
+
+  private parseCsvLine(line: string): string[] {
+    const cells: string[] = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let index = 0; index < line.length; index += 1) {
+      const char = line[index];
+      if (char === '"') {
+        if (inQuotes && line[index + 1] === '"') {
+          current += '"';
+          index += 1;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        cells.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+
+    cells.push(current.trim());
+    return cells;
+  }
+
+  private accumulateCsvMetrics(
+    content: string,
+    aggregates: Map<string, { sum: number; count: number }>,
+  ) {
+    const lines = content
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+
+    if (lines.length < 2) {
+      return;
+    }
+
+    const header = this.parseCsvLine(lines[0]);
+
+    for (let i = 1; i < lines.length; i += 1) {
+      const cells = this.parseCsvLine(lines[i]);
+
+      header.forEach((column, index) => {
+        const key = column.trim();
+        if (!key) {
+          return;
+        }
+
+        const rawValue = (cells[index] ?? '').trim();
+        if (!rawValue) {
+          return;
+        }
+
+        const numeric = Number(rawValue);
+        if (!Number.isFinite(numeric)) {
+          return;
+        }
+
+        const entry = aggregates.get(key) ?? { sum: 0, count: 0 };
+        entry.sum += numeric;
+        entry.count += 1;
+        aggregates.set(key, entry);
+      });
+    }
+  }
+
+  private extractNumericMetrics(payload: Record<string, unknown>): Record<string, number | null> {
+    const metrics: Record<string, number | null> = {};
+    for (const [key, value] of Object.entries(payload)) {
+      if (typeof value === 'number') {
+        metrics[key] = Number.isFinite(value) ? value : null;
+      } else if (typeof value === 'boolean') {
+        metrics[key] = value ? 1 : 0;
+      }
+    }
+    return metrics;
+  }
+
+  private resolveRunRecord(runId: string): RunRecord {
     const [record] = fetchRuns(this.registry, { id: runId, limit: 1 });
-    if (!record) {
+    if (record) {
+      return record;
+    }
+
+    const context = this.runs.get(runId);
+    if (!context) {
       throw new Error(`Run ${runId} not found`);
     }
-    return record.artifactsDir;
+
+    return {
+      id: context.id,
+      createdAt: context.createdAt,
+      updatedAt: context.updatedAt,
+      status: context.status,
+      command: context.command,
+      args: context.args,
+      cwd: context.cwd,
+      phase: context.metadata.phase,
+      experiment: context.metadata.experiment,
+      label: context.metadata.label,
+      artifactsDir: context.artifactsDir,
+      metrics: null,
+    } satisfies RunRecord;
   }
 }
 
