@@ -208,9 +208,14 @@ const EnvDoctor = () => {
   const [manualPathTouched, setManualPathTouched] = useState(
     persistedState?.manualPathTouched ?? false,
   );
+  const manualPathTouchedRef = useRef(manualPathTouched);
   const isMounted = useRef(false);
   const detectionTimeoutRef = useRef<number | null>(null);
   const detectionInFlightRef = useRef(false);
+
+  useEffect(() => {
+    manualPathTouchedRef.current = manualPathTouched;
+  }, [manualPathTouched]);
 
   useEffect(() => {
     isMounted.current = true;
@@ -223,24 +228,21 @@ const EnvDoctor = () => {
     };
   }, []);
 
-  const updateManualPath = useCallback(
-    (value: string, options: ManualPathUpdateOptions = {}) => {
-      console.debug('[EnvDoctor] Updating manual Python path.', {
-        value,
-        fromUser: Boolean(options.fromUser),
-        force: Boolean(options.force),
-      });
-      if (options.fromUser) {
-        setManualPathTouched(true);
-        setManualPath(value);
-        return;
-      }
-      if (!manualPathTouched || options.force) {
-        setManualPath(value);
-      }
-    },
-    [manualPathTouched],
-  );
+  const updateManualPath = useCallback((value: string, options: ManualPathUpdateOptions = {}) => {
+    console.debug('[EnvDoctor] Updating manual Python path.', {
+      value,
+      fromUser: Boolean(options.fromUser),
+      force: Boolean(options.force),
+    });
+    if (options.fromUser) {
+      setManualPathTouched(true);
+      setManualPath(value);
+      return;
+    }
+    if (!manualPathTouchedRef.current || options.force) {
+      setManualPath(value);
+    }
+  }, []);
 
   const refreshConfig = useCallback(
     async (options: ManualPathUpdateOptions = {}) => {
@@ -521,9 +523,8 @@ const EnvDoctor = () => {
     }
   }, [browseBusy, updateManualPath]);
 
-  const handleSetPythonPath = useCallback(
-    async (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
+  const submitPythonPath = useCallback(
+    async (rawPath: string) => {
       setPathNotice(null);
 
       const api = typeof window !== 'undefined' ? window?.CWT?.env : undefined;
@@ -536,7 +537,7 @@ const EnvDoctor = () => {
         return;
       }
 
-      const trimmed = manualPath.trim();
+      const trimmed = rawPath.trim();
       console.info('[EnvDoctor] Attempting to set Python path.', { trimmed });
       if (!trimmed) {
         setPathNotice({ kind: 'error', message: 'Provide the path to a Python executable.' });
@@ -560,6 +561,7 @@ const EnvDoctor = () => {
           console.info('[EnvDoctor] Python path updated successfully.', {
             path: candidate.path ?? trimmed,
           });
+          setManualPathTouched(true);
           updateManualPath(candidate.path ?? trimmed, { force: true });
           setPathNotice({ kind: 'success', message: `Interpreter set to ${candidate.path}.` });
           await runDetection();
@@ -586,7 +588,24 @@ const EnvDoctor = () => {
         }
       }
     },
-    [manualPath, refreshConfig, runDetection, updateManualPath],
+    [refreshConfig, runDetection, updateManualPath],
+  );
+
+  const handleSetPythonPath = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      void submitPythonPath(manualPath);
+    },
+    [manualPath, submitPythonPath],
+  );
+
+  const handleUseCandidate = useCallback(
+    (candidatePath: string) => {
+      setManualPathTouched(true);
+      updateManualPath(candidatePath, { force: true });
+      void submitPythonPath(candidatePath);
+    },
+    [submitPythonPath, updateManualPath],
   );
 
   const pythonPathPlaceholder = useMemo(() => getPythonPathPlaceholder(), []);
@@ -711,67 +730,9 @@ const EnvDoctor = () => {
         </div>
       )}
 
-      <form className="env-doctor__form" onSubmit={handleSetPythonPath}>
-        <label className="env-doctor__label" htmlFor="env-doctor-python-path">
-          Python executable
-        </label>
-        <div className="env-doctor__form-row">
-          <input
-            id="env-doctor-python-path"
-            type="text"
-            className="env-doctor__input"
-            placeholder={pythonPathPlaceholder}
-            value={manualPath}
-            onChange={handleManualPathChange}
-            disabled={!ipcAvailable || pathBusy}
-          />
-          <button
-            type="button"
-            className={
-              browseBusy ? 'env-doctor__button env-doctor__button--busy' : 'env-doctor__button'
-            }
-            onClick={handleBrowseForInterpreter}
-            disabled={!ipcAvailable || pathBusy || browseBusy}
-            aria-busy={browseBusy}
-          >
-            Browse…
-          </button>
-          <button
-            type="submit"
-            className={
-              pathBusy ? 'env-doctor__button env-doctor__button--busy' : 'env-doctor__button'
-            }
-            disabled={!ipcAvailable || pathBusy || manualPath.trim().length === 0}
-            aria-busy={pathBusy}
-          >
-            Set Python Path
-          </button>
-        </div>
-        <p className="env-doctor__hint">
-          Point to the Python executable inside the virtual environment prepared with
-          <code> pip install -r requirements.txt</code> and
-          <code> pip install -r requirements.test.txt</code>.
-        </p>
-      </form>
-
-      {pathNotice && (
-        <div
-          role={pathNotice.kind === 'success' ? 'status' : 'alert'}
-          className={`env-doctor__notice env-doctor__notice--${pathNotice.kind}`}
-        >
-          {pathNotice.message}
-        </div>
-      )}
-
       {candidateState.error && (
         <div role="alert" className="env-doctor__notice env-doctor__notice--error">
           {candidateState.error}
-        </div>
-      )}
-
-      {configError && (
-        <div role="alert" className="env-doctor__notice env-doctor__notice--error">
-          {configError}
         </div>
       )}
 
@@ -831,6 +792,18 @@ const EnvDoctor = () => {
                   ))}
                 </ul>
               ) : null}
+              {!selected ? (
+                <div className="env-doctor__candidate-actions">
+                  <button
+                    type="button"
+                    className="env-doctor__button env-doctor__candidate-use-button"
+                    onClick={() => handleUseCandidate(candidate.path)}
+                    disabled={!ipcAvailable || pathBusy || candidateState.loading}
+                  >
+                    Use
+                  </button>
+                </div>
+              ) : null}
             </div>
           );
         })}
@@ -840,6 +813,64 @@ const EnvDoctor = () => {
         <p className="env-doctor__empty">
           No interpreters recorded yet. Run detection or set the Python path manually to bootstrap the toolchain.
         </p>
+      )}
+
+      <form className="env-doctor__form" onSubmit={handleSetPythonPath}>
+        <label className="env-doctor__label" htmlFor="env-doctor-python-path">
+          Python executable
+        </label>
+        <div className="env-doctor__form-row">
+          <input
+            id="env-doctor-python-path"
+            type="text"
+            className="env-doctor__input"
+            placeholder={pythonPathPlaceholder}
+            value={manualPath}
+            onChange={handleManualPathChange}
+            disabled={!ipcAvailable || pathBusy}
+          />
+          <button
+            type="button"
+            className={
+              browseBusy ? 'env-doctor__button env-doctor__button--busy' : 'env-doctor__button'
+            }
+            onClick={handleBrowseForInterpreter}
+            disabled={!ipcAvailable || pathBusy || browseBusy}
+            aria-busy={browseBusy}
+          >
+            Browse…
+          </button>
+          <button
+            type="submit"
+            className={
+              pathBusy ? 'env-doctor__button env-doctor__button--busy' : 'env-doctor__button'
+            }
+            disabled={!ipcAvailable || pathBusy || manualPath.trim().length === 0}
+            aria-busy={pathBusy}
+          >
+            Set Python Path
+          </button>
+        </div>
+        <p className="env-doctor__hint">
+          Point to the Python executable inside the virtual environment prepared with
+          <code> pip install -r requirements.txt</code> and
+          <code> pip install -r requirements.test.txt</code>.
+        </p>
+      </form>
+
+      {pathNotice && (
+        <div
+          role={pathNotice.kind === 'success' ? 'status' : 'alert'}
+          className={`env-doctor__notice env-doctor__notice--${pathNotice.kind}`}
+        >
+          {pathNotice.message}
+        </div>
+      )}
+
+      {configError && (
+        <div role="alert" className="env-doctor__notice env-doctor__notice--error">
+          {configError}
+        </div>
       )}
 
       {config && (

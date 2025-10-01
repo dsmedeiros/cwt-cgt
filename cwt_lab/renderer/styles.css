@@ -508,6 +508,16 @@ body {
   margin-bottom: 0.25rem;
 }
 
+.env-doctor__candidate-actions {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.env-doctor__candidate-use-button {
+  margin-left: auto;
+}
+
 .env-doctor__empty {
   margin: 0;
   color: var(--color-muted);
