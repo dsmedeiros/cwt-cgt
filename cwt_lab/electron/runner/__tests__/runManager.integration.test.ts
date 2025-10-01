@@ -21,10 +21,11 @@ describe('RunManager integration', () => {
   const artifactsRoot = path.join(tmpRoot, 'artifacts');
   const registryPath = path.join(tmpRoot, 'registry.sqlite');
   const scriptPath = path.join(tmpRoot, 'emit_metrics.py');
+  const csvScriptPath = path.join(tmpRoot, 'emit_metrics_csv.py');
   const repoRoot = tmpRoot;
 
-let manager: RunManager | null = null;
-let skipSuite = false;
+  let manager: RunManager | null = null;
+  let skipSuite = false;
 
   beforeAll(() => {
     ensurePythonAvailable();
@@ -43,6 +44,28 @@ let skipSuite = false;
         'summary = {"fs_p95": 0.125, "phi": 0.456, "R": 0.789}',
         'with open(os.path.join(output_dir, "summary.json"), "w", encoding="utf-8") as handle:',
         '    json.dump(summary, handle)',
+      ].join('\n'),
+      'utf-8',
+    );
+
+    writeFileSync(
+      csvScriptPath,
+      [
+        'import csv',
+        'import os',
+        'import sys',
+        '',
+        "print('writing csv metrics')",
+        'sys.stdout.flush()',
+        'output_dir = os.environ.get("CWT_OUTPUT_DIR", ".")',
+        'os.makedirs(output_dir, exist_ok=True)',
+        'target_dir = os.path.join(output_dir, "graphA")',
+        'os.makedirs(target_dir, exist_ok=True)',
+        'with open(os.path.join(target_dir, "metrics.csv"), "w", newline="") as handle:',
+        "    writer = csv.writer(handle)",
+        "    writer.writerow(['spectral_gap', 'kuramoto_r'])",
+        '    writer.writerow([1.0, 0.4])',
+        '    writer.writerow([2.0, 0.6])',
       ].join('\n'),
       'utf-8',
     );
@@ -109,6 +132,27 @@ let skipSuite = false;
     );
     expect(bundle.zipPath).toMatch(/diagnostics-\d+\.zip$/);
     expect(existsSync(bundle.zipPath)).toBe(true);
+
+    const resumed = new RunManager({
+      repoRoot,
+      artifactsRoot,
+      registryPath,
+      pythonPathEntries: [],
+    });
+    resumed.setPythonEnv({ executable: pythonExecutable, version: 'test', strategy: 'installed' });
+
+    const tailChunk = await resumed.tail(runId, 0, 4_096);
+    expect(tailChunk.status).toBe('complete');
+    expect(tailChunk.failureDetails).toBeNull();
+    expect(tailChunk.output).toContain('fs_p95=0.125');
+
+    const artifacts = await resumed.listArtifacts(runId);
+    expect(artifacts.some((entry) => entry.relativePath === 'summary.json')).toBe(true);
+    const summary = await resumed.readArtifact(runId, 'summary.json');
+    expect(summary.contents).toContain('"fs_p95"');
+
+    await resumed.shutdown();
+
   });
 
   it('throws a descriptive error when the configured Python interpreter disappears', async () => {
@@ -136,5 +180,26 @@ let skipSuite = false;
     );
 
     await missingManager.shutdown();
+  });
+
+  it('derives metrics from CSV artifacts when no summary is present', async () => {
+    if (skipSuite || !manager) {
+      return;
+    }
+
+    const { runId } = await manager.createRun(
+      pythonExecutable,
+      [csvScriptPath],
+      repoRoot,
+      { experiment: 'integration-test', label: 'csv metrics' },
+    );
+
+    const completion = await manager.waitForCompletion(runId);
+    expect(completion.status).toBe('complete');
+
+    const [run] = await manager.fetchRegistry({ id: runId });
+    expect(run.metrics).not.toBeNull();
+    expect(run.metrics?.spectral_gap ?? 0).toBeCloseTo(1.5, 6);
+    expect(run.metrics?.kuramoto_r ?? 0).toBeCloseTo(0.5, 6);
   });
 });
