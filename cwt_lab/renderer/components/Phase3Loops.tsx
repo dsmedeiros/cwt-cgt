@@ -103,19 +103,14 @@ const defaultHotspots: Hotspot[] = [
 
 const graphOptions = [
   {
-    id: 'flux',
-    label: 'Flux Linkage',
-    help: 'Shows how magnetic flux threads through the loop so you can see where the ridge couples most strongly.',
+    id: 'ring3',
+    label: 'Ring-3 triad',
+    help: 'Deterministic three-node loop useful for verifying calibrations and guard thresholds.',
   },
   {
-    id: 'energy',
-    label: 'Energy Capture',
-    help: 'Estimates how much energy the loop would soak up at this hotspot, helpful for ranking promising ridges.',
-  },
-  {
-    id: 'phase',
-    label: 'Phase Portrait',
-    help: 'Plots the oscillator phases over the loop to reveal timing alignment and phase slips.',
+    id: 'random_regular',
+    label: 'Random regular (20 nodes)',
+    help: 'Generates a 20-node 3-regular digraph using the selected seed to stress-test the loop.',
   },
 ];
 

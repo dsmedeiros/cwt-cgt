@@ -762,16 +762,31 @@ ipcMain.handle('cwt:phase3:browse-hotspots', () =>
 );
 
 ipcMain.handle('cwt:phase3:loop-at-hotspot', (_event, params) =>
-  wrap(() => {
+  wrap(async () => {
     if (!params || typeof params !== 'object') {
       throw new Error('parameters are required for loop-at-hotspot');
     }
 
     const payload = params as LoopAtHotspotPayload & Record<string, unknown>;
-    const hotspotsPath =
+    const hotspotsRaw =
       typeof payload.hotspotsJson === 'string' ? payload.hotspotsJson.trim() : '';
-    if (!hotspotsPath) {
-      throw new Error('hotspotsJson must be a non-empty string path');
+    if (!hotspotsRaw) {
+      throw new Error('hotspotsJson must be a non-empty string or JSON payload');
+    }
+
+    let hotspotsPath = hotspotsRaw;
+    if (hotspotsRaw.startsWith('{') || hotspotsRaw.startsWith('[')) {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(hotspotsRaw);
+      } catch (error) {
+        throw new Error('hotspotsJson must be valid JSON when provided inline');
+      }
+
+      const inlineDir = path.join(artifactsRoot, '_temp', 'phase3_hotspots');
+      ensureDirSync(inlineDir);
+      hotspotsPath = path.join(inlineDir, `hotspots-${uuidv4()}.json`);
+      await fs.writeFile(hotspotsPath, JSON.stringify(parsed, null, 2), 'utf8');
     }
 
     const axesRaw = Array.isArray(payload.axes) ? payload.axes : [];
