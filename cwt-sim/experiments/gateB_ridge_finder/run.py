@@ -88,6 +88,20 @@ class ParameterPoint:
     kappa: float = 1.0
 
 
+def _json_safe_float(value: float | np.floating | None) -> float | None:
+    """Return ``value`` when it is finite, otherwise ``None`` for JSON safety."""
+
+    if value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(number):
+        return None
+    return number
+
+
 @dataclass(frozen=True)
 class DetectionMetrics:
     """Summary statistics for the hotspot detector."""
@@ -102,14 +116,14 @@ class DetectionMetrics:
     corr_trace_gap: float
     corr_trace_delta_r: float
 
-    def to_json(self) -> Mapping[str, float | list[float]]:
+    def to_json(self) -> Mapping[str, float | None | list[float | None]]:
         return {
-            "auc": float(self.auc),
-            "auc_ci": [float(x) for x in self.auc_ci],
-            "gap_threshold": float(self.gap_threshold),
-            "delta_r_threshold": float(self.delta_r_threshold),
-            "corr_trace_gap": float(self.corr_trace_gap),
-            "corr_trace_delta_r": float(self.corr_trace_delta_r),
+            "auc": _json_safe_float(self.auc),
+            "auc_ci": [_json_safe_float(x) for x in self.auc_ci],
+            "gap_threshold": _json_safe_float(self.gap_threshold),
+            "delta_r_threshold": _json_safe_float(self.delta_r_threshold),
+            "corr_trace_gap": _json_safe_float(self.corr_trace_gap),
+            "corr_trace_delta_r": _json_safe_float(self.corr_trace_delta_r),
         }
 
 
@@ -740,6 +754,7 @@ def save_numpy_bundle(result: GraphScanResult, out_dir: Path) -> None:
             fh,
             indent=2,
             ensure_ascii=False,
+            allow_nan=False,
         )
 
 
@@ -859,6 +874,7 @@ def save_top_omega_tiles(
             handle,
             indent=2,
             ensure_ascii=False,
+            allow_nan=False,
         )
 
 
@@ -1307,6 +1323,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             fh,
             indent=2,
             ensure_ascii=False,
+            allow_nan=False,
         )
 
     report_path = output_dir / "REPORT.md"
