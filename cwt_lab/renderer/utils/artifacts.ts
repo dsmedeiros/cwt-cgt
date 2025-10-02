@@ -10,30 +10,37 @@ export const sanitizeArtifactNodes = (value: unknown): ArtifactNode[] => {
   if (!Array.isArray(value)) {
     return [];
   }
-  return value
-    .map((entry) => {
-      if (!entry || typeof entry !== 'object') {
-        return null;
-      }
-      const node = entry as Partial<ArtifactNode>;
-      if (
-        typeof node.name !== 'string' ||
-        typeof node.path !== 'string' ||
-        typeof node.relativePath !== 'string' ||
-        (node.type !== 'file' && node.type !== 'directory')
-      ) {
-        return null;
-      }
-      const children = node.type === 'directory' ? sanitizeArtifactNodes(node.children) : [];
-      return {
-        name: node.name,
-        path: node.path,
-        type: node.type,
-        relativePath: node.relativePath,
-        children,
-      } satisfies ArtifactNode;
-    })
-    .filter((entry): entry is ArtifactNode => entry !== null);
+
+  const result: ArtifactNode[] = [];
+
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object') {
+      continue;
+    }
+
+    const node = entry as Partial<ArtifactNode>;
+    if (
+      typeof node.name !== 'string' ||
+      typeof node.path !== 'string' ||
+      typeof node.relativePath !== 'string' ||
+      (node.type !== 'file' && node.type !== 'directory')
+    ) {
+      continue;
+    }
+
+    const children =
+      node.type === 'directory' ? sanitizeArtifactNodes(node.children) : undefined;
+
+    result.push({
+      name: node.name,
+      path: node.path,
+      type: node.type,
+      relativePath: node.relativePath,
+      ...(children ? { children } : {}),
+    });
+  }
+
+  return result;
 };
 
 const GUID_PATTERN =

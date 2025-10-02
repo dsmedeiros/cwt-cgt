@@ -580,17 +580,24 @@ const Phase3Loops = () => {
         const directories = nodes.filter(
           (node) => node.type === 'directory' && isGuidLike(node.relativePath),
         );
-        setExperiments(directories);
-        if (directories.length === 0) {
+        const phase1Directories = directories.filter((directory) =>
+          Boolean(findArtifactNodeByName(directory.children ?? [], 'top_omega_tiles.json')),
+        );
+        setExperiments(phase1Directories);
+        if (phase1Directories.length === 0) {
           setSelectedExperimentPath(null);
-          setExperimentsError('No experiment folders with GUID names found under the configured root.');
+          setExperimentsError(
+            directories.length > 0
+              ? 'No Phase 1 experiments found under the configured root.'
+              : 'No experiment folders with GUID names found under the configured root.',
+          );
         } else {
           setExperimentsError(null);
           setSelectedExperimentPath((prev) => {
-            if (prev && directories.some((dir) => dir.path === prev)) {
+            if (prev && phase1Directories.some((dir) => dir.path === prev)) {
               return prev;
             }
-            return directories[0]?.path ?? null;
+            return phase1Directories[0]?.path ?? null;
           });
         }
       } catch (error) {
