@@ -488,10 +488,21 @@ def gradient_magnitude(
 
 
 def finite_correlation(a: np.ndarray, b: np.ndarray) -> float:
+    """Return the Pearson correlation coefficient for finite entries only."""
+
     mask = np.isfinite(a) & np.isfinite(b)
     if mask.sum() < 3:
         return float("nan")
-    corr = np.corrcoef(a[mask], b[mask])[0, 1]
+
+    a_finite = np.asarray(a[mask], dtype=float)
+    b_finite = np.asarray(b[mask], dtype=float)
+    if np.std(a_finite) == 0.0 or np.std(b_finite) == 0.0:
+        return float("nan")
+
+    with np.errstate(invalid="ignore", divide="ignore"):
+        corr = np.corrcoef(a_finite, b_finite)[0, 1]
+    if not np.isfinite(corr):
+        return float("nan")
     return float(corr)
 
 
