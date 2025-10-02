@@ -562,6 +562,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-gutter: stable;
 }
 
 .phase3__section h3,
@@ -1950,6 +1954,8 @@ body {
 
   .phase3__sidebar {
     order: 2;
+    max-height: none;
+    overflow: visible;
   }
 
   .phase3__main {

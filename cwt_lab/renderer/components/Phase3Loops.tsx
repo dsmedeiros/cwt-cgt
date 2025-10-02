@@ -702,15 +702,15 @@ const Phase3Loops = () => {
       return;
     }
 
-    if (typeof window === 'undefined' || !window?.CWT?.registry?.query) {
-      setPhase1RunError('Phase 1 runs are unavailable outside the desktop application.');
-      setPhase1Runs([]);
-      setSelectedPhase1RunId('');
-      return;
-    }
-
     setIsLoadingPhase1Runs(true);
     try {
+      if (typeof window === 'undefined' || !window?.CWT?.registry?.query) {
+        setPhase1RunError('Phase 1 runs are unavailable outside the desktop application.');
+        setPhase1Runs([]);
+        setSelectedPhase1RunId('');
+        return;
+      }
+
       const records = await runs.listRecent(50);
       if (!isMountedRef.current) {
         return;
@@ -739,6 +739,14 @@ const Phase3Loops = () => {
   useEffect(() => {
     void refreshPhase1Runs();
   }, [refreshPhase1Runs]);
+
+  useEffect(() => {
+    if (!selectedPhase1RunId) {
+      return;
+    }
+
+    void importFromPhase1Run();
+  }, [selectedPhase1RunId, importFromPhase1Run]);
 
   const applyImportedHotspots = useCallback(
     (entries: Phase1HotspotEntry[], originKey: string, sourceLabel: string) => {
@@ -1378,14 +1386,6 @@ const Phase3Loops = () => {
                     disabled={isLoadingPhase1Runs}
                   >
                     {isLoadingPhase1Runs ? 'Refreshing…' : 'Refresh'}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => void importFromPhase1Run()}
-                    disabled={isImportingHotspots || !selectedPhase1RunId}
-                  >
-                    {isImportingHotspots ? 'Loading…' : 'Load hotspots'}
                   </button>
                 </div>
               </div>
