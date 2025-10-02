@@ -735,14 +735,6 @@ const Phase3Loops = () => {
     void refreshPhase1Runs();
   }, [refreshPhase1Runs]);
 
-  useEffect(() => {
-    if (!selectedPhase1RunId) {
-      return;
-    }
-
-    void importFromPhase1Run();
-  }, [selectedPhase1RunId, importFromPhase1Run]);
-
   const applyImportedHotspots = useCallback(
     (entries: Phase1HotspotEntry[], originKey: string, sourceLabel: string) => {
       const normalizedOrigin = normalizeOrigin(originKey) || originKey;
@@ -821,6 +813,14 @@ const Phase3Loops = () => {
     phase1Runs,
     applyImportedHotspots,
   ]);
+
+  useEffect(() => {
+    if (!selectedPhase1RunId) {
+      return;
+    }
+
+    void importFromPhase1Run();
+  }, [selectedPhase1RunId, importFromPhase1Run]);
 
   const loadHotspotsFromSubstrate = useCallback(async () => {
     if (!selectedSubstratePath) {
