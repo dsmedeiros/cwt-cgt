@@ -124,7 +124,7 @@ const Phase2Features = () => {
   const [snapshotStatus, setSnapshotStatus] = useState<string | null>(null);
   const [pulsingRuns, setPulsingRuns] = useState<Record<string, boolean>>({});
   const abortRef = useRef<{ aborted: boolean } | null>(null);
-  const pulseTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const pulseTimeoutsRef = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
     let cancelled = false;
@@ -303,7 +303,7 @@ const Phase2Features = () => {
     setPulsingRuns((prev) => ({ ...prev, [relativePath]: true }));
     const existing = pulseTimeoutsRef.current.get(relativePath);
     if (existing) {
-      clearTimeout(existing);
+      window.clearTimeout(existing);
     }
     const timeout = window.setTimeout(() => {
       setPulsingRuns((prev) => {
@@ -349,7 +349,7 @@ const Phase2Features = () => {
     });
     const timeout = pulseTimeoutsRef.current.get(relativePath);
     if (timeout) {
-      clearTimeout(timeout);
+      window.clearTimeout(timeout);
       pulseTimeoutsRef.current.delete(relativePath);
     }
   }, []);
@@ -442,7 +442,9 @@ const Phase2Features = () => {
       if (abortRef.current) {
         abortRef.current.aborted = true;
       }
-      pulseTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
+      if (typeof window !== 'undefined') {
+        pulseTimeoutsRef.current.forEach((timeout) => window.clearTimeout(timeout));
+      }
       pulseTimeoutsRef.current.clear();
     };
   }, []);
