@@ -5,8 +5,9 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import numbers
 from pathlib import Path
-from typing import Sequence
+from typing import Any, Mapping, Sequence
 
 import networkx as nx
 import numpy as np
@@ -19,6 +20,8 @@ from cwt.orchestrator.scheduler import RunConfig, _psi_at
 
 VALID_AXES = ("rho", "tau", "zeta", "zeta_phase", "kappa")
 DEFAULT_BASE = {"rho": 1.5, "tau": 1.75, "zeta": 1.2, "zeta_phase": 0.0, "kappa": 1.0}
+DEFAULT_FS_GUARD = 0.2
+DEFAULT_SETTLE_STEPS = 40
 
 
 def ensure_dir(path: Path) -> None:
@@ -159,6 +162,159 @@ def _fs_statistics(psis: Sequence[np.ndarray]) -> tuple[list[float], float, floa
     return distances, mean, p95
 
 
+def _coerce_float(value: Any) -> float | None:
+    if isinstance(value, numbers.Real):
+        numeric = float(value)
+    else:
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return None
+    return numeric if math.isfinite(numeric) else None
+
+
+def _coerce_int(value: Any) -> int | None:
+    if isinstance(value, numbers.Integral):
+        return int(value)
+    try:
+        text = str(value).strip()
+        if not text:
+            return None
+        numeric = int(float(text))
+    except (TypeError, ValueError):
+        return None
+    return numeric
+
+
+def _load_phase3_summary(path: Path) -> Mapping[str, Any]:
+    summary_path = Path(path)
+    if not summary_path.exists():
+        raise ValueError(f"Phase 3 summary not found at '{summary_path}'")
+    try:
+        with summary_path.open("r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+    except json.JSONDecodeError as error:
+        raise ValueError(f"Phase 3 summary is not valid JSON: {error}") from error
+    if not isinstance(payload, Mapping):
+        raise ValueError("Phase 3 summary must be a JSON object")
+    return payload
+
+
+def _hydrate_from_phase3_summary(
+    summary_path: Path,
+    axes3: Sequence[str],
+    hotspot_index: int,
+    extent_index: int,
+) -> dict[str, Any]:
+    data = _load_phase3_summary(summary_path)
+    hotspots_raw = data.get("hotspots")
+    if not isinstance(hotspots_raw, Sequence) or not hotspots_raw:
+        raise ValueError("Phase 3 summary does not list any hotspots")
+    if hotspot_index < 0 or hotspot_index >= len(hotspots_raw):
+        raise ValueError(
+            f"hotspot-index {hotspot_index} is out of range for summary with {len(hotspots_raw)} hotspots"
+        )
+    hotspot_entry = hotspots_raw[hotspot_index]
+    if not isinstance(hotspot_entry, Mapping):
+        raise ValueError("Hotspot entry in Phase 3 summary is not a JSON object")
+
+    center_raw: Mapping[str, Any] | None = None
+    center_candidate = hotspot_entry.get("center")
+    if isinstance(center_candidate, Mapping):
+        center_raw = center_candidate
+    else:
+        spec_raw = hotspot_entry.get("spec")
+        if isinstance(spec_raw, Mapping):
+            inner_center = spec_raw.get("center")
+            if isinstance(inner_center, Mapping):
+                center_raw = inner_center
+    center_map: dict[str, float] = {}
+    if center_raw:
+        for key, value in center_raw.items():
+            numeric = _coerce_float(value)
+            if numeric is not None:
+                center_map[str(key)] = numeric
+
+    extents_raw = hotspot_entry.get("extents")
+    if not isinstance(extents_raw, Sequence) or not extents_raw:
+        raise ValueError("Hotspot entry does not contain any extent summaries")
+    if extent_index < 0 or extent_index >= len(extents_raw):
+        raise ValueError(
+            f"extent-index {extent_index} is out of range for hotspot with {len(extents_raw)} extents"
+        )
+    extent_entry = extents_raw[extent_index]
+    if not isinstance(extent_entry, Mapping):
+        raise ValueError("Extent entry in Phase 3 summary is not a JSON object")
+
+    axes_fallback = []
+    axes_from_summary = data.get("axes")
+    if isinstance(axes_from_summary, Sequence) and len(axes_from_summary) >= 2:
+        axes_fallback = [str(axes_from_summary[0]), str(axes_from_summary[1])]
+
+    axes_two: list[str] = []
+    axes_candidate = extent_entry.get("extents_axes") or extent_entry.get("axes")
+    if isinstance(axes_candidate, Sequence) and len(axes_candidate) >= 2:
+        axes_two = [str(axes_candidate[0]), str(axes_candidate[1])]
+    elif axes_fallback:
+        axes_two = axes_fallback[:2]
+    if len(axes_two) != 2:
+        raise ValueError("Unable to determine axes from the Phase 3 summary extent entry")
+
+    amplitudes: dict[str, float] = {}
+    values_candidate = extent_entry.get("values")
+    if isinstance(values_candidate, Sequence) and len(values_candidate) >= 2:
+        for axis_name, raw_value in zip(axes_two, values_candidate[:2]):
+            numeric = _coerce_float(raw_value)
+            if numeric is not None:
+                amplitudes[axis_name] = abs(numeric)
+
+    map_candidate = extent_entry.get("map") or extent_entry.get("extent")
+    if isinstance(map_candidate, Mapping):
+        for axis_name in axes_two:
+            if axis_name in amplitudes:
+                continue
+            numeric = _coerce_float(map_candidate.get(axis_name))
+            if numeric is not None:
+                amplitudes[axis_name] = abs(numeric)
+
+    for axis_name in axes_two:
+        if axis_name not in amplitudes:
+            raise ValueError(f"Phase 3 extent is missing a value for axis '{axis_name}'")
+
+    label = hotspot_entry.get("label")
+    if not isinstance(label, str) or not label.strip():
+        metadata = hotspot_entry.get("metadata")
+        if isinstance(metadata, Mapping):
+            meta_label = metadata.get("label") or metadata.get("name")
+            if isinstance(meta_label, str) and meta_label.strip():
+                label = meta_label
+    if not isinstance(label, str) or not label.strip():
+        label = f"Hotspot {hotspot_index + 1}"
+
+    fs_guard_value = _coerce_float(data.get("fs_guard") or data.get("fsGuard"))
+    settle_steps_value = _coerce_int(
+        data.get("neighbor_settle_steps")
+        or data.get("neighborSettleSteps")
+        or data.get("settle_steps")
+        or data.get("settleSteps")
+    )
+    graph_value = data.get("graph")
+    graph_name = str(graph_value) if isinstance(graph_value, str) and graph_value.strip() else None
+
+    return {
+        "path": str(summary_path),
+        "axes": axes_two,
+        "center": center_map,
+        "amplitudes": amplitudes,
+        "fs_guard": fs_guard_value,
+        "settle_steps": settle_steps_value,
+        "graph": graph_name,
+        "label": label,
+        "hotspot_index": hotspot_index,
+        "extent_index": extent_index,
+    }
+
+
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="3D Wilson loop experiment")
     parser.add_argument("--axes3", type=str, nargs=3, choices=VALID_AXES, default=("rho", "tau", "zeta"))
@@ -174,14 +330,34 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--steps", type=int, default=24, help="Samples per rectangle edge")
     parser.add_argument("--handle-steps", type=int, default=None, help="Samples along the rho handle")
-    parser.add_argument("--settle", type=int, default=40, help="Relaxation steps per sample")
+    parser.add_argument("--settle", type=int, default=None, help="Relaxation steps per sample")
     parser.add_argument("--graph", type=str, choices=("ring3", "random_regular"), default="ring3")
     parser.add_argument("--seed", type=int, default=7, help="Random seed for synthetic graphs")
     parser.add_argument("--eta-q", type=float, default=0.5, help="Q-layer mixing coefficient")
     parser.add_argument("--zeta", type=float, default=0.0, help="Theta coupling strength")
     parser.add_argument("--omega-scale", type=float, default=1.0, help="Scaling applied to intrinsic delays")
-    parser.add_argument("--fs-guard", type=float, default=0.2, help="Target p95 bound for Fubini-Study steps")
+    parser.add_argument(
+        "--fs-guard", type=float, default=None, help="Target p95 bound for Fubini-Study steps"
+    )
     parser.add_argument("--output-dir", type=Path, default=Path(__file__).resolve().parent / "artifacts")
+    parser.add_argument(
+        "--phase3-summary",
+        type=Path,
+        default=None,
+        help="Optional Phase 3 summary JSON used to seed centre and amplitudes",
+    )
+    parser.add_argument(
+        "--hotspot-index",
+        type=int,
+        default=0,
+        help="Hotspot index within the Phase 3 summary to import",
+    )
+    parser.add_argument(
+        "--extent-index",
+        type=int,
+        default=0,
+        help="Extent index under the selected hotspot to import",
+    )
     return parser.parse_args(argv)
 
 
@@ -191,24 +367,78 @@ def main(argv: Sequence[str] | None = None) -> None:
     if len(set(axes)) != 3:
         raise ValueError("axes3 must contain three distinct parameter names")
 
+    if int(args.hotspot_index) < 0:
+        raise ValueError("hotspot-index must be non-negative")
+    if int(args.extent_index) < 0:
+        raise ValueError("extent-index must be non-negative")
+
+    center_values = [float(value) for value in args.center]
+    amplitude_values = [abs(float(value)) for value in args.amplitudes]
+    steps_value = int(max(args.steps, 1))
+    fs_guard_value = (
+        float(args.fs_guard)
+        if args.fs_guard is not None and math.isfinite(float(args.fs_guard))
+        else DEFAULT_FS_GUARD
+    )
+    settle_steps = int(args.settle) if args.settle is not None else DEFAULT_SETTLE_STEPS
+    if settle_steps <= 0:
+        raise ValueError("settle steps must be positive")
+
+    phase3_provenance: dict[str, Any] | None = None
+    if args.phase3_summary is not None:
+        summary_info = _hydrate_from_phase3_summary(
+            Path(args.phase3_summary), axes, int(args.hotspot_index), int(args.extent_index)
+        )
+        for axis_name, value in summary_info.get("center", {}).items():
+            if axis_name in axes:
+                center_values[axes.index(axis_name)] = float(value)
+        for axis_name, value in summary_info.get("amplitudes", {}).items():
+            if axis_name in axes:
+                amplitude_values[axes.index(axis_name)] = abs(float(value))
+        fs_guard_summary = summary_info.get("fs_guard")
+        if fs_guard_summary is not None and args.fs_guard is None:
+            fs_guard_value = float(fs_guard_summary)
+        settle_summary = summary_info.get("settle_steps")
+        if settle_summary is not None and args.settle is None:
+            settle_candidate = int(settle_summary)
+            if settle_candidate > 0:
+                settle_steps = settle_candidate
+        phase3_provenance = {
+            "path": summary_info.get("path"),
+            "hotspot_index": summary_info.get("hotspot_index"),
+            "extent_index": summary_info.get("extent_index"),
+            "axes": summary_info.get("axes"),
+            "center": summary_info.get("center"),
+            "amplitudes": summary_info.get("amplitudes"),
+            "fs_guard": summary_info.get("fs_guard"),
+            "settle_steps": summary_info.get("settle_steps"),
+            "label": summary_info.get("label"),
+            "graph": summary_info.get("graph"),
+        }
+
     output_dir = Path(args.output_dir)
     ensure_dir(output_dir)
 
     substrate = _build_substrate(args.graph, args.seed)
     p0, theta0 = _initial_state(substrate)
-    config = RunConfig(eta_q=args.eta_q, zeta=args.zeta, omega_scale=args.omega_scale)
+    config = RunConfig(
+        eta_q=args.eta_q,
+        zeta=args.zeta,
+        omega_scale=args.omega_scale,
+        neighbor_settle_steps=max(settle_steps, 1),
+    )
 
     template = dict(DEFAULT_BASE)
-    for axis, value in zip(axes, args.center):
+    for axis, value in zip(axes, center_values):
         template[axis] = float(value)
 
-    handle_steps = args.handle_steps if args.handle_steps is not None else max(args.steps // 2, 2)
-    keypoints = _loop_keypoints(args.center, args.amplitudes)
+    handle_steps = int(args.handle_steps) if args.handle_steps is not None else max(steps_value // 2, 2)
+    keypoints = _loop_keypoints(center_values, amplitude_values)
     lambda_points = _interpolate_points(
         keypoints,
         axis_template=template,
         axes=axes,
-        steps=args.steps,
+        steps=steps_value,
         handle_steps=handle_steps,
     )
 
@@ -217,7 +447,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     for lam in lambda_points:
         key = _lambda_key(lam)
         if key not in psi_cache:
-            psi_cache[key] = _psi_at(substrate, lam, p0, theta0, config, steps=args.settle)
+            psi_cache[key] = _psi_at(substrate, lam, p0, theta0, config, steps=settle_steps)
         psi_sequence.append(psi_cache[key])
 
     phi_forward, overlaps_forward = _wilson_phase(psi_sequence)
@@ -227,17 +457,17 @@ def main(argv: Sequence[str] | None = None) -> None:
     min_overlap = float(min(overlap_magnitudes)) if overlap_magnitudes else float("nan")
     max_overlap = float(max(overlap_magnitudes)) if overlap_magnitudes else float("nan")
     distances, fs_mean, fs_p95 = _fs_statistics(psi_sequence)
-    guard_exceeded = bool(math.isfinite(fs_p95) and fs_p95 > float(args.fs_guard))
+    guard_exceeded = bool(math.isfinite(fs_p95) and fs_p95 > float(fs_guard_value))
 
     summary = {
         "axes": list(axes),
-        "center": [float(val) for val in args.center],
-        "amplitudes": [float(val) for val in args.amplitudes],
+        "center": [float(val) for val in center_values],
+        "amplitudes": [float(val) for val in amplitude_values],
         "graph": str(args.graph),
         "seed": int(args.seed),
-        "steps_per_edge": int(max(args.steps, 2)),
+        "steps_per_edge": int(max(steps_value, 2)),
         "handle_steps": int(max(handle_steps, 2)),
-        "settle_steps": int(max(args.settle, 1)),
+        "settle_steps": int(max(settle_steps, 1)),
         "eta_q": float(args.eta_q),
         "zeta": float(args.zeta),
         "omega_scale": float(args.omega_scale),
@@ -246,7 +476,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         "phi_sum": float(phi_forward + phi_reverse),
         "fs_mean": fs_mean,
         "fs_p95": fs_p95,
-        "fs_guard": float(args.fs_guard),
+        "fs_guard": float(fs_guard_value),
         "fs_guard_exceeded": guard_exceeded,
         "overlap_min": min_overlap,
         "overlap_max": max_overlap,
@@ -259,6 +489,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         "overlaps_reverse": [
             {"magnitude": float(np.abs(val)), "phase": float(np.angle(val))} for val in overlaps_reverse
         ],
+        "phase3_provenance": phase3_provenance,
     }
 
     summary_path = output_dir / "summary.json"
@@ -272,7 +503,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         f"Forward Wilson phase: {phi_forward:.6f} rad",
         f"Reverse Wilson phase: {phi_reverse:.6f} rad",
         f"FS mean: {fs_mean:.5f} rad",
-        f"FS p95: {fs_p95:.5f} rad (guard {float(args.fs_guard):.5f})",
+        f"FS p95: {fs_p95:.5f} rad (guard {float(fs_guard_value):.5f})",
         f"Guard exceeded: {'yes' if guard_exceeded else 'no'}",
         f"Min overlap magnitude: {min_overlap:.6f}",
         f"Max overlap magnitude: {max_overlap:.6f}",
@@ -283,7 +514,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     print(f"Forward Wilson phase: {phi_forward:.6f} rad")
     print(f"Reverse Wilson phase: {phi_reverse:.6f} rad")
-    print(f"FS p95: {fs_p95:.6f} rad (guard {float(args.fs_guard):.6f})")
+    print(f"FS p95: {fs_p95:.6f} rad (guard {float(fs_guard_value):.6f})")
     if guard_exceeded:
         print("Warning: FS step guard exceeded.")
 

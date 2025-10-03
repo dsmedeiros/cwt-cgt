@@ -65,3 +65,17 @@ export const findArtifactNodeByName = (
   }
   return null;
 };
+
+export const joinArtifactPath = (base: string, leaf: string): string => {
+  if (!base) {
+    return leaf;
+  }
+  const trimmed = base.replace(/[\\/]+$/, '');
+  if (/^\\\\/.test(trimmed) || (trimmed.includes('\\') && !trimmed.includes('/'))) {
+    return `${trimmed}\\${leaf}`;
+  }
+  if (trimmed === '') {
+    return `/${leaf}`;
+  }
+  return `${trimmed}/${leaf}`;
+};

@@ -16,6 +16,7 @@ import {
   ArtifactNode,
   findArtifactNodeByName,
   isGuidLike,
+  joinArtifactPath,
   sanitizeArtifactNodes,
 } from '../utils/artifacts';
 
@@ -120,6 +121,8 @@ const toCliValue = (value: number) => value.toFixed(4).replace(/\.0+$/, '');
 
 const normalizeOrigin = (value: string | null | undefined) =>
   value ? value.replace(/\\/g, '/').trim() : '';
+
+const PHASE3_SUMMARY_FILENAME = 'phase3_loop_summary.json';
 
 type Phase1HotspotEntry = {
   tau: number;
@@ -293,23 +296,30 @@ const buildSimplePayload = (
   seed: number,
   neighborSettleSteps: number,
   adaptLevels: number,
-): LoopAtHotspotPayload => ({
-  hotspotsJson: JSON.stringify([
-    {
-      id: hotspot.id,
-      label: hotspot.name,
-      center: [hotspot.tau, hotspot.zeta],
-    },
-  ]),
-  axes: ['tau', 'zeta'],
-  extents,
-  fsGuard,
-  graph,
-  limit,
-  seed,
-  neighborSettleSteps,
-  adaptLevels,
-});
+  saveSummaryPath?: string | null,
+): LoopAtHotspotPayload => {
+  const payload: LoopAtHotspotPayload = {
+    hotspotsJson: JSON.stringify([
+      {
+        id: hotspot.id,
+        label: hotspot.name,
+        center: [hotspot.tau, hotspot.zeta],
+      },
+    ]),
+    axes: ['tau', 'zeta'],
+    extents,
+    fsGuard,
+    graph,
+    limit,
+    seed,
+    neighborSettleSteps,
+    adaptLevels,
+  };
+  if (saveSummaryPath) {
+    payload.saveSummary = saveSummaryPath;
+  }
+  return payload;
+};
 
 const buildGuidedPayload = (
   hotspot: Hotspot,
@@ -990,10 +1000,17 @@ const Phase3Loops = () => {
       return;
     }
 
+    if (!selectedSubstratePath) {
+      setImportError('Select a substrate before running the validator.');
+      setImportMessage(null);
+      return;
+    }
+
     const extents: [number, number] = [extentAValidation.value, extentBValidation.value];
     const guardValue = fsGuardValidation.value;
     const settleSteps = neighborSettleValidation.value;
     const adaptLevels = adaptLevelsValidation.value;
+    const summaryPath = joinArtifactPath(selectedSubstratePath, PHASE3_SUMMARY_FILENAME);
     const payload = buildSimplePayload(
       selectedHotspot,
       graph,
@@ -1003,6 +1020,7 @@ const Phase3Loops = () => {
       simpleSeed,
       settleSteps,
       adaptLevels,
+      summaryPath,
     );
 
     setIsSimpleRunning(true);
@@ -1047,6 +1065,9 @@ const Phase3Loops = () => {
     neighborSettleValidation,
     adaptLevelsValidation,
     selectedHotspot,
+    selectedSubstratePath,
+    setImportError,
+    setImportMessage,
     simpleLimitValidation,
     simpleSeed,
   ]);

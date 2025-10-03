@@ -14,6 +14,9 @@ export type Wilson3DOptions = {
   zeta?: number;
   omegaScale?: number;
   outDir?: string;
+  phase3Summary?: string;
+  hotspotIndex?: number;
+  extentIndex?: number;
   strategy?: 'module' | 'script';
 };
 
@@ -132,6 +135,21 @@ export const cmdWilson3D = (pythonExe: string, options: Wilson3DOptions): Comman
   }
   if (options.outDir) {
     args.push('--output-dir', options.outDir);
+  }
+  if (options.phase3Summary) {
+    args.push('--phase3-summary', options.phase3Summary);
+  }
+  if (options.hotspotIndex != null) {
+    if (!Number.isInteger(options.hotspotIndex) || options.hotspotIndex < 0) {
+      throw new Error('hotspotIndex must be a non-negative integer when provided');
+    }
+    args.push('--hotspot-index', options.hotspotIndex.toString());
+  }
+  if (options.extentIndex != null) {
+    if (!Number.isInteger(options.extentIndex) || options.extentIndex < 0) {
+      throw new Error('extentIndex must be a non-negative integer when provided');
+    }
+    args.push('--extent-index', options.extentIndex.toString());
   }
 
   return {

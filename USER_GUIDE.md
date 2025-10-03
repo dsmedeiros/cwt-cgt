@@ -48,14 +48,19 @@ regions.
 
 Phase 3 loops around hot spots using the axes and amplitudes you select. The trace overlays Φ, FS, and R so you
 can tell whether the guard is holding while the ridge curves. Watch for FS spikes mid-loop—they usually mean
-one of the axes needs tightening.
+one of the axes needs tightening. Successful runs now emit a `phase3_loop_summary.json` next to the evaluated
+substrate so later phases can reuse the calibrated centres, extents, and guard decisions without rerunning the
+validator.
 
 ### Phase 4 – 3D explorer
 
 ![Phase 4 explorer](docs/screenshots/phase4.svg)
 
 Phase 4 renders the torus plateau and overlays candidate handles. Compare against a known 2D recipe to see if
-the 3D lift uncovers new structure or merely confirms a flat patch.
+the 3D lift uncovers new structure or merely confirms a flat patch. Use the new “Phase 3 import” controls to
+select a Phase 1/3 experiment and substrate—the explorer automatically loads the saved Phase 3 summary,
+hydrates the centre, amplitudes, guard and settle defaults, and includes the provenance when dispatching the
+Wilson-loop CLI.
 
 ### Phase 5 – Optimisation
 
