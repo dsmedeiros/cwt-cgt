@@ -5,7 +5,9 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import numbers
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Mapping, Sequence
 
@@ -1167,6 +1169,131 @@ def evaluate_acceptance(
     return not failures, failures
 
 
+def _float_or_none(value: Any) -> float | None:
+    if isinstance(value, numbers.Real):
+        numeric = float(value)
+        return numeric if math.isfinite(numeric) else None
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return None
+    return numeric if math.isfinite(numeric) else None
+
+
+def _sanitize_for_json(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {str(key): _sanitize_for_json(val) for key, val in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_sanitize_for_json(item) for item in value]
+    if isinstance(value, numbers.Real):
+        numeric = float(value)
+        return numeric if math.isfinite(numeric) else None
+    return value
+
+
+def _rect_extent_to_json(extent: RectExtent) -> dict[str, Any]:
+    return {
+        "axes": [extent.axes[0], extent.axes[1]],
+        "values": [float(extent.values[0]), float(extent.values[1])],
+        "map": extent.as_dict(),
+    }
+
+
+def _orientation_run_to_json(run: OrientationRun) -> dict[str, Any]:
+    return {
+        "orientation": run.orientation,
+        "steps": int(run.steps),
+        "area": _float_or_none(run.area),
+        "phi": _float_or_none(run.phi_flux),
+        "phi_missing": bool(run.phi_missing),
+        "kappa": _float_or_none(run.kappa),
+        "memory": [_float_or_none(value) for value in run.memory],
+        "fs_p95": _float_or_none(run.fs_p95),
+        "fs_guard_exceeded": bool(run.fs_guard_exceeded),
+        "fs_edge_counts": {axis: int(count) for axis, count in run.fs_edge_counts.items()},
+        "fs_edge_exceedances": {axis: int(count) for axis, count in run.fs_edge_exceedances.items()},
+        "fs_edge_max": {axis: _float_or_none(value) for axis, value in run.fs_edge_max.items()},
+    }
+
+
+def _extent_summary_to_json(summary: ExtentSummary) -> dict[str, Any]:
+    return {
+        "extents": _rect_extent_to_json(summary.extents),
+        "ccw": _orientation_run_to_json(summary.ccw),
+        "cw": _orientation_run_to_json(summary.cw),
+        "area_flip_error": _float_or_none(summary.area_flip_error),
+        "phi_flip_error": _float_or_none(summary.phi_flip_error),
+    }
+
+
+def _hotspot_summary_to_json(summary: HotspotSummary) -> dict[str, Any]:
+    meta = _sanitize_for_json(summary.spec.metadata)
+    omega_abs = _float_or_none(summary.spec.omega_abs)
+    return {
+        "index": int(summary.index),
+        "center": {axis: float(value) for axis, value in summary.spec.center.items()},
+        "omega_abs": omega_abs,
+        "metadata": meta,
+        "extents": [_extent_summary_to_json(extent) for extent in summary.extents],
+        "kappa_scale_errors": [_float_or_none(value) for value in summary.kappa_scale_errors],
+    }
+
+
+def _build_summary_payload(
+    *,
+    axes: tuple[str, str],
+    graph: str,
+    fs_guard: float | None,
+    config: RunConfig,
+    base_steps: int,
+    seed: int,
+    limit: int | None,
+    micro_scan: bool,
+    auto_extent: bool,
+    target_fs: float | None,
+    pilot_frac: float | None,
+    extent_bracket: tuple[float, float] | None,
+    fs_margin: float,
+    max_extent_iters: int,
+    extents_input: Sequence[RectExtent],
+    hotspots_path: Path,
+    results: Sequence[HotspotSummary],
+    accepted: bool,
+    failures: Sequence[str],
+) -> dict[str, Any]:
+    timestamp = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+    extent_bracket_payload = (
+        {"min": float(extent_bracket[0]), "max": float(extent_bracket[1])}
+        if extent_bracket is not None
+        else None
+    )
+    return {
+        "schema_version": 1,
+        "created_at": timestamp,
+        "axes": [axes[0], axes[1]],
+        "graph": graph,
+        "fs_guard": _float_or_none(fs_guard),
+        "neighbor_settle_steps": int(getattr(config, "neighbor_settle_steps", 0)),
+        "base_steps": int(base_steps),
+        "seed": int(seed),
+        "limit": int(limit) if limit is not None else None,
+        "micro_scan": bool(micro_scan),
+        "auto_extent": {
+            "enabled": bool(auto_extent),
+            "target_fs": _float_or_none(target_fs),
+            "pilot_frac": _float_or_none(pilot_frac),
+            "fs_margin": float(fs_margin),
+            "max_iters": int(max_extent_iters),
+            "extent_bracket": extent_bracket_payload,
+        },
+        "extents_requested": [_rect_extent_to_json(extent) for extent in extents_input],
+        "hotspots_path": str(hotspots_path),
+        "hotspots": [_hotspot_summary_to_json(summary) for summary in results],
+        "accepted": bool(accepted),
+        "failures": [str(message) for message in failures],
+    }
+
+
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Loop validation at curvature hotspots")
     parser.add_argument("--hotspots", type=Path, required=True, help="Path to the top_omega_tiles.json file")
@@ -1277,6 +1404,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         default=None,
         help="Maximum depth for adaptive curvature refinement",
     )
+    parser.add_argument(
+        "--save-summary",
+        type=Path,
+        default=None,
+        help="Optional path where a structured Phase 3 summary will be written",
+    )
     return parser.parse_args(argv)
 
 
@@ -1358,6 +1491,33 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     render_summary(results)
     accepted, failure_messages = evaluate_acceptance(results)
+    if args.save_summary is not None:
+        summary_path = Path(args.save_summary)
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        payload = _build_summary_payload(
+            axes=axes,
+            graph=str(args.graph),
+            fs_guard=float(args.fs_guard) if args.fs_guard is not None else None,
+            config=config,
+            base_steps=int(args.base_steps),
+            seed=int(args.seed),
+            limit=int(args.limit) if args.limit is not None else None,
+            micro_scan=micro_scan_enabled,
+            auto_extent=auto_extent_enabled,
+            target_fs=target_fs_value,
+            pilot_frac=pilot_frac_value,
+            extent_bracket=extent_bracket,
+            fs_margin=fs_margin_value,
+            max_extent_iters=max_iters_value,
+            extents_input=extents_input,
+            hotspots_path=Path(args.hotspots),
+            results=results,
+            accepted=accepted,
+            failures=failure_messages,
+        )
+        with summary_path.open("w", encoding="utf-8") as handle:
+            json.dump(payload, handle, indent=2, ensure_ascii=False)
+            handle.write("\n")
     if accepted:
         if len(results) >= 3:
             print("Acceptance criteria satisfied across evaluated hotspots.")

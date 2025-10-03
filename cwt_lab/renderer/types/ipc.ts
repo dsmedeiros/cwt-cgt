@@ -339,6 +339,7 @@ export type LoopAtHotspotPayload = {
   readoutTarget?: number;
   neighborSettleSteps?: number;
   adaptLevels?: number;
+  saveSummary?: string;
   [extra: string]: unknown;
 };
 

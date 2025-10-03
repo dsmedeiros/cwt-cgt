@@ -846,6 +846,14 @@ ipcMain.handle('cwt:phase3:loop-at-hotspot', (_event, params) =>
     delete passthrough.neighborSettleSteps;
     delete passthrough.adaptLevels;
 
+    if (payload.saveSummary !== undefined) {
+      const summaryPath = typeof payload.saveSummary === 'string' ? payload.saveSummary.trim() : '';
+      if (!summaryPath) {
+        throw new Error('saveSummary must be a non-empty string path when provided');
+      }
+      passthrough.saveSummary = summaryPath;
+    }
+
     let microScan: boolean | undefined;
     const rawMicroScan = (params as { microScan?: unknown }).microScan;
     if (rawMicroScan !== undefined) {

@@ -9,6 +9,12 @@ import {
   validateFsGuard,
   validateSteps,
 } from '../../shared/validators';
+import {
+  ArtifactNode,
+  isGuidLike,
+  joinArtifactPath,
+  sanitizeArtifactNodes,
+} from '../utils/artifacts';
 
 type WilsonMetrics = {
   fsP95: number;
@@ -24,11 +30,213 @@ type WilsonExplorerResult = {
   metrics: WilsonMetrics;
 };
 
+type Phase3SummaryExtent = {
+  axes: [string, string];
+  values: [number, number];
+  ccwFsP95: number | null;
+  cwFsP95: number | null;
+};
+
+type Phase3SummaryHotspot = {
+  index: number;
+  label: string;
+  center: Record<string, number>;
+  extents: Phase3SummaryExtent[];
+};
+
+type Phase3Summary = {
+  path: string;
+  axes: [string, string] | null;
+  graph: string | null;
+  fsGuard: number | null;
+  settleSteps: number | null;
+  hotspots: Phase3SummaryHotspot[];
+  accepted: boolean | null;
+  failures: string[];
+};
+
 const AXIS_CHOICES = ['rho', 'tau', 'zeta', 'zeta_phase', 'kappa'];
 const GRAPH_CHOICES = [
   { id: 'ring3', label: 'Ring-3 hetero' },
   { id: 'random_regular', label: 'Random regular' },
 ];
+
+const PHASE3_SUMMARY_FILENAME = 'phase3_loop_summary.json';
+
+const numberOrNull = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const stringOrNull = (value: unknown): string | null => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+const parsePhase3Summary = (raw: string, path: string): Phase3Summary => {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    throw new Error('Phase 3 summary is not valid JSON.');
+  }
+
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('Phase 3 summary payload must be a JSON object.');
+  }
+
+  const record = parsed as Record<string, unknown>;
+  const axesRaw = Array.isArray(record.axes) ? record.axes : [];
+  const axesCandidate = axesRaw
+    .map((axis) => String(axis ?? '').trim())
+    .filter((axis) => axis.length > 0);
+  const axes = axesCandidate.length >= 2 ? ([axesCandidate[0], axesCandidate[1]] as [string, string]) : null;
+
+  const graph = stringOrNull(record.graph);
+  const fsGuard = numberOrNull((record as Record<string, unknown>).fs_guard ?? (record as Record<string, unknown>).fsGuard);
+  const settleRaw =
+    record.neighbor_settle_steps ??
+    record.neighborSettleSteps ??
+    record.settle_steps ??
+    record.settleSteps;
+  const settleSteps = numberOrNull(settleRaw);
+
+  const hotspotsRaw = Array.isArray(record.hotspots) ? record.hotspots : [];
+  const hotspots: Phase3SummaryHotspot[] = [];
+
+  hotspotsRaw.forEach((entry, index) => {
+    if (!entry || typeof entry !== 'object') {
+      return;
+    }
+    const hotspotRecord = entry as Record<string, unknown>;
+    const centerSource =
+      (typeof hotspotRecord.center === 'object' && hotspotRecord.center) ||
+      (typeof (hotspotRecord.spec as { center?: unknown } | undefined)?.center === 'object'
+        ? (hotspotRecord.spec as { center?: unknown }).center
+        : null);
+    const center: Record<string, number> = {};
+    if (centerSource && typeof centerSource === 'object') {
+      Object.entries(centerSource as Record<string, unknown>).forEach(([key, value]) => {
+        const numeric = numberOrNull(value);
+        if (numeric != null) {
+          center[key] = numeric;
+        }
+      });
+    }
+
+    const extentsRaw = Array.isArray(hotspotRecord.extents) ? hotspotRecord.extents : [];
+    const extents: Phase3SummaryExtent[] = [];
+
+    extentsRaw.forEach((extentEntry) => {
+      if (!extentEntry || typeof extentEntry !== 'object') {
+        return;
+      }
+      const extentRecord = extentEntry as Record<string, unknown>;
+      const axesSource = Array.isArray(extentRecord.axes)
+        ? extentRecord.axes
+        : Array.isArray(extentRecord.extents_axes)
+          ? extentRecord.extents_axes
+          : axes;
+      if (!axesSource || axesSource.length < 2) {
+        return;
+      }
+      const axisA = String(axesSource[0] ?? '').trim();
+      const axisB = String(axesSource[1] ?? '').trim();
+      if (!axisA || !axisB) {
+        return;
+      }
+
+      const valuesCandidate = Array.isArray(extentRecord.values) ? extentRecord.values : [];
+      let valueA = numberOrNull(valuesCandidate[0]);
+      let valueB = numberOrNull(valuesCandidate[1]);
+      const mapCandidate =
+        (extentRecord.map as Record<string, unknown> | undefined) ??
+        (extentRecord.extent as Record<string, unknown> | undefined);
+      if (valueA == null && mapCandidate) {
+        valueA = numberOrNull(mapCandidate[axisA]);
+      }
+      if (valueB == null && mapCandidate) {
+        valueB = numberOrNull(mapCandidate[axisB]);
+      }
+      if (valueA == null || valueB == null) {
+        return;
+      }
+
+      const ccw = extentRecord.ccw as Record<string, unknown> | undefined;
+      const cw = extentRecord.cw as Record<string, unknown> | undefined;
+      extents.push({
+        axes: [axisA, axisB],
+        values: [Math.abs(valueA), Math.abs(valueB)],
+        ccwFsP95: ccw ? numberOrNull(ccw.fs_p95 ?? ccw.fsP95) : null,
+        cwFsP95: cw ? numberOrNull(cw.fs_p95 ?? cw.fsP95) : null,
+      });
+    });
+
+    if (extents.length === 0) {
+      return;
+    }
+
+    const indexValue = numberOrNull(hotspotRecord.index);
+    const metadata = (hotspotRecord.metadata as Record<string, unknown> | undefined) ?? {};
+    const label =
+      stringOrNull(hotspotRecord.label) ||
+      stringOrNull(metadata.label) ||
+      stringOrNull(metadata.name) ||
+      `Hotspot ${index + 1}`;
+
+    hotspots.push({
+      index: indexValue != null ? Math.trunc(indexValue) : index,
+      label,
+      center,
+      extents,
+    });
+  });
+
+  if (hotspots.length === 0) {
+    throw new Error('Phase 3 summary does not contain any usable hotspots.');
+  }
+
+  const failures = Array.isArray(record.failures)
+    ? record.failures.map((value) => String(value ?? '')).filter((value) => value.length > 0)
+    : [];
+  const accepted = typeof record.accepted === 'boolean' ? record.accepted : null;
+
+  return {
+    path,
+    axes,
+    graph,
+    fsGuard,
+    settleSteps: settleSteps != null ? Math.round(settleSteps) : null,
+    hotspots,
+    accepted,
+    failures,
+  };
+};
+
+const formatCenterValue = (value: number | null | undefined, fallback: string): string => {
+  if (value == null || !Number.isFinite(value)) {
+    return fallback;
+  }
+  const text = value.toFixed(6);
+  const trimmed = text.replace(/0+$/, '').replace(/\.$/, '');
+  return trimmed.length > 0 ? trimmed : '0';
+};
+
+const formatExtentLabel = (extent: Phase3SummaryExtent, index: number): string => {
+  const [axisA, axisB] = extent.axes;
+  const [valueA, valueB] = extent.values;
+  const base = `${index + 1}. ${axisA}/${axisB} (${valueA.toFixed(4)}, ${valueB.toFixed(4)})`;
+  const fsHints = [extent.ccwFsP95, extent.cwFsP95]
+    .filter((entry): entry is number => typeof entry === 'number' && Number.isFinite(entry))
+    .map((entry) => entry.toFixed(3));
+  return fsHints.length ? `${base} – FS p95 ${fsHints.join('/')}` : base;
+};
 
 const parseNumericInput = (value: string, fallback = 0): number => {
   const parsed = Number(value);
@@ -116,6 +324,7 @@ const buildWilsonPayload = (
     seed: number;
   },
   outDir: string,
+  extras?: { phase3SummaryPath?: string | null; hotspotIndex?: number | null; extentIndex?: number | null },
 ) => {
   const record: Record<string, unknown> = {
     axes3: payload.axes3,
@@ -131,6 +340,15 @@ const buildWilsonPayload = (
 
   if (outDir.trim()) {
     record.outputDir = outDir.trim();
+  }
+  if (extras?.phase3SummaryPath) {
+    record.phase3Summary = extras.phase3SummaryPath;
+  }
+  if (extras?.hotspotIndex != null) {
+    record.hotspotIndex = extras.hotspotIndex;
+  }
+  if (extras?.extentIndex != null) {
+    record.extentIndex = extras.extentIndex;
   }
 
   return record;
@@ -188,6 +406,21 @@ const estimateRecipePhi = (recipe: RecipeRecord | undefined): number | null => {
 
 const Phase4Explorer3D = () => {
   const decisionGate = useMemo(() => createDecisionGateEngine(), []);
+  const [artifactsRoot, setArtifactsRoot] = useState<string | null>(null);
+  const [experiments, setExperiments] = useState<ArtifactNode[]>([]);
+  const [experimentsLoading, setExperimentsLoading] = useState(false);
+  const [experimentsError, setExperimentsError] = useState<string | null>(null);
+  const [selectedExperimentPath, setSelectedExperimentPath] = useState<string | null>(null);
+  const [substrates, setSubstrates] = useState<ArtifactNode[]>([]);
+  const [substratesLoading, setSubstratesLoading] = useState(false);
+  const [substratesError, setSubstratesError] = useState<string | null>(null);
+  const [selectedSubstratePath, setSelectedSubstratePath] = useState<string | null>(null);
+  const [phase3Summary, setPhase3Summary] = useState<Phase3Summary | null>(null);
+  const [phase3SummaryPath, setPhase3SummaryPath] = useState<string | null>(null);
+  const [phase3SummaryError, setPhase3SummaryError] = useState<string | null>(null);
+  const [phase3SummaryLoading, setPhase3SummaryLoading] = useState(false);
+  const [selectedHotspotIndex, setSelectedHotspotIndex] = useState<number>(0);
+  const [selectedExtentIndex, setSelectedExtentIndex] = useState<number>(0);
   const [axisA, setAxisA] = useState(AXIS_CHOICES[0]);
   const [axisB, setAxisB] = useState(AXIS_CHOICES[1]);
   const [axisC, setAxisC] = useState('kappa');
@@ -213,6 +446,387 @@ const Phase4Explorer3D = () => {
 
   const [recipes, setRecipes] = useState<RecipeRecord[]>([]);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string>('');
+
+  const hotspotOptions = useMemo(() => {
+    if (!phase3Summary) {
+      return [] as { value: number; label: string }[];
+    }
+    return phase3Summary.hotspots.map((hotspot, index) => ({
+      value: index,
+      label: hotspot.label || `Hotspot ${index + 1}`,
+    }));
+  }, [phase3Summary]);
+
+  const extentOptions = useMemo(() => {
+    const hotspot = phase3Summary?.hotspots[selectedHotspotIndex] ?? phase3Summary?.hotspots[0];
+    if (!phase3Summary || !hotspot) {
+      return [] as { value: number; label: string }[];
+    }
+    return hotspot.extents.map((extent, index) => ({
+      value: index,
+      label: formatExtentLabel(extent, index),
+    }));
+  }, [phase3Summary, selectedHotspotIndex]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadConfig = async () => {
+      if (typeof window === 'undefined' || !window?.CWT?.env?.getConfig) {
+        setArtifactsRoot(null);
+        return;
+      }
+      try {
+        const response = await window.CWT.env.getConfig();
+        if (cancelled) {
+          return;
+        }
+        if (response.ok) {
+          setArtifactsRoot(response.data.phase2MetricsRoot ?? response.data.artifactsRoot ?? null);
+        } else {
+          setArtifactsRoot(null);
+        }
+      } catch {
+        if (!cancelled) {
+          setArtifactsRoot(null);
+        }
+      }
+    };
+
+    void loadConfig();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!artifactsRoot) {
+      setExperiments([]);
+      setExperimentsError(
+        'Artifacts workspace root not configured. Open Env Doctor to set a base directory.',
+      );
+      setExperimentsLoading(false);
+      setSelectedExperimentPath(null);
+      setSubstrates([]);
+      setSubstratesError(null);
+      setSubstratesLoading(false);
+      setSelectedSubstratePath(null);
+      setPhase3Summary(null);
+      setPhase3SummaryPath(null);
+      setPhase3SummaryError(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const api = typeof window !== 'undefined' ? window?.CWT?.artifacts : undefined;
+    if (!api?.list) {
+      setExperiments([]);
+      setExperimentsError('Artifact listing is unavailable in this build.');
+      setExperimentsLoading(false);
+      setSelectedExperimentPath(null);
+      setSubstrates([]);
+      setSelectedSubstratePath(null);
+      setSubstratesError('Artifact listing is unavailable in this build.');
+      setSubstratesLoading(false);
+      setPhase3Summary(null);
+      setPhase3SummaryPath(null);
+      setPhase3SummaryError('Artifact listing is unavailable in this build.');
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const fetchExperiments = async () => {
+      setExperimentsLoading(true);
+      setExperimentsError(null);
+      try {
+        const response = await api.list({ under: artifactsRoot });
+        if (cancelled) {
+          return;
+        }
+        if (!response.ok) {
+          setExperiments([]);
+          setExperimentsError(response.error ?? 'Failed to list experiments.');
+          setSelectedExperimentPath(null);
+          return;
+        }
+
+        const nodes = sanitizeArtifactNodes(response.data);
+        const directories = nodes.filter(
+          (node) => node.type === 'directory' && isGuidLike(node.relativePath),
+        );
+        setExperiments(directories);
+        if (directories.length === 0) {
+          setExperimentsError('No experiment folders with GUID names found under the configured root.');
+          setSelectedExperimentPath(null);
+        } else {
+          setExperimentsError(null);
+          setSelectedExperimentPath((previous) => {
+            if (previous && directories.some((dir) => dir.path === previous)) {
+              return previous;
+            }
+            return directories[0]?.path ?? null;
+          });
+        }
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        setExperiments([]);
+        setExperimentsError(message);
+        setSelectedExperimentPath(null);
+      } finally {
+        if (!cancelled) {
+          setExperimentsLoading(false);
+        }
+      }
+    };
+
+    void fetchExperiments();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [artifactsRoot]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!selectedExperimentPath) {
+      setSubstrates([]);
+      setSubstratesError(experiments.length === 0 ? null : 'Select an experiment to list substrates.');
+      setSubstratesLoading(false);
+      setSelectedSubstratePath(null);
+      setPhase3Summary(null);
+      setPhase3SummaryPath(null);
+      setPhase3SummaryError(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const api = typeof window !== 'undefined' ? window?.CWT?.artifacts : undefined;
+    if (!api?.list) {
+      setSubstrates([]);
+      setSubstratesError('Artifact listing is unavailable in this build.');
+      setSubstratesLoading(false);
+      setSelectedSubstratePath(null);
+      setPhase3Summary(null);
+      setPhase3SummaryPath(null);
+      setPhase3SummaryError('Artifact listing is unavailable in this build.');
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const fetchSubstrates = async () => {
+      setSubstratesLoading(true);
+      setSubstratesError(null);
+      setSelectedSubstratePath(null);
+      try {
+        const response = await api.list({ under: selectedExperimentPath });
+        if (cancelled) {
+          return;
+        }
+        if (!response.ok) {
+          setSubstrates([]);
+          setSubstratesError(response.error ?? 'Failed to list substrates.');
+          return;
+        }
+
+        const nodes = sanitizeArtifactNodes(response.data);
+        const directories = nodes.filter((node) => node.type === 'directory');
+        setSubstrates(directories);
+        if (directories.length === 0) {
+          setSubstratesError('No substrate directories found under this experiment.');
+          setSelectedSubstratePath(null);
+        } else {
+          setSubstratesError(null);
+          setSelectedSubstratePath((previous) => {
+            if (previous && directories.some((dir) => dir.path === previous)) {
+              return previous;
+            }
+            return directories[0]?.path ?? null;
+          });
+        }
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        setSubstrates([]);
+        setSubstratesError(message);
+        setSelectedSubstratePath(null);
+      } finally {
+        if (!cancelled) {
+          setSubstratesLoading(false);
+        }
+      }
+    };
+
+    void fetchSubstrates();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [experiments, selectedExperimentPath]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!selectedSubstratePath) {
+      setPhase3Summary(null);
+      setPhase3SummaryPath(null);
+      setPhase3SummaryError(substrates.length === 0 ? null : 'Select a substrate to load summaries.');
+      setPhase3SummaryLoading(false);
+      setSelectedHotspotIndex(0);
+      setSelectedExtentIndex(0);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const api = typeof window !== 'undefined' ? window?.CWT?.artifacts : undefined;
+    if (!api?.readFile) {
+      setPhase3Summary(null);
+      setPhase3SummaryPath(joinArtifactPath(selectedSubstratePath, PHASE3_SUMMARY_FILENAME));
+      setPhase3SummaryError('Artifact file reading is unavailable in this build.');
+      setPhase3SummaryLoading(false);
+      setSelectedHotspotIndex(0);
+      setSelectedExtentIndex(0);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const summaryCandidate = joinArtifactPath(selectedSubstratePath, PHASE3_SUMMARY_FILENAME);
+
+    const loadSummary = async () => {
+      setPhase3SummaryLoading(true);
+      setPhase3SummaryError(null);
+      try {
+        const response = await api.readFile({ path: summaryCandidate });
+        if (cancelled) {
+          return;
+        }
+        if (!response.ok) {
+          throw new Error(response.error ?? 'Failed to load Phase 3 summary.');
+        }
+        const payload = response.data as { contents?: unknown } | null;
+        const contents = typeof payload?.contents === 'string' ? payload.contents : '';
+        if (!contents) {
+          throw new Error('Phase 3 summary file was empty.');
+        }
+        const summary = parsePhase3Summary(contents, summaryCandidate);
+        setPhase3Summary(summary);
+        setPhase3SummaryPath(summaryCandidate);
+        setPhase3SummaryError(null);
+        setSelectedHotspotIndex(0);
+        setSelectedExtentIndex(0);
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        setPhase3Summary(null);
+        setPhase3SummaryPath(summaryCandidate);
+        setPhase3SummaryError(message);
+        setSelectedHotspotIndex(0);
+        setSelectedExtentIndex(0);
+      } finally {
+        if (!cancelled) {
+          setPhase3SummaryLoading(false);
+        }
+      }
+    };
+
+    void loadSummary();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedSubstratePath, substrates.length]);
+
+  useEffect(() => {
+    if (!phase3Summary || phase3Summary.hotspots.length === 0) {
+      return;
+    }
+    setSelectedHotspotIndex((previous) => {
+      if (previous < 0 || previous >= phase3Summary.hotspots.length) {
+        return 0;
+      }
+      return previous;
+    });
+  }, [phase3Summary]);
+
+  useEffect(() => {
+    if (!phase3Summary || phase3Summary.hotspots.length === 0) {
+      return;
+    }
+    const hotspot = phase3Summary.hotspots[selectedHotspotIndex] ?? phase3Summary.hotspots[0];
+    if (!hotspot || hotspot.extents.length === 0) {
+      setSelectedExtentIndex(0);
+      return;
+    }
+    setSelectedExtentIndex((previous) => {
+      if (previous < 0 || previous >= hotspot.extents.length) {
+        return 0;
+      }
+      return previous;
+    });
+  }, [phase3Summary, selectedHotspotIndex]);
+
+  useEffect(() => {
+    if (!phase3Summary || phase3Summary.hotspots.length === 0) {
+      return;
+    }
+    const hotspot = phase3Summary.hotspots[selectedHotspotIndex] ?? phase3Summary.hotspots[0];
+    if (!hotspot || hotspot.extents.length === 0) {
+      return;
+    }
+    const extent = hotspot.extents[selectedExtentIndex] ?? hotspot.extents[0];
+    if (!extent) {
+      return;
+    }
+
+    const [axisPrimary, axisSecondary] = extent.axes;
+    if (axisPrimary) {
+      setAxisA(axisPrimary);
+    }
+    if (axisSecondary) {
+      setAxisB(axisSecondary);
+    }
+    setCenterInputs((previous) => {
+      const next = [...previous] as [string, string, string];
+      next[0] = formatCenterValue(hotspot.center[axisPrimary], previous[0]);
+      next[1] = formatCenterValue(hotspot.center[axisSecondary], previous[1]);
+      return next;
+    });
+    setAmplitudes((previous) => {
+      const next = [...previous] as [number, number, number];
+      next[0] = extent.values[0];
+      next[1] = extent.values[1];
+      return next;
+    });
+    if (phase3Summary.fsGuard != null && Number.isFinite(phase3Summary.fsGuard)) {
+      setFsGuard(phase3Summary.fsGuard);
+    }
+    if (phase3Summary.settleSteps != null && Number.isFinite(phase3Summary.settleSteps)) {
+      setSettle(Math.max(1, Math.round(phase3Summary.settleSteps)));
+    }
+    const graphFromSummary = phase3Summary.graph;
+    if (graphFromSummary) {
+      const normalizedGraph = graphFromSummary === 'ring3_hetero' ? 'ring3' : graphFromSummary;
+      if (GRAPH_CHOICES.some((choice) => choice.id === normalizedGraph)) {
+        setGraph(normalizedGraph);
+      }
+    }
+  }, [phase3Summary, selectedExtentIndex, selectedHotspotIndex]);
 
   const trimmedAxisC = axisC.trim() || 'kappa';
   const axisAValidation = useMemo(() => validateAxis('phase4', axisA), [axisA]);
@@ -361,6 +975,13 @@ const Phase4Explorer3D = () => {
           seed,
         },
         outDir,
+        phase3Summary
+          ? {
+              phase3SummaryPath,
+              hotspotIndex: selectedHotspotIndex,
+              extentIndex: selectedExtentIndex,
+            }
+          : undefined,
       );
 
       try {
@@ -496,6 +1117,13 @@ const Phase4Explorer3D = () => {
         seed,
       },
       outDir,
+      phase3Summary
+        ? {
+            phase3SummaryPath,
+            hotspotIndex: selectedHotspotIndex,
+            extentIndex: selectedExtentIndex,
+          }
+        : undefined,
     );
 
     let runId: string | undefined;
@@ -543,6 +1171,116 @@ const Phase4Explorer3D = () => {
         <aside className="phase4__sidebar">
           <h2>Phase 4 – 3D Explorer</h2>
           <p>Configure a Wilson loop over three control axes and preview the resulting path.</p>
+
+          <section className="phase4__section">
+            <h3>Phase 3 import</h3>
+            <label htmlFor="phase4-experiment-select">
+              <span>Experiment</span>
+              <select
+                id="phase4-experiment-select"
+                value={selectedExperimentPath ?? ''}
+                onChange={(event) =>
+                  setSelectedExperimentPath(event.target.value ? event.target.value : null)
+                }
+                disabled={experimentsLoading || experiments.length === 0}
+              >
+                {experiments.map((experiment) => (
+                  <option key={experiment.path} value={experiment.path}>
+                    {experiment.relativePath}
+                  </option>
+                ))}
+              </select>
+              {experimentsLoading ? (
+                <small className="field-hint">Loading experiments…</small>
+              ) : experimentsError ? (
+                <small className="field-error">{experimentsError}</small>
+              ) : experiments.length === 0 ? (
+                <small className="field-hint">Run Phase 1/3 to populate experiment folders.</small>
+              ) : null}
+            </label>
+
+            <label htmlFor="phase4-substrate-select">
+              <span>Substrate</span>
+              <select
+                id="phase4-substrate-select"
+                value={selectedSubstratePath ?? ''}
+                onChange={(event) =>
+                  setSelectedSubstratePath(event.target.value ? event.target.value : null)
+                }
+                disabled={substratesLoading || substrates.length === 0}
+              >
+                {substrates.map((substrate) => (
+                  <option key={substrate.path} value={substrate.path}>
+                    {substrate.name}
+                  </option>
+                ))}
+              </select>
+              {substratesLoading ? (
+                <small className="field-hint">Loading substrates…</small>
+              ) : substratesError ? (
+                <small className="field-error">{substratesError}</small>
+              ) : substrates.length === 0 ? (
+                <small className="field-hint">No substrates detected under this experiment.</small>
+              ) : null}
+            </label>
+
+            <div className="phase4__summary-status">
+              {phase3SummaryLoading ? (
+                <p className="phase4__hint">Loading Phase 3 summary…</p>
+              ) : phase3SummaryError ? (
+                <p className="phase4__error" role="alert">
+                  {phase3SummaryError}
+                </p>
+              ) : phase3Summary ? (
+                <p className="phase4__hint">
+                  Loaded Phase 3 summary {phase3Summary.accepted === false ? '⚠️' : '✓'}{' '}
+                  <code>{phase3SummaryPath}</code>
+                </p>
+              ) : (
+                <p className="phase4__hint">Select a calibrated Phase 3 substrate to hydrate defaults.</p>
+              )}
+              {phase3Summary && phase3Summary.failures.length > 0 ? (
+                <ul className="phase4__error-list">
+                  {phase3Summary.failures.slice(0, 3).map((failure) => (
+                    <li key={failure}>{failure}</li>
+                  ))}
+                  {phase3Summary.failures.length > 3 ? <li>…</li> : null}
+                </ul>
+              ) : null}
+            </div>
+
+            <label htmlFor="phase4-hotspot-select">
+              <span>Hotspot</span>
+              <select
+                id="phase4-hotspot-select"
+                value={selectedHotspotIndex}
+                onChange={(event) => setSelectedHotspotIndex(Number(event.target.value))}
+                disabled={!phase3Summary || phase3Summary.hotspots.length === 0}
+              >
+                {hotspotOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label htmlFor="phase4-extent-select">
+              <span>Extent</span>
+              <select
+                id="phase4-extent-select"
+                value={selectedExtentIndex}
+                onChange={(event) => setSelectedExtentIndex(Number(event.target.value))}
+                disabled={!phase3Summary || hotspotOptions.length === 0}
+              >
+                {extentOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </section>
 
           <section className="phase4__section">
             <h3>Axes</h3>

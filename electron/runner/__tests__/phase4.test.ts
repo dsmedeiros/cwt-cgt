@@ -84,6 +84,29 @@ describe('cmdWilson3D', () => {
     expect(spec.args).toContain('--steps');
     expect(spec.args).toContain('32');
   });
+
+  it('includes phase 3 summary parameters when provided', () => {
+    const spec = cmdWilson3D('python', {
+      axes3: ['rho', 'tau', 'zeta'],
+      center: [1.5, 1.75, 1.2],
+      amplitudes: [0.1, 0.15, 0.12],
+      steps: 24,
+      phase3Summary: '/runs/phase3/summary.json',
+      hotspotIndex: 2,
+      extentIndex: 1,
+    });
+
+    expect(spec.args).toEqual(
+      expect.arrayContaining([
+        '--phase3-summary',
+        '/runs/phase3/summary.json',
+        '--hotspot-index',
+        '2',
+        '--extent-index',
+        '1',
+      ]),
+    );
+  });
 });
 
 describe('cmdTorusPlateau', () => {
