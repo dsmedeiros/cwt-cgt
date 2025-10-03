@@ -11,6 +11,7 @@ import {
 } from '../../shared/validators';
 import {
   ArtifactNode,
+  findArtifactNodeByName,
   isGuidLike,
   joinArtifactPath,
   sanitizeArtifactNodes,
@@ -62,6 +63,36 @@ const GRAPH_CHOICES = [
 ];
 
 const PHASE3_SUMMARY_FILENAME = 'phase3_loop_summary.json';
+
+const splitPathSegments = (value: string) =>
+  value
+    .split(/[\\/]+/)
+    .map((segment) => segment.trim())
+    .filter((segment) => segment.length > 0);
+
+const hasDirectSubstrateDirectories = (node: ArtifactNode) => {
+  if (node.type !== 'directory' || !node.children?.length) {
+    return false;
+  }
+
+  const parentSegments = splitPathSegments(node.relativePath);
+
+  return node.children.some((child) => {
+    if (child.type !== 'directory') {
+      return false;
+    }
+    const childSegments = splitPathSegments(child.relativePath);
+    if (childSegments.length !== parentSegments.length + 1) {
+      return false;
+    }
+    for (let index = 0; index < parentSegments.length; index += 1) {
+      if (childSegments[index] !== parentSegments[index]) {
+        return false;
+      }
+    }
+    return true;
+  });
+};
 
 const numberOrNull = (value: unknown): number | null => {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -559,17 +590,22 @@ const Phase4Explorer3D = () => {
         const directories = nodes.filter(
           (node) => node.type === 'directory' && isGuidLike(node.relativePath),
         );
-        setExperiments(directories);
-        if (directories.length === 0) {
-          setExperimentsError('No experiment folders with GUID names found under the configured root.');
+        const experimentsWithSubstrates = directories.filter(hasDirectSubstrateDirectories);
+        setExperiments(experimentsWithSubstrates);
+        if (experimentsWithSubstrates.length === 0) {
+          setExperimentsError(
+            directories.length > 0
+              ? 'No experiments with substrate folders found under the configured root.'
+              : 'No experiment folders with GUID names found under the configured root.',
+          );
           setSelectedExperimentPath(null);
         } else {
           setExperimentsError(null);
           setSelectedExperimentPath((previous) => {
-            if (previous && directories.some((dir) => dir.path === previous)) {
+            if (previous && experimentsWithSubstrates.some((dir) => dir.path === previous)) {
               return previous;
             }
-            return directories[0]?.path ?? null;
+            return experimentsWithSubstrates[0]?.path ?? null;
           });
         }
       } catch (error) {
@@ -704,13 +740,18 @@ const Phase4Explorer3D = () => {
       };
     }
 
-    const summaryCandidate = joinArtifactPath(selectedSubstratePath, PHASE3_SUMMARY_FILENAME);
+    const substrateNode = substrates.find((node) => node.path === selectedSubstratePath);
+    const summaryNode = substrateNode?.children
+      ? findArtifactNodeByName(substrateNode.children, PHASE3_SUMMARY_FILENAME)
+      : null;
+    const summaryCandidatePath = joinArtifactPath(selectedSubstratePath, PHASE3_SUMMARY_FILENAME);
+    const summaryPathToUse = summaryNode?.path ?? summaryCandidatePath;
 
     const loadSummary = async () => {
       setPhase3SummaryLoading(true);
       setPhase3SummaryError(null);
       try {
-        const response = await api.readFile({ path: summaryCandidate });
+        const response = await api.readFile({ path: summaryPathToUse });
         if (cancelled) {
           return;
         }
@@ -722,9 +763,9 @@ const Phase4Explorer3D = () => {
         if (!contents) {
           throw new Error('Phase 3 summary file was empty.');
         }
-        const summary = parsePhase3Summary(contents, summaryCandidate);
+        const summary = parsePhase3Summary(contents, summaryPathToUse);
         setPhase3Summary(summary);
-        setPhase3SummaryPath(summaryCandidate);
+        setPhase3SummaryPath(summaryPathToUse);
         setPhase3SummaryError(null);
         setSelectedHotspotIndex(0);
         setSelectedExtentIndex(0);
@@ -734,8 +775,12 @@ const Phase4Explorer3D = () => {
         }
         const message = error instanceof Error ? error.message : String(error);
         setPhase3Summary(null);
-        setPhase3SummaryPath(summaryCandidate);
-        setPhase3SummaryError(message);
+        setPhase3SummaryPath(summaryPathToUse);
+        setPhase3SummaryError(
+          message === 'File not found.'
+            ? 'Phase 3 summary not found under this substrate. Run Phase 3 loops to generate phase3_loop_summary.json.'
+            : message,
+        );
         setSelectedHotspotIndex(0);
         setSelectedExtentIndex(0);
       } finally {
@@ -750,7 +795,7 @@ const Phase4Explorer3D = () => {
     return () => {
       cancelled = true;
     };
-  }, [selectedSubstratePath, substrates.length]);
+  }, [selectedSubstratePath, substrates]);
 
   useEffect(() => {
     if (!phase3Summary || phase3Summary.hotspots.length === 0) {

@@ -771,10 +771,11 @@ const Phase3Loops = () => {
       });
 
       setHotspots((prev) => {
+        const withoutDefaults = prev.filter((item) => item.originPath !== 'defaults');
         if (!effectiveOrigin) {
-          return [...created, ...prev];
+          return [...created, ...withoutDefaults];
         }
-        const filtered = prev.filter((item) => item.originPath !== effectiveOrigin);
+        const filtered = withoutDefaults.filter((item) => item.originPath !== effectiveOrigin);
         return [...created, ...filtered];
       });
 
