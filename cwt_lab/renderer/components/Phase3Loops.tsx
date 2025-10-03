@@ -1379,41 +1379,6 @@ const Phase3Loops = () => {
             {!experimentsLoading && !experimentsError && experiments.length === 0 ? (
               <p className="phase3__hint">Run Phase 1 mapping to populate experiments.</p>
             ) : null}
-            <div className="phase3__import-controls">
-              <div>
-                <label htmlFor="phase3-phase1-run">Completed Phase 1 runs</label>
-                <div className="phase3__import-run">
-                  <select
-                    id="phase3-phase1-run"
-                    value={selectedPhase1RunId}
-                    onChange={(event) => setSelectedPhase1RunId(event.target.value)}
-                    disabled={isLoadingPhase1Runs || phase1Runs.length === 0}
-                  >
-                    {phase1Runs.map((run) => {
-                      const date = new Date(run.updatedAt);
-                      const label = run.label ?? run.experiment ?? run.command ?? run.id;
-                      const timestamp = Number.isFinite(date.getTime())
-                        ? date.toLocaleString()
-                        : '';
-                      const optionLabel = timestamp ? `${label} – ${timestamp}` : label;
-                      return (
-                        <option key={run.id} value={run.id}>
-                          {optionLabel}
-                        </option>
-                      );
-                    })}
-                  </select>
-                  <button
-                    type="button"
-                    className="btn btn--ghost"
-                    onClick={() => void refreshPhase1Runs()}
-                    disabled={isLoadingPhase1Runs}
-                  >
-                    {isLoadingPhase1Runs ? 'Refreshing…' : 'Refresh'}
-                  </button>
-                </div>
-              </div>
-            </div>
             {phase1RunError ? (
               <p className="phase3__error" role="alert">{phase1RunError}</p>
             ) : null}
