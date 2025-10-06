@@ -1263,7 +1263,7 @@ const Phase5Optimize = () => {
             </small>
           ) : (
             <small className="field-hint">
-              Choose an experiment from the navigation pane to store Phase 5 outputs.
+              Choose an experiment from the navigation pane to store Phase 5 outputs.
             </small>
           )}
         </div>

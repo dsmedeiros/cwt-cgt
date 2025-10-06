@@ -56,12 +56,12 @@ const describeCorrelationStrength = (value: number) => {
 
 const describeNextSteps = (value: number) => {
   if (value >= 0.6) {
-    return 'The signal is clear enough to move into Phase 3 unless other checks disagree.';
+    return 'The signal is clear enough to move into Phase 3 unless other checks disagree.';
   }
   if (value >= 0.3) {
-    return 'You can explore Phase 3, but plan to confirm by rerunning Phase 1 if resources allow.';
+    return 'You can explore Phase 3, but plan to confirm by rerunning Phase 1 if resources allow.';
   }
-  return 'Hold on Phase 3 for now; re-run Phase 1 with different settings or more samples to firm up the trend.';
+  return 'Hold on Phase 3 for now; re-run Phase 1 with different settings or more samples to firm up the trend.';
 };
 
 const buildSummary = (result: Phase2CorrelateResult | null): string => {
@@ -329,14 +329,17 @@ const Phase2Features = () => {
 
 
   useEffect(() => {
+    const abortControllerRef = abortRef.current;
+    const pulseTimeouts = pulseTimeoutsRef.current;
+
     return () => {
-      if (abortRef.current) {
-        abortRef.current.aborted = true;
+      if (abortControllerRef) {
+        abortControllerRef.aborted = true;
       }
       if (typeof window !== 'undefined') {
-        pulseTimeoutsRef.current.forEach((timeout) => window.clearTimeout(timeout));
+        pulseTimeouts.forEach((timeout) => window.clearTimeout(timeout));
       }
-      pulseTimeoutsRef.current.clear();
+      pulseTimeouts.clear();
     };
   }, []);
 
@@ -532,13 +535,13 @@ const Phase2Features = () => {
           ) : experimentsError ? (
             <span className="field-error">{experimentsError}</span>
           ) : experiments.length === 0 ? (
-            <span>Run Phase 1 to populate experiments.</span>
+            <span>Run Phase 1 to populate experiments.</span>
           ) : selectedExperimentPath ? (
             <span>
               Experiment: <code>{selectedExperimentPath}</code>
             </span>
           ) : (
-            <span>Select a Phase 1 experiment in the navigation pane.</span>
+            <span>Select a Phase 1 experiment in the navigation pane.</span>
           )}
         </div>
         <div className="phase2__nav-status" role="status">

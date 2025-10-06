@@ -23,7 +23,7 @@ type ExperimentNavigationContextValue = {
 
 const ExperimentNavigationContext = createContext<ExperimentNavigationContextValue | null>(null);
 
-const useArtifactsApi = () =>
+const getArtifactsApi = () =>
   typeof window !== 'undefined' ? window?.CWT?.artifacts : undefined;
 
 const ExperimentNavigationProvider = ({ children }: { children: React.ReactNode }) => {
@@ -57,7 +57,7 @@ const ExperimentNavigationProvider = ({ children }: { children: React.ReactNode 
       };
     }
 
-    const api = useArtifactsApi();
+    const api = getArtifactsApi();
     if (!api?.list) {
       setSubstrates([]);
       setSelectedSubstratePath(null);

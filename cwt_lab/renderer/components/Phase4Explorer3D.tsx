@@ -10,13 +10,7 @@ import {
   validateFsGuard,
   validateSteps,
 } from '../../shared/validators';
-import {
-  ArtifactNode,
-  findArtifactNodeByName,
-  isGuidLike,
-  joinArtifactPath,
-  sanitizeArtifactNodes,
-} from '../utils/artifacts';
+import { findArtifactNodeByName, joinArtifactPath } from '../utils/artifacts';
 
 type WilsonMetrics = {
   fsP95: number;
@@ -64,36 +58,6 @@ const GRAPH_CHOICES = [
 ];
 
 const PHASE3_SUMMARY_FILENAME = 'phase3_loop_summary.json';
-
-const splitPathSegments = (value: string) =>
-  value
-    .split(/[\\/]+/)
-    .map((segment) => segment.trim())
-    .filter((segment) => segment.length > 0);
-
-const hasDirectSubstrateDirectories = (node: ArtifactNode) => {
-  if (node.type !== 'directory' || !node.children?.length) {
-    return false;
-  }
-
-  const parentSegments = splitPathSegments(node.relativePath);
-
-  return node.children.some((child) => {
-    if (child.type !== 'directory') {
-      return false;
-    }
-    const childSegments = splitPathSegments(child.relativePath);
-    if (childSegments.length !== parentSegments.length + 1) {
-      return false;
-    }
-    for (let index = 0; index < parentSegments.length; index += 1) {
-      if (childSegments[index] !== parentSegments[index]) {
-        return false;
-      }
-    }
-    return true;
-  });
-};
 
 const numberOrNull = (value: unknown): number | null => {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -879,7 +843,22 @@ const Phase4Explorer3D = () => {
     return () => {
       cancelled = true;
     };
-  }, [axes3, effectiveAmplitudes, fsGuard, graph, handleSteps, numericCenter, outDir, seed, settle, steps]);
+  }, [
+    axes3,
+    effectiveAmplitudes,
+    fsGuard,
+    graph,
+    handleSteps,
+    numericCenter,
+    outDir,
+    phase3Summary,
+    phase3SummaryPath,
+    seed,
+    selectedExtentIndex,
+    selectedHotspotIndex,
+    settle,
+    steps,
+  ]);
 
   const selectedRecipe = useMemo(
     () => recipes.find((recipe) => recipe.id === selectedRecipeId),
@@ -1032,7 +1011,11 @@ const Phase4Explorer3D = () => {
     loopPoints.length,
     numericCenter,
     outDir,
+    phase3Summary,
+    phase3SummaryPath,
     selectedExperimentPath,
+    selectedExtentIndex,
+    selectedHotspotIndex,
     seed,
     settle,
     steps,

@@ -496,13 +496,13 @@ const TorusPlateauViewer = () => {
           ) : experimentsError ? (
             <div className="torus__error" role="alert">{experimentsError}</div>
           ) : experiments.length === 0 ? (
-            <p className="field-hint">Run Phase 1 to populate experiments.</p>
+            <p className="field-hint">Run Phase 1 to populate experiments.</p>
           ) : experimentPath ? (
             <p className="field-hint">
               Using <code>{experimentPath}</code> from the navigation pane.
             </p>
           ) : (
-            <p className="field-hint">Select a Phase 1 experiment in the navigation pane to enable torus runs.</p>
+            <p className="field-hint">Select a Phase 1 experiment in the navigation pane to enable torus runs.</p>
           )}
         </section>
 

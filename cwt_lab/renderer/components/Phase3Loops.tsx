@@ -13,13 +13,7 @@ import {
   validateSettleSteps,
   validateSteps,
 } from '../../shared/validators';
-import {
-  ArtifactNode,
-  findArtifactNodeByName,
-  isGuidLike,
-  joinArtifactPath,
-  sanitizeArtifactNodes,
-} from '../utils/artifacts';
+import { findArtifactNodeByName, joinArtifactPath, sanitizeArtifactNodes } from '../utils/artifacts';
 
 type Hotspot = {
   id: string;
