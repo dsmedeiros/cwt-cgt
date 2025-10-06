@@ -19,6 +19,13 @@ import { sanitizeArtifactNodes, type ArtifactNode } from './utils/artifacts';
 
 const DEFAULT_LOG_CHUNK = 8_192;
 
+const TABS_WITHOUT_ARTIFACT_SELECTORS = new Set([
+  'runs',
+  'comparison',
+  'artifacts',
+  'env',
+]);
+
 const createDemoRunsApi = (runs: DemoRun[]): RunsApi => {
   const byId = new Map(runs.map((entry) => [entry.record.id, entry]));
 
@@ -477,6 +484,8 @@ const AppContent = ({ mode, onToggleTheme, demoEnabled, onToggleDemo }: AppConte
     setSelectedSubstratePath(next.length > 0 ? next : null);
   }, []);
 
+  const hideArtifactSelectors = TABS_WITHOUT_ARTIFACT_SELECTORS.has(active);
+
   return (
     <div className="app">
       <header className="app__header">
@@ -533,63 +542,65 @@ const AppContent = ({ mode, onToggleTheme, demoEnabled, onToggleDemo }: AppConte
             </button>
           ))}
         </nav>
-        <div className="app__selectors" role="group" aria-label="Artifact navigation">
-          <div className="app__selector">
-            <label className="app__selector-label" htmlFor="app-experiment-select">
-              Experiment
-            </label>
-            <select
-              id="app-experiment-select"
-              value={selectedExperimentPath ?? ''}
-              onChange={onExperimentChange}
-              disabled={experimentsLoading || experiments.length === 0}
-            >
-              <option value="">Select an experiment</option>
-              {experiments.map((experiment) => (
-                <option key={experiment.path} value={experiment.path}>
-                  {experiment.name}
-                </option>
-              ))}
-            </select>
-            {experimentsLoading ? (
-              <small className="app__selector-message">Loading experiments…</small>
-            ) : experimentsError ? (
-              <small className="app__selector-message app__selector-message--error">
-                {experimentsError}
-              </small>
-            ) : null}
+        {hideArtifactSelectors ? null : (
+          <div className="app__selectors" role="group" aria-label="Artifact navigation">
+            <div className="app__selector">
+              <label className="app__selector-label" htmlFor="app-experiment-select">
+                Experiment
+              </label>
+              <select
+                id="app-experiment-select"
+                value={selectedExperimentPath ?? ''}
+                onChange={onExperimentChange}
+                disabled={experimentsLoading || experiments.length === 0}
+              >
+                <option value="">Select an experiment</option>
+                {experiments.map((experiment) => (
+                  <option key={experiment.path} value={experiment.path}>
+                    {experiment.name}
+                  </option>
+                ))}
+              </select>
+              {experimentsLoading ? (
+                <small className="app__selector-message">Loading experiments…</small>
+              ) : experimentsError ? (
+                <small className="app__selector-message app__selector-message--error">
+                  {experimentsError}
+                </small>
+              ) : null}
+            </div>
+            <div className="app__selector">
+              <label className="app__selector-label" htmlFor="app-substrate-select">
+                Substrate
+              </label>
+              <select
+                id="app-substrate-select"
+                value={selectedSubstratePath ?? ''}
+                onChange={onSubstrateChange}
+                disabled={
+                  substratesLoading ||
+                  !selectedExperimentPath ||
+                  substrates.length === 0 ||
+                  !!experimentsError
+                }
+              >
+                <option value="">Select a substrate</option>
+                {substrates.map((substrate) => (
+                  <option key={substrate.path} value={substrate.path}>
+                    {substrate.name}
+                  </option>
+                ))}
+              </select>
+              {substratesLoading ? (
+                <small className="app__selector-message">Loading substrates…</small>
+              ) : substratesError ? (
+                <small className="app__selector-message app__selector-message--error">
+                  {substratesError}
+                </small>
+              ) : null}
+            </div>
           </div>
-          <div className="app__selector">
-            <label className="app__selector-label" htmlFor="app-substrate-select">
-              Substrate
-            </label>
-            <select
-              id="app-substrate-select"
-              value={selectedSubstratePath ?? ''}
-              onChange={onSubstrateChange}
-              disabled={
-                substratesLoading ||
-                !selectedExperimentPath ||
-                substrates.length === 0 ||
-                !!experimentsError
-              }
-            >
-              <option value="">Select a substrate</option>
-              {substrates.map((substrate) => (
-                <option key={substrate.path} value={substrate.path}>
-                  {substrate.name}
-                </option>
-              ))}
-            </select>
-            {substratesLoading ? (
-              <small className="app__selector-message">Loading substrates…</small>
-            ) : substratesError ? (
-              <small className="app__selector-message app__selector-message--error">
-                {substratesError}
-              </small>
-            ) : null}
-          </div>
-        </div>
+        )}
       </header>
       <main className="app__content">
         {tabs.map((tab) =>
