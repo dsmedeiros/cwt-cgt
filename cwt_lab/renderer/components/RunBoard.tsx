@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { runs as defaultRunsApi } from '../ipc';
 import type { RegistryRunRecord, RunDiagnosticsBundle, RunTailChunk } from '../types/ipc';
@@ -96,6 +96,8 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [logState, setLogState] = useState<LogState>(() => makeEmptyLogState());
   const [logAbortable, setLogAbortable] = useState(false);
+  const confirmYesButtonRef = useRef<HTMLButtonElement | null>(null);
+  const deleteButtonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
 
   const resetLogState = useCallback(() => {
     setLogState(makeEmptyLogState());
@@ -283,9 +285,27 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
     setConfirmingId(runId);
   }, []);
 
-  const handleCancelDelete = useCallback(() => {
-    setConfirmingId(null);
+  const restoreDeleteButtonFocus = useCallback((runId: string) => {
+    const button = deleteButtonRefs.current.get(runId);
+    if (!button) {
+      return;
+    }
+
+    const focus = () => button.focus();
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(focus);
+    } else {
+      setTimeout(focus, 0);
+    }
   }, []);
+
+  const handleCancelDelete = useCallback(
+    (runId: string) => {
+      setConfirmingId((current) => (current === runId ? null : current));
+      restoreDeleteButtonFocus(runId);
+    },
+    [restoreDeleteButtonFocus],
+  );
 
   const handleConfirmDelete = useCallback(
     async (runId: string) => {
@@ -308,6 +328,12 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
     },
     [api, fetchRuns, logState.runId, resetLogState],
   );
+
+  useEffect(() => {
+    if (confirmingId) {
+      confirmYesButtonRef.current?.focus();
+    }
+  }, [confirmingId]);
 
   return (
     <div className="panel run-board">
@@ -405,12 +431,25 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
                     {confirmingId === run.id ? (
                       <div
                         className="run-board__confirm-delete"
-                        role="alertdialog"
-                        aria-label={`Confirm deletion for run ${run.id}`}
+                        role="group"
+                        tabIndex={-1}
+                        aria-labelledby={`run-${run.id}-confirm-message`}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Escape') {
+                            event.preventDefault();
+                            handleCancelDelete(run.id);
+                          }
+                        }}
                       >
-                        <p className="run-board__confirm-delete-message">Are you sure?</p>
+                        <p
+                          id={`run-${run.id}-confirm-message`}
+                          className="run-board__confirm-delete-message"
+                        >
+                          Are you sure?
+                        </p>
                         <div className="run-board__confirm-delete-buttons">
                           <button
+                            ref={confirmYesButtonRef}
                             type="button"
                             className="run-board__button run-board__confirm-delete-button run-board__confirm-delete-button--yes"
                             onClick={() => void handleConfirmDelete(run.id)}
@@ -424,7 +463,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
                           <button
                             type="button"
                             className="run-board__button run-board__confirm-delete-button run-board__confirm-delete-button--no"
-                            onClick={handleCancelDelete}
+                            onClick={() => handleCancelDelete(run.id)}
                           >
                             <span aria-hidden="true" className="run-board__confirm-delete-icon run-board__confirm-delete-icon--no">
                               ✖
@@ -440,6 +479,13 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
                         onClick={() => handleRequestDelete(run.id)}
                         disabled={deletingId === run.id}
                         aria-label={`Delete run ${run.id}`}
+                        ref={(element) => {
+                          if (element) {
+                            deleteButtonRefs.current.set(run.id, element);
+                          } else {
+                            deleteButtonRefs.current.delete(run.id);
+                          }
+                        }}
                       >
                         <span aria-hidden="true" role="img">
                           🗑️
