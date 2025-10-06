@@ -21,6 +21,7 @@ const DEFAULT_LOG_CHUNK = 8_192;
 
 const TABS_WITHOUT_ARTIFACT_SELECTORS = new Set([
   'runs',
+  'phase1',
   'comparison',
   'artifacts',
   'env',
