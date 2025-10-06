@@ -102,6 +102,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
   const [notice, setNotice] = useState<NoticeState>(null);
   const [collectingId, setCollectingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [logState, setLogState] = useState<LogState>(() => makeEmptyLogState());
   const [logAbortable, setLogAbortable] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
@@ -352,12 +353,17 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
     [api],
   );
 
+  const cancelDeletePrompt = useCallback(() => {
+    setConfirmingId(null);
+  }, []);
+
+  const requestDeleteRun = useCallback((runId: string) => {
+    setConfirmingId(runId);
+  }, []);
+
   const handleDeleteRun = useCallback(
     async (runId: string) => {
-      if (!window.confirm(`Delete run ${runId}? This will remove all artifacts.`)) {
-        return;
-      }
-
+      setConfirmingId(null);
       setDeletingId(runId);
       setNotice(null);
       try {
@@ -518,17 +524,55 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
                                   ? 'Collecting…'
                                   : 'Collect diagnostics'}
                               </button>
-                              <button
-                                type="button"
-                                className="run-board__button run-board__delete-button"
-                                onClick={() => handleDeleteRun(run.id)}
-                                disabled={deletingId === run.id}
-                                aria-label={`Delete run ${run.id}`}
-                              >
-                                <span aria-hidden="true" role="img">
-                                  🗑️
-                                </span>
-                              </button>
+                              {confirmingId === run.id ? (
+                                <div
+                                  className="run-board__delete-confirm"
+                                  role="group"
+                                  aria-label={`Confirm deletion of run ${run.id}`}
+                                >
+                                  <p className="run-board__delete-confirm-message">Are you sure?</p>
+                                  <div className="run-board__delete-confirm-actions">
+                                    <button
+                                      type="button"
+                                      className="run-board__button run-board__delete-confirm-button"
+                                      onClick={() => handleDeleteRun(run.id)}
+                                      disabled={deletingId === run.id}
+                                    >
+                                      <span className="run-board__button-content">
+                                        <span aria-hidden="true" role="img">
+                                          ✅
+                                        </span>
+                                        <span>{deletingId === run.id ? 'Deleting…' : 'Yes'}</span>
+                                      </span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="run-board__button run-board__delete-confirm-button"
+                                      onClick={cancelDeletePrompt}
+                                      disabled={deletingId === run.id}
+                                    >
+                                      <span className="run-board__button-content">
+                                        <span aria-hidden="true" role="img">
+                                          ❌
+                                        </span>
+                                        <span>No</span>
+                                      </span>
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="run-board__button run-board__delete-button"
+                                  onClick={() => requestDeleteRun(run.id)}
+                                  disabled={deletingId === run.id}
+                                  aria-label={`Delete run ${run.id}`}
+                                >
+                                  <span aria-hidden="true" role="img">
+                                    🗑️
+                                  </span>
+                                </button>
+                              )}
                             </td>
                           </tr>
                         ))

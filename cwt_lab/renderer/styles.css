@@ -917,6 +917,43 @@ body {
   min-width: 2.25rem;
 }
 
+.run-board__button-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.run-board__delete-confirm {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+  box-shadow: 0 0.5rem 1.25rem var(--color-panel-shadow);
+  min-width: 10rem;
+}
+
+.run-board__delete-confirm-message {
+  margin: 0;
+  font-weight: 600;
+}
+
+.run-board__delete-confirm-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.run-board__delete-confirm-button {
+  display: inline-flex;
+  align-items: center;
+  flex: 1 1 5rem;
+  justify-content: center;
+}
+
 .run-board__actions-col {
   width: 1%;
   white-space: nowrap;
