@@ -22,6 +22,7 @@ export type RunQuery = {
   id?: string;
   phase?: string;
   experiment?: string;
+  artifactsDir?: string;
   limit?: number;
 };
 
@@ -131,6 +132,10 @@ export const fetchRuns = (db: BetterSqlite3Database, query: RunQuery): RunRecord
   if (query.experiment) {
     clauses.push('experiment = @experiment');
     params.experiment = query.experiment;
+  }
+  if (query.artifactsDir) {
+    clauses.push('artifacts_dir = @artifactsDir');
+    params.artifactsDir = query.artifactsDir;
   }
 
   let sql =

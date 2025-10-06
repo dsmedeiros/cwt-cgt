@@ -39,7 +39,7 @@ describe('RunBoard', () => {
 
     await waitFor(() => expect(api.listRecent).toHaveBeenCalled());
 
-    expect(screen.getByRole('columnheader', { name: /run id/i })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /item/i })).toBeInTheDocument();
     expect(screen.getByText('run-1')).toBeInTheDocument();
     expect(screen.getByText('run-2')).toBeInTheDocument();
     const actionButtons = screen.getAllByRole('button', { name: /Collect diagnostics/i });

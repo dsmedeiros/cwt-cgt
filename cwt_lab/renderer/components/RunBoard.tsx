@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { runs as defaultRunsApi } from '../ipc';
 import type { RegistryRunRecord, RunDiagnosticsBundle, RunTailChunk } from '../types/ipc';
@@ -86,6 +86,15 @@ const formatMetrics = (metrics: Record<string, number | null> | null) => {
   return entries.length > 0 ? entries.join(', ') : '—';
 };
 
+const experimentIdFromPath = (artifactsDir: string) => {
+  const trimmed = artifactsDir.replace(/[\\/]+$/, '');
+  if (!trimmed) {
+    return artifactsDir;
+  }
+  const segments = trimmed.split(/[\\/]/).filter(Boolean);
+  return segments.length > 0 ? segments[segments.length - 1] : trimmed;
+};
+
 const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
   const [runs, setRuns] = useState<RegistryRunRecord[]>([]);
   const [loading, setLoading] = useState(false);
@@ -95,6 +104,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [logState, setLogState] = useState<LogState>(() => makeEmptyLogState());
   const [logAbortable, setLogAbortable] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   const resetLogState = useCallback(() => {
     setLogState(makeEmptyLogState());
@@ -231,6 +241,13 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
     void fetchLogChunk(logState.runId, 'refresh');
   }, [fetchLogChunk, logState.runId]);
 
+  const toggleGroup = useCallback((artifactsDir: string) => {
+    setExpandedGroups((prev) => ({
+      ...prev,
+      [artifactsDir]: !(prev[artifactsDir] ?? true),
+    }));
+  }, []);
+
   useEffect(() => {
     void fetchRuns();
   }, [fetchRuns]);
@@ -247,16 +264,73 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
 
   useCommandRegistration({ run: runCommand, abort: abortCommand });
 
-  const sortedRuns = useMemo(
-    () =>
-      [...runs].sort((a, b) => {
+  const groupedExperiments = useMemo(() => {
+    if (runs.length === 0) {
+      return [] as Array<{
+        artifactsDir: string;
+        runs: RegistryRunRecord[];
+        label: string;
+        experimentId: string;
+        lastUpdated: number;
+        status: RegistryRunRecord['status'];
+        primaryPhase: string | null;
+        metrics: Record<string, number | null> | null;
+      }>;
+    }
+
+    const buckets = new Map<string, RegistryRunRecord[]>();
+    for (const run of runs) {
+      const key = run.artifactsDir && run.artifactsDir.length > 0 ? run.artifactsDir : `run:${run.id}`;
+      const list = buckets.get(key);
+      if (list) {
+        list.push(run);
+      } else {
+        buckets.set(key, [run]);
+      }
+    }
+
+    const groups = Array.from(buckets.entries()).map(([artifactsDir, bucketRuns]) => {
+      const sorted = [...bucketRuns].sort((a, b) => {
         if (a.updatedAt === b.updatedAt) {
           return b.createdAt - a.createdAt;
         }
         return b.updatedAt - a.updatedAt;
-      }),
-    [runs],
-  );
+      });
+
+      const latest = sorted[0];
+      const phase1 = sorted.find((run) => run.phase === 'phase1') ?? null;
+      const labelCandidate =
+        phase1?.label ||
+        phase1?.experiment ||
+        latest.label ||
+        latest.experiment ||
+        experimentIdFromPath(artifactsDir);
+
+      const selectMetrics = (record: RegistryRunRecord | null) => {
+        if (!record?.metrics) {
+          return null;
+        }
+        return Object.keys(record.metrics).length > 0 ? record.metrics : null;
+      };
+
+      const metrics = selectMetrics(phase1) ?? selectMetrics(latest);
+      const lastUpdated = sorted.reduce((acc, run) => Math.max(acc, run.updatedAt), 0);
+
+      return {
+        artifactsDir,
+        runs: sorted,
+        label: labelCandidate,
+        experimentId: experimentIdFromPath(artifactsDir),
+        lastUpdated,
+        status: latest.status,
+        primaryPhase: phase1?.phase ?? latest.phase ?? null,
+        metrics,
+      };
+    });
+
+    groups.sort((a, b) => b.lastUpdated - a.lastUpdated);
+    return groups;
+  }, [runs]);
 
   const handleCollectDiagnostics = useCallback(
     async (runId: string) => {
@@ -342,10 +416,10 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
         <table className="run-board__table">
           <thead>
             <tr>
-              <th scope="col">Run ID</th>
+              <th scope="col">Item</th>
               <th scope="col">Status</th>
               <th scope="col">Phase</th>
-              <th scope="col">Experiment</th>
+              <th scope="col">Label / Path</th>
               <th scope="col">Last update</th>
               <th scope="col">Metrics</th>
               <th scope="col" className="run-board__actions-col">
@@ -354,62 +428,114 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
             </tr>
           </thead>
           <tbody>
-            {sortedRuns.length === 0 ? (
+            {groupedExperiments.length === 0 ? (
               <tr>
                 <td colSpan={7} className="run-board__empty">
                   No runs recorded yet. Launch an experiment to populate the board.
                 </td>
               </tr>
             ) : (
-              sortedRuns.map((run) => (
-                <tr key={run.id}>
-                  <td>
-                    <code className="run-board__mono">{run.id}</code>
-                  </td>
-                  <td>
-                    <span className={`run-board__status run-board__status--${run.status}`}>
-                      {statusLabels[run.status] ?? run.status}
-                    </span>
-                  </td>
-                  <td>{run.phase ?? '—'}</td>
-                  <td>{run.experiment ?? '—'}</td>
-                  <td>{formatTimestamp(run.updatedAt)}</td>
-                  <td>{formatMetrics(run.metrics)}</td>
-                  <td className="run-board__actions">
-                    <button
-                      type="button"
-                      className="run-board__button"
-                      onClick={() => handleViewLog(run.id)}
-                      disabled={logState.loading && logState.runId === run.id}
-                    >
-                      {logState.runId === run.id
-                        ? logState.loading
-                          ? 'Loading log…'
-                          : 'Hide log'
-                        : 'View log'}
-                    </button>
-                    <button
-                      type="button"
-                      className="run-board__button"
-                      onClick={() => handleCollectDiagnostics(run.id)}
-                      disabled={collectingId === run.id}
-                    >
-                      {collectingId === run.id ? 'Collecting…' : 'Collect diagnostics'}
-                    </button>
-                    <button
-                      type="button"
-                      className="run-board__button run-board__delete-button"
-                      onClick={() => handleDeleteRun(run.id)}
-                      disabled={deletingId === run.id}
-                      aria-label={`Delete run ${run.id}`}
-                    >
-                      <span aria-hidden="true" role="img">
-                        🗑️
-                      </span>
-                    </button>
-                  </td>
-                </tr>
-              ))
+              groupedExperiments.map((group) => {
+                const isExpanded = expandedGroups[group.artifactsDir] ?? true;
+                const statusLabel = statusLabels[group.status] ?? group.status;
+                const metricsText = formatMetrics(group.metrics);
+                const runCountLabel =
+                  group.runs.length === 1 ? '1 phase run' : `${group.runs.length} phase runs`;
+                return (
+                  <Fragment key={group.artifactsDir}>
+                    <tr className="run-board__experiment-row">
+                      <td>
+                        <button
+                          type="button"
+                          className="run-board__experiment-toggle"
+                          onClick={() => toggleGroup(group.artifactsDir)}
+                          aria-expanded={isExpanded}
+                        >
+                          <span aria-hidden="true" className="run-board__experiment-caret">
+                            {isExpanded ? '▾' : '▸'}
+                          </span>
+                          <span>{group.label}</span>
+                        </button>
+                        <div className="run-board__experiment-meta">
+                          <code className="run-board__mono">{group.experimentId}</code>
+                          <span className="run-board__experiment-path">{group.artifactsDir}</span>
+                          <span className="run-board__experiment-count">{runCountLabel}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`run-board__status run-board__status--${group.status}`}>
+                          {statusLabel}
+                        </span>
+                      </td>
+                      <td>{group.primaryPhase ?? '—'}</td>
+                      <td>
+                        <code className="run-board__mono">{group.artifactsDir}</code>
+                      </td>
+                      <td>{formatTimestamp(group.lastUpdated)}</td>
+                      <td>{metricsText}</td>
+                      <td className="run-board__actions run-board__actions--placeholder">—</td>
+                    </tr>
+                    {isExpanded
+                      ? group.runs.map((run) => (
+                          <tr key={run.id} className="run-board__run-row">
+                            <td>
+                              <div className="run-board__run-label">
+                                <span aria-hidden="true" className="run-board__run-bullet">
+                                  •
+                                </span>
+                                <code className="run-board__mono">{run.id}</code>
+                              </div>
+                            </td>
+                            <td>
+                              <span className={`run-board__status run-board__status--${run.status}`}>
+                                {statusLabels[run.status] ?? run.status}
+                              </span>
+                            </td>
+                            <td>{run.phase ?? '—'}</td>
+                            <td>{run.label ?? run.command ?? '—'}</td>
+                            <td>{formatTimestamp(run.updatedAt)}</td>
+                            <td>{formatMetrics(run.metrics)}</td>
+                            <td className="run-board__actions">
+                              <button
+                                type="button"
+                                className="run-board__button"
+                                onClick={() => handleViewLog(run.id)}
+                                disabled={logState.loading && logState.runId === run.id}
+                              >
+                                {logState.runId === run.id
+                                  ? logState.loading
+                                    ? 'Loading log…'
+                                    : 'Hide log'
+                                  : 'View log'}
+                              </button>
+                              <button
+                                type="button"
+                                className="run-board__button"
+                                onClick={() => handleCollectDiagnostics(run.id)}
+                                disabled={collectingId === run.id}
+                              >
+                                {collectingId === run.id
+                                  ? 'Collecting…'
+                                  : 'Collect diagnostics'}
+                              </button>
+                              <button
+                                type="button"
+                                className="run-board__button run-board__delete-button"
+                                onClick={() => handleDeleteRun(run.id)}
+                                disabled={deletingId === run.id}
+                                aria-label={`Delete run ${run.id}`}
+                              >
+                                <span aria-hidden="true" role="img">
+                                  🗑️
+                                </span>
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      : null}
+                  </Fragment>
+                );
+              })
             )}
           </tbody>
         </table>

@@ -12,8 +12,10 @@ import type {
   CouplingTunerResult,
   CouplingVariantSummary,
   CouplingTunerPayload,
+  BetaSweepRunRecord,
   RecipeRecord,
 } from '../types/ipc';
+import { useExperimentNavigation } from '../navigation/ExperimentNavigationContext';
 
 type FamilyOption = {
   id: string;
@@ -124,6 +126,19 @@ const badgeClassForPersistence = (value: number | null | undefined) => {
     return 'badge badge--warning';
   }
   return 'badge badge--danger';
+};
+
+const statusBadgeClass = (status: string) => {
+  switch (status) {
+    case 'complete':
+      return 'badge badge--success';
+    case 'failed':
+      return 'badge badge--danger';
+    case 'aborted':
+      return 'badge badge--warning';
+    default:
+      return 'badge badge--warning';
+  }
 };
 
 const guardBadgeClass = (entry: CouplingVariantSummary) => {
@@ -328,6 +343,10 @@ const Phase5Optimize = () => {
   const [tunerResult, setTunerResult] = useState<CouplingTunerResult | null>(null);
   const [tunerRunning, setTunerRunning] = useState(false);
   const [tunerError, setTunerError] = useState<string | null>(null);
+  const [betaSweepRuns, setBetaSweepRuns] = useState<BetaSweepRunRecord[]>([]);
+  const [betaSweepDir, setBetaSweepDir] = useState<string | null>(null);
+  const [betaSweepRunning, setBetaSweepRunning] = useState(false);
+  const [betaSweepError, setBetaSweepError] = useState<string | null>(null);
   const [recipes, setRecipes] = useState<RecipeRecord[]>([]);
   const [recipesLoading, setRecipesLoading] = useState(false);
   const [recipesLoaded, setRecipesLoaded] = useState(false);
@@ -343,7 +362,13 @@ const Phase5Optimize = () => {
   const [bestRecipe, setBestRecipe] = useState<RecipeRecord | null>(null);
   const [exportingRecipeId, setExportingRecipeId] = useState<string | null>(null);
 
-  const [artifactsRoot, setArtifactsRoot] = useState<string | null>(null);
+  const {
+    artifactsRoot,
+    experiments,
+    experimentsError,
+    experimentsLoading,
+    selectedExperimentPath,
+  } = useExperimentNavigation();
 
   const [graphPreview, setGraphPreview] = useState('');
   const [graphPreviewError, setGraphPreviewError] = useState<string | null>(null);
@@ -354,44 +379,21 @@ const Phase5Optimize = () => {
   const [tunerPreview, setTunerPreview] = useState<string[]>([]);
   const [tunerPreviewError, setTunerPreviewError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchConfig = async () => {
-      if (typeof window === 'undefined' || !window?.CWT?.env?.getConfig) {
-        return;
-      }
-
-      try {
-        const response = await window.CWT.env.getConfig();
-        if (cancelled) {
-          return;
-        }
-        if (response.ok) {
-          setArtifactsRoot(response.data.artifactsRoot ?? null);
-        }
-      } catch {
-        if (!cancelled) {
-          setArtifactsRoot(null);
-        }
-      }
-    };
-
-    void fetchConfig();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   const buildPreviewPath = useCallback(
     (category: string, leaf = '<preview>'): string | null => {
-      if (!artifactsRoot) {
+      const base = selectedExperimentPath
+        ? selectedExperimentPath.replace(/[\\/]+$/, '')
+        : artifactsRoot
+        ? artifactsRoot.replace(/[\\/]+$/, '')
+        : null;
+      if (!base) {
         return null;
       }
-      const root = artifactsRoot.replace(/[\\/]+$/, '');
       const trimmedCategory = category.replace(/^[\\/]+/, '').replace(/[\\/]+$/, '');
-      const segments = [root];
+      const segments = [base];
+      if (selectedExperimentPath) {
+        segments.push('phase5');
+      }
       if (trimmedCategory) {
         segments.push(trimmedCategory);
       }
@@ -400,7 +402,7 @@ const Phase5Optimize = () => {
       }
       return segments.filter(Boolean).join('/');
     },
-    [artifactsRoot],
+    [artifactsRoot, selectedExperimentPath],
   );
 
   const buildGraphCommand = useCallback((): ValidationResult<GraphFamilyCommandPayload> => {
@@ -557,6 +559,32 @@ const Phase5Optimize = () => {
       error: null,
     };
   }, [betaInput, configPathInput, etaInput]);
+
+  const buildBetaSweepPayload = useCallback(
+    (): ValidationResult<{ configPath: string; betas: number[] }> => {
+      const trimmedPath = configPathInput.trim();
+      if (!trimmedPath) {
+        return { payload: null, error: 'Provide a baseline YAML path.' };
+      }
+
+      const betaValues = betaInput
+        .split(',')
+        .map((value) => Number.parseFloat(value.trim()))
+        .filter((value) => Number.isFinite(value));
+      if (betaValues.length === 0) {
+        return { payload: null, error: 'Provide at least one β value (comma-separated).' };
+      }
+
+      return {
+        payload: {
+          configPath: trimmedPath,
+          betas: betaValues,
+        },
+        error: null,
+      };
+    },
+    [betaInput, configPathInput],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -955,12 +983,20 @@ const Phase5Optimize = () => {
       return;
     }
 
+    if (!selectedExperimentPath) {
+      setGraphError('Select an experiment before running graph analysis.');
+      return;
+    }
+
     setGraphIsRunning(true);
     setGraphError(null);
     setGraphResult(null);
 
     try {
-      const response = await window.CWT.phase5.cmdGraphFamily(payload);
+      const response = await window.CWT.phase5.cmdGraphFamily({
+        ...payload,
+        experimentDir: selectedExperimentPath,
+      });
       if (!response.ok) {
         throw new Error(response.error ?? 'Graph family analysis failed');
       }
@@ -984,12 +1020,20 @@ const Phase5Optimize = () => {
       return;
     }
 
+    if (!selectedExperimentPath) {
+      setInvError('Select an experiment before running inverse design.');
+      return;
+    }
+
     setInvRunning(true);
     setInvError(null);
     setInvResult(null);
 
     try {
-      const response = await window.CWT.phase5.cmdInverseDesign(payload);
+      const response = await window.CWT.phase5.cmdInverseDesign({
+        ...payload,
+        experimentDir: selectedExperimentPath,
+      });
       if (!response.ok) {
         throw new Error(response.error ?? 'Inverse design failed');
       }
@@ -1013,12 +1057,20 @@ const Phase5Optimize = () => {
       return;
     }
 
+    if (!selectedExperimentPath) {
+      setNoiseError('Select an experiment before running the noise sweep.');
+      return;
+    }
+
     setNoiseRunning(true);
     setNoiseError(null);
     setNoiseResult(null);
 
     try {
-      const response = await window.CWT.phase5.cmdNoiseRobust(payload);
+      const response = await window.CWT.phase5.cmdNoiseRobust({
+        ...payload,
+        experimentDir: selectedExperimentPath,
+      });
       if (!response.ok) {
         throw new Error(response.error ?? 'Noise sweep failed');
       }
@@ -1030,6 +1082,45 @@ const Phase5Optimize = () => {
       setNoiseError(error instanceof Error ? error.message : String(error));
     } finally {
       setNoiseRunning(false);
+    }
+  };
+
+  const runBetaSweep = async () => {
+    if (!window?.CWT?.phase5?.betaSweep) {
+      setBetaSweepError('β sweep command is unavailable.');
+      return;
+    }
+
+    const { payload, error } = buildBetaSweepPayload();
+    if (!payload) {
+      setBetaSweepError(error ?? 'Provide valid β sweep parameters.');
+      return;
+    }
+
+    if (!selectedExperimentPath) {
+      setBetaSweepError('Select an experiment before launching the β sweep.');
+      return;
+    }
+
+    setBetaSweepRunning(true);
+    setBetaSweepError(null);
+    setBetaSweepRuns([]);
+    setBetaSweepDir(null);
+
+    try {
+      const response = await window.CWT.phase5.betaSweep({
+        ...payload,
+        experimentDir: selectedExperimentPath,
+      });
+      if (!response.ok) {
+        throw new Error(response.error ?? 'β sweep failed');
+      }
+      setBetaSweepRuns(Array.isArray(response.data.runs) ? response.data.runs : []);
+      setBetaSweepDir(response.data.stagingDir ?? response.data.tempDir ?? null);
+    } catch (error) {
+      setBetaSweepError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBetaSweepRunning(false);
     }
   };
 
@@ -1045,12 +1136,20 @@ const Phase5Optimize = () => {
       return;
     }
 
+    if (!selectedExperimentPath) {
+      setTunerError('Select an experiment before running the coupling tuner.');
+      return;
+    }
+
     setTunerRunning(true);
     setTunerError(null);
     setTunerResult(null);
 
     try {
-      const response = await window.CWT.phase5.couplingTuner(payload);
+      const response = await window.CWT.phase5.couplingTuner({
+        ...payload,
+        experimentDir: selectedExperimentPath,
+      });
       if (!response.ok) {
         throw new Error(response.error ?? 'Coupling tuner failed');
       }
@@ -1067,8 +1166,12 @@ const Phase5Optimize = () => {
       setExportMessage({ tone: 'error', text: 'Recipe run is unavailable in this build.' });
       return;
     }
+    if (!selectedExperimentPath) {
+      setExportMessage({ tone: 'error', text: 'Select an experiment before running a recipe.' });
+      return;
+    }
     try {
-      await window.CWT.recipes.run({ id });
+      await window.CWT.recipes.run({ id, experimentDir: selectedExperimentPath });
       setExportMessage({ tone: 'success', text: `Run launched for recipe ${id}.` });
     } catch (error) {
       setExportMessage({
@@ -1147,6 +1250,24 @@ const Phase5Optimize = () => {
           </div>
         </header>
 
+        <div className="phase5__experiment-notice">
+          {experimentsLoading ? (
+            <small className="field-hint">Loading experiments…</small>
+          ) : experimentsError ? (
+            <small className="field-error">{experimentsError}</small>
+          ) : experiments.length === 0 ? (
+            <small className="field-hint">Run Phase 1 to populate experiment folders.</small>
+          ) : selectedExperimentPath ? (
+            <small className="field-hint">
+              Results will be stored in <code>{selectedExperimentPath}</code>.
+            </small>
+          ) : (
+            <small className="field-hint">
+              Choose an experiment from the navigation pane to store Phase 5 outputs.
+            </small>
+          )}
+        </div>
+
         {exportMessage ? <p className={messageClass}>{exportMessage.text}</p> : null}
         {recipesError ? <p className="phase5__error">{recipesError}</p> : null}
 
@@ -1188,6 +1309,12 @@ const Phase5Optimize = () => {
                         type="button"
                         className="btn btn--primary"
                         onClick={() => handleRunRecipe(recipe.id)}
+                        disabled={!selectedExperimentPath}
+                        title={
+                          !selectedExperimentPath
+                            ? 'Select an experiment to store recipe outputs.'
+                            : undefined
+                        }
                       >
                         Run
                       </button>
@@ -1272,7 +1399,11 @@ const Phase5Optimize = () => {
           </div>
         </div>
 
-        <button className="phase5__run" onClick={runGraphAnalysis} disabled={graphIsRunning}>
+        <button
+          className="phase5__run"
+          onClick={runGraphAnalysis}
+          disabled={graphIsRunning || !selectedExperimentPath}
+        >
           {graphIsRunning ? 'Running…' : 'Run topology sweep'}
         </button>
 
@@ -1448,7 +1579,11 @@ const Phase5Optimize = () => {
           </div>
         </div>
 
-        <button className="phase5__run" onClick={runInverseDesign} disabled={invRunning}>
+        <button
+          className="phase5__run"
+          onClick={runInverseDesign}
+          disabled={invRunning || !selectedExperimentPath}
+        >
           {invRunning ? 'Running…' : 'Run inverse design'}
         </button>
 
@@ -1635,7 +1770,11 @@ const Phase5Optimize = () => {
           </div>
         </div>
 
-        <button className="phase5__run" onClick={runNoiseSweep} disabled={noiseRunning}>
+        <button
+          className="phase5__run"
+          onClick={runNoiseSweep}
+          disabled={noiseRunning || !selectedExperimentPath}
+        >
           {noiseRunning ? 'Running…' : 'Run noise sweep'}
         </button>
 
@@ -1774,11 +1913,37 @@ const Phase5Optimize = () => {
           </div>
         </div>
 
-        <button className="phase5__run" onClick={runCouplingTuner} disabled={tunerRunning}>
+        <button
+          className="phase5__run"
+          onClick={runCouplingTuner}
+          disabled={tunerRunning || !selectedExperimentPath}
+        >
           {tunerRunning ? 'Running…' : 'Run coupling tuner'}
         </button>
 
         {tunerError ? <p className="phase5__error">{tunerError}</p> : null}
+
+        <div className="phase5__beta-sweep">
+          <h4>Launch β sweep runs</h4>
+          <p>
+            Spawn <code>run_loop</code> jobs for each β value to capture full simulation artifacts for
+            offline analysis.
+          </p>
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={runBetaSweep}
+            disabled={betaSweepRunning || !selectedExperimentPath}
+            title={
+              !selectedExperimentPath
+                ? 'Select an experiment to store β sweep outputs.'
+                : undefined
+            }
+          >
+            {betaSweepRunning ? 'Launching…' : 'Launch β sweep runs'}
+          </button>
+          {betaSweepError ? <p className="phase5__error">{betaSweepError}</p> : null}
+        </div>
       </section>
 
       <section className="phase5__tuner-results">
@@ -1856,6 +2021,50 @@ const Phase5Optimize = () => {
         ) : (
           <p className="phase5__placeholder">Configure β / ηq values and generate evaluation variants.</p>
         )}
+        {betaSweepRunning && betaSweepRuns.length === 0 ? (
+          <p className="phase5__placeholder">Launching β sweep runs…</p>
+        ) : null}
+        {betaSweepRuns.length ? (
+          <article className="phase5__beta-results">
+            <header>
+              <h3>β sweep run summary</h3>
+            </header>
+            <table className="phase5__table">
+              <thead>
+                <tr>
+                  <th>β</th>
+                  <th>Run ID</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {betaSweepRuns.map((entry) => (
+                  <tr key={`${entry.runId}-${entry.beta}`}>
+                    <td>{formatFloat(entry.beta, 3)}</td>
+                    <td>
+                      <code className="phase5__code-snippet">{entry.runId}</code>{' '}
+                      <button type="button" className="link-button" onClick={() => copyToClipboard(entry.runId)}>
+                        Copy
+                      </button>
+                    </td>
+                    <td>
+                      <span className={statusBadgeClass(entry.status)}>{entry.status}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {betaSweepDir ? (
+              <p className="phase5__beta-path">
+                Config staging:&nbsp;
+                <code>{betaSweepDir}</code>{' '}
+                <button type="button" className="link-button" onClick={() => copyToClipboard(betaSweepDir)}>
+                  Copy path
+                </button>
+              </p>
+            ) : null}
+          </article>
+        ) : null}
       </section>
     </div>
   );

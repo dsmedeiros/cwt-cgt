@@ -2,6 +2,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 
 import App from './App';
+import { ExperimentNavigationProvider } from './navigation/ExperimentNavigationContext';
 import { ThemeProvider } from './theme';
 import { I18nProvider } from './i18n';
 import './styles.css';
@@ -17,7 +18,9 @@ root.render(
   <React.StrictMode>
     <I18nProvider>
       <ThemeProvider>
-        <App />
+        <ExperimentNavigationProvider>
+          <App />
+        </ExperimentNavigationProvider>
       </ThemeProvider>
     </I18nProvider>
   </React.StrictMode>,

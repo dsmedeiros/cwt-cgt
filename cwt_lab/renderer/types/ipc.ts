@@ -51,6 +51,13 @@ export type GraphFamilyCommandPayload = {
   gridSize: number;
   extents: number;
   seed: number;
+  experimentDir?: string;
+};
+
+export type AdiabaticBoundaryRunPayload = {
+  outDir?: string;
+  experimentDir?: string;
+  [extra: string]: unknown;
 };
 
 export type InverseDesignControlPoint = {
@@ -90,6 +97,7 @@ export type InverseDesignCommandPayload = {
   budgetSteps?: number;
   maxFs?: number;
   targetIndex?: number;
+  experimentDir?: string;
 };
 
 export type NoiseRobustTrial = {
@@ -144,6 +152,7 @@ export type NoiseRobustCommandPayload = {
   loopSteps?: number;
   gridSize?: number;
   axes?: [string, string];
+  experimentDir?: string;
 };
 
 export type CouplingVariantSummary = {
@@ -172,6 +181,19 @@ export type CouplingTunerPayload = {
   configPath: string;
   betas: number[];
   etaQ?: number | number[];
+  experimentDir?: string;
+};
+
+export type BetaSweepRunRecord = {
+  beta: number;
+  runId: string;
+  status: string;
+};
+
+export type BetaSweepResult = {
+  runs: BetaSweepRunRecord[];
+  tempDir: string;
+  stagingDir?: string;
 };
 
 export type Phase2FeatureName = 'spectral_gap' | 'kuramoto_r' | 'grad_r' | 'trace_g';
@@ -340,6 +362,7 @@ export type LoopAtHotspotPayload = {
   neighborSettleSteps?: number;
   adaptLevels?: number;
   saveSummary?: string;
+  experimentDir?: string;
   [extra: string]: unknown;
 };
 
@@ -364,6 +387,7 @@ export type GuidedLoopArgs = {
   zeta?: number;
   omegaScale?: number;
   outputDir?: string;
+  experimentDir?: string;
   [extra: string]: unknown;
 };
 
@@ -393,6 +417,7 @@ export type RecipeSavePayload = {
 
 export type RecipeRunPayload = {
   id: string;
+  experimentDir?: string;
 };
 
 export type RecipeExportPayload = {
@@ -458,7 +483,9 @@ export interface RendererIpc {
         satisfied: boolean;
       }>
     >;
-    adiabaticBoundary: (payload: { outDir: string }) => Promise<IpcEnvelope<RunCreateResult>>;
+    adiabaticBoundary: (
+      payload: AdiabaticBoundaryRunPayload,
+    ) => Promise<IpcEnvelope<RunCreateResult>>;
     cmdAdiabaticBoundary: (
       params?: Record<string, unknown>,
     ) => Promise<IpcEnvelope<AdiabaticBoundaryResult>>;
@@ -481,13 +508,8 @@ export interface RendererIpc {
       params: NoiseRobustCommandPayload,
     ) => Promise<IpcEnvelope<NoiseRobustCommandResult>>;
     betaSweep: (
-      params: { configPath: string; betas: number[] },
-    ) => Promise<
-      IpcEnvelope<{
-        runs: Array<{ beta: number; runId: string; status: string }>;
-        tempDir: string;
-      }>
-    >;
+      params: { configPath: string; betas: number[]; experimentDir?: string },
+    ) => Promise<IpcEnvelope<BetaSweepResult>>;
     couplingTuner: (
       params: CouplingTunerPayload,
     ) => Promise<IpcEnvelope<CouplingTunerResult>>;
