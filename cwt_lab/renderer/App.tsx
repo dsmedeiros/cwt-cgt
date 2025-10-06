@@ -11,6 +11,7 @@ import Phase5Optimize from './components/Phase5Optimize';
 import TorusPlateauViewer from './components/TorusPlateauViewer';
 import RunBoard, { type RunsApi } from './components/RunBoard';
 import RecipeComparison from './components/RecipeComparison';
+import NavigationPane from './components/NavigationPane';
 import { CommandProvider, useCommandCenter, useCommandCombos } from './commandCenter';
 import { DemoModeProvider, useDemoMode, type DemoRun } from './demo/DemoModeContext';
 import { useTranslation } from './i18n';
@@ -302,15 +303,18 @@ const AppContent = ({ mode, onToggleTheme, demoEnabled, onToggleDemo }: AppConte
           ))}
         </nav>
       </header>
-      <main className="app__content">
-        {tabs.map((tab) =>
-          tab.id === active ? (
-            <section key={tab.id} className="app__panel">
-              {tab.element}
-            </section>
-          ) : null,
-        )}
-      </main>
+      <div className="app__body">
+        <NavigationPane />
+        <main className="app__content">
+          {tabs.map((tab) =>
+            tab.id === active ? (
+              <section key={tab.id} className="app__panel">
+                {tab.element}
+              </section>
+            ) : null,
+          )}
+        </main>
+      </div>
       {activeHelp ? (
         <HelpDrawer
           open={helpOpen}

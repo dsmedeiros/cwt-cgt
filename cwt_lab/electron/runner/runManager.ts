@@ -65,6 +65,7 @@ type RunContext = {
   buffer: Buffer;
   process: ChildProcessWithoutNullStreams | null;
   artifactsDir: string;
+  workspaceDir: string;
   logPath: string;
   metadata: Required<RunMetadata>;
   updatedAt: number;
@@ -86,6 +87,7 @@ type ManagerConfig = {
 
 export type RunOptions = {
   timeoutMs?: number;
+  artifactsDir?: string | null;
 };
 
 type RunDiagnostics = {
@@ -107,6 +109,19 @@ type RunDiagnostics = {
 type StoredDiagnostics = Partial<RunDiagnostics> & { timeoutMs?: unknown };
 
 const LONG_PATH_THRESHOLD = 240;
+
+const RUN_WORKSPACE_ROOT = '_runs';
+const RUN_LOG_FILENAME = 'stdout.log';
+const RUN_DIAGNOSTICS_FILENAME = 'diagnostics.json';
+
+const resolveWorkspaceDir = (artifactsDir: string, runId: string) =>
+  path.join(artifactsDir, RUN_WORKSPACE_ROOT, runId);
+
+const resolveLogPath = (artifactsDir: string, runId: string) =>
+  path.join(resolveWorkspaceDir(artifactsDir, runId), RUN_LOG_FILENAME);
+
+const resolveDiagnosticsPath = (artifactsDir: string, runId: string) =>
+  path.join(resolveWorkspaceDir(artifactsDir, runId), RUN_DIAGNOSTICS_FILENAME);
 
 const toFsPath = (value: string) => {
   if (process.platform !== 'win32') {
@@ -170,8 +185,14 @@ export class RunManager {
 
     const runId = randomUUID();
     const runCwd = cwd ? path.resolve(cwd) : this.config.repoRoot;
-    const runArtifactsDir = path.join(this.config.artifactsRoot, runId);
+    const overrideArtifactsDir =
+      typeof options.artifactsDir === 'string' && options.artifactsDir.length > 0
+        ? path.resolve(options.artifactsDir)
+        : null;
+    const runArtifactsDir = overrideArtifactsDir ?? path.join(this.config.artifactsRoot, runId);
     await ensureDir(runArtifactsDir);
+    const runWorkspaceDir = resolveWorkspaceDir(runArtifactsDir, runId);
+    await ensureDir(runWorkspaceDir);
 
     const argsSummary = JSON.stringify(args);
     console.info(
@@ -188,7 +209,7 @@ export class RunManager {
     });
 
     const timeoutMs = Number.isFinite(options.timeoutMs) ? Number(options.timeoutMs) : null;
-    const diagnosticsPath = path.join(runArtifactsDir, 'diagnostics.json');
+    const diagnosticsPath = resolveDiagnosticsPath(runArtifactsDir, runId);
 
     const pythonPathValue = this.buildPythonPath();
     const envSnapshotSource: NodeJS.ProcessEnv = {
@@ -228,7 +249,8 @@ export class RunManager {
       buffer: Buffer.alloc(0),
       process: null,
       artifactsDir: runArtifactsDir,
-      logPath: path.join(runArtifactsDir, 'stdout.log'),
+      workspaceDir: runWorkspaceDir,
+      logPath: resolveLogPath(runArtifactsDir, runId),
       metadata: {
         phase: metadata.phase ?? null,
         experiment: metadata.experiment ?? null,
@@ -636,12 +658,18 @@ export class RunManager {
 
     const record = this.resolveRunRecord(runId);
     const artifactsDir = record.artifactsDir;
-    const logPath = path.join(artifactsDir, 'stdout.log');
+    const preferredLogPath = resolveLogPath(artifactsDir, runId);
+    const legacyLogPath = path.join(artifactsDir, 'stdout.log');
     let buffer = Buffer.alloc(0);
 
-    if (existsSync(toFsPath(logPath))) {
+    const candidateLogs = [preferredLogPath, legacyLogPath];
+    for (const candidate of candidateLogs) {
+      if (!existsSync(toFsPath(candidate))) {
+        continue;
+      }
       try {
-        buffer = await fs.readFile(toFsPath(logPath));
+        buffer = await fs.readFile(toFsPath(candidate));
+        break;
       } catch (error) {
         console.warn(`Failed to read stdout for run ${runId}:`, error);
       }
@@ -774,18 +802,33 @@ export class RunManager {
     const attachments: string[] = [];
     const zip = new JSZip();
 
-    const addFile = async (filename: string) => {
-      const absolute = path.join(artifactsDir, filename);
+    const addFile = async (absolute: string) => {
       if (!existsSync(toFsPath(absolute))) {
-        return;
+        return false;
       }
       const data = await fs.readFile(toFsPath(absolute));
-      zip.file(filename, data);
+      const relative = path.relative(artifactsDir, absolute) || path.basename(absolute);
+      zip.file(relative.replace(/\\/g, '/'), data);
       attachments.push(absolute);
+      return true;
     };
 
-    await addFile('stdout.log');
-    await addFile('diagnostics.json');
+    const logPaths = [resolveLogPath(artifactsDir, runId), path.join(artifactsDir, 'stdout.log')];
+    for (const candidate of logPaths) {
+      if (await addFile(candidate)) {
+        break;
+      }
+    }
+
+    const diagnosticsPaths = [
+      resolveDiagnosticsPath(artifactsDir, runId),
+      path.join(artifactsDir, 'diagnostics.json'),
+    ];
+    for (const candidate of diagnosticsPaths) {
+      if (await addFile(candidate)) {
+        break;
+      }
+    }
 
     const envInfo = {
       platform: process.platform,
@@ -816,11 +859,24 @@ export class RunManager {
       throw new Error(`Unable to locate run ${runId}: ${message}`);
     }
 
+    const workspaceDir = resolveWorkspaceDir(artifactsDir, runId);
     try {
-      await fs.rm(toFsPath(artifactsDir), { recursive: true, force: true });
+      await fs.rm(toFsPath(workspaceDir), { recursive: true, force: true });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to delete run directory ${artifactsDir}: ${message}`);
+      console.warn(`Failed to remove workspace for run ${runId}:`, message);
+    }
+
+    const related = fetchRuns(this.registry, { artifactsDir });
+    const remaining = related.filter((run) => run.id !== runId);
+
+    if (remaining.length === 0) {
+      try {
+        await fs.rm(toFsPath(artifactsDir), { recursive: true, force: true });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`Failed to delete run directory ${artifactsDir}: ${message}`);
+      }
     }
 
     deleteRunRecord(this.registry, runId);
@@ -937,22 +993,29 @@ export class RunManager {
     runId: string,
     artifactsDir: string,
   ): Promise<StoredDiagnostics | null> {
-    const diagnosticsPath = path.join(artifactsDir, 'diagnostics.json');
-    if (!existsSync(toFsPath(diagnosticsPath))) {
-      return null;
+    const diagnosticsPaths = [
+      resolveDiagnosticsPath(artifactsDir, runId),
+      path.join(artifactsDir, 'diagnostics.json'),
+    ];
+
+    for (const candidate of diagnosticsPaths) {
+      if (!existsSync(toFsPath(candidate))) {
+        continue;
+      }
+
+      try {
+        const raw = await fs.readFile(toFsPath(candidate), 'utf-8');
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') {
+          continue;
+        }
+        return parsed as StoredDiagnostics;
+      } catch (error) {
+        console.warn(`Failed to read diagnostics for run ${runId}:`, error);
+      }
     }
 
-    try {
-      const raw = await fs.readFile(toFsPath(diagnosticsPath), 'utf-8');
-      const parsed = JSON.parse(raw);
-      if (!parsed || typeof parsed !== 'object') {
-        return null;
-      }
-      return parsed as StoredDiagnostics;
-    } catch (error) {
-      console.warn(`Failed to read diagnostics for run ${runId}:`, error);
-      return null;
-    }
+    return null;
   }
 
   private formatTailChunk({

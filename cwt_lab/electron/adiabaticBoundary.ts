@@ -167,11 +167,21 @@ export const runAdiabaticBoundary = async (
   cwtSimRoot: string,
   artifactsRoot: string,
   params: Record<string, unknown> | undefined,
+  options: { experimentDir?: string | null } = {},
 ): Promise<AdiabaticBoundaryResult> => {
-  const outputDir = path.join(artifactsRoot, 'adiabatic_boundary', uuidv4());
+  const resolvedExperimentDir =
+    typeof options.experimentDir === 'string' && options.experimentDir.length > 0
+      ? options.experimentDir
+      : null;
+
+  const root = resolvedExperimentDir ?? artifactsRoot;
+  const segments = resolvedExperimentDir
+    ? ['phase3', 'adiabatic_boundary', uuidv4()]
+    : ['adiabatic_boundary', uuidv4()];
+  const outputDir = path.join(root, ...segments);
   await fs.mkdir(outputDir, { recursive: true });
 
-  const args = buildArgsFromParams({ ...params, outputDir });
+  const args = buildArgsFromParams({ ...(params ?? {}), outputDir });
   const { runId } = await runManager.createRun(
     'experiments.adiabatic_boundary.run',
     args,
@@ -181,6 +191,7 @@ export const runAdiabaticBoundary = async (
       experiment: 'adiabatic_boundary',
       label: 'Adiabatic boundary sweep',
     },
+    { artifactsDir: resolvedExperimentDir ?? undefined },
   );
 
   const completion = await runManager.waitForCompletion(runId);

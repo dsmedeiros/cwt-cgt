@@ -719,10 +719,11 @@ const launchPhase = (
   module: string,
   params: Record<string, unknown> | undefined,
   metadata: RunMetadata,
+  options: { artifactsDir?: string | null } = {},
 ) => {
   ensurePythonEnvironment();
   const args = buildArgsFromParams(params);
-  return runManager.createRun(module, args, cwtSimRoot, metadata);
+  return runManager.createRun(module, args, cwtSimRoot, metadata, options);
 };
 
 ipcMain.handle('cwt:phase1:map', (_event, params) =>
@@ -834,6 +835,9 @@ ipcMain.handle('cwt:phase3:loop-at-hotspot', (_event, params) =>
     }
 
     const passthrough = { ...(payload as Record<string, unknown>) };
+    const experimentDirRaw =
+      typeof passthrough.experimentDir === 'string' ? passthrough.experimentDir.trim() : '';
+    delete passthrough.experimentDir;
     delete passthrough.hotspotsJson;
     delete passthrough.axes;
     delete passthrough.extents;
@@ -924,11 +928,13 @@ ipcMain.handle('cwt:phase3:loop-at-hotspot', (_event, params) =>
       runParams.adaptLevels = adaptLevels;
     }
 
+    const resolvedArtifactsDir = experimentDirRaw ? path.resolve(experimentDirRaw) : null;
+
     return launchPhase('experiments.loop_at_hotspot.run', runParams, {
       phase: 'phase3',
       experiment: 'loop_at_hotspot',
       label: 'Loop at hotspot',
-    });
+    }, { artifactsDir: resolvedArtifactsDir });
   }),
 );
 
@@ -950,6 +956,7 @@ ipcMain.handle('cwt:phase3:guided-loop', (_event, params) =>
       handleSteps: rawHandle,
       graph: rawGraph,
       seed: rawSeed,
+      experimentDir: rawExperimentDir,
       ...otherParams
     } = payload;
 
@@ -1037,6 +1044,11 @@ ipcMain.handle('cwt:phase3:guided-loop', (_event, params) =>
       graph,
     };
 
+    const resolvedArtifactsDir =
+      typeof rawExperimentDir === 'string' && rawExperimentDir.trim().length > 0
+        ? path.resolve(rawExperimentDir.trim())
+        : null;
+
     if (fsGuard !== null) {
       baseRunParams.fsGuard = fsGuard;
     }
@@ -1074,6 +1086,7 @@ ipcMain.handle('cwt:phase3:guided-loop', (_event, params) =>
           experiment: 'wilson_loop_3d_guided',
           label: `Guided Wilson loop (${steps} steps)`,
         },
+        { artifactsDir: resolvedArtifactsDir },
       );
 
       const completion = await runManager.waitForCompletion(runId);
@@ -1126,10 +1139,17 @@ ipcMain.handle('cwt:phase3:adiabatic-boundary', (_event, payload) =>
       throw new Error('parameters are required for adiabatic-boundary');
     }
 
-    const { outDir: rawOutDir, ...rest } = payload as { outDir?: unknown } & Record<string, unknown>;
-    const outDir = typeof rawOutDir === 'string' ? rawOutDir.trim() : '';
+    const { outDir: rawOutDir, experimentDir: rawExperimentDir, ...rest } =
+      payload as { outDir?: unknown; experimentDir?: unknown } & Record<string, unknown>;
+
+    const experimentDirRaw = typeof rawExperimentDir === 'string' ? rawExperimentDir.trim() : '';
+    const resolvedExperimentDir = experimentDirRaw ? path.resolve(experimentDirRaw) : null;
+
+    let outDir = typeof rawOutDir === 'string' ? rawOutDir.trim() : '';
     if (!outDir) {
-      throw new Error('outDir must be a non-empty string path');
+      const root = resolvedExperimentDir ?? artifactsRoot;
+      const segments = resolvedExperimentDir ? ['phase3', 'adiabatic_boundary'] : ['adiabatic_boundary'];
+      outDir = path.join(root, ...segments, uuidv4());
     }
 
     const runParams: Record<string, unknown> = {
@@ -1137,59 +1157,117 @@ ipcMain.handle('cwt:phase3:adiabatic-boundary', (_event, payload) =>
       outputDir: outDir,
     };
 
-    return launchPhase('experiments.adiabatic_boundary.run', runParams, {
-      phase: 'phase3',
-      experiment: 'adiabatic_boundary',
-      label: 'Adiabatic boundary sweep',
-    });
+    return launchPhase(
+      'experiments.adiabatic_boundary.run',
+      runParams,
+      {
+        phase: 'phase3',
+        experiment: 'adiabatic_boundary',
+        label: 'Adiabatic boundary sweep',
+      },
+      { artifactsDir: resolvedExperimentDir },
+    );
   }),
 );
 
 ipcMain.handle('cwt:phase3:adiabatic-boundary:analyze', (_event, params) =>
   wrap(() => {
     ensurePythonEnvironment();
-    return runAdiabaticBoundary(
-      runManager,
-      cwtSimRoot,
-      artifactsRoot,
-      params as Record<string, unknown> | undefined,
-    );
+    const rawParams = (params ?? {}) as Record<string, unknown>;
+    const sanitizedParams = { ...rawParams };
+    const experimentDirRaw =
+      typeof rawParams.experimentDir === 'string' ? rawParams.experimentDir.trim() : '';
+    let resolvedExperimentDir: string | null = null;
+    if (experimentDirRaw) {
+      resolvedExperimentDir = path.resolve(experimentDirRaw);
+      delete sanitizedParams.experimentDir;
+    }
+
+    return runAdiabaticBoundary(runManager, cwtSimRoot, artifactsRoot, sanitizedParams, {
+      experimentDir: resolvedExperimentDir,
+    });
   }),
 );
 
 ipcMain.handle('cwt:phase4:wilson3d', (_event, params) =>
-  wrap(() =>
-    launchPhase('experiments.wilson_loop_3d.run', params, {
-      phase: 'phase4',
-      experiment: 'wilson_loop_3d',
-      label: 'Wilson loop 3D sweep',
-    }),
-  ),
+  wrap(() => {
+    const rawParams = (params ?? {}) as Record<string, unknown>;
+    const sanitizedParams = { ...rawParams };
+    const experimentDirRaw =
+      typeof rawParams.experimentDir === 'string' ? rawParams.experimentDir.trim() : '';
+    if (experimentDirRaw) {
+      delete sanitizedParams.experimentDir;
+    }
+    const resolvedArtifactsDir = experimentDirRaw ? path.resolve(experimentDirRaw) : null;
+
+    return launchPhase(
+      'experiments.wilson_loop_3d.run',
+      sanitizedParams,
+      {
+        phase: 'phase4',
+        experiment: 'wilson_loop_3d',
+        label: 'Wilson loop 3D sweep',
+      },
+      { artifactsDir: resolvedArtifactsDir },
+    );
+  }),
 );
 
 ipcMain.handle('cwt:phase4:torus-plateau', (_event, params) =>
-  wrap(() =>
-    launchPhase('experiments.torus_plateau.run', params, {
-      phase: 'phase4',
-      experiment: 'torus_plateau',
-      label: 'Torus plateau survey',
-    }),
-  ),
+  wrap(() => {
+    const rawParams = (params ?? {}) as Record<string, unknown>;
+    const sanitizedParams = { ...rawParams };
+    const experimentDirRaw =
+      typeof rawParams.experimentDir === 'string' ? rawParams.experimentDir.trim() : '';
+    if (experimentDirRaw) {
+      delete sanitizedParams.experimentDir;
+    }
+    const resolvedArtifactsDir = experimentDirRaw ? path.resolve(experimentDirRaw) : null;
+
+    return launchPhase(
+      'experiments.torus_plateau.run',
+      sanitizedParams,
+      {
+        phase: 'phase4',
+        experiment: 'torus_plateau',
+        label: 'Torus plateau survey',
+      },
+      { artifactsDir: resolvedArtifactsDir },
+    );
+  }),
 );
 
 ipcMain.handle('cwt:phase5:graph-family', (_event, params) =>
-  wrap(() =>
-    launchPhase('experiments.graph_family.run', params, {
-      phase: 'phase5',
-      experiment: 'graph_family',
-      label: 'Graph family sweep',
-    }),
-  ),
+  wrap(() => {
+    const rawParams = (params ?? {}) as Record<string, unknown>;
+    const sanitizedParams = { ...rawParams };
+    const experimentDirRaw =
+      typeof rawParams.experimentDir === 'string' ? rawParams.experimentDir.trim() : '';
+    if (experimentDirRaw) {
+      delete sanitizedParams.experimentDir;
+    }
+    const resolvedArtifactsDir = experimentDirRaw ? path.resolve(experimentDirRaw) : null;
+
+    return launchPhase(
+      'experiments.graph_family.run',
+      sanitizedParams,
+      {
+        phase: 'phase5',
+        experiment: 'graph_family',
+        label: 'Graph family sweep',
+      },
+      { artifactsDir: resolvedArtifactsDir },
+    );
+  }),
 );
 
 ipcMain.handle('cwt:phase5:graph-family:analyze', (_event, payload) =>
   wrap(async () => {
     const env = ensurePythonEnvironment();
+
+    const experimentDirRaw =
+      typeof payload?.experimentDir === 'string' ? payload.experimentDir.trim() : '';
+    const resolvedExperimentDir = experimentDirRaw ? path.resolve(experimentDirRaw) : null;
 
     const familiesRaw = Array.isArray(payload?.families)
       ? payload?.families
@@ -1233,7 +1311,11 @@ ipcMain.handle('cwt:phase5:graph-family:analyze', (_event, payload) =>
       throw new Error('seed must be numeric.');
     }
 
-    const outDir = path.join(artifactsRoot, 'graph_family', uuidv4());
+    const root = resolvedExperimentDir ?? artifactsRoot;
+    const segments = resolvedExperimentDir
+      ? ['phase5', 'graph_family', uuidv4()]
+      : ['graph_family', uuidv4()];
+    const outDir = path.join(root, ...segments);
     await fs.mkdir(outDir, { recursive: true });
 
     return cmdGraphFamily(env.executable, {
@@ -1251,6 +1333,10 @@ ipcMain.handle('cwt:phase5:graph-family:analyze', (_event, payload) =>
 ipcMain.handle('cwt:phase5:inverse-design:command', (_event, payload: Record<string, unknown> | undefined) =>
   wrap(async () => {
     const env = ensurePythonEnvironment();
+
+    const experimentDirRaw =
+      typeof payload?.experimentDir === 'string' ? payload.experimentDir.trim() : '';
+    const resolvedExperimentDir = experimentDirRaw ? path.resolve(experimentDirRaw) : null;
 
     const axesRaw = Array.isArray(payload?.axes) ? payload.axes : [];
     if (axesRaw.length !== 2) {
@@ -1298,7 +1384,11 @@ ipcMain.handle('cwt:phase5:inverse-design:command', (_event, payload: Record<str
       throw new Error('targetIndex must be an integer when provided.');
     }
 
-    const outDir = path.join(artifactsRoot, 'inverse_design', uuidv4());
+    const root = resolvedExperimentDir ?? artifactsRoot;
+    const segments = resolvedExperimentDir
+      ? ['phase5', 'inverse_design', uuidv4()]
+      : ['inverse_design', uuidv4()];
+    const outDir = path.join(root, ...segments);
     await fs.mkdir(outDir, { recursive: true });
 
     return cmdInverseDesign(env.executable, {
@@ -1317,6 +1407,10 @@ ipcMain.handle('cwt:phase5:inverse-design:command', (_event, payload: Record<str
 ipcMain.handle('cwt:phase5:noise-robust:command', (_event, payload: Record<string, unknown> | undefined) =>
   wrap(async () => {
     const env = ensurePythonEnvironment();
+
+    const experimentDirRaw =
+      typeof payload?.experimentDir === 'string' ? payload.experimentDir.trim() : '';
+    const resolvedExperimentDir = experimentDirRaw ? path.resolve(experimentDirRaw) : null;
 
     const toNumericArray = (value: unknown): number[] => {
       if (!Array.isArray(value)) {
@@ -1353,7 +1447,11 @@ ipcMain.handle('cwt:phase5:noise-robust:command', (_event, payload: Record<strin
       throw new Error('axes entries must be non-empty strings.');
     }
 
-    const outDir = path.join(artifactsRoot, 'noise_robust', uuidv4());
+    const root = resolvedExperimentDir ?? artifactsRoot;
+    const segments = resolvedExperimentDir
+      ? ['phase5', 'noise_robust', uuidv4()]
+      : ['noise_robust', uuidv4()];
+    const outDir = path.join(root, ...segments);
     await fs.mkdir(outDir, { recursive: true });
 
     return cmdGateCRobust(env.executable, {
@@ -1371,32 +1469,79 @@ ipcMain.handle('cwt:phase5:noise-robust:command', (_event, payload: Record<strin
 );
 
 ipcMain.handle('cwt:phase5:inverse-design', (_event, params) =>
-  wrap(() =>
-    launchPhase('experiments.inverse_design.run', params, {
-      phase: 'phase5',
-      experiment: 'inverse_design',
-      label: 'Inverse design',
-    }),
-  ),
+  wrap(() => {
+    const rawParams = (params ?? {}) as Record<string, unknown>;
+    const sanitizedParams = { ...rawParams };
+    const experimentDirRaw =
+      typeof rawParams.experimentDir === 'string' ? rawParams.experimentDir.trim() : '';
+    if (experimentDirRaw) {
+      delete sanitizedParams.experimentDir;
+    }
+    const resolvedArtifactsDir = experimentDirRaw ? path.resolve(experimentDirRaw) : null;
+
+    return launchPhase(
+      'experiments.inverse_design.run',
+      sanitizedParams,
+      {
+        phase: 'phase5',
+        experiment: 'inverse_design',
+        label: 'Inverse design',
+      },
+      { artifactsDir: resolvedArtifactsDir },
+    );
+  }),
 );
 
 ipcMain.handle('cwt:phase5:noise-robust', (_event, params) =>
-  wrap(() =>
-    launchPhase('experiments.gateC_topology_robust.run', params, {
-      phase: 'phase5',
-      experiment: 'gateC_topology_robust',
-      label: 'Noise robustness sweep',
-    }),
-  ),
+  wrap(() => {
+    const rawParams = (params ?? {}) as Record<string, unknown>;
+    const sanitizedParams = { ...rawParams };
+    const experimentDirRaw =
+      typeof rawParams.experimentDir === 'string' ? rawParams.experimentDir.trim() : '';
+    if (experimentDirRaw) {
+      delete sanitizedParams.experimentDir;
+    }
+    const resolvedArtifactsDir = experimentDirRaw ? path.resolve(experimentDirRaw) : null;
+
+    return launchPhase(
+      'experiments.gateC_topology_robust.run',
+      sanitizedParams,
+      {
+        phase: 'phase5',
+        experiment: 'gateC_topology_robust',
+        label: 'Noise robustness sweep',
+      },
+      { artifactsDir: resolvedArtifactsDir },
+    );
+  }),
 );
 
-ipcMain.handle('cwt:phase5:beta-sweep', (_event, params: { configPath: string; betas: number[] }) =>
+ipcMain.handle('cwt:phase5:beta-sweep', (_event, params) =>
   wrap(async () => {
-    if (!params?.configPath || !Array.isArray(params.betas) || params.betas.length === 0) {
-      throw new Error('configPath and betas are required');
+    const payload = (params ?? {}) as Record<string, unknown>;
+
+    const configPathRaw = typeof payload.configPath === 'string' ? payload.configPath.trim() : '';
+    if (!configPathRaw) {
+      throw new Error('configPath is required for β sweep runs.');
     }
 
-    const basePath = path.resolve(params.configPath);
+    const betasRaw = Array.isArray(payload.betas) ? payload.betas : [];
+    const betas = betasRaw.map((value, index) => {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) {
+        throw new Error(`beta entry ${index + 1} must be numeric.`);
+      }
+      return numeric;
+    });
+    if (betas.length === 0) {
+      throw new Error('At least one beta value is required.');
+    }
+
+    const experimentDirRaw =
+      typeof payload.experimentDir === 'string' ? payload.experimentDir.trim() : '';
+    const resolvedExperimentDir = experimentDirRaw ? path.resolve(experimentDirRaw) : null;
+
+    const basePath = path.resolve(configPathRaw);
     const baseContent = await fs.readFile(basePath, 'utf-8');
     const baseConfig = parseYaml(baseContent);
     if (typeof baseConfig !== 'object' || baseConfig === null) {
@@ -1404,15 +1549,17 @@ ipcMain.handle('cwt:phase5:beta-sweep', (_event, params: { configPath: string; b
     }
 
     ensurePythonEnvironment();
-    const tempDir = await fs.mkdtemp(path.join(artifactsRoot, 'beta-sweep-'));
+
+    const root = resolvedExperimentDir ?? artifactsRoot;
+    const segments = resolvedExperimentDir
+      ? ['phase5', 'beta_sweep', uuidv4()]
+      : ['beta_sweep', uuidv4()];
+    const stagingDir = path.join(root, ...segments);
+    await fs.mkdir(stagingDir, { recursive: true });
+
     const runs: Array<{ beta: number; runId: string; status: string }> = [];
 
-    for (const betaValue of params.betas) {
-      const beta = Number(betaValue);
-      if (!Number.isFinite(beta)) {
-        throw new Error('beta values must be numeric');
-      }
-
+    for (const beta of betas) {
       const mutated = JSON.parse(JSON.stringify(baseConfig)) as Record<string, unknown>;
       const existingCoupling =
         typeof mutated['geometric_coupling'] === 'object' && mutated['geometric_coupling'] !== null
@@ -1423,7 +1570,7 @@ ipcMain.handle('cwt:phase5:beta-sweep', (_event, params: { configPath: string; b
         beta,
       };
 
-      const configPath = path.join(tempDir, `beta_${beta}.yaml`);
+      const configPath = path.join(stagingDir, `beta_${beta}.yaml`);
       await fs.writeFile(configPath, stringifyYaml(mutated), 'utf-8');
 
       const { runId } = await runManager.createRun(
@@ -1435,19 +1582,24 @@ ipcMain.handle('cwt:phase5:beta-sweep', (_event, params: { configPath: string; b
           experiment: 'beta_sweep',
           label: `β sweep (β=${beta})`,
         },
+        resolvedExperimentDir ? { artifactsDir: resolvedExperimentDir } : undefined,
       );
 
       const completion = await runManager.waitForCompletion(runId);
       runs.push({ beta, runId, status: completion.status });
     }
 
-    return { runs, tempDir };
+    return { runs, tempDir: stagingDir, stagingDir };
   }),
 );
 
 ipcMain.handle('cwt:phase5:coupling-tuner', (_event, payload: Record<string, unknown> | undefined) =>
   wrap(async () => {
     const env = ensurePythonEnvironment();
+
+    const experimentDirRaw =
+      typeof payload?.experimentDir === 'string' ? payload.experimentDir.trim() : '';
+    const resolvedExperimentDir = experimentDirRaw ? path.resolve(experimentDirRaw) : null;
 
     const configPathRaw = typeof payload?.configPath === 'string' ? payload.configPath.trim() : '';
     if (!configPathRaw) {
@@ -1488,7 +1640,11 @@ ipcMain.handle('cwt:phase5:coupling-tuner', (_event, payload: Record<string, unk
       etaQ = numeric;
     }
 
-    const outDir = path.join(artifactsRoot, 'coupling_tuner', uuidv4());
+    const root = resolvedExperimentDir ?? artifactsRoot;
+    const segments = resolvedExperimentDir
+      ? ['phase5', 'coupling_tuner', uuidv4()]
+      : ['coupling_tuner', uuidv4()];
+    const outDir = path.join(root, ...segments);
     await fs.mkdir(outDir, { recursive: true });
 
     return runCouplingTuner(env.executable, {
@@ -1645,11 +1801,15 @@ ipcMain.handle('cwt:recipes:save', (_event, payload: unknown) =>
   }),
 );
 
-ipcMain.handle('cwt:recipes:run', (_event, payload: { id: string }) =>
+ipcMain.handle('cwt:recipes:run', (_event, payload: { id: string; experimentDir?: string }) =>
   wrap(async () => {
     if (!payload?.id) {
       throw new Error('id is required');
     }
+
+    const experimentDirRaw =
+      typeof payload.experimentDir === 'string' ? payload.experimentDir.trim() : '';
+    const resolvedArtifactsDir = experimentDirRaw ? path.resolve(experimentDirRaw) : null;
 
     const recipes = await loadRecipes();
     const recipe = recipes.find((item) => item.id === payload.id);
@@ -1659,10 +1819,16 @@ ipcMain.handle('cwt:recipes:run', (_event, payload: { id: string }) =>
 
     ensurePythonEnvironment();
     const args = buildArgsFromParams(recipe.params);
-    return runManager.createRun(recipe.command, args, cwtSimRoot, {
-      experiment: recipe.command,
-      label: `Recipe: ${recipe.name}`,
-    });
+    return runManager.createRun(
+      recipe.command,
+      args,
+      cwtSimRoot,
+      {
+        experiment: recipe.command,
+        label: `Recipe: ${recipe.name}`,
+      },
+      { artifactsDir: resolvedArtifactsDir },
+    );
   }, { label: 'cwt:recipes:run' }),
 );
 

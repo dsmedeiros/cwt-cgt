@@ -1,16 +1,13 @@
-import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Plot from 'react-plotly.js';
 import type { Data, Layout } from 'plotly.js';
 
 import { phase2 } from '../ipc';
+import { useExperimentNavigation } from '../navigation/ExperimentNavigationContext';
 import { formatValidationMessage, validatePercentile } from '../../shared/validators';
 import type { Phase2CorrelateResult, Phase2FeatureName, Phase2RocPoint } from '../types/ipc';
 import { useCommandRegistration } from '../commandCenter';
-import {
-  ArtifactNode,
-  isGuidLike,
-  sanitizeArtifactNodes,
-} from '../utils/artifacts';
+import { ArtifactNode } from '../utils/artifacts';
 
 const FEATURE_DISPLAY_NAMES: Record<Phase2FeatureName, string> = {
   spectral_gap: 'Spectral gap',
@@ -104,13 +101,17 @@ const buildSummary = (result: Phase2CorrelateResult | null): string => {
 };
 
 const Phase2Features = () => {
-  const [phase2Root, setPhase2Root] = useState<string | null>(null);
-  const [experiments, setExperiments] = useState<ArtifactNode[]>([]);
-  const [experimentsError, setExperimentsError] = useState<string | null>(null);
-  const [experimentsLoading, setExperimentsLoading] = useState(false);
-  const [selectedExperimentPath, setSelectedExperimentPath] = useState<string | null>(null);
+  const {
+    artifactsRoot,
+    experiments,
+    experimentsError,
+    experimentsLoading,
+    selectedExperimentPath,
+    selectedSubstratePath,
+    substratesError,
+    substratesLoading,
+  } = useExperimentNavigation();
   const [selectedRunPaths, setSelectedRunPaths] = useState<string[]>([]);
-  const [runDropdownValue, setRunDropdownValue] = useState('');
   const [thresholdMode, setThresholdMode] = useState<'absolute' | 'percentile'>('absolute');
   const [absoluteThreshold, setAbsoluteThreshold] = useState('1.0');
   const [percentileThreshold, setPercentileThreshold] = useState('90');
@@ -126,124 +127,6 @@ const Phase2Features = () => {
   const abortRef = useRef<{ aborted: boolean } | null>(null);
   const pulseTimeoutsRef = useRef<Map<string, number>>(new Map());
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadConfig = async () => {
-      if (typeof window === 'undefined' || !window?.CWT?.env?.getConfig) {
-        return;
-      }
-
-      try {
-        const response = await window.CWT.env.getConfig();
-        if (cancelled) {
-          return;
-        }
-        if (response.ok) {
-          setPhase2Root(response.data.phase2MetricsRoot ?? response.data.artifactsRoot ?? null);
-        } else {
-          setPhase2Root(null);
-        }
-      } catch {
-        if (!cancelled) {
-          setPhase2Root(null);
-        }
-      }
-    };
-
-    void loadConfig();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    if (!phase2Root) {
-      setExperiments([]);
-      setSelectedExperimentPath(null);
-      setSelectedRunPaths([]);
-      setExperimentsError(
-        'Artifacts workspace root not configured. Open Env Doctor to set a base directory.',
-      );
-      setExperimentsLoading(false);
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    const api = typeof window !== 'undefined' ? window?.CWT?.artifacts : undefined;
-    if (!api?.list) {
-      setExperiments([]);
-      setSelectedExperimentPath(null);
-      setSelectedRunPaths([]);
-      setExperimentsError('Artifact listing is unavailable in this build.');
-      setExperimentsLoading(false);
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    const fetchExperiments = async () => {
-      setExperimentsLoading(true);
-      setExperimentsError(null);
-      try {
-        const response = await api.list({ under: phase2Root });
-        if (cancelled) {
-          return;
-        }
-        if (!response.ok) {
-          setExperiments([]);
-          setSelectedExperimentPath(null);
-          setSelectedRunPaths([]);
-          setExperimentsError(response.error ?? 'Failed to list experiments.');
-          return;
-        }
-
-        const nodes = sanitizeArtifactNodes(response.data);
-        const directories = nodes.filter(
-          (node) => node.type === 'directory' && isGuidLike(node.relativePath),
-        );
-        setExperiments(directories);
-
-        if (directories.length === 0) {
-          setSelectedExperimentPath(null);
-          setSelectedRunPaths([]);
-          setExperimentsError('No experiment folders with GUID names found under the configured root.');
-        } else {
-          setExperimentsError(null);
-          setSelectedExperimentPath((prev) => {
-            if (prev && directories.some((dir) => dir.path === prev)) {
-              return prev;
-            }
-            return directories[0]?.path ?? null;
-          });
-        }
-      } catch (err) {
-        if (cancelled) {
-          return;
-        }
-        const message = err instanceof Error ? err.message : String(err);
-        setExperiments([]);
-        setSelectedExperimentPath(null);
-        setSelectedRunPaths([]);
-        setExperimentsError(message);
-      } finally {
-        if (!cancelled) {
-          setExperimentsLoading(false);
-        }
-      }
-    };
-
-    void fetchExperiments();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [phase2Root]);
-
   const selectedExperiment = useMemo(
     () => experiments.find((entry) => entry.path === selectedExperimentPath) ?? null,
     [experiments, selectedExperimentPath],
@@ -258,6 +141,12 @@ const Phase2Features = () => {
       : [];
     return children.filter((child) => child.type === 'directory');
   }, [selectedExperiment]);
+
+  const selectedSubstrateNode = useMemo(
+    () =>
+      availableRunDirs.find((child) => child.path === selectedSubstratePath) ?? null,
+    [availableRunDirs, selectedSubstratePath],
+  );
 
   useEffect(() => {
     const childDirs = availableRunDirs;
@@ -319,23 +208,25 @@ const Phase2Features = () => {
     pulseTimeoutsRef.current.set(relativePath, timeout);
   }, []);
 
-  const handleRunSelect = useCallback(
-    (event: ChangeEvent<HTMLSelectElement>) => {
-      const value = event.target.value;
-      if (!value) {
-        return;
+  const handleAddSelectedSubstrate = useCallback(() => {
+    if (!selectedSubstratePath) {
+      return;
+    }
+
+    const match = availableRunDirs.find((dir) => dir.path === selectedSubstratePath);
+    if (!match) {
+      setError('Selected substrate is unavailable. Refresh the navigation list and try again.');
+      return;
+    }
+
+    setSelectedRunPaths((prev) => {
+      if (prev.includes(match.relativePath)) {
+        triggerPulse(match.relativePath);
+        return prev;
       }
-      setRunDropdownValue('');
-      setSelectedRunPaths((prev) => {
-        if (prev.includes(value)) {
-          triggerPulse(value);
-          return prev;
-        }
-        return [...prev, value];
-      });
-    },
-    [triggerPulse],
-  );
+      return [...prev, match.relativePath];
+    });
+  }, [availableRunDirs, selectedSubstratePath, setSelectedRunPaths, triggerPulse]);
 
   const handleRemoveRun = useCallback((relativePath: string) => {
     setSelectedRunPaths((prev) => prev.filter((value) => value !== relativePath));
@@ -448,10 +339,6 @@ const Phase2Features = () => {
       pulseTimeoutsRef.current.clear();
     };
   }, []);
-
-  useEffect(() => {
-    setRunDropdownValue('');
-  }, [selectedExperimentPath]);
 
   const runRegistration = useMemo(
     () => ({ handler: () => void runCorrelation(), description: 'Run Phase-2 correlation' }),
@@ -637,45 +524,57 @@ const Phase2Features = () => {
           </p>
         </div>
         <p className="field-hint">
-          Base directory: <code>{phase2Root ?? 'Not configured'}</code>
+          Base directory: <code>{artifactsRoot ?? 'Not configured'}</code>
         </p>
-        <div className="phase2__selectors">
-          <label className="phase2__selector">
-            <span>Experiment</span>
-            <select
-              value={selectedExperimentPath ?? ''}
-              onChange={(event) => setSelectedExperimentPath(event.target.value || null)}
-              disabled={experimentsLoading || isLoading || experiments.length === 0}
-            >
-              {experiments.map((experiment) => (
-                <option key={experiment.path} value={experiment.path}>
-                  {experiment.relativePath}
-                </option>
-              ))}
-            </select>
-          </label>
+        <div className="phase2__nav-status" role="status">
+          {experimentsLoading ? (
+            <span>Loading experiments…</span>
+          ) : experimentsError ? (
+            <span className="field-error">{experimentsError}</span>
+          ) : experiments.length === 0 ? (
+            <span>Run Phase 1 to populate experiments.</span>
+          ) : selectedExperimentPath ? (
+            <span>
+              Experiment: <code>{selectedExperimentPath}</code>
+            </span>
+          ) : (
+            <span>Select a Phase 1 experiment in the navigation pane.</span>
+          )}
         </div>
-        <label className="phase2__selector">
-          <span>Substrates</span>
-          <select
-            value={runDropdownValue}
-            onChange={handleRunSelect}
-            disabled={experimentsLoading || isLoading || availableRunDirs.length === 0}
+        <div className="phase2__nav-status" role="status">
+          {substratesLoading ? (
+            <span>Loading substrates…</span>
+          ) : substratesError ? (
+            <span className="field-error">{substratesError}</span>
+          ) : selectedSubstrateNode ? (
+            <span>
+              Selected substrate: <code>{selectedSubstrateNode.relativePath}</code>
+            </span>
+          ) : selectedExperimentPath ? (
+            <span>Select a substrate in the navigation pane to queue it for analysis.</span>
+          ) : (
+            <span>Choose an experiment to list available substrates.</span>
+          )}
+        </div>
+        <div className="phase2__nav-actions">
+          <button
+            type="button"
+            className="btn"
+            onClick={handleAddSelectedSubstrate}
+            disabled={
+              isLoading ||
+              !selectedSubstratePath ||
+              experimentsLoading ||
+              substratesLoading ||
+              availableRunDirs.length === 0
+            }
           >
-            <option value="">
-              {availableRunDirs.length === 0 ? 'No substrate directories found' : 'Select a substrate…'}
-            </option>
-            {availableRunDirs.map((run) => (
-              <option key={run.relativePath} value={run.relativePath}>
-                {run.relativePath}
-              </option>
-            ))}
-          </select>
+            Add selected substrate
+          </button>
           <p className="field-hint">
-            Click to add substrates. Selecting one again highlights it in the list below so you can spot existing choices.
+            Change the substrate in the navigation pane and click “Add” again to build a multi-run set.
           </p>
-        </label>
-        {experimentsError ? <div className="phase2__error" role="alert">{experimentsError}</div> : null}
+        </div>
         {metricsDirs.length > 0 ? (
           <ul className="phase2__dir-list">
             {selectedRunNodes.map((node) => (

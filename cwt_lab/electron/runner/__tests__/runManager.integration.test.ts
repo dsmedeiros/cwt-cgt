@@ -117,17 +117,20 @@ describe('RunManager integration', () => {
     const [run] = runs;
     expect(run.metrics).toEqual({ fs_p95: 0.125, phi: 0.456, R: 0.789 });
 
-    const diagnostics = JSON.parse(
-      readFileSync(path.join(run.artifactsDir, 'diagnostics.json'), 'utf-8'),
-    ) as { status: string; command: string };
+    const workspaceDir = path.join(run.artifactsDir, '_runs', runId);
+    const diagnosticsPath = path.join(workspaceDir, 'diagnostics.json');
+    const diagnostics = JSON.parse(readFileSync(diagnosticsPath, 'utf-8')) as {
+      status: string;
+      command: string;
+    };
     expect(diagnostics.status).toBe('complete');
     expect(diagnostics.command).toBe(pythonExecutable);
 
     const bundle = await manager.collectDiagnosticsBundle(runId);
     expect(bundle.files).toEqual(
       expect.arrayContaining([
-        path.join(run.artifactsDir, 'stdout.log'),
-        path.join(run.artifactsDir, 'diagnostics.json'),
+        path.join(workspaceDir, 'stdout.log'),
+        diagnosticsPath,
       ]),
     );
     expect(bundle.zipPath).toMatch(/diagnostics-\d+\.zip$/);

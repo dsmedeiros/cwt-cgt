@@ -3,6 +3,7 @@ import Plot from 'react-plotly.js';
 import type { Layout, PlotData } from 'plotly.js';
 import type { RecipeRecord } from '../types/ipc';
 import { createDecisionGateEngine } from '../decisionGate';
+import { useExperimentNavigation } from '../navigation/ExperimentNavigationContext';
 import {
   formatValidationMessage,
   validateAxis,
@@ -437,15 +438,16 @@ const estimateRecipePhi = (recipe: RecipeRecord | undefined): number | null => {
 
 const Phase4Explorer3D = () => {
   const decisionGate = useMemo(() => createDecisionGateEngine(), []);
-  const [artifactsRoot, setArtifactsRoot] = useState<string | null>(null);
-  const [experiments, setExperiments] = useState<ArtifactNode[]>([]);
-  const [experimentsLoading, setExperimentsLoading] = useState(false);
-  const [experimentsError, setExperimentsError] = useState<string | null>(null);
-  const [selectedExperimentPath, setSelectedExperimentPath] = useState<string | null>(null);
-  const [substrates, setSubstrates] = useState<ArtifactNode[]>([]);
-  const [substratesLoading, setSubstratesLoading] = useState(false);
-  const [substratesError, setSubstratesError] = useState<string | null>(null);
-  const [selectedSubstratePath, setSelectedSubstratePath] = useState<string | null>(null);
+  const {
+    experiments,
+    experimentsError,
+    experimentsLoading,
+    selectedExperimentPath,
+    substrates,
+    substratesError,
+    substratesLoading,
+    selectedSubstratePath,
+  } = useExperimentNavigation();
   const [phase3Summary, setPhase3Summary] = useState<Phase3Summary | null>(null);
   const [phase3SummaryPath, setPhase3SummaryPath] = useState<string | null>(null);
   const [phase3SummaryError, setPhase3SummaryError] = useState<string | null>(null);
@@ -455,6 +457,11 @@ const Phase4Explorer3D = () => {
   const [axisA, setAxisA] = useState(AXIS_CHOICES[0]);
   const [axisB, setAxisB] = useState(AXIS_CHOICES[1]);
   const [axisC, setAxisC] = useState('kappa');
+
+  const selectedSubstrateNode = useMemo(
+    () => substrates.find((node) => node.path === selectedSubstratePath) ?? null,
+    [substrates, selectedSubstratePath],
+  );
 
   const [centerInputs, setCenterInputs] = useState<[string, string, string]>(['1.5', '1.75', '1.2']);
   const [amplitudes, setAmplitudes] = useState<[number, number, number]>([0.12, 0.15, 0.08]);
@@ -502,223 +509,35 @@ const Phase4Explorer3D = () => {
   useEffect(() => {
     let cancelled = false;
 
-    const loadConfig = async () => {
-      if (typeof window === 'undefined' || !window?.CWT?.env?.getConfig) {
-        setArtifactsRoot(null);
-        return;
-      }
-      try {
-        const response = await window.CWT.env.getConfig();
-        if (cancelled) {
-          return;
-        }
-        if (response.ok) {
-          setArtifactsRoot(response.data.phase2MetricsRoot ?? response.data.artifactsRoot ?? null);
-        } else {
-          setArtifactsRoot(null);
-        }
-      } catch {
-        if (!cancelled) {
-          setArtifactsRoot(null);
-        }
-      }
-    };
-
-    void loadConfig();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    if (!artifactsRoot) {
-      setExperiments([]);
-      setExperimentsError(
-        'Artifacts workspace root not configured. Open Env Doctor to set a base directory.',
-      );
-      setExperimentsLoading(false);
-      setSelectedExperimentPath(null);
-      setSubstrates([]);
-      setSubstratesError(null);
-      setSubstratesLoading(false);
-      setSelectedSubstratePath(null);
-      setPhase3Summary(null);
-      setPhase3SummaryPath(null);
-      setPhase3SummaryError(null);
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    const api = typeof window !== 'undefined' ? window?.CWT?.artifacts : undefined;
-    if (!api?.list) {
-      setExperiments([]);
-      setExperimentsError('Artifact listing is unavailable in this build.');
-      setExperimentsLoading(false);
-      setSelectedExperimentPath(null);
-      setSubstrates([]);
-      setSelectedSubstratePath(null);
-      setSubstratesError('Artifact listing is unavailable in this build.');
-      setSubstratesLoading(false);
-      setPhase3Summary(null);
-      setPhase3SummaryPath(null);
-      setPhase3SummaryError('Artifact listing is unavailable in this build.');
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    const fetchExperiments = async () => {
-      setExperimentsLoading(true);
-      setExperimentsError(null);
-      try {
-        const response = await api.list({ under: artifactsRoot });
-        if (cancelled) {
-          return;
-        }
-        if (!response.ok) {
-          setExperiments([]);
-          setExperimentsError(response.error ?? 'Failed to list experiments.');
-          setSelectedExperimentPath(null);
-          return;
-        }
-
-        const nodes = sanitizeArtifactNodes(response.data);
-        const directories = nodes.filter(
-          (node) => node.type === 'directory' && isGuidLike(node.relativePath),
-        );
-        const experimentsWithSubstrates = directories.filter(hasDirectSubstrateDirectories);
-        setExperiments(experimentsWithSubstrates);
-        if (experimentsWithSubstrates.length === 0) {
-          setExperimentsError(
-            directories.length > 0
-              ? 'No experiments with substrate folders found under the configured root.'
-              : 'No experiment folders with GUID names found under the configured root.',
-          );
-          setSelectedExperimentPath(null);
-        } else {
-          setExperimentsError(null);
-          setSelectedExperimentPath((previous) => {
-            if (previous && experimentsWithSubstrates.some((dir) => dir.path === previous)) {
-              return previous;
-            }
-            return experimentsWithSubstrates[0]?.path ?? null;
-          });
-        }
-      } catch (error) {
-        if (cancelled) {
-          return;
-        }
-        const message = error instanceof Error ? error.message : String(error);
-        setExperiments([]);
-        setExperimentsError(message);
-        setSelectedExperimentPath(null);
-      } finally {
-        if (!cancelled) {
-          setExperimentsLoading(false);
-        }
-      }
-    };
-
-    void fetchExperiments();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [artifactsRoot]);
-
-  useEffect(() => {
-    let cancelled = false;
-
     if (!selectedExperimentPath) {
-      setSubstrates([]);
-      setSubstratesError(experiments.length === 0 ? null : 'Select an experiment to list substrates.');
-      setSubstratesLoading(false);
-      setSelectedSubstratePath(null);
       setPhase3Summary(null);
       setPhase3SummaryPath(null);
-      setPhase3SummaryError(null);
+      setPhase3SummaryError('Select an experiment to load summaries.');
+      setPhase3SummaryLoading(false);
+      setSelectedHotspotIndex(0);
+      setSelectedExtentIndex(0);
       return () => {
         cancelled = true;
       };
     }
-
-    const api = typeof window !== 'undefined' ? window?.CWT?.artifacts : undefined;
-    if (!api?.list) {
-      setSubstrates([]);
-      setSubstratesError('Artifact listing is unavailable in this build.');
-      setSubstratesLoading(false);
-      setSelectedSubstratePath(null);
-      setPhase3Summary(null);
-      setPhase3SummaryPath(null);
-      setPhase3SummaryError('Artifact listing is unavailable in this build.');
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    const fetchSubstrates = async () => {
-      setSubstratesLoading(true);
-      setSubstratesError(null);
-      setSelectedSubstratePath(null);
-      try {
-        const response = await api.list({ under: selectedExperimentPath });
-        if (cancelled) {
-          return;
-        }
-        if (!response.ok) {
-          setSubstrates([]);
-          setSubstratesError(response.error ?? 'Failed to list substrates.');
-          return;
-        }
-
-        const nodes = sanitizeArtifactNodes(response.data);
-        const directories = nodes.filter((node) => node.type === 'directory');
-        setSubstrates(directories);
-        if (directories.length === 0) {
-          setSubstratesError('No substrate directories found under this experiment.');
-          setSelectedSubstratePath(null);
-        } else {
-          setSubstratesError(null);
-          setSelectedSubstratePath((previous) => {
-            if (previous && directories.some((dir) => dir.path === previous)) {
-              return previous;
-            }
-            return directories[0]?.path ?? null;
-          });
-        }
-      } catch (error) {
-        if (cancelled) {
-          return;
-        }
-        const message = error instanceof Error ? error.message : String(error);
-        setSubstrates([]);
-        setSubstratesError(message);
-        setSelectedSubstratePath(null);
-      } finally {
-        if (!cancelled) {
-          setSubstratesLoading(false);
-        }
-      }
-    };
-
-    void fetchSubstrates();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [experiments, selectedExperimentPath]);
-
-  useEffect(() => {
-    let cancelled = false;
 
     if (!selectedSubstratePath) {
       setPhase3Summary(null);
       setPhase3SummaryPath(null);
       setPhase3SummaryError(substrates.length === 0 ? null : 'Select a substrate to load summaries.');
+      setPhase3SummaryLoading(false);
+      setSelectedHotspotIndex(0);
+      setSelectedExtentIndex(0);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const substrateExists = substrates.some((node) => node.path === selectedSubstratePath);
+    if (!substrateExists) {
+      setPhase3Summary(null);
+      setPhase3SummaryPath(null);
+      setPhase3SummaryError('Selected substrate is unavailable. Choose another substrate.');
       setPhase3SummaryLoading(false);
       setSelectedHotspotIndex(0);
       setSelectedExtentIndex(0);
@@ -795,7 +614,7 @@ const Phase4Explorer3D = () => {
     return () => {
       cancelled = true;
     };
-  }, [selectedSubstratePath, substrates]);
+  }, [selectedExperimentPath, selectedSubstratePath, substrates]);
 
   useEffect(() => {
     if (!phase3Summary || phase3Summary.hotspots.length === 0) {
@@ -1145,6 +964,11 @@ const Phase4Explorer3D = () => {
       return;
     }
 
+    if (!selectedExperimentPath) {
+      setError('Select an experiment before launching the explorer.');
+      return;
+    }
+
     setIsRunning(true);
     setError(null);
     setTipMessage(null);
@@ -1170,11 +994,15 @@ const Phase4Explorer3D = () => {
           }
         : undefined,
     );
+    const payloadWithExperiment = {
+      ...payload,
+      experimentDir: selectedExperimentPath,
+    };
 
     let runId: string | undefined;
     try {
       if (window?.CWT?.phase4?.wilson3d) {
-        const response = await window.CWT.phase4.wilson3d(payload);
+        const response = await window.CWT.phase4.wilson3d(payloadWithExperiment);
         if (!response.ok) {
           throw new Error(response.error ?? 'Failed to launch Wilson explorer run');
         }
@@ -1204,6 +1032,7 @@ const Phase4Explorer3D = () => {
     loopPoints.length,
     numericCenter,
     outDir,
+    selectedExperimentPath,
     seed,
     settle,
     steps,
@@ -1219,55 +1048,39 @@ const Phase4Explorer3D = () => {
 
           <section className="phase4__section">
             <h3>Phase 3 import</h3>
-            <label htmlFor="phase4-experiment-select">
-              <span>Experiment</span>
-              <select
-                id="phase4-experiment-select"
-                value={selectedExperimentPath ?? ''}
-                onChange={(event) =>
-                  setSelectedExperimentPath(event.target.value ? event.target.value : null)
-                }
-                disabled={experimentsLoading || experiments.length === 0}
-              >
-                {experiments.map((experiment) => (
-                  <option key={experiment.path} value={experiment.path}>
-                    {experiment.relativePath}
-                  </option>
-                ))}
-              </select>
-              {experimentsLoading ? (
-                <small className="field-hint">Loading experiments…</small>
-              ) : experimentsError ? (
-                <small className="field-error">{experimentsError}</small>
-              ) : experiments.length === 0 ? (
-                <small className="field-hint">Run Phase 1/3 to populate experiment folders.</small>
-              ) : null}
-            </label>
-
-            <label htmlFor="phase4-substrate-select">
-              <span>Substrate</span>
-              <select
-                id="phase4-substrate-select"
-                value={selectedSubstratePath ?? ''}
-                onChange={(event) =>
-                  setSelectedSubstratePath(event.target.value ? event.target.value : null)
-                }
-                disabled={substratesLoading || substrates.length === 0}
-              >
-                {substrates.map((substrate) => (
-                  <option key={substrate.path} value={substrate.path}>
-                    {substrate.name}
-                  </option>
-                ))}
-              </select>
-              {substratesLoading ? (
-                <small className="field-hint">Loading substrates…</small>
-              ) : substratesError ? (
-                <small className="field-error">{substratesError}</small>
-              ) : substrates.length === 0 ? (
-                <small className="field-hint">No substrates detected under this experiment.</small>
-              ) : null}
-            </label>
+            <div className="phase4__nav-summary">
+              <p>
+                {experimentsLoading ? (
+                  'Loading experiments…'
+                ) : experimentsError ? (
+                  <span className="phase4__error" role="alert">{experimentsError}</span>
+                ) : experiments.length === 0 ? (
+                  'Run Phase 1/3 to populate experiment folders.'
+                ) : selectedExperimentPath ? (
+                  <>
+                    Experiment: <code>{selectedExperimentPath}</code>
+                  </>
+                ) : (
+                  'Select a Phase 1 experiment in the navigation pane.'
+                )}
+              </p>
+              <p>
+                {substratesLoading ? (
+                  'Loading substrates…'
+                ) : substratesError ? (
+                  <span className="phase4__error" role="alert">{substratesError}</span>
+                ) : selectedSubstratePath ? (
+                  <>
+                    Substrate:{' '}
+                    <code>{selectedSubstrateNode?.name ?? selectedSubstrateNode?.relativePath ?? selectedSubstratePath}</code>
+                  </>
+                ) : selectedExperimentPath ? (
+                  'Choose a substrate in the navigation pane to hydrate defaults.'
+                ) : (
+                  'Pick an experiment to list available substrates.'
+                )}
+              </p>
+            </div>
 
             <div className="phase4__summary-status">
               {phase3SummaryLoading ? (

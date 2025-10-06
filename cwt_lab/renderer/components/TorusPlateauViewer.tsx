@@ -3,6 +3,7 @@ import Plot from 'react-plotly.js';
 import type { Layout, PlotData } from 'plotly.js';
 
 import type { ArtifactFile } from '../types/ipc';
+import { useExperimentNavigation } from '../navigation/ExperimentNavigationContext';
 
 const { useEffect } = React;
 
@@ -126,6 +127,14 @@ const TorusPlateauViewer = () => {
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const [selectedSampleIndex, setSelectedSampleIndex] = useState(0);
+
+  const {
+    artifactsRoot: experimentRoot,
+    experiments,
+    experimentsError,
+    experimentsLoading,
+    selectedExperimentPath: experimentPath,
+  } = useExperimentNavigation();
 
   useEffect(() => {
     let cancelled = false;
@@ -266,6 +275,11 @@ const TorusPlateauViewer = () => {
       return;
     }
 
+    if (!experimentPath) {
+      setError('Select a Phase 1 experiment before launching the survey.');
+      return;
+    }
+
     const axes: [string, string] = [axisA.trim(), axisB.trim()];
     if (!axes[0] || !axes[1]) {
       setError('Provide names for both axes.');
@@ -318,7 +332,10 @@ const TorusPlateauViewer = () => {
     setCurrentRunId(null);
 
     try {
-      const response = await window.CWT.phase4.torusPlateau(payload);
+      const response = await window.CWT.phase4.torusPlateau({
+        ...payload,
+        experimentDir: experimentPath,
+      });
       if (!response.ok) {
         throw new Error(response.error ?? 'Failed to launch torus plateau run.');
       }
@@ -336,7 +353,18 @@ const TorusPlateauViewer = () => {
     } finally {
       setIsRunning(false);
     }
-  }, [axisA, axisB, disorderInput, gridSizeInput, loadSummary, tauCenter, tauExtent, zetaCenter, zetaExtent]);
+  }, [
+    axisA,
+    axisB,
+    disorderInput,
+    experimentPath,
+    gridSizeInput,
+    loadSummary,
+    tauCenter,
+    tauExtent,
+    zetaCenter,
+    zetaExtent,
+  ]);
 
   const selectedSample = summary?.samples?.[selectedSampleIndex];
 
@@ -461,6 +489,24 @@ const TorusPlateauViewer = () => {
         <p>Launch a toroidal curvature survey and inspect the integrated flux plateau across disorder strengths.</p>
 
         <section className="torus__section">
+          <h3>Experiment</h3>
+          <p className="field-hint">Base directory: <code>{experimentRoot ?? 'Not configured'}</code></p>
+          {experimentsLoading ? (
+            <p className="field-hint" role="status">Loading experiments…</p>
+          ) : experimentsError ? (
+            <div className="torus__error" role="alert">{experimentsError}</div>
+          ) : experiments.length === 0 ? (
+            <p className="field-hint">Run Phase 1 to populate experiments.</p>
+          ) : experimentPath ? (
+            <p className="field-hint">
+              Using <code>{experimentPath}</code> from the navigation pane.
+            </p>
+          ) : (
+            <p className="field-hint">Select a Phase 1 experiment in the navigation pane to enable torus runs.</p>
+          )}
+        </section>
+
+        <section className="torus__section">
           <h3>Axes</h3>
           <label className="torus__field">
             <span>Axis 1</span>
@@ -515,7 +561,12 @@ const TorusPlateauViewer = () => {
         </section>
 
         <section className="torus__actions">
-          <button className="btn btn--primary" type="button" onClick={runExperiment} disabled={isRunning}>
+          <button
+            className="btn btn--primary"
+            type="button"
+            onClick={runExperiment}
+            disabled={isRunning || !experimentPath || experimentsLoading}
+          >
             {isRunning ? 'Launching…' : 'Run torus survey'}
           </button>
         </section>
