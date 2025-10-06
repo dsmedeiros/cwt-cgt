@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
 import ArtifactBrowser from './components/ArtifactBrowser';
 import HelpDrawer from './components/HelpDrawer';
@@ -15,6 +15,7 @@ import { CommandProvider, useCommandCenter, useCommandCombos } from './commandCe
 import { DemoModeProvider, useDemoMode, type DemoRun } from './demo/DemoModeContext';
 import { useTranslation } from './i18n';
 import { useThemeMode } from './theme';
+import { sanitizeArtifactNodes, type ArtifactNode } from './utils/artifacts';
 
 const DEFAULT_LOG_CHUNK = 8_192;
 
@@ -109,6 +110,16 @@ const AppContent = ({ mode, onToggleTheme, demoEnabled, onToggleDemo }: AppConte
   const combos = useCommandCombos();
   const { runs: demoRuns } = useDemoMode();
   const { t } = useTranslation();
+  const [configError, setConfigError] = useState<string | null>(null);
+  const [artifactsRoot, setArtifactsRoot] = useState<string | null>(null);
+  const [experiments, setExperiments] = useState<ArtifactNode[]>([]);
+  const [experimentsLoading, setExperimentsLoading] = useState(false);
+  const [experimentsError, setExperimentsError] = useState<string | null>(null);
+  const [selectedExperimentPath, setSelectedExperimentPath] = useState<string | null>(null);
+  const [substrates, setSubstrates] = useState<ArtifactNode[]>([]);
+  const [substratesLoading, setSubstratesLoading] = useState(false);
+  const [substratesError, setSubstratesError] = useState<string | null>(null);
+  const [selectedSubstratePath, setSelectedSubstratePath] = useState<string | null>(null);
 
   const demoRunsApi = useMemo<RunsApi | undefined>(
     () => (demoEnabled ? createDemoRunsApi(demoRuns) : undefined),
@@ -245,6 +256,227 @@ const AppContent = ({ mode, onToggleTheme, demoEnabled, onToggleDemo }: AppConte
     setHelpOpen(false);
   }, [active]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadConfig = async () => {
+      if (typeof window === 'undefined' || !window?.CWT?.env?.getConfig) {
+        setArtifactsRoot(null);
+        setConfigError('Artifact configuration is unavailable in this build.');
+        return;
+      }
+
+      try {
+        const response = await window.CWT.env.getConfig();
+        if (cancelled) {
+          return;
+        }
+        if (response.ok) {
+          const rawRoot = response.data.artifactsRoot ?? null;
+          const normalizedRoot =
+            typeof rawRoot === 'string' && rawRoot.trim().length > 0 ? rawRoot.trim() : null;
+          setConfigError(null);
+          setArtifactsRoot(normalizedRoot);
+        } else {
+          setConfigError(response.error ?? 'Failed to load artifact configuration.');
+          setArtifactsRoot(null);
+        }
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        setConfigError(message);
+        setArtifactsRoot(null);
+      }
+    };
+
+    void loadConfig();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!artifactsRoot) {
+      setExperiments([]);
+      setExperimentsLoading(false);
+      setSelectedExperimentPath(null);
+      setExperimentsError(
+        configError ??
+          'Artifacts workspace root not configured. Open Env Doctor to set a base directory.',
+      );
+      setSubstrates([]);
+      setSubstratesLoading(false);
+      setSelectedSubstratePath(null);
+      setSubstratesError(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const api = typeof window !== 'undefined' ? window?.CWT?.artifacts : undefined;
+    if (!api?.list) {
+      setExperiments([]);
+      setExperimentsLoading(false);
+      setSelectedExperimentPath(null);
+      setExperimentsError('Artifact listing is unavailable in this build.');
+      setSubstrates([]);
+      setSubstratesLoading(false);
+      setSelectedSubstratePath(null);
+      setSubstratesError('Artifact listing is unavailable in this build.');
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const fetchExperiments = async () => {
+      setExperimentsLoading(true);
+      setExperimentsError(null);
+      try {
+        const response = await api.list({ under: artifactsRoot });
+        if (cancelled) {
+          return;
+        }
+        if (!response.ok) {
+          setExperiments([]);
+          setSelectedExperimentPath(null);
+          setExperimentsError(response.error ?? 'Failed to list experiments.');
+          return;
+        }
+
+        const nodes = sanitizeArtifactNodes(response.data);
+        const directories = nodes
+          .filter((node) => node.type === 'directory')
+          .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+        setExperiments(directories);
+        if (directories.length === 0) {
+          setSelectedExperimentPath(null);
+          setExperimentsError('No experiment directories found under the configured artifacts root.');
+          return;
+        }
+
+        setSelectedExperimentPath((previous) => {
+          if (previous && directories.some((dir) => dir.path === previous)) {
+            return previous;
+          }
+          return directories[0]?.path ?? null;
+        });
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        setExperiments([]);
+        setSelectedExperimentPath(null);
+        setExperimentsError(message);
+      } finally {
+        if (!cancelled) {
+          setExperimentsLoading(false);
+        }
+      }
+    };
+
+    void fetchExperiments();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [artifactsRoot, configError]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!selectedExperimentPath) {
+      setSubstrates([]);
+      setSubstratesLoading(false);
+      setSelectedSubstratePath(null);
+      setSubstratesError(
+        experiments.length === 0 ? null : 'Select an experiment to list substrates.',
+      );
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const api = typeof window !== 'undefined' ? window?.CWT?.artifacts : undefined;
+    if (!api?.list) {
+      setSubstrates([]);
+      setSubstratesLoading(false);
+      setSelectedSubstratePath(null);
+      setSubstratesError('Artifact listing is unavailable in this build.');
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const fetchSubstrates = async () => {
+      setSubstratesLoading(true);
+      setSubstratesError(null);
+      try {
+        const response = await api.list({ under: selectedExperimentPath });
+        if (cancelled) {
+          return;
+        }
+        if (!response.ok) {
+          setSubstrates([]);
+          setSelectedSubstratePath(null);
+          setSubstratesError(response.error ?? 'Failed to list substrates.');
+          return;
+        }
+
+        const nodes = sanitizeArtifactNodes(response.data);
+        const directories = nodes
+          .filter((node) => node.type === 'directory')
+          .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+        setSubstrates(directories);
+        if (directories.length === 0) {
+          setSelectedSubstratePath(null);
+          setSubstratesError('No substrate directories found under this experiment.');
+          return;
+        }
+
+        setSelectedSubstratePath((previous) => {
+          if (previous && directories.some((dir) => dir.path === previous)) {
+            return previous;
+          }
+          return directories[0]?.path ?? null;
+        });
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        setSubstrates([]);
+        setSelectedSubstratePath(null);
+        setSubstratesError(message);
+      } finally {
+        if (!cancelled) {
+          setSubstratesLoading(false);
+        }
+      }
+    };
+
+    void fetchSubstrates();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedExperimentPath, experiments.length]);
+
+  const onExperimentChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
+    const next = event.target.value.trim();
+    setSelectedExperimentPath(next.length > 0 ? next : null);
+  }, []);
+
+  const onSubstrateChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
+    const next = event.target.value.trim();
+    setSelectedSubstratePath(next.length > 0 ? next : null);
+  }, []);
+
   return (
     <div className="app">
       <header className="app__header">
@@ -301,6 +533,63 @@ const AppContent = ({ mode, onToggleTheme, demoEnabled, onToggleDemo }: AppConte
             </button>
           ))}
         </nav>
+        <div className="app__selectors" role="group" aria-label="Artifact navigation">
+          <div className="app__selector">
+            <label className="app__selector-label" htmlFor="app-experiment-select">
+              Experiment
+            </label>
+            <select
+              id="app-experiment-select"
+              value={selectedExperimentPath ?? ''}
+              onChange={onExperimentChange}
+              disabled={experimentsLoading || experiments.length === 0}
+            >
+              <option value="">Select an experiment</option>
+              {experiments.map((experiment) => (
+                <option key={experiment.path} value={experiment.path}>
+                  {experiment.name}
+                </option>
+              ))}
+            </select>
+            {experimentsLoading ? (
+              <small className="app__selector-message">Loading experiments…</small>
+            ) : experimentsError ? (
+              <small className="app__selector-message app__selector-message--error">
+                {experimentsError}
+              </small>
+            ) : null}
+          </div>
+          <div className="app__selector">
+            <label className="app__selector-label" htmlFor="app-substrate-select">
+              Substrate
+            </label>
+            <select
+              id="app-substrate-select"
+              value={selectedSubstratePath ?? ''}
+              onChange={onSubstrateChange}
+              disabled={
+                substratesLoading ||
+                !selectedExperimentPath ||
+                substrates.length === 0 ||
+                !!experimentsError
+              }
+            >
+              <option value="">Select a substrate</option>
+              {substrates.map((substrate) => (
+                <option key={substrate.path} value={substrate.path}>
+                  {substrate.name}
+                </option>
+              ))}
+            </select>
+            {substratesLoading ? (
+              <small className="app__selector-message">Loading substrates…</small>
+            ) : substratesError ? (
+              <small className="app__selector-message app__selector-message--error">
+                {substratesError}
+              </small>
+            ) : null}
+          </div>
+        </div>
       </header>
       <main className="app__content">
         {tabs.map((tab) =>
