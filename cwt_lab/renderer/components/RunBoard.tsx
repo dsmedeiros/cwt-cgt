@@ -93,6 +93,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
   const [notice, setNotice] = useState<NoticeState>(null);
   const [collectingId, setCollectingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [logState, setLogState] = useState<LogState>(() => makeEmptyLogState());
   const [logAbortable, setLogAbortable] = useState(false);
 
@@ -278,12 +279,17 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
     [api],
   );
 
-  const handleDeleteRun = useCallback(
-    async (runId: string) => {
-      if (!window.confirm(`Delete run ${runId}? This will remove all artifacts.`)) {
-        return;
-      }
+  const handleRequestDelete = useCallback((runId: string) => {
+    setConfirmingId(runId);
+  }, []);
 
+  const handleCancelDelete = useCallback(() => {
+    setConfirmingId(null);
+  }, []);
+
+  const handleConfirmDelete = useCallback(
+    async (runId: string) => {
+      setConfirmingId(null);
       setDeletingId(runId);
       setNotice(null);
       try {
@@ -396,17 +402,50 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
                     >
                       {collectingId === run.id ? 'Collecting…' : 'Collect diagnostics'}
                     </button>
-                    <button
-                      type="button"
-                      className="run-board__button run-board__delete-button"
-                      onClick={() => handleDeleteRun(run.id)}
-                      disabled={deletingId === run.id}
-                      aria-label={`Delete run ${run.id}`}
-                    >
-                      <span aria-hidden="true" role="img">
-                        🗑️
-                      </span>
-                    </button>
+                    {confirmingId === run.id ? (
+                      <div
+                        className="run-board__confirm-delete"
+                        role="alertdialog"
+                        aria-label={`Confirm deletion for run ${run.id}`}
+                      >
+                        <p className="run-board__confirm-delete-message">Are you sure?</p>
+                        <div className="run-board__confirm-delete-buttons">
+                          <button
+                            type="button"
+                            className="run-board__button run-board__confirm-delete-button run-board__confirm-delete-button--yes"
+                            onClick={() => void handleConfirmDelete(run.id)}
+                            disabled={deletingId === run.id}
+                          >
+                            <span aria-hidden="true" className="run-board__confirm-delete-icon run-board__confirm-delete-icon--yes">
+                              ✔
+                            </span>
+                            Yes
+                          </button>
+                          <button
+                            type="button"
+                            className="run-board__button run-board__confirm-delete-button run-board__confirm-delete-button--no"
+                            onClick={handleCancelDelete}
+                          >
+                            <span aria-hidden="true" className="run-board__confirm-delete-icon run-board__confirm-delete-icon--no">
+                              ✖
+                            </span>
+                            No
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="run-board__button run-board__delete-button"
+                        onClick={() => handleRequestDelete(run.id)}
+                        disabled={deletingId === run.id}
+                        aria-label={`Delete run ${run.id}`}
+                      >
+                        <span aria-hidden="true" role="img">
+                          🗑️
+                        </span>
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))

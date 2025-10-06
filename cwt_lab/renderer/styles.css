@@ -767,6 +767,86 @@ body {
   min-width: 2.25rem;
 }
 
+.run-board__confirm-delete {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.06), 0 12px 24px -12px var(--color-panel-shadow);
+  min-width: 10.5rem;
+}
+
+.run-board__confirm-delete-message {
+  margin: 0;
+  font-weight: 600;
+  text-align: center;
+}
+
+.run-board__confirm-delete-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.run-board__confirm-delete-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  justify-content: center;
+}
+
+.run-board__confirm-delete-button--yes {
+  color: var(--color-success-bg);
+  border-color: var(--color-success-bg);
+}
+
+.run-board__confirm-delete-button--yes:hover,
+.run-board__confirm-delete-button--yes:focus-visible {
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+  border-color: var(--color-success-bg);
+}
+
+.run-board__confirm-delete-button--yes:hover .run-board__confirm-delete-icon--yes,
+.run-board__confirm-delete-button--yes:focus-visible .run-board__confirm-delete-icon--yes {
+  color: var(--color-success-text);
+}
+
+.run-board__confirm-delete-button--no {
+  color: var(--color-danger-bg);
+  border-color: var(--color-danger-bg);
+}
+
+.run-board__confirm-delete-button--no:hover,
+.run-board__confirm-delete-button--no:focus-visible {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+  border-color: var(--color-danger-bg);
+}
+
+.run-board__confirm-delete-button--no:hover .run-board__confirm-delete-icon--no,
+.run-board__confirm-delete-button--no:focus-visible .run-board__confirm-delete-icon--no {
+  color: var(--color-danger-text);
+}
+
+.run-board__confirm-delete-icon {
+  display: inline-flex;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.run-board__confirm-delete-icon--yes {
+  color: var(--color-success-bg);
+}
+
+.run-board__confirm-delete-icon--no {
+  color: var(--color-danger-bg);
+}
+
 .run-board__actions-col {
   width: 1%;
   white-space: nowrap;
