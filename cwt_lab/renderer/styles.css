@@ -170,6 +170,60 @@ body {
   flex-wrap: wrap;
 }
 
+.app__selectors {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.app__selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 12rem;
+}
+
+.app__selector-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.app__selector select {
+  font: inherit;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.app__selector select:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.35);
+}
+
+.app__selector select:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.app__selector-message {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.app__selector-message--error {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+:root[data-theme='dark'] .app__selector-message--error {
+  color: #fca5a5;
+}
+
 .app__tab {
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.3);
