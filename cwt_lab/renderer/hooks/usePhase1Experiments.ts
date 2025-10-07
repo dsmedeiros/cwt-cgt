@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import type { ArtifactsWatchEvent } from '../types/ipc';
+
 import type { ArtifactNode } from '../utils/artifacts';
 import { findArtifactNodeByName, isGuidLike, sanitizeArtifactNodes } from '../utils/artifacts';
 
@@ -171,6 +173,74 @@ export const usePhase1Experiments = (
   }, [artifactsRoot, hasArtifactsApi, refreshToken, requirePhase1Outputs]);
 
   const refresh = useCallback(() => setRefreshToken((token) => token + 1), []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (!artifactsRoot || !hasArtifactsApi) {
+      return;
+    }
+
+    const api = window?.CWT?.artifacts;
+    if (!api?.watch || !api?.unwatch || !api?.onDidChange) {
+      return;
+    }
+
+    let disposed = false;
+    let watcherId: number | null = null;
+
+    const isDirectChild = (relativePath: string) =>
+      relativePath.length > 0 && !relativePath.includes('/') && !relativePath.includes('\\');
+
+    const handleChange = (event: ArtifactsWatchEvent) => {
+      if (watcherId === null || event.id !== watcherId) {
+        return;
+      }
+      if (event.kind !== 'addDir' && event.kind !== 'unlinkDir') {
+        return;
+      }
+      if (!event.relativePath || !isDirectChild(event.relativePath)) {
+        return;
+      }
+      refresh();
+    };
+
+    const unsubscribe = api.onDidChange(handleChange);
+
+    const establishWatcher = async () => {
+      try {
+        const response = await api.watch({ under: artifactsRoot, depth: 1 });
+        if (!response?.ok) {
+          return;
+        }
+        const id = response.data?.id;
+        if (typeof id !== 'number') {
+          return;
+        }
+        if (disposed) {
+          await api
+            .unwatch({ id })
+            .catch(() => undefined);
+          return;
+        }
+        watcherId = id;
+      } catch (error) {
+        console.warn('Failed to watch experiment root for changes:', error);
+      }
+    };
+
+    void establishWatcher();
+
+    return () => {
+      disposed = true;
+      unsubscribe();
+      if (watcherId !== null) {
+        void api.unwatch({ id: watcherId }).catch(() => undefined);
+      }
+    };
+  }, [artifactsRoot, hasArtifactsApi, refresh]);
 
   return {
     artifactsRoot,

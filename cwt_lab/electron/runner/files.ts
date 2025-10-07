@@ -1,12 +1,16 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import chokidar from 'chokidar';
+import chokidar, { type WatchOptions } from 'chokidar';
 
 export type ArtifactFile = {
   path: string;
   relativePath: string;
   updatedAt: number;
   type: 'file' | 'directory';
+};
+
+export type ArtifactChangeEvent = ArtifactFile & {
+  kind: 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir';
 };
 
 const LONG_PATH_THRESHOLD = 240;
@@ -65,27 +69,60 @@ const scanRecursive = async (root: string, base: string): Promise<ArtifactFile[]
 
 export const scanArtifacts = async (root: string): Promise<ArtifactFile[]> => scanRecursive(root, root);
 
-export const watchArtifacts = (root: string, onChange: (file: ArtifactFile) => void) => {
-  const watcher = chokidar.watch(root, { ignoreInitial: true });
+const makeChangeEvent = (
+  root: string,
+  kind: ArtifactChangeEvent['kind'],
+  filePath: string,
+  type: ArtifactFile['type'],
+  updatedAt?: number,
+): ArtifactChangeEvent => ({
+  path: filePath,
+  relativePath: path.relative(root, filePath),
+  updatedAt: updatedAt ?? Date.now(),
+  type,
+  kind,
+});
 
-  watcher.on('add', async (filePath) => {
-    const stat = await fs.stat(toFsPath(filePath));
-    onChange({
-      path: filePath,
-      relativePath: path.relative(root, filePath),
-      updatedAt: stat.mtimeMs,
-      type: 'file',
-    });
+export const watchArtifacts = (
+  root: string,
+  onChange: (event: ArtifactChangeEvent) => void,
+  options: WatchOptions = {},
+) => {
+  const watcher = chokidar.watch(root, { ignoreInitial: true, ...options });
+
+  const emitWithStat = async (
+    kind: ArtifactChangeEvent['kind'],
+    filePath: string,
+    type: ArtifactFile['type'],
+  ) => {
+    try {
+      const stat = await fs.stat(toFsPath(filePath));
+      onChange(makeChangeEvent(root, kind, filePath, type, stat.mtimeMs));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException)?.code !== 'ENOENT') {
+        console.warn('Failed to stat artifact change:', error);
+      }
+    }
+  };
+
+  watcher.on('add', (filePath) => {
+    void emitWithStat('add', filePath, 'file');
   });
 
-  watcher.on('change', async (filePath) => {
-    const stat = await fs.stat(toFsPath(filePath));
-    onChange({
-      path: filePath,
-      relativePath: path.relative(root, filePath),
-      updatedAt: stat.mtimeMs,
-      type: 'file',
-    });
+  watcher.on('change', (filePath) => {
+    void emitWithStat('change', filePath, 'file');
+  });
+
+  watcher.on('unlink', (filePath) => {
+    onChange(makeChangeEvent(root, 'unlink', filePath, 'file'));
+  });
+
+  watcher.on('addDir', (filePath) => {
+    void emitWithStat('addDir', filePath, 'directory');
+  });
+
+  watcher.on('unlinkDir', (filePath) => {
+    onChange(makeChangeEvent(root, 'unlinkDir', filePath, 'directory'));
   });
 
   return watcher;
