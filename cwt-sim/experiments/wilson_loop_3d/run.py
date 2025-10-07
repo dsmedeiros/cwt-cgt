@@ -459,6 +459,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     distances, fs_mean, fs_p95 = _fs_statistics(psi_sequence)
     guard_exceeded = bool(math.isfinite(fs_p95) and fs_p95 > float(fs_guard_value))
 
+    phi_signed = float(phi_forward)
     summary = {
         "axes": list(axes),
         "center": [float(val) for val in center_values],
@@ -471,6 +472,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         "eta_q": float(args.eta_q),
         "zeta": float(args.zeta),
         "omega_scale": float(args.omega_scale),
+        "phi": phi_signed,
+        "phi_value": phi_signed,
+        "phi_flux": phi_signed,
         "phi_forward": float(phi_forward),
         "phi_reverse": float(phi_reverse),
         "phi_sum": float(phi_forward + phi_reverse),
