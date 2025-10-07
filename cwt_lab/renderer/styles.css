@@ -808,6 +808,11 @@ body {
   word-break: break-all;
 }
 
+.run-board__experiment-updated {
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
 
 .run-board__experiment-count {
   background-color: var(--color-table-stripe);
@@ -824,6 +829,7 @@ body {
   align-items: center;
   gap: 0.5rem;
   padding-left: 1.75rem;
+  flex-wrap: wrap;
 }
 
 .run-board__run-bullet {
@@ -871,6 +877,22 @@ body {
 .run-board__status--aborted {
   background: var(--color-danger-bg);
   color: var(--color-danger-text);
+}
+
+.run-board__phase-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.run-board__phase-badge {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.55rem;
+}
+
+.run-board__no-phases {
+  color: var(--color-muted);
+  font-size: 0.85rem;
 }
 
 .run-board__log {
@@ -1231,6 +1253,23 @@ body {
   background: rgba(147, 197, 253, 0.55);
   cursor: not-allowed;
   color: rgba(30, 58, 138, 0.68);
+}
+
+.btn--danger {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+  border-color: var(--color-danger-bg);
+}
+
+.btn--danger:hover:not(:disabled) {
+  background: #b91c1c;
+  color: var(--color-danger-text);
+}
+
+.btn--danger:disabled {
+  background: rgba(220, 38, 38, 0.65);
+  color: rgba(254, 226, 226, 0.7);
+  cursor: not-allowed;
 }
 
 .btn--ghost {

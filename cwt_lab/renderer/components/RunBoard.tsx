@@ -95,6 +95,28 @@ const experimentIdFromPath = (artifactsDir: string) => {
   return segments.length > 0 ? segments[segments.length - 1] : trimmed;
 };
 
+const formatPhaseLabel = (phase: string | null | undefined) => {
+  if (!phase) {
+    return null;
+  }
+
+  const match = /^phase(\d+)/i.exec(phase);
+  if (match) {
+    return `Phase ${match[1]}`;
+  }
+
+  return phase.replace(/[-_]/g, ' ');
+};
+
+type ExperimentGroup = {
+  artifactsDir: string;
+  runs: RegistryRunRecord[];
+  label: string;
+  experimentId: string;
+  lastUpdated: number;
+  completedPhases: string[];
+};
+
 const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
   const [runs, setRuns] = useState<RegistryRunRecord[]>([]);
   const [loading, setLoading] = useState(false);
@@ -103,6 +125,8 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
   const [collectingId, setCollectingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [confirmingExperiment, setConfirmingExperiment] = useState<string | null>(null);
+  const [deletingExperimentId, setDeletingExperimentId] = useState<string | null>(null);
   const [logState, setLogState] = useState<LogState>(() => makeEmptyLogState());
   const [logAbortable, setLogAbortable] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
@@ -245,7 +269,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
   const toggleGroup = useCallback((artifactsDir: string) => {
     setExpandedGroups((prev) => ({
       ...prev,
-      [artifactsDir]: !(prev[artifactsDir] ?? true),
+      [artifactsDir]: !(prev[artifactsDir] ?? false),
     }));
   }, []);
 
@@ -267,16 +291,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
 
   const groupedExperiments = useMemo(() => {
     if (runs.length === 0) {
-      return [] as Array<{
-        artifactsDir: string;
-        runs: RegistryRunRecord[];
-        label: string;
-        experimentId: string;
-        lastUpdated: number;
-        status: RegistryRunRecord['status'];
-        primaryPhase: string | null;
-        metrics: Record<string, number | null> | null;
-      }>;
+      return [] as ExperimentGroup[];
     }
 
     const buckets = new Map<string, RegistryRunRecord[]>();
@@ -299,23 +314,15 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
       });
 
       const latest = sorted[0];
-      const phase1 = sorted.find((run) => run.phase === 'phase1') ?? null;
-      const labelCandidate =
-        phase1?.label ||
-        phase1?.experiment ||
-        latest.label ||
-        latest.experiment ||
-        experimentIdFromPath(artifactsDir);
-
-      const selectMetrics = (record: RegistryRunRecord | null) => {
-        if (!record?.metrics) {
-          return null;
-        }
-        return Object.keys(record.metrics).length > 0 ? record.metrics : null;
-      };
-
-      const metrics = selectMetrics(phase1) ?? selectMetrics(latest);
+      const labelCandidate = latest.label || latest.experiment || experimentIdFromPath(artifactsDir);
       const lastUpdated = sorted.reduce((acc, run) => Math.max(acc, run.updatedAt), 0);
+      const completedPhases = Array.from(
+        new Set(
+          sorted
+            .filter((run) => run.status === 'complete' && run.phase)
+            .map((run) => formatPhaseLabel(run.phase) ?? run.phase ?? ''),
+        ),
+      ).filter((phase): phase is string => Boolean(phase));
 
       return {
         artifactsDir,
@@ -323,9 +330,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
         label: labelCandidate,
         experimentId: experimentIdFromPath(artifactsDir),
         lastUpdated,
-        status: latest.status,
-        primaryPhase: phase1?.phase ?? latest.phase ?? null,
-        metrics,
+        completedPhases,
       };
     });
 
@@ -355,15 +360,18 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
 
   const cancelDeletePrompt = useCallback(() => {
     setConfirmingId(null);
+    setConfirmingExperiment(null);
   }, []);
 
   const requestDeleteRun = useCallback((runId: string) => {
+    setConfirmingExperiment(null);
     setConfirmingId(runId);
   }, []);
 
   const handleDeleteRun = useCallback(
     async (runId: string) => {
       setConfirmingId(null);
+      setConfirmingExperiment(null);
       setDeletingId(runId);
       setNotice(null);
       try {
@@ -378,6 +386,38 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
         setNotice({ kind: 'error', message });
       } finally {
         setDeletingId(null);
+      }
+    },
+    [api, fetchRuns, logState.runId, resetLogState],
+  );
+
+  const requestDeleteExperiment = useCallback((artifactsDir: string) => {
+    setConfirmingId(null);
+    setConfirmingExperiment(artifactsDir);
+  }, []);
+
+  const handleDeleteExperiment = useCallback(
+    async (group: ExperimentGroup) => {
+      setConfirmingExperiment(null);
+      setDeletingExperimentId(group.artifactsDir);
+      setNotice(null);
+      try {
+        for (const run of group.runs) {
+          await api.deleteRun(run.id);
+          if (logState.runId === run.id) {
+            resetLogState();
+          }
+        }
+        await fetchRuns();
+        setNotice({
+          kind: 'success',
+          message: `Experiment ${group.label} deleted.`,
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        setNotice({ kind: 'error', message });
+      } finally {
+        setDeletingExperimentId(null);
       }
     },
     [api, fetchRuns, logState.runId, resetLogState],
@@ -422,11 +462,10 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
         <table className="run-board__table">
           <thead>
             <tr>
-              <th scope="col">Item</th>
-              <th scope="col">Status</th>
-              <th scope="col">Phase</th>
-              <th scope="col">Label / Path</th>
+              <th scope="col">Experiment / Run</th>
+              <th scope="col">Path / Command</th>
               <th scope="col">Last update</th>
+              <th scope="col">Phases</th>
               <th scope="col">Metrics</th>
               <th scope="col" className="run-board__actions-col">
                 Actions
@@ -436,15 +475,13 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
           <tbody>
             {groupedExperiments.length === 0 ? (
               <tr>
-                <td colSpan={7} className="run-board__empty">
+                <td colSpan={6} className="run-board__empty">
                   No runs recorded yet. Launch an experiment to populate the board.
                 </td>
               </tr>
             ) : (
               groupedExperiments.map((group) => {
-                const isExpanded = expandedGroups[group.artifactsDir] ?? true;
-                const statusLabel = statusLabels[group.status] ?? group.status;
-                const metricsText = formatMetrics(group.metrics);
+                const isExpanded = expandedGroups[group.artifactsDir] ?? false;
                 const runCountLabel =
                   group.runs.length === 1 ? '1 phase run' : `${group.runs.length} phase runs`;
                 return (
@@ -464,22 +501,82 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
                         </button>
                         <div className="run-board__experiment-meta">
                           <code className="run-board__mono">{group.experimentId}</code>
-                          <span className="run-board__experiment-path">{group.artifactsDir}</span>
                           <span className="run-board__experiment-count">{runCountLabel}</span>
                         </div>
                       </td>
                       <td>
-                        <span className={`run-board__status run-board__status--${group.status}`}>
-                          {statusLabel}
-                        </span>
+                        <code className="run-board__mono run-board__experiment-path">{group.artifactsDir}</code>
                       </td>
-                      <td>{group.primaryPhase ?? '—'}</td>
                       <td>
-                        <code className="run-board__mono">{group.artifactsDir}</code>
+                        <span className="run-board__experiment-updated">{formatTimestamp(group.lastUpdated)}</span>
                       </td>
-                      <td>{formatTimestamp(group.lastUpdated)}</td>
-                      <td>{metricsText}</td>
-                      <td className="run-board__actions run-board__actions--placeholder">—</td>
+                      <td>
+                        {group.completedPhases.length > 0 ? (
+                          <div className="run-board__phase-badges">
+                            {group.completedPhases.map((phase) => (
+                              <span key={phase} className="badge badge--success run-board__phase-badge">
+                                {phase}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="run-board__no-phases">No completed phases</span>
+                        )}
+                      </td>
+                      <td>—</td>
+                      <td className="run-board__actions">
+                        {confirmingExperiment === group.artifactsDir ? (
+                          <div
+                            className="run-board__delete-confirm"
+                            role="group"
+                            aria-label={`Confirm deletion of experiment ${group.label}`}
+                          >
+                            <p className="run-board__delete-confirm-message">Are you sure?</p>
+                            <div className="run-board__delete-confirm-actions">
+                              <button
+                                type="button"
+                                className="btn btn--danger btn--small run-board__button run-board__delete-confirm-button"
+                                onClick={() => handleDeleteExperiment(group)}
+                                disabled={deletingExperimentId === group.artifactsDir}
+                              >
+                                <span className="run-board__button-content">
+                                  <span aria-hidden="true" role="img">
+                                    ✅
+                                  </span>
+                                  <span>
+                                    {deletingExperimentId === group.artifactsDir ? 'Deleting…' : 'Yes'}
+                                  </span>
+                                </span>
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn--ghost btn--small run-board__button run-board__delete-confirm-button"
+                                onClick={cancelDeletePrompt}
+                                disabled={deletingExperimentId === group.artifactsDir}
+                              >
+                                <span className="run-board__button-content">
+                                  <span aria-hidden="true" role="img">
+                                    ❌
+                                  </span>
+                                  <span>No</span>
+                                </span>
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn btn--danger btn--small run-board__button run-board__delete-button"
+                            onClick={() => requestDeleteExperiment(group.artifactsDir)}
+                            disabled={deletingExperimentId === group.artifactsDir}
+                            aria-label={`Delete experiment ${group.label}`}
+                          >
+                            <span aria-hidden="true" role="img">
+                              🗑️
+                            </span>
+                          </button>
+                        )}
+                      </td>
                     </tr>
                     {isExpanded
                       ? group.runs.map((run) => (
@@ -490,21 +587,19 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
                                   •
                                 </span>
                                 <code className="run-board__mono">{run.id}</code>
+                                <span className={`run-board__status run-board__status--${run.status}`}>
+                                  {statusLabels[run.status] ?? run.status}
+                                </span>
                               </div>
                             </td>
-                            <td>
-                              <span className={`run-board__status run-board__status--${run.status}`}>
-                                {statusLabels[run.status] ?? run.status}
-                              </span>
-                            </td>
-                            <td>{run.phase ?? '—'}</td>
                             <td>{run.label ?? run.command ?? '—'}</td>
                             <td>{formatTimestamp(run.updatedAt)}</td>
+                            <td>{formatPhaseLabel(run.phase) ?? '—'}</td>
                             <td>{formatMetrics(run.metrics)}</td>
                             <td className="run-board__actions">
                               <button
                                 type="button"
-                                className="btn btn--ghost btn--small run-board__button"
+                                className="btn btn--primary btn--small run-board__button"
                                 onClick={() => handleViewLog(run.id)}
                                 disabled={logState.loading && logState.runId === run.id}
                               >
@@ -534,7 +629,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
                                   <div className="run-board__delete-confirm-actions">
                                     <button
                                       type="button"
-                                      className="btn btn--primary btn--small run-board__button run-board__delete-confirm-button"
+                                      className="btn btn--danger btn--small run-board__button run-board__delete-confirm-button"
                                       onClick={() => handleDeleteRun(run.id)}
                                       disabled={deletingId === run.id}
                                     >
@@ -563,7 +658,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
                               ) : (
                                 <button
                                   type="button"
-                                  className="btn btn--ghost btn--small run-board__button run-board__delete-button"
+                                  className="btn btn--danger btn--small run-board__button run-board__delete-button"
                                   onClick={() => requestDeleteRun(run.id)}
                                   disabled={deletingId === run.id}
                                   aria-label={`Delete run ${run.id}`}
