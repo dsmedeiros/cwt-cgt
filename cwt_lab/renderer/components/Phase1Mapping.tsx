@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { formatValidationMessage, validateAxis, validateExtent, validateSeed } from '../../shared/validators';
 import { useCommandRegistration } from '../commandCenter';
 import { phase1 } from '../ipc';
+import { useExperimentNavigation } from '../navigation/ExperimentNavigationContext';
 
 const AXIS_OPTIONS = ['rho', 'tau', 'zeta', 'zeta_phase', 'kappa'] as const;
 
@@ -52,6 +53,7 @@ const computeCoverageFraction = (
 const formatRange = (range: [number, number]) => `${range[0].toFixed(3)} … ${range[1].toFixed(3)}`;
 
 const Phase1Mapping = () => {
+  const { refreshExperiments } = useExperimentNavigation();
   const [axisPrimary, setAxisPrimary] = useState<AxisOption>(AXIS_OPTIONS[0]);
   const [axisSecondary, setAxisSecondary] = useState<AxisOption>(AXIS_OPTIONS[1]);
   const [extent, setExtent] = useState(0.6);
@@ -146,12 +148,20 @@ const Phase1Mapping = () => {
       }
       setTipMessage(nextTip);
       setStatusMessage(`Mapping run ${result.runId} launched. Track progress in the Run Board.`);
+      refreshExperiments();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : String(error));
     } finally {
       setIsRunning(false);
     }
-  }, [axisPairError, axisPrimaryValidation, axisSecondaryValidation, extentValidation, seedValidation]);
+  }, [
+    axisPairError,
+    axisPrimaryValidation,
+    axisSecondaryValidation,
+    extentValidation,
+    refreshExperiments,
+    seedValidation,
+  ]);
 
   const runRegistration = useMemo(
     () => ({ handler: () => void runMapping(), description: 'Run Phase-1 mapping' }),
