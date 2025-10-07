@@ -1354,6 +1354,46 @@ body {
   color: var(--color-accent-contrast);
 }
 
+.phase3__step-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.phase3__step-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.phase3__step-row label {
+  font-weight: 600;
+}
+
+.phase3__step-row-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.phase3__step-input {
+  flex: 1 1 auto;
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  min-width: 0;
+}
+
+.phase3__step-input:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.phase3__step-remove {
+  white-space: nowrap;
+}
+
 .phase3__hint {
   color: var(--color-muted);
   margin: 0;

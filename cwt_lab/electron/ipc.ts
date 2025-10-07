@@ -1284,10 +1284,15 @@ ipcMain.handle('cwt:phase3:guided-loop', (_event, params) =>
       throw new Error('axes3 entries must be distinct');
     }
 
-    const center = Array.isArray(rawCenter) ? rawCenter.map((value) => Number(value)) : [];
-    if (center.length !== 3 || center.some((value) => !Number.isFinite(value))) {
+    const centerValues = Array.isArray(rawCenter) ? rawCenter.map((value) => Number(value)) : [];
+    if (centerValues.length !== 3 || centerValues.some((value) => !Number.isFinite(value))) {
       throw new Error('center must contain three numeric coordinates');
     }
+    const center: [number, number, number] = [
+      centerValues[0],
+      centerValues[1],
+      centerValues[2],
+    ];
 
     const amplitudes = Array.isArray(rawAmplitudes)
       ? rawAmplitudes.map((value) => Number(value))

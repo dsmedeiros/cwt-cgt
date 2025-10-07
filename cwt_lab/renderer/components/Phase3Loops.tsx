@@ -120,6 +120,17 @@ const normalizeOrigin = (value: string | null | undefined) =>
 
 const PHASE3_SUMMARY_FILENAME = 'phase3_loop_summary.json';
 
+type GuidedStepEntry = {
+  id: string;
+  value: string;
+};
+
+let guidedStepEntrySequence = 0;
+const createGuidedStepEntry = (value: number | string = ''): GuidedStepEntry => ({
+  id: `guided-step-${guidedStepEntrySequence++}`,
+  value: typeof value === 'number' ? String(value) : String(value ?? ''),
+});
+
 type Phase1HotspotEntry = {
   tau: number;
   zeta: number;
@@ -565,7 +576,11 @@ const Phase3Loops = () => {
 
   const [tauAmplitude, setTauAmplitude] = useState(0.15);
   const [zetaAmplitude, setZetaAmplitude] = useState(0.15);
-  const [guidedSteps, setGuidedSteps] = useState<number[]>([160, 320, 480]);
+  const [guidedStepEntries, setGuidedStepEntries] = useState<GuidedStepEntry[]>([
+    createGuidedStepEntry(160),
+    createGuidedStepEntry(320),
+    createGuidedStepEntry(480),
+  ]);
   const [guidedMinPhi, setGuidedMinPhi] = useState(0.02);
   const [guidedSeed, setGuidedSeed] = useState(2024);
   const [guidedResult, setGuidedResult] = useState<GuidedLoopResult | null>(null);
@@ -825,9 +840,41 @@ const Phase3Loops = () => {
     [adaptLevelsInput],
   );
   const fsGuardNumber = fsGuardValidation.ok ? fsGuardValidation.value : null;
-  const guidedStepValidation = useMemo(() => guidedSteps.map((step) => validateSteps(step)), [guidedSteps]);
-  const guidedStepError = guidedStepValidation.find((result) => !result.ok);
-  const guidedStepErrorMessage = guidedStepError && !guidedStepError.ok ? guidedStepError.message : undefined;
+  const guidedStepAnalysis = useMemo(() => {
+    const validations = guidedStepEntries.map((entry) => ({
+      entry,
+      validation: validateSteps(entry.value),
+    }));
+    const counts = new Map<number, number>();
+    const numericValues: number[] = [];
+    validations.forEach(({ validation }) => {
+      if (validation.ok) {
+        numericValues.push(validation.value);
+        counts.set(validation.value, (counts.get(validation.value) ?? 0) + 1);
+      }
+    });
+    const errors = new Map<string, string | null>();
+    validations.forEach(({ entry, validation }) => {
+      if (!validation.ok) {
+        errors.set(entry.id, validation.message);
+        return;
+      }
+      if ((counts.get(validation.value) ?? 0) > 1) {
+        errors.set(entry.id, 'Duplicate step.');
+        return;
+      }
+      errors.set(entry.id, null);
+    });
+    const steps = Array.from(new Set(numericValues)).sort((a, b) => a - b);
+
+    return { errors, steps };
+  }, [guidedStepEntries]);
+  const guidedSteps = guidedStepAnalysis.steps;
+  const guidedStepErrors = guidedStepEntries.map(
+    (entry) => guidedStepAnalysis.errors.get(entry.id) ?? null,
+  );
+  const hasGuidedStepError = guidedStepErrors.some((message) => message != null);
+  const firstGuidedStepError = guidedStepErrors.find((message) => message != null) ?? null;
   const fsGuardError = formatValidationMessage(fsGuardValidation);
   const simpleLimitError = formatValidationMessage(simpleLimitValidation);
   const settleStepsError = formatValidationMessage(neighborSettleValidation);
@@ -866,19 +913,19 @@ const Phase3Loops = () => {
     if (!fsGuardValidation.ok) {
       return fsGuardValidation.message;
     }
-    if (guidedSteps.length === 0) {
-      return 'Select at least one step.';
-    }
-    if (guidedStepErrorMessage) {
-      return guidedStepErrorMessage;
+    if (!hasGuidedStepError && guidedSteps.length === 0) {
+      return 'Add at least one valid step.';
     }
     return undefined;
-  }, [fsGuardValidation, guidedStepErrorMessage, guidedSteps.length]);
+  }, [fsGuardValidation, guidedSteps.length, hasGuidedStepError]);
 
   const isSimpleRunDisabled = isSimpleRunning || Boolean(simpleRunDisabledReason);
-  const isGuidedRunDisabled = isGuidedRunning || Boolean(guidedRunDisabledReason);
+  const isGuidedRunDisabled =
+    isGuidedRunning || hasGuidedStepError || Boolean(guidedRunDisabledReason);
   const simpleRunTitle = isSimpleRunning ? 'Loop already running.' : simpleRunDisabledReason;
-  const guidedRunTitle = isGuidedRunning ? 'Guided calibration in progress.' : guidedRunDisabledReason;
+  const guidedRunTitle = isGuidedRunning
+    ? 'Guided calibration in progress.'
+    : guidedRunDisabledReason ?? firstGuidedStepError ?? undefined;
 
   const addManualHotspot = () => {
     const id = `manual-${Date.now()}`;
@@ -992,14 +1039,20 @@ const Phase3Loops = () => {
     simpleSeed,
   ]);
 
-  const toggleStep = (step: number) => {
-    setGuidedSteps((prev) =>
-      prev.includes(step) ? prev.filter((value) => value !== step) : [...prev, step].sort((a, b) => a - b),
-    );
+  const updateGuidedStepEntry = (id: string, value: string) => {
+    setGuidedStepEntries((prev) => prev.map((entry) => (entry.id === id ? { ...entry, value } : entry)));
+  };
+
+  const addGuidedStepEntry = () => {
+    setGuidedStepEntries((prev) => [...prev, createGuidedStepEntry('')]);
+  };
+
+  const removeGuidedStepEntry = (id: string) => {
+    setGuidedStepEntries((prev) => prev.filter((entry) => entry.id !== id));
   };
 
   const runGuidedLoop = useCallback(async () => {
-    if (!selectedHotspot || !fsGuardValidation.ok) {
+    if (!selectedHotspot || !fsGuardValidation.ok || guidedSteps.length === 0) {
       return;
     }
 
@@ -1657,19 +1710,49 @@ const Phase3Loops = () => {
 
               <div className="phase3__section">
                 <h4>Step sequence</h4>
-                <div className="phase3__chips">
-                  {[160, 320, 480, 800].map((step) => (
-                    <button
-                      key={step}
-                      type="button"
-                      className={guidedSteps.includes(step) ? 'chip chip--active' : 'chip'}
-                      onClick={() => toggleStep(step)}
-                    >
-                      {step}
-                    </button>
-                  ))}
+                <div className="phase3__step-editor">
+                  {guidedStepEntries.map((entry, index) => {
+                    const inputId = `guided-step-input-${entry.id}`;
+                    const error = guidedStepErrors[index];
+                    return (
+                      <div key={entry.id} className="phase3__step-row">
+                        <label htmlFor={inputId}>Step {index + 1}</label>
+                        <div className="phase3__step-row-controls">
+                          <input
+                            id={inputId}
+                            className="phase3__step-input"
+                            type="number"
+                            inputMode="numeric"
+                            min={16}
+                            max={2000}
+                            value={entry.value}
+                            onChange={(event) => updateGuidedStepEntry(entry.id, event.target.value)}
+                            placeholder="e.g. 320"
+                          />
+                          <button
+                            type="button"
+                            className="btn btn--ghost btn--small phase3__step-remove"
+                            onClick={() => removeGuidedStepEntry(entry.id)}
+                            aria-label={`Remove step ${index + 1}`}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        {error ? (
+                          <small className="field-error" role="alert">
+                            {error}
+                          </small>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                  <button type="button" className="btn btn--ghost btn--small" onClick={addGuidedStepEntry}>
+                    Add step
+                  </button>
                 </div>
-                <p className="phase3__hint">Toggle to include or exclude calibration steps.</p>
+                <p className="phase3__hint">
+                  Provide one or more step counts. Values are validated, sorted, and deduplicated automatically.
+                </p>
                 {guidedRunDisabledReason ? (
                   <p className="field-error" role="alert">{guidedRunDisabledReason}</p>
                 ) : null}
