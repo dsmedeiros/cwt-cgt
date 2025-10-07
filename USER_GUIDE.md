@@ -83,8 +83,9 @@ disk—handy when pointing the lab at a Windows virtual environment or a freshly
 
 - **FS spikes**: When FS distance suddenly climbs, reduce the loop amplitude or tighten the guard in Phase 3.
   If spikes persist, revisit Phase 1 to map a broader region—the ridge may be kinked or split.
-- **Φ ≈ 0**: A flat φ suggests you are on a plateau. Increase the extent in Phase 1 to hunt for a steeper
-  gradient or switch axes in Phase 3 to tilt the loop towards a new direction.
+- **Φ ≈ 0 or below the minimum**: A flat or underperforming φ suggests you are on a plateau. Increase the τ/ζ
+  amplitudes in Phase 3, relax the Φ threshold slightly, widen the extent in Phase 1, or switch axes to tilt the
+  loop towards a direction with more curvature.
 - **Import errors in Env Doctor**: Use the **Set Python Path** option to point to the virtual environment you
   prepared with `pip install -r requirements.txt` and `pip install -r requirements.test.txt`. The diagnostics
   panel will show the exact import failure to guide additional installs.
