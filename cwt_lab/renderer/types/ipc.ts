@@ -372,6 +372,16 @@ export type Phase3BrowseHotspotsResult = {
   contents: string | null;
 };
 
+export type GuidedLoopSummary = {
+  path: string;
+  axes: [string, string];
+  extents: [number, number];
+  center: Record<string, number>;
+  label: string;
+  metadata?: Record<string, unknown>;
+  omegaAbs?: number | null;
+};
+
 export type GuidedLoopArgs = {
   axes3: [string, string, string];
   center: [number, number, number];
@@ -387,6 +397,7 @@ export type GuidedLoopArgs = {
   zeta?: number;
   omegaScale?: number;
   outputDir?: string;
+  summary?: GuidedLoopSummary;
   experimentDir?: string;
   [extra: string]: unknown;
 };
