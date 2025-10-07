@@ -627,6 +627,7 @@ body {
   display: grid;
   grid-template-columns: minmax(240px, 300px) 1fr;
   gap: 1.5rem;
+  align-items: start;
 }
 
 .phase3__sidebar {
@@ -638,6 +639,7 @@ body {
   gap: 1.25rem;
   max-height: calc(100vh - 4rem);
   min-height: 0;
+  overflow-y: auto;
 }
 
 .phase3__section h3,
