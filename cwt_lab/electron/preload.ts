@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import type { IpcRendererEvent } from 'electron';
 
-import type { IpcEnvelope, RendererIpc } from '../renderer/types/ipc';
+import type { IpcEnvelope, RendererIpc, ArtifactsWatchEvent } from '../renderer/types/ipc';
 
 const invoke = <T>(channel: string, payload?: unknown) =>
   ipcRenderer.invoke(channel, payload) as Promise<IpcEnvelope<T>>;
@@ -56,6 +57,18 @@ const api = {
   artifacts: {
     list: (payload) => invoke('cwt:artifacts:list', payload),
     readFile: (payload) => invoke('cwt:artifacts:read-file', payload),
+    watch: (payload) => invoke('cwt:artifacts:watch', payload),
+    unwatch: (payload) => invoke('cwt:artifacts:unwatch', payload),
+    onDidChange: (listener: (event: ArtifactsWatchEvent) => void) => {
+      const channel = 'cwt:artifacts:changed';
+      const handler = (_event: IpcRendererEvent, payload: ArtifactsWatchEvent) => {
+        listener(payload);
+      };
+      ipcRenderer.on(channel, handler);
+      return () => {
+        ipcRenderer.removeListener(channel, handler);
+      };
+    },
   },
   registry: {
     query: (payload) => invoke('cwt:registry:query', payload),

@@ -410,6 +410,24 @@ export type ArtifactsReadFilePayload = {
   path: string;
 };
 
+export type ArtifactsWatchPayload = {
+  under?: string;
+  depth?: number;
+};
+
+export type ArtifactsUnwatchPayload = {
+  id: number;
+};
+
+export type ArtifactsWatchEvent = {
+  id: number;
+  kind: 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir';
+  path: string;
+  relativePath: string;
+  updatedAt: number;
+  type: 'file' | 'directory';
+};
+
 export type RegistryQueryPayload = {
   phase?: string;
   experiment?: string;
@@ -530,6 +548,13 @@ export interface RendererIpc {
     readFile: (
       payload: ArtifactsReadFilePayload,
     ) => Promise<IpcEnvelope<{ path: string; contents: string }>>;
+    watch: (
+      payload?: ArtifactsWatchPayload,
+    ) => Promise<IpcEnvelope<{ id: number }>>;
+    unwatch: (
+      payload: ArtifactsUnwatchPayload,
+    ) => Promise<IpcEnvelope<{ id: number }>>;
+    onDidChange: (listener: (event: ArtifactsWatchEvent) => void) => () => void;
   };
   registry: {
     query: (

@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { usePhase1Experiments } from '../hooks/usePhase1Experiments';
 import type { ArtifactNode } from '../utils/artifacts';
 import { sanitizeArtifactNodes } from '../utils/artifacts';
+import type { ArtifactsWatchEvent } from '../types/ipc';
 
 type ExperimentNavigationContextValue = {
   artifactsRoot: string | null;
@@ -135,6 +136,74 @@ const ExperimentNavigationProvider = ({ children }: { children: React.ReactNode 
     () => setSubstratesRefreshToken((token) => token + 1),
     [],
   );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (!selectedExperimentPath || !hasArtifactsApi) {
+      return;
+    }
+
+    const api = window?.CWT?.artifacts;
+    if (!api?.watch || !api?.unwatch || !api?.onDidChange) {
+      return;
+    }
+
+    let disposed = false;
+    let watcherId: number | null = null;
+
+    const isDirectChild = (relativePath: string) =>
+      relativePath.length > 0 && !relativePath.includes('/') && !relativePath.includes('\\');
+
+    const handleChange = (event: ArtifactsWatchEvent) => {
+      if (watcherId === null || event.id !== watcherId) {
+        return;
+      }
+      if (event.kind !== 'addDir' && event.kind !== 'unlinkDir') {
+        return;
+      }
+      if (!event.relativePath || !isDirectChild(event.relativePath)) {
+        return;
+      }
+      refreshSubstrates();
+    };
+
+    const unsubscribe = api.onDidChange(handleChange);
+
+    const establishWatcher = async () => {
+      try {
+        const response = await api.watch({ under: selectedExperimentPath, depth: 1 });
+        if (!response?.ok) {
+          return;
+        }
+        const id = response.data?.id;
+        if (typeof id !== 'number') {
+          return;
+        }
+        if (disposed) {
+          await api
+            .unwatch({ id })
+            .catch(() => undefined);
+          return;
+        }
+        watcherId = id;
+      } catch (error) {
+        console.warn('Failed to watch experiment substrates for changes:', error);
+      }
+    };
+
+    void establishWatcher();
+
+    return () => {
+      disposed = true;
+      unsubscribe();
+      if (watcherId !== null) {
+        void api.unwatch({ id: watcherId }).catch(() => undefined);
+      }
+    };
+  }, [hasArtifactsApi, refreshSubstrates, selectedExperimentPath]);
 
   const value = useMemo<ExperimentNavigationContextValue>(
     () => ({

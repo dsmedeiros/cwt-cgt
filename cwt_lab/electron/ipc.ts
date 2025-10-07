@@ -2,6 +2,7 @@ import { app, ipcMain, dialog, BrowserWindow } from 'electron';
 import { spawn } from 'node:child_process';
 import { promises as fs, existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
+import type { FSWatcher } from 'chokidar';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
@@ -24,7 +25,7 @@ import cmdGateCRobust from './noiseRobust';
 import runCouplingTuner from './couplingTuner';
 import { buildArgsFromParams } from './runner/args';
 import { correlate as correlatePhase2 } from '../../electron/runner/phase2';
-import { scanArtifacts } from './runner/files';
+import { scanArtifacts, watchArtifacts, type ArtifactChangeEvent } from './runner/files';
 
 type Envelope<T> = { ok: true; data: T } | { ok: false; error: string; data?: T };
 
@@ -171,6 +172,24 @@ const normalizeRecipe = (input: any): StoredRecipe => {
 
   return { id, name, description, basedOnRunId, params, command, seed, envInfo, createdAt };
 };
+
+type ArtifactsWatchPayload = {
+  under?: string;
+  depth?: number;
+};
+
+type ArtifactsUnwatchPayload = {
+  id: number;
+};
+
+type ArtifactsWatcher = {
+  watcher: FSWatcher;
+  senderId: number;
+  onDestroyed: () => void;
+};
+
+const artifactWatchers = new Map<number, ArtifactsWatcher>();
+let nextArtifactsWatcherId = 1;
 
 const loadRecipes = async (): Promise<StoredRecipe[]> => {
   if (!existsSync(recipesPath)) {
@@ -1995,6 +2014,88 @@ ipcMain.handle('cwt:phase2:save-snapshot', (_event, payload?: unknown) =>
 
     return { path: filePath };
   }),
+);
+
+ipcMain.handle('cwt:artifacts:watch', (event, payload: ArtifactsWatchPayload) =>
+  wrap(async () => {
+    const target = payload?.under ? path.resolve(payload.under) : artifactsRoot;
+    const depthRaw = payload?.depth;
+    const depth = typeof depthRaw === 'number' && depthRaw >= 0 ? depthRaw : undefined;
+
+    const id = nextArtifactsWatcherId++;
+    const sender = event.sender;
+    let closed = false;
+    let watcher: FSWatcher | null = null;
+
+    const closeWatcher = async () => {
+      if (closed) {
+        return;
+      }
+      closed = true;
+      const entry = artifactWatchers.get(id);
+      if (entry) {
+        artifactWatchers.delete(id);
+        sender.removeListener('destroyed', entry.onDestroyed);
+      }
+      try {
+        if (watcher) {
+          await watcher.close();
+        }
+      } catch (error) {
+        console.warn('Failed to close artifacts watcher:', error);
+      }
+    };
+
+    watcher = watchArtifacts(
+      target,
+      (change: ArtifactChangeEvent) => {
+        if (sender.isDestroyed()) {
+          void closeWatcher();
+          return;
+        }
+        sender.send('cwt:artifacts:changed', { id, ...change });
+      },
+      { depth },
+    );
+
+    const onDestroyed = () => {
+      void closeWatcher();
+    };
+
+    sender.once('destroyed', onDestroyed);
+    artifactWatchers.set(id, { watcher, senderId: sender.id, onDestroyed });
+
+    return { id };
+  }, { label: 'cwt:artifacts:watch' }),
+);
+
+ipcMain.handle('cwt:artifacts:unwatch', (event, payload: ArtifactsUnwatchPayload) =>
+  wrap(async () => {
+    const idRaw = payload?.id;
+    const id = typeof idRaw === 'number' ? idRaw : Number(idRaw);
+    if (!Number.isInteger(id)) {
+      throw new Error('id is required');
+    }
+
+    const entry = artifactWatchers.get(id);
+    if (!entry) {
+      return { id };
+    }
+
+    if (entry.senderId !== event.sender.id) {
+      throw new Error('Cannot unwatch artifacts created by another renderer process.');
+    }
+
+    artifactWatchers.delete(id);
+    event.sender.removeListener('destroyed', entry.onDestroyed);
+    try {
+      await entry.watcher.close();
+    } catch (error) {
+      console.warn('Failed to close artifacts watcher:', error);
+    }
+
+    return { id };
+  }, { label: 'cwt:artifacts:unwatch' }),
 );
 
 ipcMain.handle('cwt:artifacts:list', (_event, payload: { under?: string }) =>
