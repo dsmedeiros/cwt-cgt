@@ -339,23 +339,63 @@ const buildGuidedPayload = (
   fsGuard: number,
   minPhi: number,
   seed: number,
-): GuidedLoopArgs => ({
-  axes3: ['tau', 'zeta', 'kappa'],
-  center: [hotspot.tau, hotspot.zeta, 0],
-  amplitudes: [tauAmp, zetaAmp, 0],
-  graph,
-  stepsList,
-  fsGuard,
-  minPhi,
-  seed,
-});
+  summaryPath?: string | null,
+): GuidedLoopArgs => {
+  const axes =
+    Array.isArray(hotspot.axes) && hotspot.axes.length === 2
+      ? (hotspot.axes as [string, string])
+      : (['tau', 'zeta'] as [string, string]);
+  const [axisI, axisJ] = axes;
+  const payload: GuidedLoopArgs = {
+    axes3: [axisI, axisJ, 'kappa'],
+    center: [hotspot.tau, hotspot.zeta, 0],
+    amplitudes: [tauAmp, zetaAmp, 0],
+    graph,
+    stepsList,
+    fsGuard,
+    minPhi,
+    seed,
+  };
+
+  if (summaryPath) {
+    const centerRecord: Record<string, number> = {
+      [axisI]: hotspot.tau,
+      [axisJ]: hotspot.zeta,
+    };
+    const metadata: Record<string, unknown> = {};
+    if (hotspot.id) {
+      metadata.id = hotspot.id;
+    }
+    const origin = normalizeOrigin(hotspot.originPath);
+    if (origin) {
+      metadata.origin = origin;
+    }
+    if (typeof hotspot.calm === 'boolean') {
+      metadata.calm = hotspot.calm;
+    }
+    if (hotspot.graph) {
+      metadata.graph = hotspot.graph;
+    }
+
+    payload.summary = {
+      path: summaryPath,
+      axes: [axisI, axisJ],
+      extents: [tauAmp, zetaAmp],
+      center: centerRecord,
+      label: hotspot.name,
+      ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
+    };
+  }
+
+  return payload;
+};
 
 const previewGuidedCli = async (payload: GuidedLoopArgs): Promise<string> => {
   if (typeof window === 'undefined' || !window?.CWT?.run?.preview) {
     return 'Command preview unavailable in this environment.';
   }
 
-  const { stepsList, ...rest } = payload;
+  const { stepsList, summary: _summary, ...rest } = payload;
   const baseParams: Record<string, unknown> = { ...rest };
   const previews: string[] = [];
 
@@ -921,7 +961,17 @@ const Phase3Loops = () => {
       return;
     }
 
+    if (!selectedSubstratePath) {
+      setImportError('Select a substrate before running the guided explorer.');
+      setImportMessage(null);
+      return;
+    }
+
     const guardValue = fsGuardValidation.value;
+    const summaryPath = selectedSubstratePath
+      ? joinArtifactPath(selectedSubstratePath, PHASE3_SUMMARY_FILENAME)
+      : null;
+
     const payload = buildGuidedPayload(
       selectedHotspot,
       graph,
@@ -931,6 +981,7 @@ const Phase3Loops = () => {
       guardValue,
       guidedMinPhi,
       guidedSeed,
+      summaryPath,
     );
     const payloadWithExperiment: GuidedLoopArgs = {
       ...payload,
@@ -1009,6 +1060,7 @@ const Phase3Loops = () => {
     guidedSteps,
     selectedHotspot,
     selectedExperimentPath,
+    selectedSubstratePath,
     setImportError,
     setImportMessage,
     tauAmplitude,

@@ -16,7 +16,7 @@ import {
 } from './runner/env';
 import { RunManager, type RunMetadata } from './runner/runManager';
 import { artifactsRoot, cwtSimRoot, repoRoot } from './paths';
-import type { GuidedLoopArgs, LoopAtHotspotPayload } from '../renderer/types/ipc';
+import type { GuidedLoopArgs, GuidedLoopSummary, LoopAtHotspotPayload } from '../renderer/types/ipc';
 import { runAdiabaticBoundary } from './adiabaticBoundary';
 import { cmdGraphFamily } from './graphFamily';
 import cmdInverseDesign from './inverseDesign';
@@ -726,6 +726,241 @@ const launchPhase = (
   return runManager.createRun(module, args, cwtSimRoot, metadata, options);
 };
 
+type GuidedSummaryRequest = {
+  path: string;
+  axes: [string, string];
+  extents: [number, number];
+  center: Record<string, number>;
+  label: string;
+  metadata: Record<string, unknown>;
+  omegaAbs: number | null;
+};
+
+const sanitizeSummaryMetadata = (value: unknown): Record<string, unknown> => {
+  if (!value || typeof value !== 'object') {
+    return {};
+  }
+
+  const result: Record<string, unknown> = {};
+  Object.entries(value as Record<string, unknown>).forEach(([rawKey, rawValue]) => {
+    const key = typeof rawKey === 'string' ? rawKey.trim() : '';
+    if (!key) {
+      return;
+    }
+    if (
+      rawValue === null ||
+      typeof rawValue === 'string' ||
+      typeof rawValue === 'number' ||
+      typeof rawValue === 'boolean'
+    ) {
+      result[key] = rawValue;
+    }
+  });
+  return result;
+};
+
+const parseGuidedSummaryRequest = (
+  raw: unknown,
+  fallback: {
+    axes: [string, string];
+    amplitudes: [number, number];
+    center: [number, number, number];
+    label: string;
+  },
+): GuidedSummaryRequest | null => {
+  if (raw === undefined || raw === null) {
+    return null;
+  }
+  if (typeof raw !== 'object') {
+    throw new Error('summary must be an object when provided');
+  }
+
+  const record = raw as GuidedLoopSummary & Record<string, unknown>;
+  const pathRaw = typeof record.path === 'string' ? record.path.trim() : '';
+  if (!pathRaw) {
+    throw new Error('summary.path must be a non-empty string');
+  }
+
+  const axesRaw = Array.isArray(record.axes) ? record.axes : fallback.axes;
+  const axisA = String(axesRaw[0] ?? '').trim();
+  const axisB = String(axesRaw[1] ?? '').trim();
+  if (!axisA || !axisB) {
+    throw new Error('summary.axes must contain two axis names');
+  }
+
+  const extentsRaw = Array.isArray(record.extents) ? record.extents : fallback.amplitudes;
+  const extentA = Number(extentsRaw[0] ?? fallback.amplitudes[0]);
+  const extentB = Number(extentsRaw[1] ?? fallback.amplitudes[1]);
+  if (!Number.isFinite(extentA) || !Number.isFinite(extentB)) {
+    throw new Error('summary.extents must contain numeric values');
+  }
+
+  const centerRaw = record.center;
+  const center: Record<string, number> = {};
+  if (centerRaw && typeof centerRaw === 'object') {
+    Object.entries(centerRaw as Record<string, unknown>).forEach(([rawKey, rawValue]) => {
+      const key = typeof rawKey === 'string' ? rawKey.trim() : '';
+      if (!key) {
+        return;
+      }
+      const numeric = Number(rawValue);
+      if (Number.isFinite(numeric)) {
+        center[key] = numeric;
+      }
+    });
+  }
+  if (Object.keys(center).length === 0) {
+    center[axisA] = fallback.center[0];
+    center[axisB] = fallback.center[1];
+  }
+
+  const labelRaw = typeof record.label === 'string' ? record.label.trim() : '';
+  const label = labelRaw || fallback.label;
+
+  const omegaCandidate = record.omegaAbs ?? record.omega_abs;
+  const omegaNumeric = Number(omegaCandidate);
+  const omegaAbs = Number.isFinite(omegaNumeric) ? omegaNumeric : null;
+
+  const summaryPath = path.resolve(pathRaw);
+
+  return {
+    path: summaryPath,
+    axes: [axisA, axisB],
+    extents: [Math.abs(extentA), Math.abs(extentB)],
+    center,
+    label,
+    metadata: sanitizeSummaryMetadata(record.metadata),
+    omegaAbs,
+  };
+};
+
+const pickMetricValue = (
+  metrics: Record<string, number | null> | null | undefined,
+  key: string,
+): number | null => {
+  if (!metrics) {
+    return null;
+  }
+
+  const candidates = Array.from(
+    new Set([
+      key,
+      key.replace(/_/g, '-'),
+      key.replace(/-/g, '_'),
+      key.toLowerCase(),
+      key.toUpperCase(),
+    ]),
+  );
+
+  for (const candidate of candidates) {
+    if (candidate in metrics) {
+      const rawValue = metrics[candidate];
+      if (rawValue === null || rawValue === undefined) {
+        return null;
+      }
+      const numeric = Number(rawValue);
+      if (Number.isFinite(numeric)) {
+        return numeric;
+      }
+    }
+  }
+
+  return null;
+};
+
+const writeGuidedSummary = async (
+  request: GuidedSummaryRequest,
+  options: {
+    graph: string;
+    fsGuard: number | null;
+    settle: number | null;
+    seed: number | null;
+    runs: Array<{
+      runId: string;
+      steps: number;
+      status: string;
+      metrics: Record<string, number | null> | null;
+    }>;
+    stepsList: number[];
+  },
+) => {
+  const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+  const finalRun = options.runs[options.runs.length - 1] ?? null;
+  const finalMetrics = finalRun?.metrics ?? null;
+  const extentEntry: Record<string, unknown> = {
+    axes: request.axes,
+    values: request.extents,
+  };
+
+  if (finalRun && finalMetrics) {
+    const ccw: Record<string, unknown> = {};
+    const fsP95 = pickMetricValue(finalMetrics, 'fs_p95');
+    if (fsP95 !== null) {
+      ccw.fs_p95 = fsP95;
+    }
+    const phi = pickMetricValue(finalMetrics, 'phi');
+    if (phi !== null) {
+      ccw.phi = phi;
+    }
+    const rValue = pickMetricValue(finalMetrics, 'R') ?? pickMetricValue(finalMetrics, 'r');
+    if (rValue !== null) {
+      ccw.R = rValue;
+    }
+    const overlap = pickMetricValue(finalMetrics, 'overlap_min');
+    if (overlap !== null) {
+      ccw.overlap_min = overlap;
+    }
+    const kappaDelta = pickMetricValue(finalMetrics, 'kappa1_delta');
+    if (kappaDelta !== null) {
+      ccw.kappa1_delta = kappaDelta;
+    }
+    if (Object.keys(ccw).length > 0) {
+      ccw.steps = finalRun.steps;
+      extentEntry.ccw = ccw;
+    }
+  }
+
+  const hotspotEntry: Record<string, unknown> = {
+    label: request.label,
+    center: request.center,
+    extents: [extentEntry],
+  };
+
+  if (Object.keys(request.metadata).length > 0) {
+    hotspotEntry.metadata = request.metadata;
+  }
+  if (request.omegaAbs !== null) {
+    hotspotEntry.omega_abs = request.omegaAbs;
+  }
+
+  const payload: Record<string, unknown> = {
+    schema_version: 1,
+    created_at: timestamp,
+    axes: request.axes,
+    graph: options.graph,
+    fs_guard: options.fsGuard,
+    neighbor_settle_steps: options.settle,
+    seed: options.seed,
+    steps_list: options.stepsList,
+    hotspots: [hotspotEntry],
+    accepted: true,
+    failures: [],
+    source: 'guided_loop',
+  };
+
+  if (options.runs.length > 0) {
+    payload.runs = options.runs.map((run) => ({
+      run_id: run.runId,
+      steps: run.steps,
+      status: run.status,
+      metrics: run.metrics,
+    }));
+  }
+
+  await fs.mkdir(path.dirname(request.path), { recursive: true });
+  await fs.writeFile(request.path, `${JSON.stringify(payload, null, 2)}\n`, 'utf-8');
+};
+
 ipcMain.handle('cwt:phase1:map', (_event, params) =>
   wrap(() =>
     launchPhase('experiments.gateB_ridge_finder.run', params, {
@@ -957,6 +1192,7 @@ ipcMain.handle('cwt:phase3:guided-loop', (_event, params) =>
       graph: rawGraph,
       seed: rawSeed,
       experimentDir: rawExperimentDir,
+      summary: rawSummary,
       ...otherParams
     } = payload;
 
@@ -1005,6 +1241,13 @@ ipcMain.handle('cwt:phase3:guided-loop', (_event, params) =>
     if (amplitudes.length !== 3 || amplitudes.some((value) => !Number.isFinite(value))) {
       throw new Error('amplitudes must contain three numeric values');
     }
+
+    const summaryRequest = parseGuidedSummaryRequest(rawSummary, {
+      axes: [axes3[0], axes3[1]],
+      amplitudes: [amplitudes[0], amplitudes[1]],
+      center,
+      label: 'Guided hotspot',
+    });
 
     const fsGuardRaw = rawFsGuard !== undefined && rawFsGuard !== null ? Number(rawFsGuard) : null;
     const fsGuard = fsGuardRaw !== null && Number.isFinite(fsGuardRaw) ? fsGuardRaw : null;
@@ -1127,6 +1370,17 @@ ipcMain.handle('cwt:phase3:guided-loop', (_event, params) =>
       ) {
         continue;
       }
+    }
+
+    if (summaryRequest && satisfied && runs.length > 0) {
+      await writeGuidedSummary(summaryRequest, {
+        graph,
+        fsGuard,
+        settle,
+        seed,
+        runs,
+        stepsList,
+      });
     }
 
     return { runs, satisfied };
