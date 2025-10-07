@@ -625,7 +625,7 @@ body {
 
 .phase3__layout {
   display: grid;
-  grid-template-columns: minmax(240px, 300px) 1fr;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
   gap: 1.5rem;
   align-items: start;
 }
@@ -637,9 +637,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  max-height: calc(100vh - 4rem);
   min-height: 0;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .phase3__section h3,
