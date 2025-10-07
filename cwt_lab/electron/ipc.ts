@@ -951,7 +951,9 @@ const writeGuidedSummary = async (
 
     if (options.minPhi !== null && (phi === null || phi < options.minPhi)) {
       failures.push(
-        `Guided loop φ=${phi === null ? 'n/a' : phi.toFixed(4)} did not reach minimum ${options.minPhi.toFixed(4)}.`,
+        `Guided loop φ=${
+          phi === null ? 'n/a' : phi.toFixed(4)
+        } did not reach minimum ${options.minPhi.toFixed(4)}. Try increasing τ/ζ amplitudes, loosening the Φ threshold, or revisiting the selected axes/extents per the troubleshooting guidance.`,
       );
     }
     if (

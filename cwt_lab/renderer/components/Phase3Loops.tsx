@@ -500,7 +500,11 @@ const buildGuidedFailureReasons = ({
   const fsExceeded = metricFromRecord(metrics, 'fs_guard_exceeded');
 
   if (minPhi != null && (phi == null || phi < minPhi)) {
-    reasons.push(`Guided loop φ=${phi == null ? 'n/a' : phi.toFixed(4)} did not reach minimum ${minPhi.toFixed(4)}.`);
+    reasons.push(
+      `Guided loop φ=${
+        phi == null ? 'n/a' : phi.toFixed(4)
+      } did not reach minimum ${minPhi.toFixed(4)}. Try increasing τ/ζ amplitudes, loosening the Φ threshold, or revisiting the selected axes/extents per the troubleshooting guidance.`,
+    );
   }
 
   if (
