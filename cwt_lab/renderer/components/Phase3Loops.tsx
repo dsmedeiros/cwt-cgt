@@ -293,15 +293,29 @@ const buildSimplePayload = (
   adaptLevels: number,
   saveSummaryPath?: string | null,
 ): LoopAtHotspotPayload => {
+  const axes =
+    Array.isArray(hotspot.axes) && hotspot.axes.length === 2
+      ? (hotspot.axes as [string, string])
+      : (['tau', 'zeta'] as [string, string]);
+  const [axisI, axisJ] = axes;
+  const hotspotEntry: Record<string, unknown> = {
+    coordinates: {
+      [axisI]: hotspot.tau,
+      [axisJ]: hotspot.zeta,
+    },
+    label: hotspot.name,
+  };
+  const origin = normalizeOrigin(hotspot.originPath);
+  if (origin) {
+    hotspotEntry.origin = origin;
+  }
+  if (hotspot.id) {
+    hotspotEntry.id = hotspot.id;
+  }
+
   const payload: LoopAtHotspotPayload = {
-    hotspotsJson: JSON.stringify([
-      {
-        id: hotspot.id,
-        label: hotspot.name,
-        center: [hotspot.tau, hotspot.zeta],
-      },
-    ]),
-    axes: ['tau', 'zeta'],
+    hotspotsJson: JSON.stringify({ axes, hotspots: [hotspotEntry] }),
+    axes,
     extents,
     fsGuard,
     graph,
@@ -439,11 +453,6 @@ const Phase3Loops = () => {
     substratesLoading,
     selectedSubstratePath,
   } = useExperimentNavigation();
-
-  const selectedSubstrateNode = useMemo(
-    () => substrates.find((node) => node.path === selectedSubstratePath) ?? null,
-    [substrates, selectedSubstratePath],
-  );
 
   const [phase1Runs, setPhase1Runs] = useState<RegistryRunRecord[]>([]);
   const [selectedPhase1RunId, setSelectedPhase1RunId] = useState('');
@@ -1142,54 +1151,42 @@ const Phase3Loops = () => {
 
           <section className="phase3__section">
             <h3>Phase 1 ridge map</h3>
-          <div className="phase3__nav-summary">
-            <p>
-              {experimentsLoading ? (
-                'Loading experiments…'
-              ) : experimentsError ? (
-                <span className="phase3__error" role="alert">{experimentsError}</span>
-              ) : experiments.length === 0 ? (
-                'Run Phase 1 mapping to populate experiments.'
-              ) : selectedExperimentPath ? (
-                <>
-                  Experiment: <code>{selectedExperimentPath}</code>
-                </>
-              ) : (
-                'Select a Phase 1 experiment in the navigation pane.'
-              )}
-            </p>
-            <p>
-              {substratesLoading ? (
-                'Loading substrates…'
-              ) : substratesError ? (
-                <span className="phase3__error" role="alert">{substratesError}</span>
-              ) : selectedSubstratePath ? (
-                <>
-                  Substrate:{' '}
-                  <code>{selectedSubstrateNode?.name ?? selectedSubstrateNode?.relativePath ?? selectedSubstratePath}</code>
-                </>
-              ) : selectedExperimentPath ? (
-                'Choose a substrate in the navigation pane to load hotspots.'
-              ) : (
-                'Pick an experiment to list available substrates.'
-              )}
-            </p>
-          </div>
-          <div className="phase3__import-run">
-            <button
-              type="button"
-              className="btn"
-              onClick={() => void loadHotspotsFromSubstrate()}
-              disabled={
-                isImportingHotspots ||
-                !selectedSubstratePath ||
-                substratesLoading ||
-                experimentsLoading
-              }
-            >
-              {isImportingHotspots ? 'Loading…' : 'Load hotspots'}
-            </button>
-          </div>
+            <div className="phase3__import-run">
+              <button
+                type="button"
+                className="btn"
+                onClick={() => void loadHotspotsFromSubstrate()}
+                disabled={
+                  isImportingHotspots ||
+                  !selectedSubstratePath ||
+                  substratesLoading ||
+                  experimentsLoading
+                }
+              >
+                {isImportingHotspots ? 'Loading…' : 'Load hotspots'}
+              </button>
+            </div>
+            {experimentsError ? (
+              <p className="phase3__error" role="alert">{experimentsError}</p>
+            ) : null}
+            {!experimentsLoading && !experimentsError && experiments.length === 0 ? (
+              <p className="phase3__hint">Run Phase 1 mapping to populate experiments.</p>
+            ) : null}
+            {!experimentsLoading &&
+              !experimentsError &&
+              experiments.length > 0 &&
+              !selectedExperimentPath ? (
+                <p className="phase3__hint">Select an experiment from the header dropdown to enable Phase 3 tools.</p>
+              ) : null}
+            {substratesError ? (
+              <p className="phase3__error" role="alert">{substratesError}</p>
+            ) : null}
+            {selectedExperimentPath &&
+              !substratesLoading &&
+              !substratesError &&
+              !selectedSubstratePath ? (
+                <p className="phase3__hint">Choose a substrate from the header dropdown to load hotspots.</p>
+              ) : null}
             {phase1RunError ? (
               <p className="phase3__error" role="alert">{phase1RunError}</p>
             ) : null}
