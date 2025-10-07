@@ -46,6 +46,14 @@ export const usePhase1Experiments = (
     [],
   );
 
+  const normalizeRoot = useCallback((value: unknown) => {
+    if (typeof value !== 'string') {
+      return null;
+    }
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -61,7 +69,9 @@ export const usePhase1Experiments = (
           return;
         }
         if (response.ok) {
-          setArtifactsRoot(response.data.phase2MetricsRoot ?? response.data.artifactsRoot ?? null);
+          const artifacts = normalizeRoot(response.data?.artifactsRoot);
+          const metrics = normalizeRoot(response.data?.phase2MetricsRoot);
+          setArtifactsRoot(artifacts ?? metrics);
         } else {
           setArtifactsRoot(null);
         }
@@ -77,7 +87,7 @@ export const usePhase1Experiments = (
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [normalizeRoot]);
 
   useEffect(() => {
     let cancelled = false;

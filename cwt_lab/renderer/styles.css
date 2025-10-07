@@ -1554,18 +1554,6 @@ body {
   font-size: 0.95rem;
 }
 
-.phase2__nav-status {
-  margin: 0.25rem 0;
-  font-size: 0.9rem;
-  color: rgba(15, 23, 42, 0.75);
-}
-
-.phase2__nav-status code {
-  background: rgba(15, 23, 42, 0.08);
-  padding: 0.1rem 0.35rem;
-  border-radius: 0.5rem;
-}
-
 .phase2__nav-actions {
   display: flex;
   flex-direction: column;

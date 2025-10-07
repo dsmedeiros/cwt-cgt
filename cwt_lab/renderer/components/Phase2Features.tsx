@@ -529,36 +529,6 @@ const Phase2Features = () => {
         <p className="field-hint">
           Base directory: <code>{artifactsRoot ?? 'Not configured'}</code>
         </p>
-        <div className="phase2__nav-status" role="status">
-          {experimentsLoading ? (
-            <span>Loading experiments…</span>
-          ) : experimentsError ? (
-            <span className="field-error">{experimentsError}</span>
-          ) : experiments.length === 0 ? (
-            <span>Run Phase 1 to populate experiments.</span>
-          ) : selectedExperimentPath ? (
-            <span>
-              Experiment: <code>{selectedExperimentPath}</code>
-            </span>
-          ) : (
-            <span>Select a Phase 1 experiment in the navigation pane.</span>
-          )}
-        </div>
-        <div className="phase2__nav-status" role="status">
-          {substratesLoading ? (
-            <span>Loading substrates…</span>
-          ) : substratesError ? (
-            <span className="field-error">{substratesError}</span>
-          ) : selectedSubstrateNode ? (
-            <span>
-              Selected substrate: <code>{selectedSubstrateNode.relativePath}</code>
-            </span>
-          ) : selectedExperimentPath ? (
-            <span>Select a substrate in the navigation pane to queue it for analysis.</span>
-          ) : (
-            <span>Choose an experiment to list available substrates.</span>
-          )}
-        </div>
         <div className="phase2__nav-actions">
           <button
             type="button"
