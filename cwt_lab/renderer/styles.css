@@ -1444,6 +1444,64 @@ body {
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
 }
 
+.phase3__recommended {
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(148, 163, 184, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.phase3__recommended h5 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.phase3__recommended dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.5rem 1rem;
+}
+
+.phase3__recommended dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+}
+
+.phase3__recommended dd {
+  margin: 0;
+  font-family: 'Fira Mono', 'SFMono-Regular', ui-monospace, monospace;
+  font-size: 0.85rem;
+  color: var(--color-text);
+}
+
+.phase3__guided-failures {
+  border-left: 3px solid rgba(220, 53, 69, 0.6);
+  padding: 0.25rem 0 0.25rem 0.75rem;
+  background: rgba(220, 53, 69, 0.08);
+  border-radius: 0.5rem;
+}
+
+.phase3__guided-failures h5 {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+  color: rgba(220, 53, 69, 0.85);
+}
+
+.phase3__guided-failures ul {
+  margin: 0;
+  padding-left: 1.15rem;
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+  color: rgba(148, 163, 184, 0.95);
+}
+
 .phase1__header {
   display: flex;
   flex-direction: column;
