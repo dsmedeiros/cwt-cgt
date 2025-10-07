@@ -340,12 +340,15 @@ def _default_run_config(target_index: int) -> RunConfig:
     )
 
 
-def _build_substrate(name: str) -> GraphSubstrate:
+def _build_substrate(name: str, *, seed: int | None = None) -> GraphSubstrate:
     key = name.lower()
     if key in {"ring3_hetero", "ring3-h", "ring3-hetero"}:
         return factories.ring3_hetero()
     if key == "ring3":
         return factories.ring3()
+    if key in {"random_regular", "random-regular", "randomregular"}:
+        graph_seed = 13 if seed is None else abs(int(seed))
+        return factories.random_regular_digraph(N=20, out_degree=3, seed=graph_seed)
     raise ValueError(f"unsupported substrate '{name}'")
 
 
@@ -1445,7 +1448,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not hotspots:
         raise ValueError("no hotspots available for evaluation")
 
-    substrate = _build_substrate(str(args.graph))
+    substrate = _build_substrate(str(args.graph), seed=int(args.seed))
     config = _default_run_config(int(args.readout_target))
     if args.fs_guard is not None:
         config.fs_step_guard = {

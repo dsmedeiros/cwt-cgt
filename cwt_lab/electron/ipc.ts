@@ -901,6 +901,8 @@ const writeGuidedSummary = async (
       metrics: Record<string, number | null> | null;
     }>;
     stepsList: number[];
+    satisfied: boolean;
+    minPhi: number | null;
   },
 ) => {
   const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -939,6 +941,34 @@ const writeGuidedSummary = async (
     }
   }
 
+  const metricsForFailure =
+    finalMetrics ?? options.runs.find((run) => run.metrics)?.metrics ?? null;
+  const failures: string[] = [];
+  if (!options.satisfied) {
+    const phi = pickMetricValue(metricsForFailure, 'phi');
+    const fsP95 = pickMetricValue(metricsForFailure, 'fs_p95');
+    const fsExceeded = pickMetricValue(metricsForFailure, 'fs_guard_exceeded');
+
+    if (options.minPhi !== null && (phi === null || phi < options.minPhi)) {
+      failures.push(
+        `Guided loop φ=${phi === null ? 'n/a' : phi.toFixed(4)} did not reach minimum ${options.minPhi.toFixed(4)}.`,
+      );
+    }
+    if (
+      options.fsGuard !== null &&
+      ((fsP95 !== null && fsP95 > options.fsGuard) || (fsExceeded !== null && fsExceeded > 0))
+    ) {
+      failures.push(
+        `Guided loop FS guard threshold ${options.fsGuard.toFixed(4)} was exceeded (p95=${
+          fsP95 === null ? 'n/a' : fsP95.toFixed(4)
+        }).`,
+      );
+    }
+    if (failures.length === 0) {
+      failures.push('Guided loop criteria were not satisfied.');
+    }
+  }
+
   const hotspotEntry: Record<string, unknown> = {
     label: request.label,
     center: request.center,
@@ -962,11 +992,14 @@ const writeGuidedSummary = async (
     seed: options.seed,
     steps_list: options.stepsList,
     hotspots: [hotspotEntry],
-    accepted: true,
-    failures: [],
+    accepted: options.satisfied,
+    failures,
     source: 'guided_loop',
   };
 
+  if (options.minPhi !== null) {
+    payload.min_phi = options.minPhi;
+  }
   if (options.runs.length > 0) {
     payload.runs = options.runs.map((run) => ({
       run_id: run.runId,
@@ -1391,7 +1424,7 @@ ipcMain.handle('cwt:phase3:guided-loop', (_event, params) =>
       }
     }
 
-    if (summaryRequest && satisfied && runs.length > 0) {
+    if (summaryRequest && runs.length > 0) {
       await writeGuidedSummary(summaryRequest, {
         graph,
         fsGuard,
@@ -1399,6 +1432,8 @@ ipcMain.handle('cwt:phase3:guided-loop', (_event, params) =>
         seed,
         runs,
         stepsList,
+        satisfied,
+        minPhi,
       });
     }
 
