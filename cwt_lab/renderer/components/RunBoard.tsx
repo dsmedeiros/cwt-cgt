@@ -394,7 +394,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
         </div>
         <button
           type="button"
-          className="run-board__button"
+          className="btn btn--ghost run-board__button run-board__button--refresh"
           onClick={() => fetchRuns()}
           disabled={loading}
         >
@@ -504,7 +504,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
                             <td className="run-board__actions">
                               <button
                                 type="button"
-                                className="run-board__button"
+                                className="btn btn--ghost btn--small run-board__button"
                                 onClick={() => handleViewLog(run.id)}
                                 disabled={logState.loading && logState.runId === run.id}
                               >
@@ -516,7 +516,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
                               </button>
                               <button
                                 type="button"
-                                className="run-board__button"
+                                className="btn btn--primary btn--small run-board__button"
                                 onClick={() => handleCollectDiagnostics(run.id)}
                                 disabled={collectingId === run.id}
                               >
@@ -534,7 +534,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
                                   <div className="run-board__delete-confirm-actions">
                                     <button
                                       type="button"
-                                      className="run-board__button run-board__delete-confirm-button"
+                                      className="btn btn--primary btn--small run-board__button run-board__delete-confirm-button"
                                       onClick={() => handleDeleteRun(run.id)}
                                       disabled={deletingId === run.id}
                                     >
@@ -547,7 +547,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
                                     </button>
                                     <button
                                       type="button"
-                                      className="run-board__button run-board__delete-confirm-button"
+                                      className="btn btn--ghost btn--small run-board__button run-board__delete-confirm-button"
                                       onClick={cancelDeletePrompt}
                                       disabled={deletingId === run.id}
                                     >
@@ -563,7 +563,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
                               ) : (
                                 <button
                                   type="button"
-                                  className="run-board__button run-board__delete-button"
+                                  className="btn btn--ghost btn--small run-board__button run-board__delete-button"
                                   onClick={() => requestDeleteRun(run.id)}
                                   disabled={deletingId === run.id}
                                   aria-label={`Delete run ${run.id}`}
@@ -615,7 +615,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
           <div className="run-board__log-actions">
             <button
               type="button"
-              className="run-board__button"
+              className="btn btn--ghost btn--small run-board__button"
               onClick={handleLoadMore}
               disabled={!logState.hasMoreBefore || logState.loading}
             >
@@ -623,7 +623,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
             </button>
             <button
               type="button"
-              className="run-board__button"
+              className="btn btn--ghost btn--small run-board__button"
               onClick={handleRefresh}
               disabled={logState.loading}
             >
@@ -632,7 +632,7 @@ const RunBoard = ({ api = defaultRunsApi }: RunBoardProps) => {
             {logAbortable ? (
               <button
                 type="button"
-                className="run-board__button"
+                className="btn btn--ghost btn--small run-board__button"
                 onClick={resetLogState}
               >
                 Cancel request
