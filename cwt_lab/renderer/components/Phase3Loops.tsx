@@ -63,6 +63,7 @@ type GuidedLoopResult = {
     overlapMin?: number;
     kappaChange?: number;
   };
+  failureReasons: string[];
 };
 
 const defaultHotspots: Hotspot[] = [
@@ -473,6 +474,49 @@ const metricFromRecord = (metrics: Record<string, number | null> | null, key: st
     }
   }
   return undefined;
+};
+
+const buildGuidedFailureReasons = ({
+  satisfied,
+  runs,
+  minPhi,
+  fsGuard,
+}: {
+  satisfied: boolean;
+  runs: GuidedLoopRun[];
+  minPhi?: number;
+  fsGuard?: number;
+}) => {
+  if (satisfied) {
+    return [];
+  }
+
+  const metrics =
+    runs[runs.length - 1]?.metrics ?? runs.find((run) => run.metrics)?.metrics ?? null;
+  const reasons: string[] = [];
+
+  const phi = metricFromRecord(metrics, 'phi');
+  const fsP95 = metricFromRecord(metrics, 'fs_p95');
+  const fsExceeded = metricFromRecord(metrics, 'fs_guard_exceeded');
+
+  if (minPhi != null && (phi == null || phi < minPhi)) {
+    reasons.push(`Guided loop φ=${phi == null ? 'n/a' : phi.toFixed(4)} did not reach minimum ${minPhi.toFixed(4)}.`);
+  }
+
+  if (
+    fsGuard != null &&
+    ((fsP95 != null && fsP95 > fsGuard) || (fsExceeded != null && fsExceeded > 0))
+  ) {
+    reasons.push(
+      `Guided loop FS guard threshold ${fsGuard.toFixed(4)} was exceeded (p95=${fsP95 == null ? 'n/a' : fsP95.toFixed(4)}).`,
+    );
+  }
+
+  if (reasons.length === 0) {
+    reasons.push('Guided loop criteria were not satisfied.');
+  }
+
+  return reasons;
 };
 
 const Phase3Loops = () => {
@@ -1039,6 +1083,12 @@ const Phase3Loops = () => {
         runs,
         satisfied,
         derivedMetrics: derived,
+        failureReasons: buildGuidedFailureReasons({
+          satisfied,
+          runs,
+          minPhi: guidedMinPhi,
+          fsGuard: guardValue,
+        }),
       });
       const tip = decisionGate.evaluate({
         phase: 'phase3',
@@ -1130,6 +1180,28 @@ const Phase3Loops = () => {
       setSaveInFlight(false);
     }
   };
+
+  const guidedRecommendations = useMemo(() => {
+    if (!guidedResult) {
+      return null;
+    }
+
+    const { payload } = guidedResult;
+    const [axisA, axisB] = payload.axes3;
+    const [centerA, centerB] = payload.center;
+    const [ampA, ampB] = payload.amplitudes;
+
+    return {
+      graph: graphOptions.find((option) => option.id === payload.graph)?.label ?? payload.graph,
+      steps: payload.stepsList.join(', '),
+      guard: payload.fsGuard != null ? toCliValue(payload.fsGuard) : 'n/a',
+      minPhi: payload.minPhi != null ? toCliValue(payload.minPhi) : 'n/a',
+      settle: payload.settle != null ? String(payload.settle) : 'n/a',
+      seed: payload.seed != null ? String(payload.seed) : 'n/a',
+      center: `${axisA}=${toCliValue(centerA)}, ${axisB}=${toCliValue(centerB)}`,
+      amplitudes: `${axisA}±${toCliValue(ampA)}, ${axisB}±${toCliValue(ampB)}`,
+    };
+  }, [guidedResult]);
 
   useEffect(() => {
     if (!saveSuccessMessage) {
@@ -1639,6 +1711,41 @@ const Phase3Loops = () => {
                       κ₁ Δ: {guidedResult.derivedMetrics.kappaChange != null ? guidedResult.derivedMetrics.kappaChange.toFixed(3) : '–'}
                     </span>
                   </div>
+
+                  {guidedRecommendations ? (
+                    <section className="phase3__recommended">
+                      <h5>Recommended parameters</h5>
+                      <dl>
+                        <dt>Graph</dt>
+                        <dd>{guidedRecommendations.graph}</dd>
+                        <dt>Steps</dt>
+                        <dd>{guidedRecommendations.steps}</dd>
+                        <dt>FS guard</dt>
+                        <dd>{guidedRecommendations.guard}</dd>
+                        <dt>Minimum Φ</dt>
+                        <dd>{guidedRecommendations.minPhi}</dd>
+                        <dt>Settle steps</dt>
+                        <dd>{guidedRecommendations.settle}</dd>
+                        <dt>Seed</dt>
+                        <dd>{guidedRecommendations.seed}</dd>
+                        <dt>Center</dt>
+                        <dd>{guidedRecommendations.center}</dd>
+                        <dt>Amplitudes</dt>
+                        <dd>{guidedRecommendations.amplitudes}</dd>
+                      </dl>
+                    </section>
+                  ) : null}
+
+                  {!guidedResult.satisfied && guidedResult.failureReasons.length > 0 ? (
+                    <section className="phase3__guided-failures">
+                      <h5>Guided loop needs more tuning</h5>
+                      <ul>
+                        {guidedResult.failureReasons.map((reason) => (
+                          <li key={reason}>{reason}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  ) : null}
 
                   <section className="phase3__runs">
                     <h5>Runs</h5>
