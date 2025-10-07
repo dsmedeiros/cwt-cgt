@@ -26,6 +26,7 @@ describe('RunBoard', () => {
       buildRun({ id: 'run-2', status: 'complete', updatedAt: Date.now() - 500 }),
       buildRun({ id: 'run-1', status: 'running', updatedAt: Date.now() }),
     ];
+    const experimentLabel = runs[0].label ?? runs[0].experiment ?? runs[0].id;
     const api = {
       listRecent: vi.fn().mockResolvedValue(runs),
       collectDiagnostics: vi
@@ -39,7 +40,11 @@ describe('RunBoard', () => {
 
     await waitFor(() => expect(api.listRecent).toHaveBeenCalled());
 
-    expect(screen.getByRole('columnheader', { name: /item/i })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /experiment \/ run/i })).toBeInTheDocument();
+
+    const toggle = await screen.findByRole('button', { name: experimentLabel });
+    fireEvent.click(toggle);
+
     expect(screen.getByText('run-1')).toBeInTheDocument();
     expect(screen.getByText('run-2')).toBeInTheDocument();
     const actionButtons = screen.getAllByRole('button', { name: /Collect diagnostics/i });
@@ -67,26 +72,27 @@ describe('RunBoard', () => {
 
   it('tails logs with pagination controls', async () => {
     const runs = [buildRun({ id: 'run-1', status: 'running' })];
-  const tail = vi
-    .fn()
-    .mockResolvedValueOnce({
-      output: 'tail chunk',
-      startFromByte: 7,
-      nextFromByte: 12,
-      totalBytes: 12,
-      hasMoreBefore: true,
-      status: 'running',
-      failureDetails: null,
-    })
-    .mockResolvedValueOnce({
-      output: 'older ',
-      startFromByte: 0,
-      nextFromByte: 7,
-      totalBytes: 12,
-      hasMoreBefore: false,
-      status: 'running',
-      failureDetails: null,
-    });
+    const experimentLabel = runs[0].label ?? runs[0].experiment ?? runs[0].id;
+    const tail = vi
+      .fn()
+      .mockResolvedValueOnce({
+        output: 'tail chunk',
+        startFromByte: 7,
+        nextFromByte: 12,
+        totalBytes: 12,
+        hasMoreBefore: true,
+        status: 'running',
+        failureDetails: null,
+      })
+      .mockResolvedValueOnce({
+        output: 'older ',
+        startFromByte: 0,
+        nextFromByte: 7,
+        totalBytes: 12,
+        hasMoreBefore: false,
+        status: 'running',
+        failureDetails: null,
+      });
     const api = {
       listRecent: vi.fn().mockResolvedValue(runs),
       collectDiagnostics: vi.fn(),
@@ -97,6 +103,9 @@ describe('RunBoard', () => {
     render(<RunBoard api={api} />);
 
     await waitFor(() => expect(api.listRecent).toHaveBeenCalled());
+    const toggle = await screen.findByRole('button', { name: experimentLabel });
+    fireEvent.click(toggle);
+
     const viewButtons = screen.getAllByRole('button', { name: /View log/i });
     fireEvent.click(viewButtons[0]);
 
@@ -126,6 +135,7 @@ describe('RunBoard', () => {
 
   it('surfaces failure details when available', async () => {
     const runs = [buildRun({ id: 'run-1', status: 'failed' })];
+    const experimentLabel = runs[0].label ?? runs[0].experiment ?? runs[0].id;
     const api = {
       listRecent: vi.fn().mockResolvedValue(runs),
       collectDiagnostics: vi.fn(),
@@ -144,6 +154,9 @@ describe('RunBoard', () => {
     render(<RunBoard api={api} />);
 
     await waitFor(() => expect(api.listRecent).toHaveBeenCalled());
+
+    const toggle = await screen.findByRole('button', { name: experimentLabel });
+    fireEvent.click(toggle);
 
     const viewButtons = screen.getAllByRole('button', { name: /View log/i });
     fireEvent.click(viewButtons[0]);
@@ -174,19 +187,22 @@ describe('RunBoard', () => {
       tail: vi.fn(),
       deleteRun: vi.fn().mockResolvedValue({ runId: 'run-1' }),
     };
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
-
     render(<RunBoard api={api} />);
 
     await waitFor(() => expect(listRecent).toHaveBeenCalledTimes(1));
 
+    const experimentLabel = run1.label ?? run1.experiment ?? run1.id;
+    const toggle = await screen.findByRole('button', { name: experimentLabel });
+    fireEvent.click(toggle);
+
     const deleteButton = screen.getByRole('button', { name: /delete run run-1/i });
     fireEvent.click(deleteButton);
+
+    const confirmDelete = await screen.findByRole('button', { name: /yes/i });
+    fireEvent.click(confirmDelete);
 
     await waitFor(() => expect(api.deleteRun).toHaveBeenCalledWith('run-1'));
     await waitFor(() => expect(listRecent).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(screen.queryByText('run-1')).not.toBeInTheDocument());
-
-    confirmSpy.mockRestore();
   });
 });
