@@ -8,6 +8,7 @@ import type { ArtifactFile } from '../types/ipc';
 import {
   findPhase1HeatmapGroups,
   formatPhase1GraphLabel,
+  formatPhase1SubstrateLabel,
   phase1HeatmapKinds,
   type Phase1HeatmapKind,
 } from '../utils/artifacts';
@@ -25,6 +26,7 @@ const DEFAULT_AXIS_RANGES: Record<AxisOption, [number, number]> = {
 };
 
 type HeatmapImage = {
+  substrate: string;
   graph: string;
   kind: Phase1HeatmapKind;
   relativePath: string;
@@ -79,8 +81,15 @@ const formatRange = (range: [number, number]) => `${range[0].toFixed(3)} … ${r
 const describeHeatmapKind = (kind: Phase1HeatmapKind) =>
   kind === 'omega_heatmap' ? '|Ω| heatmap' : 'Population heatmap';
 
-const formatHeatmapLabel = (graph: string, kind: Phase1HeatmapKind) =>
-  `${formatPhase1GraphLabel(graph)} – ${describeHeatmapKind(kind)}`;
+const formatHeatmapLabel = (substrate: string, graph: string, kind: Phase1HeatmapKind) => {
+  const substrateLabel = formatPhase1SubstrateLabel(substrate);
+  const graphLabel = formatPhase1GraphLabel(graph);
+  const kindLabel = describeHeatmapKind(kind);
+  if (substrateLabel === graphLabel) {
+    return `${substrateLabel} – ${kindLabel}`;
+  }
+  return `${substrateLabel} • ${graphLabel} – ${kindLabel}`;
+};
 
 const deriveMaxOmegaValue = (input: unknown): number | null => {
   if (!input) {
@@ -254,11 +263,12 @@ const Phase1Mapping = () => {
                 continue;
               }
               gallery.push({
+                substrate: group.substrate,
                 graph: group.graph,
                 kind,
                 relativePath,
                 dataUrl: `data:image/png;base64,${artifact.contents}`,
-                label: formatHeatmapLabel(group.graph, kind),
+                label: formatHeatmapLabel(group.substrate, group.graph, kind),
               });
             } catch (error) {
               if (!isCancelled()) {
@@ -623,7 +633,7 @@ const Phase1Mapping = () => {
             <div className="phase1__heatmaps-grid">
               {heatmapState.items.map((item) => (
                 <figure
-                  key={`${item.graph}-${item.kind}`}
+                  key={`${item.substrate}-${item.graph}-${item.kind}`}
                   className="phase1__heatmap"
                 >
                   <img src={item.dataUrl} alt={item.label} loading="lazy" />
