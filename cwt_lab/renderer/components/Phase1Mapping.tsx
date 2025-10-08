@@ -12,6 +12,7 @@ import {
   phase1HeatmapKinds,
   type Phase1HeatmapKind,
 } from '../utils/artifacts';
+import Phase1HeatmapViewer, { type HeatmapImage } from './Phase1HeatmapViewer';
 
 const AXIS_OPTIONS = ['rho', 'tau', 'zeta', 'zeta_phase', 'kappa'] as const;
 
@@ -23,15 +24,6 @@ const DEFAULT_AXIS_RANGES: Record<AxisOption, [number, number]> = {
   zeta: [0, 1.5],
   zeta_phase: [-0.5, 0.5],
   kappa: [0.5, 1.5],
-};
-
-type HeatmapImage = {
-  substrate: string;
-  graph: string;
-  kind: Phase1HeatmapKind;
-  relativePath: string;
-  dataUrl: string;
-  label: string;
 };
 
 type HeatmapState = {
@@ -165,6 +157,17 @@ const Phase1Mapping = () => {
     items: [],
     message: null,
   });
+  const [activeHeatmap, setActiveHeatmap] = useState<HeatmapImage | null>(null);
+
+  const handleHeatmapOpen = useCallback((heatmap: HeatmapImage) => {
+    setActiveHeatmap(heatmap);
+  }, []);
+
+  const handleHeatmapClose = useCallback(() => {
+    setActiveHeatmap(null);
+  }, []);
+
+  const isViewerOpen = activeHeatmap != null;
 
   const axisPrimaryValidation = useMemo(() => validateAxis('phase1', axisPrimary), [axisPrimary]);
   const axisSecondaryValidation = useMemo(() => validateAxis('phase1', axisSecondary), [axisSecondary]);
@@ -484,7 +487,7 @@ const Phase1Mapping = () => {
   }, [lastRunId, loadHeatmaps]);
 
   return (
-    <div className="panel phase1">
+    <div className={`panel phase1${isViewerOpen ? ' phase1--viewer-open' : ''}`}>
       <header className="phase1__header">
         <h2>Phase 1 – Mapping</h2>
         <p>
@@ -633,13 +636,22 @@ const Phase1Mapping = () => {
         <h3>Heatmaps</h3>
         {heatmapState.status === 'ready' && heatmapState.items.length > 0 ? (
           <>
-            <div className="phase1__heatmaps-grid">
+            <div
+              className={`phase1__heatmaps-grid${isViewerOpen ? ' phase1__heatmaps-grid--expanded' : ''}`}
+            >
               {heatmapState.items.map((item) => (
                 <figure
                   key={`${item.substrate}-${item.graph}-${item.kind}`}
                   className="phase1__heatmap"
                 >
-                  <img src={item.dataUrl} alt={item.label} loading="lazy" />
+                  <button
+                    type="button"
+                    className="phase1__heatmap-button"
+                    onClick={() => handleHeatmapOpen(item)}
+                    aria-label={`View heatmap for ${item.label}`}
+                  >
+                    <img src={item.dataUrl} alt={item.label} loading="lazy" />
+                  </button>
                   <figcaption>{item.label}</figcaption>
                 </figure>
               ))}
@@ -665,6 +677,9 @@ const Phase1Mapping = () => {
           </p>
         )}
       </section>
+      {isViewerOpen && activeHeatmap ? (
+        <Phase1HeatmapViewer heatmap={activeHeatmap} onClose={handleHeatmapClose} />
+      ) : null}
     </div>
   );
 };
