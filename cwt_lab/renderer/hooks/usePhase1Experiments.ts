@@ -194,17 +194,38 @@ export const usePhase1Experiments = (
     const isDirectChild = (relativePath: string) =>
       relativePath.length > 0 && !relativePath.includes('/') && !relativePath.includes('\\');
 
+    const normalizeRelativePath = (relativePath: string) => relativePath.replace(/\\/g, '/');
+
+    const isTopOmegaTilesChange = (relativePath: string) => {
+      const normalized = normalizeRelativePath(relativePath);
+      const parts = normalized.split('/');
+      if (parts.length !== 2) {
+        return false;
+      }
+      const [experimentId, fileName] = parts;
+      return experimentId.length > 0 && fileName === 'top_omega_tiles.json';
+    };
+
     const handleChange = (event: ArtifactsWatchEvent) => {
       if (watcherId === null || event.id !== watcherId) {
         return;
       }
-      if (event.kind !== 'addDir' && event.kind !== 'unlinkDir') {
+      if (!event.relativePath) {
         return;
       }
-      if (!event.relativePath || !isDirectChild(event.relativePath)) {
+      if (event.kind === 'addDir' || event.kind === 'unlinkDir') {
+        if (!isDirectChild(event.relativePath)) {
+          return;
+        }
+        refresh();
         return;
       }
-      refresh();
+      if (requirePhase1Outputs && (event.kind === 'add' || event.kind === 'unlink')) {
+        if (!isTopOmegaTilesChange(event.relativePath)) {
+          return;
+        }
+        refresh();
+      }
     };
 
     const unsubscribe = api.onDidChange(handleChange);
@@ -240,7 +261,7 @@ export const usePhase1Experiments = (
         void api.unwatch({ id: watcherId }).catch(() => undefined);
       }
     };
-  }, [artifactsRoot, hasArtifactsApi, refresh]);
+  }, [artifactsRoot, hasArtifactsApi, refresh, requirePhase1Outputs]);
 
   return {
     artifactsRoot,
