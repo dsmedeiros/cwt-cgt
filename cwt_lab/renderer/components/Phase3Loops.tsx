@@ -469,12 +469,33 @@ const fsGuardBadgeClass = (fsP95?: number, guard?: number) => {
   return 'badge badge--danger';
 };
 
-const metricFromRecord = (metrics: Record<string, number | null> | null, key: string) => {
+const metricFromRecord = (
+  metrics: Record<string, number | null> | null,
+  key: string,
+  extraKeys: string[] = [],
+) => {
   if (!metrics) {
     return undefined;
   }
 
-  const candidates = [key, key.replace('-', '_'), key.replace('_', '-')];
+  const seen = new Set<string>();
+  const candidates: string[] = [];
+  const registerCandidate = (candidate: string) => {
+    const normalized = candidate.trim();
+    if (!normalized || seen.has(normalized)) {
+      return;
+    }
+    seen.add(normalized);
+    candidates.push(normalized);
+  };
+
+  [key, key.replace(/-/g, '_'), key.replace(/_/g, '-')].forEach(registerCandidate);
+  extraKeys.forEach((candidate) => {
+    [candidate, candidate.replace(/-/g, '_'), candidate.replace(/_/g, '-')].forEach(
+      registerCandidate,
+    );
+  });
+
   for (const candidate of candidates) {
     if (candidate in metrics) {
       const value = metrics[candidate];
@@ -484,6 +505,30 @@ const metricFromRecord = (metrics: Record<string, number | null> | null, key: st
       return value;
     }
   }
+  return undefined;
+};
+
+const phiFromMetrics = (metrics: Record<string, number | null> | null) => {
+  const phi = metricFromRecord(metrics, 'phi', ['phi_flux', 'phi_sum', 'phi_value']);
+  if (typeof phi === 'number') {
+    return phi;
+  }
+
+  const phiForward = metricFromRecord(metrics, 'phi_forward', ['phiForward']);
+  const phiReverse = metricFromRecord(metrics, 'phi_reverse', ['phiReverse']);
+
+  if (typeof phiForward === 'number' && typeof phiReverse === 'number') {
+    return phiForward + phiReverse;
+  }
+
+  if (typeof phiForward === 'number') {
+    return phiForward;
+  }
+
+  if (typeof phiReverse === 'number') {
+    return phiReverse;
+  }
+
   return undefined;
 };
 
@@ -506,7 +551,7 @@ const buildGuidedFailureReasons = ({
     runs[runs.length - 1]?.metrics ?? runs.find((run) => run.metrics)?.metrics ?? null;
   const reasons: string[] = [];
 
-  const phi = metricFromRecord(metrics, 'phi');
+  const phi = phiFromMetrics(metrics);
   const fsP95 = metricFromRecord(metrics, 'fs_p95');
   const fsExceeded = metricFromRecord(metrics, 'fs_guard_exceeded');
 
@@ -1128,7 +1173,7 @@ const Phase3Loops = () => {
       const referenceMetrics = runs.find((run) => run.metrics) ?? runs[runs.length - 1];
       const derived = {
         fsP95: metricFromRecord(referenceMetrics?.metrics ?? null, 'fs_p95'),
-        phi: metricFromRecord(referenceMetrics?.metrics ?? null, 'phi'),
+        phi: phiFromMetrics(referenceMetrics?.metrics ?? null),
         r: metricFromRecord(referenceMetrics?.metrics ?? null, 'R'),
         overlapMin: metricFromRecord(referenceMetrics?.metrics ?? null, 'overlap_min'),
         kappaChange: metricFromRecord(referenceMetrics?.metrics ?? null, 'kappa1_delta'),
@@ -1802,23 +1847,39 @@ const Phase3Loops = () => {
                   {guidedRecommendations ? (
                     <section className="phase3__recommended">
                       <h5>Recommended parameters</h5>
-                      <dl>
-                        <dt>Graph</dt>
-                        <dd>{guidedRecommendations.graph}</dd>
-                        <dt>Steps</dt>
-                        <dd>{guidedRecommendations.steps}</dd>
-                        <dt>FS guard</dt>
-                        <dd>{guidedRecommendations.guard}</dd>
-                        <dt>Minimum Φ</dt>
-                        <dd>{guidedRecommendations.minPhi}</dd>
-                        <dt>Settle steps</dt>
-                        <dd>{guidedRecommendations.settle}</dd>
-                        <dt>Seed</dt>
-                        <dd>{guidedRecommendations.seed}</dd>
-                        <dt>Center</dt>
-                        <dd>{guidedRecommendations.center}</dd>
-                        <dt>Amplitudes</dt>
-                        <dd>{guidedRecommendations.amplitudes}</dd>
+                      <dl className="phase3__recommended-list">
+                        <div className="phase3__recommended-item">
+                          <dt>Graph</dt>
+                          <dd>{guidedRecommendations.graph}</dd>
+                        </div>
+                        <div className="phase3__recommended-item">
+                          <dt>Steps</dt>
+                          <dd>{guidedRecommendations.steps}</dd>
+                        </div>
+                        <div className="phase3__recommended-item">
+                          <dt>FS guard</dt>
+                          <dd>{guidedRecommendations.guard}</dd>
+                        </div>
+                        <div className="phase3__recommended-item">
+                          <dt>Minimum Φ</dt>
+                          <dd>{guidedRecommendations.minPhi}</dd>
+                        </div>
+                        <div className="phase3__recommended-item">
+                          <dt>Settle steps</dt>
+                          <dd>{guidedRecommendations.settle}</dd>
+                        </div>
+                        <div className="phase3__recommended-item">
+                          <dt>Seed</dt>
+                          <dd>{guidedRecommendations.seed}</dd>
+                        </div>
+                        <div className="phase3__recommended-item">
+                          <dt>Center</dt>
+                          <dd>{guidedRecommendations.center}</dd>
+                        </div>
+                        <div className="phase3__recommended-item">
+                          <dt>Amplitudes</dt>
+                          <dd>{guidedRecommendations.amplitudes}</dd>
+                        </div>
                       </dl>
                     </section>
                   ) : null}

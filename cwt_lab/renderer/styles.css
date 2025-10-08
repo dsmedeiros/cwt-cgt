@@ -1499,21 +1499,30 @@ body {
   font-size: 0.95rem;
 }
 
-.phase3__recommended dl {
+.phase3__recommended-list {
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 0.5rem 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem 1.5rem;
 }
 
-.phase3__recommended dt {
+.phase3__recommended-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+}
+
+.phase3__recommended-item dt {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--color-muted);
 }
 
-.phase3__recommended dd {
+.phase3__recommended-item dd {
   margin: 0;
   font-family: 'Fira Mono', 'SFMono-Regular', ui-monospace, monospace;
   font-size: 0.85rem;
