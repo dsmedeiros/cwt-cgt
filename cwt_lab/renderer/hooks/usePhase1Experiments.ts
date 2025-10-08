@@ -220,7 +220,10 @@ export const usePhase1Experiments = (
         refresh();
         return;
       }
-      if (requirePhase1Outputs && (event.kind === 'add' || event.kind === 'unlink')) {
+      if (
+        requirePhase1Outputs &&
+        (event.kind === 'add' || event.kind === 'change' || event.kind === 'unlink')
+      ) {
         if (!isTopOmegaTilesChange(event.relativePath)) {
           return;
         }
