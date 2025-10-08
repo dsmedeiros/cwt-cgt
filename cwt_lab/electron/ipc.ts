@@ -721,7 +721,12 @@ ipcMain.handle('cwt:run:delete', (_event, payload: { runId: string }) =>
   }, { label: 'cwt:run:delete' }),
 );
 
-ipcMain.handle('cwt:run:read-artifact', (_event, payload: { runId: string; relativePath: string }) =>
+ipcMain.handle(
+  'cwt:run:read-artifact',
+  (
+    _event,
+    payload: { runId: string; relativePath: string; encoding?: 'utf-8' | 'base64' },
+  ) =>
   wrap(async () => {
     if (!payload?.runId) {
       throw new Error('runId is required');
@@ -729,8 +734,12 @@ ipcMain.handle('cwt:run:read-artifact', (_event, payload: { runId: string; relat
     if (!payload?.relativePath || typeof payload.relativePath !== 'string') {
       throw new Error('relativePath is required');
     }
+    const encoding = payload.encoding ?? 'utf-8';
+    if (encoding !== 'utf-8' && encoding !== 'base64') {
+      throw new Error('Unsupported encoding requested');
+    }
 
-    return runManager.readArtifact(payload.runId, payload.relativePath);
+    return runManager.readArtifact(payload.runId, payload.relativePath, encoding);
   }, { label: 'cwt:run:read-artifact' }),
 );
 

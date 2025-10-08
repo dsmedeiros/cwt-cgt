@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi, afterEach } from 'vitest';
 
 import { usePhase1Experiments } from '../usePhase1Experiments';
-import type { ArtifactsWatchEvent } from '../../types/ipc';
+import type { ArtifactsWatchEvent, RendererIpc } from '../../types/ipc';
 
 const buildExperimentNode = (guid: string) => ({
   name: guid,
@@ -29,9 +29,11 @@ const buildExperimentNode = (guid: string) => ({
 
 describe('usePhase1Experiments', () => {
   const guid = '123e4567-e89b-12d3-a456-426614174000';
+  const globalWindow = window as typeof window & { CWT?: RendererIpc };
+  const originalCWT = globalWindow.CWT;
 
   afterEach(() => {
-    delete (window as typeof window & { CWT?: unknown }).CWT;
+    globalWindow.CWT = originalCWT;
   });
 
   it('refreshes when nested Phase 1 outputs change', async () => {
@@ -58,15 +60,16 @@ describe('usePhase1Experiments', () => {
       };
     });
 
-    (window as typeof window & { CWT?: unknown }).CWT = {
-      env: { getConfig },
+    globalWindow.CWT = {
+      env: { getConfig } as unknown as RendererIpc['env'],
       artifacts: {
         list,
+        readFile: vi.fn(),
         watch,
         unwatch,
         onDidChange,
-      },
-    };
+      } as unknown as RendererIpc['artifacts'],
+    } as RendererIpc;
 
     const { result } = renderHook(() => usePhase1Experiments());
 

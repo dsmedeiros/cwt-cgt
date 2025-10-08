@@ -33,6 +33,7 @@ describe('RunManager integration', () => {
     writeFileSync(
       scriptPath,
       [
+        'import base64',
         'import json',
         'import os',
         'import sys',
@@ -44,6 +45,9 @@ describe('RunManager integration', () => {
         'summary = {"fs_p95": 0.125, "phi": 0.456, "R": 0.789}',
         'with open(os.path.join(output_dir, "summary.json"), "w", encoding="utf-8") as handle:',
         '    json.dump(summary, handle)',
+        'heatmap_bytes = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=")',
+        'with open(os.path.join(output_dir, "heatmaps.png"), "wb") as handle:',
+        '    handle.write(heatmap_bytes)',
       ].join('\n'),
       'utf-8',
     );
@@ -152,7 +156,12 @@ describe('RunManager integration', () => {
     const artifacts = await resumed.listArtifacts(runId);
     expect(artifacts.some((entry) => entry.relativePath === 'summary.json')).toBe(true);
     const summary = await resumed.readArtifact(runId, 'summary.json');
+    expect(summary.encoding).toBe('utf-8');
     expect(summary.contents).toContain('"fs_p95"');
+
+    const heatmap = await resumed.readArtifact(runId, 'heatmaps.png', 'base64');
+    expect(heatmap.encoding).toBe('base64');
+    expect(heatmap.contents).toMatch(/^iVBORw0KGgo/);
 
     await resumed.shutdown();
 

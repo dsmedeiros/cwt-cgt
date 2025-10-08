@@ -1,3 +1,5 @@
+import type { ArtifactFile } from '../types/ipc';
+
 export type ArtifactNode = {
   name: string;
   path: string;
@@ -78,4 +80,61 @@ export const joinArtifactPath = (base: string, leaf: string): string => {
     return `/${leaf}`;
   }
   return `${trimmed}/${leaf}`;
+};
+
+export type Phase1HeatmapKind = 'heatmaps' | 'omega_heatmap';
+
+export type Phase1HeatmapGroup = {
+  graph: string;
+  files: Partial<Record<Phase1HeatmapKind, string>>;
+};
+
+const normalizeRelativePath = (value: string) => value.replace(/\\/g, '/');
+
+const HEATMAP_PATTERN = /\/(heatmaps\.png|omega_heatmap\.png)$/;
+
+const HEATMAP_KINDS: readonly Phase1HeatmapKind[] = ['heatmaps', 'omega_heatmap'];
+
+export const phase1HeatmapKinds = HEATMAP_KINDS;
+
+export const findPhase1HeatmapGroups = (artifacts: ArtifactFile[]): Phase1HeatmapGroup[] => {
+  const groups = new Map<string, Phase1HeatmapGroup>();
+
+  for (const artifact of artifacts) {
+    if (artifact.type !== 'file') {
+      continue;
+    }
+    const normalized = normalizeRelativePath(artifact.relativePath);
+    if (!HEATMAP_PATTERN.test(normalized)) {
+      continue;
+    }
+
+    const segments = normalized.split('/');
+    if (segments.length < 2) {
+      continue;
+    }
+
+    const fileName = segments[segments.length - 1] ?? '';
+    const graph = segments[segments.length - 2];
+    if (!graph) {
+      continue;
+    }
+
+    const group = groups.get(graph) ?? { graph, files: {} };
+
+    if (fileName === 'heatmaps.png') {
+      group.files.heatmaps = artifact.relativePath;
+    } else if (fileName === 'omega_heatmap.png') {
+      group.files.omega_heatmap = artifact.relativePath;
+    }
+
+    groups.set(graph, group);
+  }
+
+  return Array.from(groups.values()).sort((a, b) => a.graph.localeCompare(b.graph));
+};
+
+export const formatPhase1GraphLabel = (graph: string): string => {
+  const sanitized = graph.replace(/[_\-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return sanitized.length > 0 ? sanitized : 'Unnamed graph';
 };
