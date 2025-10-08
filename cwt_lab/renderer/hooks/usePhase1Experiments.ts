@@ -198,12 +198,16 @@ export const usePhase1Experiments = (
 
     const isTopOmegaTilesChange = (relativePath: string) => {
       const normalized = normalizeRelativePath(relativePath);
-      const parts = normalized.split('/');
-      if (parts.length !== 2) {
+      const segments = normalized.split('/').filter((segment) => segment.length > 0);
+      if (segments.length < 2) {
         return false;
       }
-      const [experimentId, fileName] = parts;
-      return experimentId.length > 0 && fileName === 'top_omega_tiles.json';
+      const [experimentId, ...rest] = segments;
+      if (!isGuidLike(experimentId)) {
+        return false;
+      }
+      const fileName = rest[rest.length - 1];
+      return fileName === 'top_omega_tiles.json';
     };
 
     const handleChange = (event: ArtifactsWatchEvent) => {
@@ -235,7 +239,7 @@ export const usePhase1Experiments = (
 
     const establishWatcher = async () => {
       try {
-        const response = await api.watch({ under: artifactsRoot, depth: 1 });
+        const response = await api.watch({ under: artifactsRoot, depth: 2 });
         if (!response?.ok) {
           return;
         }
