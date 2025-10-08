@@ -84,10 +84,24 @@ export const joinArtifactPath = (base: string, leaf: string): string => {
 
 export type Phase1HeatmapKind = 'heatmaps' | 'omega_heatmap';
 
+export type Phase1HeatmapFile = {
+  /**
+   * Relative path exactly as reported by the backend. This should be used when
+   * requesting the artifact contents because it preserves the platform specific
+   * separators required by the file system APIs in the Electron process.
+   */
+  relativePath: string;
+  /**
+   * Normalized path with forward slashes. Helpful for display purposes and for
+   * producing stable keys regardless of the host platform.
+   */
+  normalizedPath: string;
+};
+
 export type Phase1HeatmapGroup = {
   substrate: string;
   graph: string;
-  files: Partial<Record<Phase1HeatmapKind, string>>;
+  files: Partial<Record<Phase1HeatmapKind, Phase1HeatmapFile>>;
 };
 
 const normalizeRelativePath = (value: string) => value.replace(/\\/g, '/');
@@ -107,7 +121,15 @@ export const phase1HeatmapKinds = HEATMAP_KINDS;
 
 const resolveHeatmapMetadata = (
   relativePath: string,
-): { normalizedPath: string; graph: string; substrate: string; kind: Phase1HeatmapKind } | null => {
+):
+  | {
+      rawPath: string;
+      normalizedPath: string;
+      graph: string;
+      substrate: string;
+      kind: Phase1HeatmapKind;
+    }
+  | null => {
   const normalizedPath = normalizeRelativePath(relativePath);
   if (!HEATMAP_PATTERN.test(normalizedPath)) {
     return null;
@@ -149,7 +171,7 @@ const resolveHeatmapMetadata = (
     }
   }
 
-  return { normalizedPath, graph, substrate, kind };
+  return { rawPath: relativePath, normalizedPath, graph, substrate, kind };
 };
 
 export const findPhase1HeatmapGroups = (artifacts: ArtifactFile[]): Phase1HeatmapGroup[] => {
@@ -172,7 +194,10 @@ export const findPhase1HeatmapGroups = (artifacts: ArtifactFile[]): Phase1Heatma
       files: {},
     };
 
-    group.files[metadata.kind] = metadata.normalizedPath;
+    group.files[metadata.kind] = {
+      relativePath: metadata.rawPath,
+      normalizedPath: metadata.normalizedPath,
+    };
     groups.set(key, group);
   }
 

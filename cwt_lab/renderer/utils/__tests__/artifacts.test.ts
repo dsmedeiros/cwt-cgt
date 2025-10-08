@@ -37,15 +37,24 @@ describe('artifacts helpers', () => {
       substrate: 'ring3',
       graph: 'ring3',
       files: {
-        heatmaps: 'substrates/ring3/heatmaps.png',
-        omega_heatmap: 'substrates/ring3/omega_heatmap.png',
+        heatmaps: {
+          relativePath: 'substrates\\ring3\\heatmaps.png',
+          normalizedPath: 'substrates/ring3/heatmaps.png',
+        },
+        omega_heatmap: {
+          relativePath: 'substrates/ring3/omega_heatmap.png',
+          normalizedPath: 'substrates/ring3/omega_heatmap.png',
+        },
       },
     });
     expect(groups[1]).toEqual({
       substrate: 'small_world',
       graph: 'small_world',
       files: {
-        heatmaps: 'substrates/small_world/heatmaps.png',
+        heatmaps: {
+          relativePath: 'substrates/small_world/heatmaps.png',
+          normalizedPath: 'substrates/small_world/heatmaps.png',
+        },
       },
     });
   });
@@ -64,7 +73,10 @@ describe('artifacts helpers', () => {
     expect(groups).toHaveLength(1);
     expect(groups[0].substrate).toBe('torus');
     expect(groups[0].graph).toBe('torus');
-    expect(groups[0].files.heatmaps).toBe('experiment/substrates/torus/heatmaps.png');
+    expect(groups[0].files.heatmaps).toEqual({
+      relativePath: 'experiment/substrates/torus/heatmaps.png',
+      normalizedPath: 'experiment/substrates/torus/heatmaps.png',
+    });
   });
 
   it('provides sanitized graph labels', () => {

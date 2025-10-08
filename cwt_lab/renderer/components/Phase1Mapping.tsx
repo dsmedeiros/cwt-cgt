@@ -245,36 +245,39 @@ const Phase1Mapping = () => {
 
         for (const group of groups) {
           for (const kind of phase1HeatmapKinds) {
-            const relativePath = group.files[kind];
-            if (!relativePath) {
+            const fileEntry = group.files[kind];
+            if (!fileEntry) {
               continue;
             }
             try {
               const artifact = await runs.readArtifact({
                 runId,
-                relativePath,
+                relativePath: fileEntry.relativePath,
                 encoding: 'base64',
               });
               if (isCancelled()) {
                 return;
               }
               if (artifact.encoding !== 'base64') {
-                failures.push(relativePath);
+                failures.push(fileEntry.normalizedPath);
                 continue;
               }
               gallery.push({
                 substrate: group.substrate,
                 graph: group.graph,
                 kind,
-                relativePath,
+                relativePath: fileEntry.normalizedPath,
                 dataUrl: `data:image/png;base64,${artifact.contents}`,
                 label: formatHeatmapLabel(group.substrate, group.graph, kind),
               });
             } catch (error) {
               if (!isCancelled()) {
-                console.warn(`Failed to read heatmap artifact ${relativePath} for run ${runId}:`, error);
+                console.warn(
+                  `Failed to read heatmap artifact ${fileEntry.relativePath} for run ${runId}:`,
+                  error,
+                );
               }
-              failures.push(relativePath);
+              failures.push(fileEntry.normalizedPath);
             }
           }
         }
