@@ -13,7 +13,7 @@ export default defineConfig({
     include: [
       'electron/**/*.test.ts',
       'shared/**/*.test.ts',
-      'renderer/**/*.test.tsx',
+      'renderer/**/*.test.{ts,tsx}',
     ],
     restoreMocks: true,
     clearMocks: true,
