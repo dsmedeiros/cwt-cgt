@@ -4,11 +4,14 @@ import type {
   Phase2CorrelatePayload,
   Phase2CorrelateResult,
   Phase3BrowseHotspotsResult,
+  ArtifactFile,
   RegistryRunRecord,
   RunCreateResult,
   RunDiagnosticsBundle,
   RunTailChunk,
   RunTailPayload,
+  RunReadArtifactPayload,
+  RunReadArtifactResult,
 } from './types/ipc';
 
 const unwrap = async <T>(
@@ -69,6 +72,18 @@ export const runs = {
     return unwrap(
       window?.CWT?.registry?.query?.({ limit }),
       'Run registry IPC is unavailable',
+    );
+  },
+  async openArtifacts(runId: string): Promise<ArtifactFile[]> {
+    return unwrap(
+      window?.CWT?.run?.openArtifacts?.({ runId }),
+      'Run artifacts IPC is unavailable',
+    );
+  },
+  async readArtifact(payload: RunReadArtifactPayload): Promise<RunReadArtifactResult> {
+    return unwrap(
+      window?.CWT?.run?.readArtifact?.(payload),
+      'Run artifact reader IPC is unavailable',
     );
   },
   async collectDiagnostics(runId: string): Promise<RunDiagnosticsBundle> {

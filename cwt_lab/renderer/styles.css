@@ -1604,6 +1604,53 @@ body {
   color: var(--color-muted);
 }
 
+.phase1__heatmaps {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.phase1__heatmaps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  max-height: 24rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.phase1__heatmap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.phase1__heatmap img {
+  width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  object-fit: contain;
+}
+
+.phase1__heatmap figcaption {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.phase1__heatmaps-status,
+.phase1__heatmaps-note {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-muted);
+}
+
+.phase1__heatmaps-note {
+  font-style: italic;
+}
+
 .phase1__status-note {
   margin: 0.5rem 0 1rem;
   color: var(--color-muted);

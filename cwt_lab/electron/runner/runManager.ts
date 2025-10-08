@@ -718,7 +718,11 @@ export class RunManager {
     }
   }
 
-  async readArtifact(runId: string, relativePath: string) {
+  async readArtifact(
+    runId: string,
+    relativePath: string,
+    encoding: 'utf-8' | 'base64' = 'utf-8',
+  ) {
     const artifactsDir = await this.resolveArtifactsDir(runId);
     const safeRelative = relativePath.replace(/\\/g, '/');
     const resolved = path.resolve(artifactsDir, safeRelative);
@@ -726,8 +730,17 @@ export class RunManager {
       throw new Error('Invalid artifact path');
     }
 
+    if (encoding !== 'utf-8' && encoding !== 'base64') {
+      throw new Error(`Unsupported encoding requested: ${encoding}`);
+    }
+
+    if (encoding === 'base64') {
+      const buffer = await fs.readFile(toFsPath(resolved));
+      return { path: resolved, contents: buffer.toString('base64'), encoding };
+    }
+
     const contents = await fs.readFile(toFsPath(resolved), 'utf-8');
-    return { path: resolved, contents };
+    return { path: resolved, contents, encoding };
   }
 
   async fetchRegistry(query: RunQuery = {}): Promise<RunRecord[]> {

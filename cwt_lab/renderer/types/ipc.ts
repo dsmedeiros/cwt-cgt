@@ -349,6 +349,20 @@ export type ArtifactFile = {
   type: 'file' | 'directory';
 };
 
+export type RunArtifactEncoding = 'utf-8' | 'base64';
+
+export type RunReadArtifactPayload = {
+  runId: string;
+  relativePath: string;
+  encoding?: RunArtifactEncoding;
+};
+
+export type RunReadArtifactResult = {
+  path: string;
+  contents: string;
+  encoding: RunArtifactEncoding;
+};
+
 export type LoopAtHotspotPayload = {
   hotspotsJson: string;
   axes: [string, string];
@@ -429,6 +443,7 @@ export type ArtifactsWatchEvent = {
 };
 
 export type RegistryQueryPayload = {
+  id?: string;
   phase?: string;
   experiment?: string;
   limit?: number;
@@ -485,8 +500,8 @@ export interface RendererIpc {
     collectDiagnostics: (payload: { runId: string }) => Promise<IpcEnvelope<RunDiagnosticsBundle>>;
     delete: (payload: RunDeletePayload) => Promise<IpcEnvelope<RunDeleteResult>>;
     readArtifact: (
-      payload: { runId: string; relativePath: string },
-    ) => Promise<IpcEnvelope<{ path: string; contents: string }>>;
+      payload: RunReadArtifactPayload,
+    ) => Promise<IpcEnvelope<RunReadArtifactResult>>;
   };
   phase1: {
     map: (params: Record<string, unknown>) => Promise<IpcEnvelope<RunCreateResult>>;

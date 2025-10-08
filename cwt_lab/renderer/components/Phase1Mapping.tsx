@@ -1,9 +1,16 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { formatValidationMessage, validateAxis, validateExtent, validateSeed } from '../../shared/validators';
 import { useCommandRegistration } from '../commandCenter';
-import { phase1 } from '../ipc';
+import { phase1, runs } from '../ipc';
 import { useExperimentNavigation } from '../navigation/ExperimentNavigationContext';
+import type { ArtifactFile } from '../types/ipc';
+import {
+  findPhase1HeatmapGroups,
+  formatPhase1GraphLabel,
+  phase1HeatmapKinds,
+  type Phase1HeatmapKind,
+} from '../utils/artifacts';
 
 const AXIS_OPTIONS = ['rho', 'tau', 'zeta', 'zeta_phase', 'kappa'] as const;
 
@@ -16,6 +23,23 @@ const DEFAULT_AXIS_RANGES: Record<AxisOption, [number, number]> = {
   zeta_phase: [-0.5, 0.5],
   kappa: [0.5, 1.5],
 };
+
+type HeatmapImage = {
+  graph: string;
+  kind: Phase1HeatmapKind;
+  relativePath: string;
+  dataUrl: string;
+  label: string;
+};
+
+type HeatmapState = {
+  status: 'idle' | 'loading' | 'ready' | 'error';
+  runId: string | null;
+  items: HeatmapImage[];
+  message: string | null;
+};
+
+const HEATMAP_POLL_INTERVAL_MS = 3_000;
 
 type AxisRangeSnapshot = {
   axis: AxisOption;
@@ -52,6 +76,63 @@ const computeCoverageFraction = (
 
 const formatRange = (range: [number, number]) => `${range[0].toFixed(3)} … ${range[1].toFixed(3)}`;
 
+const describeHeatmapKind = (kind: Phase1HeatmapKind) =>
+  kind === 'omega_heatmap' ? '|Ω| heatmap' : 'Population heatmap';
+
+const formatHeatmapLabel = (graph: string, kind: Phase1HeatmapKind) =>
+  `${formatPhase1GraphLabel(graph)} – ${describeHeatmapKind(kind)}`;
+
+const deriveMaxOmegaValue = (input: unknown): number | null => {
+  if (!input) {
+    return null;
+  }
+
+  const visited = new WeakSet<object>();
+  let result: number | null = null;
+
+  const pushValue = (value: unknown) => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      result = result == null ? value : Math.max(result, value);
+    } else if (typeof value === 'string') {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) {
+        result = result == null ? parsed : Math.max(result, parsed);
+      }
+    }
+  };
+
+  const visit = (node: unknown) => {
+    if (!node) {
+      return;
+    }
+    if (Array.isArray(node)) {
+      for (const item of node) {
+        visit(item);
+      }
+      return;
+    }
+    if (typeof node === 'object') {
+      const objectNode = node as Record<string, unknown>;
+      if (visited.has(objectNode)) {
+        return;
+      }
+      visited.add(objectNode);
+      if ('omega_abs' in objectNode) {
+        pushValue(objectNode.omega_abs);
+      }
+      if ('omegaAbs' in objectNode) {
+        pushValue(objectNode.omegaAbs);
+      }
+      for (const value of Object.values(objectNode)) {
+        visit(value);
+      }
+    }
+  };
+
+  visit(input);
+  return result;
+};
+
 const Phase1Mapping = () => {
   const { refreshExperiments } = useExperimentNavigation();
   const [axisPrimary, setAxisPrimary] = useState<AxisOption>(AXIS_OPTIONS[0]);
@@ -69,6 +150,12 @@ const Phase1Mapping = () => {
     | { primary: AxisRangeSnapshot; secondary: AxisRangeSnapshot }
     | null
   >(null);
+  const [heatmapState, setHeatmapState] = useState<HeatmapState>({
+    status: 'idle',
+    runId: null,
+    items: [],
+    message: null,
+  });
 
   const axisPrimaryValidation = useMemo(() => validateAxis('phase1', axisPrimary), [axisPrimary]);
   const axisSecondaryValidation = useMemo(() => validateAxis('phase1', axisSecondary), [axisSecondary]);
@@ -95,6 +182,119 @@ const Phase1Mapping = () => {
   })();
   const isRunDisabled = isRunning || Boolean(runDisabledReason);
   const runTitle = isRunning ? 'Mapping already running.' : runDisabledReason;
+
+  const updateMaxOmegaFromArtifacts = useCallback(
+    async (runId: string, artifacts: ArtifactFile[], isCancelled: () => boolean) => {
+      const topOmegaEntry = artifacts.find((artifact) => {
+        if (artifact.type !== 'file') {
+          return false;
+        }
+        const normalized = artifact.relativePath.replace(/\\/g, '/');
+        return normalized.endsWith('top_omega_tiles.json');
+      });
+
+      if (!topOmegaEntry) {
+        return;
+      }
+
+      try {
+        const response = await runs.readArtifact({
+          runId,
+          relativePath: topOmegaEntry.relativePath,
+        });
+        if (isCancelled()) {
+          return;
+        }
+        const parsed = JSON.parse(response.contents) as unknown;
+        const derived = deriveMaxOmegaValue(parsed);
+        if (isCancelled()) {
+          return;
+        }
+        if (typeof derived === 'number' && Number.isFinite(derived)) {
+          setMaxOmega(derived);
+        }
+      } catch (error) {
+        if (!isCancelled()) {
+          console.warn(`Failed to refresh max |Ω| from run ${runId}:`, error);
+        }
+      }
+    },
+    [setMaxOmega],
+  );
+
+  const loadHeatmaps = useCallback(
+    async (runId: string, isCancelled: () => boolean) => {
+      try {
+        const artifacts = await runs.openArtifacts(runId);
+        if (isCancelled()) {
+          return;
+        }
+
+        const groups = findPhase1HeatmapGroups(artifacts);
+        const gallery: HeatmapImage[] = [];
+        const failures: string[] = [];
+
+        for (const group of groups) {
+          for (const kind of phase1HeatmapKinds) {
+            const relativePath = group.files[kind];
+            if (!relativePath) {
+              continue;
+            }
+            try {
+              const artifact = await runs.readArtifact({
+                runId,
+                relativePath,
+                encoding: 'base64',
+              });
+              if (isCancelled()) {
+                return;
+              }
+              if (artifact.encoding !== 'base64') {
+                failures.push(relativePath);
+                continue;
+              }
+              gallery.push({
+                graph: group.graph,
+                kind,
+                relativePath,
+                dataUrl: `data:image/png;base64,${artifact.contents}`,
+                label: formatHeatmapLabel(group.graph, kind),
+              });
+            } catch (error) {
+              if (!isCancelled()) {
+                console.warn(`Failed to read heatmap artifact ${relativePath} for run ${runId}:`, error);
+              }
+              failures.push(relativePath);
+            }
+          }
+        }
+
+        if (isCancelled()) {
+          return;
+        }
+
+        const message = failures.length
+          ? `Some heatmaps could not be loaded (${failures.length}).`
+          : gallery.length === 0
+          ? 'No heatmap images were produced for this run.'
+          : null;
+
+        setHeatmapState({ status: 'ready', runId, items: gallery, message });
+        await updateMaxOmegaFromArtifacts(runId, artifacts, isCancelled);
+      } catch (error) {
+        if (isCancelled()) {
+          return;
+        }
+        setHeatmapState({
+          status: 'error',
+          runId,
+          items: [],
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    },
+    [updateMaxOmegaFromArtifacts],
+  );
 
   const runMapping = useCallback(async () => {
     if (
@@ -131,7 +331,14 @@ const Phase1Mapping = () => {
       const coverageFraction = computeCoverageFraction(primaryAxis, secondaryAxis, extentValue);
       setCoverage(coverageFraction);
       setMaxOmega(null);
-      setLastRunId(result.runId ?? null);
+      const nextRunId = result.runId ?? null;
+      setLastRunId(nextRunId);
+      setHeatmapState({
+        status: 'loading',
+        runId: nextRunId,
+        items: [],
+        message: 'Waiting for the latest run to finish…',
+      });
       setLastRanges({
         primary: { axis: primaryAxis, range: primaryRange },
         secondary: { axis: secondaryAxis, range: secondaryRange },
@@ -172,12 +379,105 @@ const Phase1Mapping = () => {
     run: runRegistration,
   });
 
+  useEffect(() => {
+    if (!lastRunId) {
+      setHeatmapState((current) =>
+        current.status === 'idle'
+          ? current
+          : { status: 'idle', runId: null, items: [], message: null },
+      );
+      return;
+    }
+
+    let cancelled = false;
+    let pollHandle: ReturnType<typeof setTimeout> | null = null;
+
+    const isCancelled = () => cancelled;
+
+    const poll = async (): Promise<void> => {
+      if (cancelled) {
+        return;
+      }
+      try {
+        const response = await window?.CWT?.registry?.query?.({ id: lastRunId });
+        if (!response) {
+          throw new Error('Run registry IPC is unavailable');
+        }
+        if (!response.ok) {
+          throw new Error(response.error ?? 'Failed to query run status.');
+        }
+        const [record] = response.data ?? [];
+        if (!record) {
+          throw new Error(`Run ${lastRunId} not found in the registry.`);
+        }
+        if (record.status === 'complete') {
+          await loadHeatmaps(lastRunId, isCancelled);
+          return;
+        }
+        if (record.status === 'failed' || record.status === 'aborted') {
+          setHeatmapState({
+            status: 'error',
+            runId: lastRunId,
+            items: [],
+            message:
+              record.status === 'failed'
+                ? 'Run failed before producing heatmaps.'
+                : 'Run was aborted before producing heatmaps.',
+          });
+          return;
+        }
+
+        setHeatmapState((current) => {
+          if (current.status === 'loading' && current.runId === lastRunId) {
+            return current;
+          }
+          return {
+            status: 'loading',
+            runId: lastRunId,
+            items: [],
+            message: 'Waiting for the latest run to finish…',
+          };
+        });
+
+        pollHandle = setTimeout(poll, HEATMAP_POLL_INTERVAL_MS);
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        setHeatmapState({
+          status: 'error',
+          runId: lastRunId,
+          items: [],
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    };
+
+    setHeatmapState({
+      status: 'loading',
+      runId: lastRunId,
+      items: [],
+      message: 'Waiting for the latest run to finish…',
+    });
+
+    void poll();
+
+    return () => {
+      cancelled = true;
+      if (pollHandle) {
+        clearTimeout(pollHandle);
+      }
+    };
+  }, [lastRunId, loadHeatmaps]);
+
   return (
     <div className="panel phase1">
       <header className="phase1__header">
         <h2>Phase 1 – Mapping</h2>
         <p>
-          Configure a coarse sweep across two axes to scout the landscape before diving deeper into loops.
+          Configure a coarse sweep across two axes to scout the landscape before diving deeper into
+          loops. Once a run finishes, preview the generated heatmaps below to spot promising
+          substrates quickly.
         </p>
       </header>
       {tipMessage ? (
@@ -315,6 +615,42 @@ const Phase1Mapping = () => {
             <strong>{lastRunId ?? '–'}</strong>
           </li>
         </ul>
+      </section>
+      <section className="phase1__heatmaps">
+        <h3>Heatmaps</h3>
+        {heatmapState.status === 'ready' && heatmapState.items.length > 0 ? (
+          <>
+            <div className="phase1__heatmaps-grid">
+              {heatmapState.items.map((item) => (
+                <figure
+                  key={`${item.graph}-${item.kind}`}
+                  className="phase1__heatmap"
+                >
+                  <img src={item.dataUrl} alt={item.label} loading="lazy" />
+                  <figcaption>{item.label}</figcaption>
+                </figure>
+              ))}
+            </div>
+            {heatmapState.message ? (
+              <p className="phase1__heatmaps-note">{heatmapState.message}</p>
+            ) : null}
+          </>
+        ) : (
+          <p className="phase1__heatmaps-status">
+            {(() => {
+              if (heatmapState.status === 'loading') {
+                return heatmapState.message ?? 'Waiting for the latest run to finish…';
+              }
+              if (heatmapState.status === 'error') {
+                return heatmapState.message ?? 'Heatmaps could not be loaded.';
+              }
+              if (heatmapState.status === 'ready') {
+                return heatmapState.message ?? 'No heatmap images were produced for this run.';
+              }
+              return 'Run a mapping sweep to generate heatmaps.';
+            })()}
+          </p>
+        )}
       </section>
     </div>
   );
