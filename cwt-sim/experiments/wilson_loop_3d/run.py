@@ -28,6 +28,26 @@ def ensure_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
 
 
+def _sanitize_for_json(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {key: _sanitize_for_json(val) for key, val in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_sanitize_for_json(item) for item in value]
+    if isinstance(value, np.ndarray):
+        return [_sanitize_for_json(item) for item in value.tolist()]
+    if isinstance(value, bool) or value is None:
+        return value
+    if isinstance(value, numbers.Integral):
+        integer = int(value)
+        return integer
+    if isinstance(value, numbers.Real):
+        numeric = float(value)
+        return numeric if math.isfinite(numeric) else None
+    if isinstance(value, numbers.Complex) and not isinstance(value, numbers.Real):
+        return None
+    return value
+
+
 def _initial_state(substrate: GraphSubstrate) -> tuple[np.ndarray, np.ndarray]:
     N = substrate.N
     if N == 0:
@@ -496,9 +516,11 @@ def main(argv: Sequence[str] | None = None) -> None:
         "phase3_provenance": phase3_provenance,
     }
 
+    sanitized_summary = _sanitize_for_json(summary)
+
     summary_path = output_dir / "summary.json"
     with summary_path.open("w", encoding="utf-8") as handle:
-        json.dump(summary, handle, indent=2, ensure_ascii=False)
+        json.dump(sanitized_summary, handle, indent=2, ensure_ascii=False, allow_nan=False)
 
     report_lines = [
         "# Wilson loop in three dimensions",

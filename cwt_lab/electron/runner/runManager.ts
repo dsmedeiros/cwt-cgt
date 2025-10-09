@@ -1082,12 +1082,32 @@ export class RunManager {
       return null;
     }
 
+    let raw: string | null = null;
     try {
-      const raw = await fs.readFile(toFsPath(summaryPath), 'utf-8');
+      raw = await fs.readFile(toFsPath(summaryPath), 'utf-8');
       const parsed = JSON.parse(raw) as Record<string, unknown>;
       const metrics = this.extractNumericMetrics(parsed);
       return Object.keys(metrics).length > 0 ? metrics : null;
     } catch (error) {
+      if (raw) {
+        const matches = Array.from(raw.matchAll(/"([^"\\]+)"\s*:\s*(NaN|Infinity|-Infinity)/g));
+        if (matches.length > 0) {
+          matches.forEach((match) => {
+            const field = match[1];
+            const value = match[2];
+            console.warn(
+              `Summary metrics for run ${runId} contain non-finite value ${value} in field ${field}.`,
+            );
+          });
+        } else {
+          const fallback = raw.match(/\b(NaN|Infinity|-Infinity)\b/);
+          if (fallback) {
+            console.warn(
+              `Summary metrics for run ${runId} contain non-finite value ${fallback[1]} in an array or nested structure.`,
+            );
+          }
+        }
+      }
       console.warn(`Failed to parse summary metrics for run ${runId}:`, error);
       return null;
     }
