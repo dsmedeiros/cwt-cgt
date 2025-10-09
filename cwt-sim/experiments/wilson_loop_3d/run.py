@@ -6,6 +6,7 @@ import argparse
 import json
 import math
 import numbers
+import os
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -22,10 +23,24 @@ VALID_AXES = ("rho", "tau", "zeta", "zeta_phase", "kappa")
 DEFAULT_BASE = {"rho": 1.5, "tau": 1.75, "zeta": 1.2, "zeta_phase": 0.0, "kappa": 1.0}
 DEFAULT_FS_GUARD = 0.2
 DEFAULT_SETTLE_STEPS = 40
+DEFAULT_ARTIFACTS_DIR = Path(__file__).resolve().parent / "artifacts"
 
 
 def ensure_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
+
+
+def resolve_output_dir(cli_value: Path | None) -> Path:
+    """Resolve the artifact directory preferring CLI, then $CWT_OUTPUT_DIR, then default."""
+
+    if cli_value is not None:
+        return cli_value
+
+    env_value = os.environ.get("CWT_OUTPUT_DIR")
+    if env_value:
+        return Path(env_value)
+
+    return DEFAULT_ARTIFACTS_DIR
 
 
 def _sanitize_for_json(value: Any) -> Any:
@@ -359,7 +374,16 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--fs-guard", type=float, default=None, help="Target p95 bound for Fubini-Study steps"
     )
-    parser.add_argument("--output-dir", type=Path, default=Path(__file__).resolve().parent / "artifacts")
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help=(
+            "Directory to store run artifacts. Explicit values override the launcher-provided "
+            "$CWT_OUTPUT_DIR; otherwise defaults to that env var when set, "
+            "or the module's ./artifacts folder."
+        ),
+    )
     parser.add_argument(
         "--phase3-summary",
         type=Path,
@@ -436,7 +460,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             "graph": summary_info.get("graph"),
         }
 
-    output_dir = Path(args.output_dir)
+    output_dir = resolve_output_dir(args.output_dir)
     ensure_dir(output_dir)
 
     substrate = _build_substrate(args.graph, args.seed)
