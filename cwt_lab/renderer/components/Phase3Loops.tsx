@@ -15,13 +15,16 @@ import {
 } from '../../shared/validators';
 import { findArtifactNodeByName, joinArtifactPath, sanitizeArtifactNodes } from '../utils/artifacts';
 
+type HotspotAxis = 'rho' | 'tau' | 'zeta' | 'zeta_phase' | 'kappa';
+
+type HotspotCoordinates = Partial<Record<HotspotAxis, number>>;
+
 type Hotspot = {
   id: string;
   name: string;
-  tau: number;
-  zeta: number;
   calm?: boolean;
-  axes?: [string, string];
+  axes?: [HotspotAxis, HotspotAxis];
+  coordinates?: HotspotCoordinates;
   graph?: string | null;
   originPath?: string | null;
 };
@@ -66,33 +69,71 @@ type GuidedLoopResult = {
   failureReasons: string[];
 };
 
+const hotspotAxisOrder: HotspotAxis[] = ['rho', 'tau', 'zeta', 'zeta_phase', 'kappa'];
+
+const hotspotAxisLabels: Record<HotspotAxis, string> = {
+  rho: 'ρ',
+  tau: 'τ',
+  zeta: 'ζ',
+  zeta_phase: 'ζ_phase',
+  kappa: 'κ',
+};
+
+const defaultPlaneAxes: [HotspotAxis, HotspotAxis] = ['tau', 'zeta'];
+
+const labelForAxis = (axis: HotspotAxis | string) =>
+  hotspotAxisLabels[axis as HotspotAxis] ?? axis;
+
+const axisAliasToHotspotAxis = (value: string): HotspotAxis | null => {
+  const normalized = value.trim().toLowerCase();
+  switch (normalized) {
+    case 'rho':
+    case 'ρ':
+      return 'rho';
+    case 'tau':
+    case 'τ':
+      return 'tau';
+    case 'zeta':
+    case 'ζ':
+      return 'zeta';
+    case 'zeta_phase':
+    case 'zeta-phase':
+    case 'zetaphase':
+    case 'ζ_phase':
+    case 'ζφ':
+      return 'zeta_phase';
+    case 'kappa':
+    case 'κ':
+      return 'kappa';
+    default:
+      return null;
+  }
+};
+
 const defaultHotspots: Hotspot[] = [
   {
     id: 'calm-1',
     name: 'Calm Basin A',
-    tau: 0.08,
-    zeta: -0.03,
     calm: true,
-    axes: ['tau', 'zeta'],
+    axes: [defaultPlaneAxes[0], defaultPlaneAxes[1]],
+    coordinates: { tau: 0.08, zeta: -0.03 },
     graph: 'default',
     originPath: 'defaults',
   },
   {
     id: 'calm-2',
     name: 'Calm Basin B',
-    tau: -0.04,
-    zeta: 0.06,
     calm: true,
-    axes: ['tau', 'zeta'],
+    axes: [defaultPlaneAxes[0], defaultPlaneAxes[1]],
+    coordinates: { tau: -0.04, zeta: 0.06 },
     graph: 'default',
     originPath: 'defaults',
   },
   {
     id: 'spicy-1',
     name: 'Energetic Ridge',
-    tau: 0.18,
-    zeta: 0.12,
-    axes: ['tau', 'zeta'],
+    axes: [defaultPlaneAxes[0], defaultPlaneAxes[1]],
+    coordinates: { tau: 0.18, zeta: 0.12 },
     graph: 'default',
     originPath: 'defaults',
   },
@@ -115,6 +156,61 @@ const safeNumber = (value: number) => Number(value.toFixed(4));
 
 const toCliValue = (value: number) => value.toFixed(4).replace(/\.0+$/, '');
 
+const getHotspotAxes = (hotspot: Hotspot): [HotspotAxis, HotspotAxis] => {
+  if (Array.isArray(hotspot.axes) && hotspot.axes.length === 2) {
+    return [hotspot.axes[0], hotspot.axes[1]];
+  }
+  return [defaultPlaneAxes[0], defaultPlaneAxes[1]];
+};
+
+const getHotspotCoordinate = (hotspot: Hotspot, axis: HotspotAxis): number | undefined => {
+  if (hotspot.coordinates && typeof hotspot.coordinates[axis] === 'number') {
+    return hotspot.coordinates[axis];
+  }
+  const legacyValue = (hotspot as Record<string, unknown>)[axis];
+  return typeof legacyValue === 'number' ? legacyValue : undefined;
+};
+
+const getPlaneCoordinates = (hotspot: Hotspot): [number, number] => {
+  const [axisA, axisB] = getHotspotAxes(hotspot);
+  const coordA = getHotspotCoordinate(hotspot, axisA);
+  const coordB = getHotspotCoordinate(hotspot, axisB);
+  return [coordA ?? 0, coordB ?? 0];
+};
+
+const buildCoordinateRecord = (hotspot: Hotspot): Record<string, number> => {
+  const record: Record<string, number> = {};
+  const seen = new Set<HotspotAxis>();
+  if (hotspot.coordinates) {
+    for (const axis of hotspotAxisOrder) {
+      const value = hotspot.coordinates[axis];
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        record[axis] = value;
+        seen.add(axis);
+      }
+    }
+  }
+  // Legacy fallback to any numeric properties.
+  for (const axis of hotspotAxisOrder) {
+    if (seen.has(axis)) {
+      continue;
+    }
+    const legacyValue = (hotspot as Record<string, unknown>)[axis];
+    if (typeof legacyValue === 'number' && Number.isFinite(legacyValue)) {
+      record[axis] = legacyValue;
+    }
+  }
+  return record;
+};
+
+const formatPlaneSummary = (hotspot: Hotspot) => {
+  const [axisA, axisB] = getHotspotAxes(hotspot);
+  const [coordA, coordB] = getPlaneCoordinates(hotspot);
+  const labelA = labelForAxis(axisA);
+  const labelB = labelForAxis(axisB);
+  return `${labelA} ${toCliValue(coordA)} / ${labelB} ${toCliValue(coordB)}`;
+};
+
 const normalizeOrigin = (value: string | null | undefined) =>
   value ? value.replace(/\\/g, '/').trim() : '';
 
@@ -132,8 +228,8 @@ const createGuidedStepEntry = (value: number | string = ''): GuidedStepEntry => 
 });
 
 type Phase1HotspotEntry = {
-  tau: number;
-  zeta: number;
+  axes: [HotspotAxis, HotspotAxis];
+  coordinates: HotspotCoordinates;
   omegaAbs: number | null;
 };
 
@@ -155,7 +251,11 @@ const parsePhase1Hotspots = (raw: string): Phase1HotspotEntry[] => {
   const axes = axesRaw
     .map((axis) => String(axis ?? '').trim())
     .filter((axis) => axis.length > 0)
-    .map((axis) => ({ original: axis, normalized: axis.toLowerCase() }));
+    .map((axis) => ({
+      original: axis,
+      normalized: axis.toLowerCase(),
+      canonical: axisAliasToHotspotAxis(axis),
+    }));
 
   const tilesRaw = (parsed as { top_tiles?: unknown; topTiles?: unknown }).top_tiles ?? (
     parsed as { topTiles?: unknown }
@@ -182,19 +282,35 @@ const parsePhase1Hotspots = (raw: string): Phase1HotspotEntry[] => {
     return null;
   };
 
-  const tauCandidates = [
-    axes.find((axis) => axis.normalized === 'tau')?.original,
-    'tau',
-    'τ',
-  ];
-  const zetaCandidates = [
-    axes.find((axis) => axis.normalized === 'zeta')?.original,
-    'zeta',
-    'ζ',
-  ];
+  const candidateMap: Record<HotspotAxis, string[]> = {
+    rho: ['rho', 'ρ'],
+    tau: ['tau', 'τ'],
+    zeta: ['zeta', 'ζ'],
+    zeta_phase: ['zeta_phase', 'ζ_phase', 'zeta-phase', 'zetaphase', 'ζφ'],
+    kappa: ['kappa', 'κ'],
+  };
 
-  let sawTauCoordinate = false;
-  let sawZetaCoordinate = false;
+  for (const axis of axes) {
+    if (!axis.canonical) {
+      continue;
+    }
+    candidateMap[axis.canonical] = [axis.original, ...candidateMap[axis.canonical].filter((item) => item !== axis.original)];
+  }
+
+  const planeAxesFromFile = axes
+    .map((axis) => axis.canonical)
+    .filter((axis): axis is HotspotAxis => Boolean(axis))
+    .filter((axis, index, array) => array.indexOf(axis) === index);
+
+  const planeAxes: [HotspotAxis, HotspotAxis] =
+    planeAxesFromFile.length >= 2
+      ? [planeAxesFromFile[0]!, planeAxesFromFile[1]!]
+      : [defaultPlaneAxes[0], defaultPlaneAxes[1]];
+
+  const planeAxisSeen: Partial<Record<HotspotAxis, boolean>> = {
+    [planeAxes[0]]: false,
+    [planeAxes[1]]: false,
+  };
 
   for (const tile of tiles) {
     if (!tile || typeof tile !== 'object') {
@@ -207,17 +323,22 @@ const parsePhase1Hotspots = (raw: string): Phase1HotspotEntry[] => {
     }
 
     const coordinateRecord = coordinates as Record<string, unknown>;
-    const tauValue = readCoordinate(coordinateRecord, tauCandidates);
-    const zetaValue = readCoordinate(coordinateRecord, zetaCandidates);
-
-    if (tauValue != null) {
-      sawTauCoordinate = true;
+    const coordinateValues: HotspotCoordinates = {};
+    for (const axis of hotspotAxisOrder) {
+      const value = readCoordinate(coordinateRecord, candidateMap[axis]);
+      if (value == null) {
+        continue;
+      }
+      coordinateValues[axis] = value;
+      if (axis === planeAxes[0] || axis === planeAxes[1]) {
+        planeAxisSeen[axis] = true;
+      }
     }
-    if (zetaValue != null) {
-      sawZetaCoordinate = true;
-    }
 
-    if (tauValue == null || zetaValue == null) {
+    const planeValueA = coordinateValues[planeAxes[0]];
+    const planeValueB = coordinateValues[planeAxes[1]];
+
+    if (planeValueA == null || planeValueB == null) {
       continue;
     }
 
@@ -226,19 +347,18 @@ const parsePhase1Hotspots = (raw: string): Phase1HotspotEntry[] => {
     const omegaAbs = Number(omegaRaw);
 
     entries.push({
-      tau: tauValue,
-      zeta: zetaValue,
+      axes: [planeAxes[0], planeAxes[1]],
+      coordinates: coordinateValues,
       omegaAbs: Number.isFinite(omegaAbs) ? omegaAbs : null,
     });
   }
 
   if (entries.length === 0 && tiles.length > 0) {
     const missing: string[] = [];
-    if (!sawTauCoordinate) {
-      missing.push('τ');
-    }
-    if (!sawZetaCoordinate) {
-      missing.push('ζ');
+    for (const axis of [planeAxes[0], planeAxes[1]]) {
+      if (!planeAxisSeen[axis]) {
+        missing.push(labelForAxis(axis));
+      }
     }
     if (missing.length > 0) {
       throw new Error(`Hotspot file must contain ${missing.join(' and ')} coordinates.`);
@@ -272,10 +392,11 @@ const formatOmega = (value: number | null) => {
 };
 
 const hotspotKey = (hotspot: Hotspot) => {
-  const axes = hotspot.axes ?? ['tau', 'zeta'];
+  const axes = getHotspotAxes(hotspot);
   const graph = hotspot.graph ?? '';
   const origin = normalizeOrigin(hotspot.originPath);
-  const center = `${hotspot.tau.toFixed(6)}|${hotspot.zeta.toFixed(6)}`;
+  const [coordA, coordB] = getPlaneCoordinates(hotspot);
+  const center = `${coordA.toFixed(6)}|${coordB.toFixed(6)}`;
   return `${axes[0]}|${axes[1]}|${graph}|${center}|${origin}`;
 };
 
@@ -305,16 +426,15 @@ const buildSimplePayload = (
   adaptLevels: number,
   saveSummaryPath?: string | null,
 ): LoopAtHotspotPayload => {
-  const axes =
-    Array.isArray(hotspot.axes) && hotspot.axes.length === 2
-      ? (hotspot.axes as [string, string])
-      : (['tau', 'zeta'] as [string, string]);
+  const axes = getHotspotAxes(hotspot);
   const [axisI, axisJ] = axes;
+  const coordinates = buildCoordinateRecord(hotspot);
+  const centerI = typeof coordinates[axisI] === 'number' ? coordinates[axisI] : 0;
+  const centerJ = typeof coordinates[axisJ] === 'number' ? coordinates[axisJ] : 0;
+  coordinates[axisI] = centerI;
+  coordinates[axisJ] = centerJ;
   const hotspotEntry: Record<string, unknown> = {
-    coordinates: {
-      [axisI]: hotspot.tau,
-      [axisJ]: hotspot.zeta,
-    },
+    coordinates,
     label: hotspot.name,
   };
   const origin = normalizeOrigin(hotspot.originPath);
@@ -355,15 +475,13 @@ const buildGuidedPayload = (
   seed: number,
   summaryPath?: string | null,
 ): GuidedLoopArgs => {
-  const axes =
-    Array.isArray(hotspot.axes) && hotspot.axes.length === 2
-      ? (hotspot.axes as [string, string])
-      : (['tau', 'zeta'] as [string, string]);
+  const axes = getHotspotAxes(hotspot);
   const [axisI, axisJ] = axes;
+  const [centerI, centerJ] = getPlaneCoordinates(hotspot);
   const payload: GuidedLoopArgs = {
     // axis[0] is the handle; axes[1] × axes[2] span the loop plane
     axes3: ['kappa', axisI, axisJ],
-    center: [kappaCenter, hotspot.tau, hotspot.zeta],
+    center: [kappaCenter, centerI, centerJ],
     amplitudes: [kappaAmp, tauAmp, zetaAmp],
     graph,
     stepsList,
@@ -375,8 +493,8 @@ const buildGuidedPayload = (
   if (summaryPath) {
     const centerRecord: Record<string, number> = {
       kappa: kappaCenter,
-      [axisI]: hotspot.tau,
-      [axisJ]: hotspot.zeta,
+      [axisI]: centerI,
+      [axisJ]: centerJ,
     };
     const metadata: Record<string, unknown> = {};
     if (hotspot.id) {
@@ -541,11 +659,13 @@ const buildGuidedFailureReasons = ({
   runs,
   minPhi,
   fsGuard,
+  planeAxes,
 }: {
   satisfied: boolean;
   runs: GuidedLoopRun[];
   minPhi?: number;
   fsGuard?: number;
+  planeAxes: [HotspotAxis, HotspotAxis];
 }) => {
   if (satisfied) {
     return [];
@@ -555,6 +675,10 @@ const buildGuidedFailureReasons = ({
     runs[runs.length - 1]?.metrics ?? runs.find((run) => run.metrics)?.metrics ?? null;
   const reasons: string[] = [];
 
+  const [axisA, axisB] = planeAxes;
+  const axisALabel = labelForAxis(axisA);
+  const axisBLabel = labelForAxis(axisB);
+
   const phi = phiFromMetrics(metrics);
   const fsP95 = metricFromRecord(metrics, 'fs_p95');
   const fsExceeded = metricFromRecord(metrics, 'fs_guard_exceeded');
@@ -563,7 +687,7 @@ const buildGuidedFailureReasons = ({
     reasons.push(
       `Guided loop φ=${
         phi == null ? 'n/a' : phi.toFixed(4)
-      } did not reach minimum ${minPhi.toFixed(4)}. Try increasing τ/ζ amplitudes, loosening the Φ threshold, or revisiting the selected axes/extents per the troubleshooting guidance.`,
+      } did not reach minimum ${minPhi.toFixed(4)}. Try increasing ${axisALabel}/${axisBLabel} amplitudes, loosening the Φ threshold, or revisiting the selected axes/extents per the troubleshooting guidance.`,
     );
   }
 
@@ -586,8 +710,50 @@ const buildGuidedFailureReasons = ({
 const Phase3Loops = () => {
   const [hotspots, setHotspots] = useState<Hotspot[]>(defaultHotspots);
   const [selectedHotspotId, setSelectedHotspotId] = useState<string>(defaultHotspots[0].id);
-  const [manualTau, setManualTau] = useState(0);
-  const [manualZeta, setManualZeta] = useState(0);
+  const [manualPlaneAxes, setManualPlaneAxes] = useState<[HotspotAxis, HotspotAxis]>([
+    defaultPlaneAxes[0],
+    defaultPlaneAxes[1],
+  ]);
+  const [manualCoordinates, setManualCoordinates] = useState<HotspotCoordinates>({
+    tau: 0,
+    zeta: 0,
+  });
+  const manualAxisOptions = useMemo(
+    () => hotspotAxisOrder.map((axis) => ({ value: axis, label: labelForAxis(axis) })),
+    [],
+  );
+
+  const updateManualAxis = useCallback((index: 0 | 1, axis: HotspotAxis) => {
+    setManualPlaneAxes((prev) => {
+      const next: [HotspotAxis, HotspotAxis] = [prev[0], prev[1]];
+      const otherIndex = index === 0 ? 1 : 0;
+      next[index] = axis;
+      if (next[otherIndex] === axis) {
+        const fallback = hotspotAxisOrder.find(
+          (candidate) => candidate !== axis && candidate !== next[index],
+        );
+        next[otherIndex] = fallback ?? (axis === 'tau' ? 'zeta' : 'tau');
+      }
+      return next;
+    });
+    setManualCoordinates((prev) => {
+      if (prev[axis] != null && Number.isFinite(prev[axis] ?? 0)) {
+        return prev;
+      }
+      return { ...prev, [axis]: 0 };
+    });
+  }, []);
+
+  const updateManualCoordinate = useCallback((axis: HotspotAxis, value: number) => {
+    setManualCoordinates((prev) => ({
+      ...prev,
+      [axis]: Number.isFinite(value) ? value : 0,
+    }));
+  }, []);
+  const manualOptionalAxes = useMemo(
+    () => hotspotAxisOrder.filter((axis) => !manualPlaneAxes.includes(axis)),
+    [manualPlaneAxes],
+  );
   const [graph, setGraph] = useState(graphOptions[0].id);
   const [activeTab, setActiveTab] = useState<'simple' | 'guided'>('guided');
 
@@ -661,6 +827,10 @@ const Phase3Loops = () => {
     [hotspots, selectedHotspotId],
   );
 
+  const selectedPlaneAxes = useMemo(() => getHotspotAxes(selectedHotspot), [selectedHotspot]);
+  const selectedAxisALabel = labelForAxis(selectedPlaneAxes[0]);
+  const selectedAxisBLabel = labelForAxis(selectedPlaneAxes[1]);
+
 
   useEffect(
     () => () => {
@@ -733,12 +903,19 @@ const Phase3Loops = () => {
       const created: Hotspot[] = entries.map((entry, index) => {
         const omegaLabel = formatOmega(entry.omegaAbs);
         const suffix = omegaLabel ? ` (|Ω| ${omegaLabel})` : '';
+        const planeAxes = entry.axes ?? [...defaultPlaneAxes];
+        const coordinates: HotspotCoordinates = {};
+        for (const axis of hotspotAxisOrder) {
+          const value = entry.coordinates?.[axis];
+          if (typeof value === 'number' && Number.isFinite(value)) {
+            coordinates[axis] = value;
+          }
+        }
         return {
           id: toImportId(effectiveOrigin || sourceLabel, index),
           name: `Phase 1 ridge #${index + 1}${suffix}`,
-          tau: entry.tau,
-          zeta: entry.zeta,
-          axes: ['tau', 'zeta'],
+          axes: [planeAxes[0], planeAxes[1]],
+          coordinates,
           graph: null,
           originPath: effectiveOrigin,
         } satisfies Hotspot;
@@ -980,13 +1157,26 @@ const Phase3Loops = () => {
 
   const addManualHotspot = () => {
     const id = `manual-${Date.now()}`;
+    const [axisA, axisB] = manualPlaneAxes;
+    const coordinateMap: HotspotCoordinates = {};
+    for (const axis of hotspotAxisOrder) {
+      const value = manualCoordinates[axis];
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        coordinateMap[axis] = value;
+      }
+    }
+    const valueA = typeof coordinateMap[axisA] === 'number' ? (coordinateMap[axisA] as number) : 0;
+    const valueB = typeof coordinateMap[axisB] === 'number' ? (coordinateMap[axisB] as number) : 0;
+    coordinateMap[axisA] = valueA;
+    coordinateMap[axisB] = valueB;
+    const labelA = labelForAxis(axisA);
+    const labelB = labelForAxis(axisB);
     const newHotspot: Hotspot = {
       id,
-      name: `Manual (${toCliValue(manualTau)}, ${toCliValue(manualZeta)})`,
-      tau: manualTau,
-      zeta: manualZeta,
+      name: `Manual (${labelA} ${toCliValue(valueA)}, ${labelB} ${toCliValue(valueB)})`,
       calm: true,
-      axes: ['tau', 'zeta'],
+      axes: [axisA, axisB],
+      coordinates: coordinateMap,
       graph,
       originPath: 'manual',
     };
@@ -1198,6 +1388,7 @@ const Phase3Loops = () => {
           runs,
           minPhi: guidedMinPhi,
           fsGuard: guardValue,
+          planeAxes: getHotspotAxes(selectedHotspot),
         }),
       });
       const tip = decisionGate.evaluate({
@@ -1300,6 +1491,9 @@ const Phase3Loops = () => {
 
     const { payload } = guidedResult;
     const [axisA, axisB, axisC] = payload.axes3;
+    const axisALabel = labelForAxis(axisA);
+    const axisBLabel = labelForAxis(axisB);
+    const axisCLabel = labelForAxis(axisC);
     const [, centerPlaneA, centerPlaneB] = payload.center;
     const [ampA, ampB, ampC] = payload.amplitudes;
 
@@ -1310,8 +1504,8 @@ const Phase3Loops = () => {
       minPhi: payload.minPhi != null ? toCliValue(payload.minPhi) : 'n/a',
       settle: payload.settle != null ? String(payload.settle) : 'n/a',
       seed: payload.seed != null ? String(payload.seed) : 'n/a',
-      center: `${axisB}=${toCliValue(centerPlaneA)}, ${axisC}=${toCliValue(centerPlaneB)}`,
-      amplitudes: `${axisA}±${toCliValue(ampA)}, ${axisB}±${toCliValue(ampB)}, ${axisC}±${toCliValue(ampC)}`,
+      center: `${axisBLabel}=${toCliValue(centerPlaneA)}, ${axisCLabel}=${toCliValue(centerPlaneB)}`,
+      amplitudes: `${axisALabel}±${toCliValue(ampA)}, ${axisBLabel}±${toCliValue(ampB)}, ${axisCLabel}±${toCliValue(ampC)}`,
     };
   }, [guidedResult]);
 
@@ -1452,7 +1646,7 @@ const Phase3Loops = () => {
                   <span>
                     {hotspot.name}
                     <small>
-                      τ {toCliValue(hotspot.tau)} / ζ {toCliValue(hotspot.zeta)}
+                      {formatPlaneSummary(hotspot)}
                     </small>
                   </span>
                 </label>
@@ -1464,23 +1658,62 @@ const Phase3Loops = () => {
             <h3>Manual center</h3>
             <div className="phase3__field-grid">
               <label>
-                <span>τ</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={manualTau}
-                  onChange={(event) => setManualTau(Number(event.target.value))}
-                />
+                <span>Loop plane axis 1</span>
+                <select
+                  value={manualPlaneAxes[0]}
+                  onChange={(event) => updateManualAxis(0, event.target.value as HotspotAxis)}
+                >
+                  {manualAxisOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label>
-                <span>ζ</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={manualZeta}
-                  onChange={(event) => setManualZeta(Number(event.target.value))}
-                />
+                <span>Loop plane axis 2</span>
+                <select
+                  value={manualPlaneAxes[1]}
+                  onChange={(event) => updateManualAxis(1, event.target.value as HotspotAxis)}
+                >
+                  {manualAxisOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </label>
+              {manualPlaneAxes.map((axis) => (
+                <label key={`manual-axis-${axis}`}>
+                  <span>{labelForAxis(axis)}</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={manualCoordinates[axis] ?? 0}
+                    onChange={(event) => updateManualCoordinate(axis, Number(event.target.value))}
+                  />
+                </label>
+              ))}
+              {manualOptionalAxes.length > 0 ? (
+                <details>
+                  <summary>Optional axes</summary>
+                  <div className="phase3__field-grid">
+                    {manualOptionalAxes.map((axis) => (
+                      <label key={`manual-optional-${axis}`}>
+                        <span>{labelForAxis(axis)}</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={manualCoordinates[axis] ?? 0}
+                          onChange={(event) =>
+                            updateManualCoordinate(axis, Number(event.target.value))
+                          }
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </details>
+              ) : null}
             </div>
             <button type="button" className="btn" onClick={addManualHotspot}>
               Use center
@@ -1538,7 +1771,7 @@ const Phase3Loops = () => {
               <h3>Simple loop scan</h3>
               <div className="phase3__grid">
                 <label>
-                  <span>Extent τ</span>
+                  <span>Extent {selectedAxisALabel}</span>
                   <input
                     type="range"
                     min="0.01"
@@ -1548,10 +1781,10 @@ const Phase3Loops = () => {
                     onChange={(event) => setExtentA(Math.max(0.01, Number(event.target.value)))}
                   />
                   <code>{extentA.toFixed(2)}</code>
-                  <small className="field-hint">How far to sweep along τ from the hotspot centre.</small>
+                  <small className="field-hint">{`How far to sweep along ${selectedAxisALabel} from the hotspot centre.`}</small>
                 </label>
                 <label>
-                  <span>Extent ζ</span>
+                  <span>Extent {selectedAxisBLabel}</span>
                   <input
                     type="range"
                     min="0.01"
@@ -1561,7 +1794,7 @@ const Phase3Loops = () => {
                     onChange={(event) => setExtentB(Math.max(0.01, Number(event.target.value)))}
                   />
                   <code>{extentB.toFixed(2)}</code>
-                  <small className="field-hint">Controls the ζ reach of the loop about the hotspot.</small>
+                  <small className="field-hint">{`Controls the ${selectedAxisBLabel} reach of the loop about the hotspot.`}</small>
                 </label>
                 <label>
                   <span>FS guard</span>
@@ -1676,7 +1909,7 @@ const Phase3Loops = () => {
                           <td>
                             <div>{run.hotspot.name}</div>
                             <small>
-                              τ {toCliValue(run.hotspot.tau)} / ζ {toCliValue(run.hotspot.zeta)}
+                              {formatPlaneSummary(run.hotspot)}
                             </small>
                           </td>
                           <td>{graphOptions.find((option) => option.id === run.graph)?.label ?? run.graph}</td>
@@ -1702,7 +1935,7 @@ const Phase3Loops = () => {
               <h3>Guided loop</h3>
               <div className="phase3__grid phase3__grid--guided">
                 <label>
-                  <span>τ amplitude</span>
+                  <span>{selectedAxisALabel} amplitude</span>
                   <input
                     type="range"
                     min="0"
@@ -1712,10 +1945,10 @@ const Phase3Loops = () => {
                     onChange={(event) => setTauAmplitude(Number(event.target.value))}
                   />
                   <code>{tauAmplitude.toFixed(2)}</code>
-                  <small className="field-hint">Half-width of the sweep along τ when guiding the loop.</small>
+                  <small className="field-hint">{`Half-width of the sweep along ${selectedAxisALabel} when guiding the loop.`}</small>
                 </label>
                 <label>
-                  <span>ζ amplitude</span>
+                  <span>{selectedAxisBLabel} amplitude</span>
                   <input
                     type="range"
                     min="0"
@@ -1725,7 +1958,7 @@ const Phase3Loops = () => {
                     onChange={(event) => setZetaAmplitude(Number(event.target.value))}
                   />
                   <code>{zetaAmplitude.toFixed(2)}</code>
-                  <small className="field-hint">Adjust to explore broader ζ excursions without overshooting.</small>
+                  <small className="field-hint">{`Adjust to explore broader ${selectedAxisBLabel} excursions without overshooting.`}</small>
                 </label>
                 <label>
                   <span>κ amplitude</span>
@@ -1754,7 +1987,7 @@ const Phase3Loops = () => {
                     }}
                   />
                   <small className="field-hint">
-                    Baseline for the κ handle; adjust to explore τ–κ or ζ–κ planes.
+                    {`Baseline for the κ handle; adjust to explore ${selectedAxisALabel}–κ or ${selectedAxisBLabel}–κ planes.`}
                   </small>
                 </label>
                 <label>
