@@ -465,8 +465,8 @@ const buildSimplePayload = (
 const buildGuidedPayload = (
   hotspot: Hotspot,
   graph: string,
-  tauAmp: number,
-  zetaAmp: number,
+  planeAmpI: number,
+  planeAmpJ: number,
   kappaAmp: number,
   kappaCenter: number,
   stepsList: number[],
@@ -482,7 +482,7 @@ const buildGuidedPayload = (
     // axis[0] is the handle; axes[1] × axes[2] span the loop plane
     axes3: ['kappa', axisI, axisJ],
     center: [kappaCenter, centerI, centerJ],
-    amplitudes: [kappaAmp, tauAmp, zetaAmp],
+    amplitudes: [kappaAmp, planeAmpI, planeAmpJ],
     graph,
     stepsList,
     fsGuard,
@@ -514,7 +514,7 @@ const buildGuidedPayload = (
     payload.summary = {
       path: summaryPath,
       axes: [axisI, axisJ],
-      extents: [tauAmp, zetaAmp],
+      extents: [planeAmpI, planeAmpJ],
       center: centerRecord,
       label: hotspot.name,
       ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
@@ -789,8 +789,8 @@ const Phase3Loops = () => {
   const [simpleRuns, setSimpleRuns] = useState<SimpleLoopResult[]>([]);
   const [isSimpleRunning, setIsSimpleRunning] = useState(false);
 
-  const [tauAmplitude, setTauAmplitude] = useState(0.15);
-  const [zetaAmplitude, setZetaAmplitude] = useState(0.15);
+  const [planeAmplitudeI, setPlaneAmplitudeI] = useState(0.15);
+  const [planeAmplitudeJ, setPlaneAmplitudeJ] = useState(0.15);
   const [kappaAmplitude, setKappaAmplitude] = useState(0.06);
   const [kappaCenter, setKappaCenter] = useState(1.0);
   const [guidedStepEntries, setGuidedStepEntries] = useState<GuidedStepEntry[]>([
@@ -828,8 +828,9 @@ const Phase3Loops = () => {
   );
 
   const selectedPlaneAxes = useMemo(() => getHotspotAxes(selectedHotspot), [selectedHotspot]);
-  const selectedAxisALabel = labelForAxis(selectedPlaneAxes[0]);
-  const selectedAxisBLabel = labelForAxis(selectedPlaneAxes[1]);
+  const [selectedAxisI, selectedAxisJ] = selectedPlaneAxes;
+  const selectedAxisILabel = labelForAxis(selectedAxisI);
+  const selectedAxisJLabel = labelForAxis(selectedAxisJ);
 
 
   useEffect(
@@ -1317,8 +1318,8 @@ const Phase3Loops = () => {
     const payload = buildGuidedPayload(
       selectedHotspot,
       graph,
-      tauAmplitude,
-      zetaAmplitude,
+      planeAmplitudeI,
+      planeAmplitudeJ,
       kappaAmplitude,
       kappaCenter,
       guidedSteps,
@@ -1349,7 +1350,7 @@ const Phase3Loops = () => {
       if (!runs) {
         const simulatedMetrics: GuidedLoopRun[] = guidedSteps.map((steps, index) => {
           const seed = guidedSeed + index * 23;
-          const simpleMetrics = simulateSimpleMetrics(seed, [tauAmplitude, zetaAmplitude], guardValue);
+          const simpleMetrics = simulateSimpleMetrics(seed, [planeAmplitudeI, planeAmplitudeJ], guardValue);
           const metricsRecord: Record<string, number> = {
             fs_p95: simpleMetrics.fsP95,
             phi: simpleMetrics.phi,
@@ -1414,10 +1415,10 @@ const Phase3Loops = () => {
     selectedSubstratePath,
     setImportError,
     setImportMessage,
-    tauAmplitude,
+    planeAmplitudeI,
     kappaAmplitude,
     kappaCenter,
-    zetaAmplitude,
+    planeAmplitudeJ,
   ]);
 
   const copyGuidedCommand = () => {
@@ -1771,7 +1772,7 @@ const Phase3Loops = () => {
               <h3>Simple loop scan</h3>
               <div className="phase3__grid">
                 <label>
-                  <span>Extent {selectedAxisALabel}</span>
+                  <span>Extent {selectedAxisILabel}</span>
                   <input
                     type="range"
                     min="0.01"
@@ -1781,10 +1782,10 @@ const Phase3Loops = () => {
                     onChange={(event) => setExtentA(Math.max(0.01, Number(event.target.value)))}
                   />
                   <code>{extentA.toFixed(2)}</code>
-                  <small className="field-hint">{`How far to sweep along ${selectedAxisALabel} from the hotspot centre.`}</small>
+                  <small className="field-hint">{`How far to sweep along ${selectedAxisILabel} from the hotspot centre.`}</small>
                 </label>
                 <label>
-                  <span>Extent {selectedAxisBLabel}</span>
+                  <span>Extent {selectedAxisJLabel}</span>
                   <input
                     type="range"
                     min="0.01"
@@ -1794,7 +1795,7 @@ const Phase3Loops = () => {
                     onChange={(event) => setExtentB(Math.max(0.01, Number(event.target.value)))}
                   />
                   <code>{extentB.toFixed(2)}</code>
-                  <small className="field-hint">{`Controls the ${selectedAxisBLabel} reach of the loop about the hotspot.`}</small>
+                  <small className="field-hint">{`Controls the ${selectedAxisJLabel} reach of the loop about the hotspot.`}</small>
                 </label>
                 <label>
                   <span>FS guard</span>
@@ -1935,30 +1936,30 @@ const Phase3Loops = () => {
               <h3>Guided loop</h3>
               <div className="phase3__grid phase3__grid--guided">
                 <label>
-                  <span>{selectedAxisALabel} amplitude</span>
+                  <span>{selectedAxisILabel} amplitude</span>
                   <input
                     type="range"
                     min="0"
                     max="0.4"
                     step="0.01"
-                    value={tauAmplitude}
-                    onChange={(event) => setTauAmplitude(Number(event.target.value))}
+                    value={planeAmplitudeI}
+                    onChange={(event) => setPlaneAmplitudeI(Number(event.target.value))}
                   />
-                  <code>{tauAmplitude.toFixed(2)}</code>
-                  <small className="field-hint">{`Half-width of the sweep along ${selectedAxisALabel} when guiding the loop.`}</small>
+                  <code>{planeAmplitudeI.toFixed(2)}</code>
+                  <small className="field-hint">{`Half-width of the sweep along ${selectedAxisILabel} when guiding the loop.`}</small>
                 </label>
                 <label>
-                  <span>{selectedAxisBLabel} amplitude</span>
+                  <span>{selectedAxisJLabel} amplitude</span>
                   <input
                     type="range"
                     min="0"
                     max="0.4"
                     step="0.01"
-                    value={zetaAmplitude}
-                    onChange={(event) => setZetaAmplitude(Number(event.target.value))}
+                    value={planeAmplitudeJ}
+                    onChange={(event) => setPlaneAmplitudeJ(Number(event.target.value))}
                   />
-                  <code>{zetaAmplitude.toFixed(2)}</code>
-                  <small className="field-hint">{`Adjust to explore broader ${selectedAxisBLabel} excursions without overshooting.`}</small>
+                  <code>{planeAmplitudeJ.toFixed(2)}</code>
+                  <small className="field-hint">{`Adjust to explore broader ${selectedAxisJLabel} excursions without overshooting.`}</small>
                 </label>
                 <label>
                   <span>κ amplitude</span>
@@ -1987,7 +1988,7 @@ const Phase3Loops = () => {
                     }}
                   />
                   <small className="field-hint">
-                    {`Baseline for the κ handle; adjust to explore ${selectedAxisALabel}–κ or ${selectedAxisBLabel}–κ planes.`}
+                    {`Baseline for the κ handle; adjust to explore ${selectedAxisILabel}–κ or ${selectedAxisJLabel}–κ planes.`}
                   </small>
                 </label>
                 <label>
