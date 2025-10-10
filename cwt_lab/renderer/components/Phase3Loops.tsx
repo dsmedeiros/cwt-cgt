@@ -348,6 +348,7 @@ const buildGuidedPayload = (
   tauAmp: number,
   zetaAmp: number,
   kappaAmp: number,
+  kappaCenter: number,
   stepsList: number[],
   fsGuard: number,
   minPhi: number,
@@ -360,9 +361,10 @@ const buildGuidedPayload = (
       : (['tau', 'zeta'] as [string, string]);
   const [axisI, axisJ] = axes;
   const payload: GuidedLoopArgs = {
-    axes3: [axisI, axisJ, 'kappa'],
-    center: [hotspot.tau, hotspot.zeta, 0],
-    amplitudes: [tauAmp, zetaAmp, kappaAmp],
+    // axis[0] is the handle; axes[1] × axes[2] span the loop plane
+    axes3: ['kappa', axisI, axisJ],
+    center: [kappaCenter, hotspot.tau, hotspot.zeta],
+    amplitudes: [kappaAmp, tauAmp, zetaAmp],
     graph,
     stepsList,
     fsGuard,
@@ -372,6 +374,7 @@ const buildGuidedPayload = (
 
   if (summaryPath) {
     const centerRecord: Record<string, number> = {
+      kappa: kappaCenter,
       [axisI]: hotspot.tau,
       [axisJ]: hotspot.zeta,
     };
@@ -623,6 +626,7 @@ const Phase3Loops = () => {
   const [tauAmplitude, setTauAmplitude] = useState(0.15);
   const [zetaAmplitude, setZetaAmplitude] = useState(0.15);
   const [kappaAmplitude, setKappaAmplitude] = useState(0.06);
+  const [kappaCenter, setKappaCenter] = useState(1.0);
   const [guidedStepEntries, setGuidedStepEntries] = useState<GuidedStepEntry[]>([
     createGuidedStepEntry(160),
     createGuidedStepEntry(320),
@@ -1126,6 +1130,7 @@ const Phase3Loops = () => {
       tauAmplitude,
       zetaAmplitude,
       kappaAmplitude,
+      kappaCenter,
       guidedSteps,
       guardValue,
       guidedMinPhi,
@@ -1219,6 +1224,8 @@ const Phase3Loops = () => {
     setImportError,
     setImportMessage,
     tauAmplitude,
+    kappaAmplitude,
+    kappaCenter,
     zetaAmplitude,
   ]);
 
@@ -1293,7 +1300,7 @@ const Phase3Loops = () => {
 
     const { payload } = guidedResult;
     const [axisA, axisB, axisC] = payload.axes3;
-    const [centerA, centerB] = payload.center;
+    const [, centerPlaneA, centerPlaneB] = payload.center;
     const [ampA, ampB, ampC] = payload.amplitudes;
 
     return {
@@ -1303,7 +1310,7 @@ const Phase3Loops = () => {
       minPhi: payload.minPhi != null ? toCliValue(payload.minPhi) : 'n/a',
       settle: payload.settle != null ? String(payload.settle) : 'n/a',
       seed: payload.seed != null ? String(payload.seed) : 'n/a',
-      center: `${axisA}=${toCliValue(centerA)}, ${axisB}=${toCliValue(centerB)}`,
+      center: `${axisB}=${toCliValue(centerPlaneA)}, ${axisC}=${toCliValue(centerPlaneB)}`,
       amplitudes: `${axisA}±${toCliValue(ampA)}, ${axisB}±${toCliValue(ampB)}, ${axisC}±${toCliValue(ampC)}`,
     };
   }, [guidedResult]);
@@ -1732,6 +1739,23 @@ const Phase3Loops = () => {
                   />
                   <code>{kappaAmplitude.toFixed(2)}</code>
                   <small className="field-hint">Gives the 3-axis loop nonzero enclosed area so Φ can register.</small>
+                </label>
+                <label>
+                  <span>κ center</span>
+                  <input
+                    type="number"
+                    step="0.05"
+                    min="-2"
+                    max="4"
+                    value={kappaCenter}
+                    onChange={(event) => {
+                      const next = Number(event.target.value);
+                      setKappaCenter((prev) => (Number.isFinite(next) ? next : prev));
+                    }}
+                  />
+                  <small className="field-hint">
+                    Baseline for the κ handle; adjust to explore τ–κ or ζ–κ planes.
+                  </small>
                 </label>
                 <label>
                   <span>FS guard</span>

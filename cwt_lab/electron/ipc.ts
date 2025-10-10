@@ -792,7 +792,7 @@ const parseGuidedSummaryRequest = (
   fallback: {
     axes: [string, string];
     amplitudes: [number, number];
-    center: [number, number, number];
+    center: [number, number];
     label: string;
   },
 ): GuidedSummaryRequest | null => {
@@ -1311,9 +1311,9 @@ ipcMain.handle('cwt:phase3:guided-loop', (_event, params) =>
     }
 
     const summaryRequest = parseGuidedSummaryRequest(rawSummary, {
-      axes: [axes3[0], axes3[1]],
-      amplitudes: [amplitudes[0], amplitudes[1]],
-      center,
+      axes: [axes3[1], axes3[2]],
+      amplitudes: [amplitudes[1], amplitudes[2]],
+      center: [center[1], center[2]],
       label: 'Guided hotspot',
     });
 
