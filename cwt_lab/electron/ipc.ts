@@ -896,6 +896,48 @@ const pickMetricValue = (
   return null;
 };
 
+const guidedAxisLabels: Record<string, string> = {
+  rho: 'ρ',
+  tau: 'τ',
+  zeta: 'ζ',
+  zeta_phase: 'ζ_phase',
+  kappa: 'κ',
+};
+
+const normalizeGuidedAxis = (value: string): keyof typeof guidedAxisLabels | null => {
+  const normalized = value.trim().toLowerCase().replace(/[-\s]+/g, '_');
+  switch (normalized) {
+    case 'rho':
+    case 'ρ':
+      return 'rho';
+    case 'tau':
+    case 'τ':
+      return 'tau';
+    case 'zeta':
+    case 'ζ':
+      return 'zeta';
+    case 'zeta_phase':
+    case 'zeta-phase':
+    case 'zetaphase':
+    case 'ζ_phase':
+    case 'ζφ':
+      return 'zeta_phase';
+    case 'kappa':
+    case 'κ':
+      return 'kappa';
+    default:
+      return null;
+  }
+};
+
+const formatGuidedAxisLabel = (value: string): string => {
+  const normalized = normalizeGuidedAxis(value);
+  if (normalized) {
+    return guidedAxisLabels[normalized];
+  }
+  return value;
+};
+
 const writeGuidedSummary = async (
   request: GuidedSummaryRequest,
   options: {
@@ -914,6 +956,8 @@ const writeGuidedSummary = async (
     minPhi: number | null;
   },
 ) => {
+  const axisALabel = formatGuidedAxisLabel(request.axes[0]);
+  const axisBLabel = formatGuidedAxisLabel(request.axes[1]);
   const timestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
   const finalRun = options.runs[options.runs.length - 1] ?? null;
   const finalMetrics = finalRun?.metrics ?? null;
@@ -962,7 +1006,7 @@ const writeGuidedSummary = async (
       failures.push(
         `Guided loop φ=${
           phi === null ? 'n/a' : phi.toFixed(4)
-        } did not reach minimum ${options.minPhi.toFixed(4)}. Try increasing τ/ζ amplitudes, loosening the Φ threshold, or revisiting the selected axes/extents per the troubleshooting guidance.`,
+        } did not reach minimum ${options.minPhi.toFixed(4)}. Try increasing ${axisALabel}/${axisBLabel} amplitudes, loosening the Φ threshold, or revisiting the selected ${axisALabel}/${axisBLabel} axes/extents per the troubleshooting guidance.`,
       );
     }
     if (

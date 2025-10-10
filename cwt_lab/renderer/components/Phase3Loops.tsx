@@ -687,7 +687,7 @@ const buildGuidedFailureReasons = ({
     reasons.push(
       `Guided loop φ=${
         phi == null ? 'n/a' : phi.toFixed(4)
-      } did not reach minimum ${minPhi.toFixed(4)}. Try increasing ${axisALabel}/${axisBLabel} amplitudes, loosening the Φ threshold, or revisiting the selected axes/extents per the troubleshooting guidance.`,
+      } did not reach minimum ${minPhi.toFixed(4)}. Try increasing ${axisALabel}/${axisBLabel} amplitudes, loosening the Φ threshold, or revisiting the selected ${axisALabel}/${axisBLabel} axes/extents per the troubleshooting guidance.`,
     );
   }
 
