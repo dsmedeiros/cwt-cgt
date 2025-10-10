@@ -347,6 +347,7 @@ const buildGuidedPayload = (
   graph: string,
   tauAmp: number,
   zetaAmp: number,
+  kappaAmp: number,
   stepsList: number[],
   fsGuard: number,
   minPhi: number,
@@ -361,7 +362,7 @@ const buildGuidedPayload = (
   const payload: GuidedLoopArgs = {
     axes3: [axisI, axisJ, 'kappa'],
     center: [hotspot.tau, hotspot.zeta, 0],
-    amplitudes: [tauAmp, zetaAmp, 0],
+    amplitudes: [tauAmp, zetaAmp, kappaAmp],
     graph,
     stepsList,
     fsGuard,
@@ -509,26 +510,26 @@ const metricFromRecord = (
 };
 
 const phiFromMetrics = (metrics: Record<string, number | null> | null) => {
-  const phi = metricFromRecord(metrics, 'phi', ['phi_flux', 'phi_sum', 'phi_value']);
-  if (typeof phi === 'number') {
-    return phi;
+  const primary = metricFromRecord(metrics, 'phi', ['phi_flux', 'phi_value']);
+  if (typeof primary === 'number') {
+    return Math.abs(primary);
   }
 
   const phiForward = metricFromRecord(metrics, 'phi_forward', ['phiForward']);
   const phiReverse = metricFromRecord(metrics, 'phi_reverse', ['phiReverse']);
-
   if (typeof phiForward === 'number' && typeof phiReverse === 'number') {
-    return phiForward + phiReverse;
+    return Math.max(Math.abs(phiForward), Math.abs(phiReverse));
   }
-
   if (typeof phiForward === 'number') {
-    return phiForward;
+    return Math.abs(phiForward);
   }
-
   if (typeof phiReverse === 'number') {
-    return phiReverse;
+    return Math.abs(phiReverse);
   }
-
+  const phiSum = metricFromRecord(metrics, 'phi_sum', ['phiSum']);
+  if (typeof phiSum === 'number') {
+    return Math.abs(phiSum);
+  }
   return undefined;
 };
 
@@ -621,6 +622,7 @@ const Phase3Loops = () => {
 
   const [tauAmplitude, setTauAmplitude] = useState(0.15);
   const [zetaAmplitude, setZetaAmplitude] = useState(0.15);
+  const [kappaAmplitude, setKappaAmplitude] = useState(0.06);
   const [guidedStepEntries, setGuidedStepEntries] = useState<GuidedStepEntry[]>([
     createGuidedStepEntry(160),
     createGuidedStepEntry(320),
@@ -1123,6 +1125,7 @@ const Phase3Loops = () => {
       graph,
       tauAmplitude,
       zetaAmplitude,
+      kappaAmplitude,
       guidedSteps,
       guardValue,
       guidedMinPhi,
@@ -1289,9 +1292,9 @@ const Phase3Loops = () => {
     }
 
     const { payload } = guidedResult;
-    const [axisA, axisB] = payload.axes3;
+    const [axisA, axisB, axisC] = payload.axes3;
     const [centerA, centerB] = payload.center;
-    const [ampA, ampB] = payload.amplitudes;
+    const [ampA, ampB, ampC] = payload.amplitudes;
 
     return {
       graph: graphOptions.find((option) => option.id === payload.graph)?.label ?? payload.graph,
@@ -1301,7 +1304,7 @@ const Phase3Loops = () => {
       settle: payload.settle != null ? String(payload.settle) : 'n/a',
       seed: payload.seed != null ? String(payload.seed) : 'n/a',
       center: `${axisA}=${toCliValue(centerA)}, ${axisB}=${toCliValue(centerB)}`,
-      amplitudes: `${axisA}±${toCliValue(ampA)}, ${axisB}±${toCliValue(ampB)}`,
+      amplitudes: `${axisA}±${toCliValue(ampA)}, ${axisB}±${toCliValue(ampB)}, ${axisC}±${toCliValue(ampC)}`,
     };
   }, [guidedResult]);
 
@@ -1716,6 +1719,19 @@ const Phase3Loops = () => {
                   />
                   <code>{zetaAmplitude.toFixed(2)}</code>
                   <small className="field-hint">Adjust to explore broader ζ excursions without overshooting.</small>
+                </label>
+                <label>
+                  <span>κ amplitude</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="0.4"
+                    step="0.01"
+                    value={kappaAmplitude}
+                    onChange={(event) => setKappaAmplitude(Number(event.target.value))}
+                  />
+                  <code>{kappaAmplitude.toFixed(2)}</code>
+                  <small className="field-hint">Gives the 3-axis loop nonzero enclosed area so Φ can register.</small>
                 </label>
                 <label>
                   <span>FS guard</span>
