@@ -27,6 +27,7 @@ type Hotspot = {
   coordinates?: HotspotCoordinates;
   graph?: string | null;
   originPath?: string | null;
+  omegaAbs?: number | null;
 };
 
 type SimpleLoopMetrics = {
@@ -517,6 +518,7 @@ const buildGuidedPayload = (
       extents: [planeAmpI, planeAmpJ],
       center: centerRecord,
       label: hotspot.name,
+      ...(hotspot.omegaAbs !== undefined ? { omegaAbs: hotspot.omegaAbs } : {}),
       ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
     };
   }
@@ -919,6 +921,7 @@ const Phase3Loops = () => {
           coordinates,
           graph: null,
           originPath: effectiveOrigin,
+          omegaAbs: entry.omegaAbs,
         } satisfies Hotspot;
       });
 
