@@ -1414,12 +1414,22 @@ ipcMain.handle('cwt:phase3:guided-loop', (_event, params) =>
         continue;
       }
 
-      const phiSum = metrics.phi_sum ?? metrics.phiForward ?? metrics.phi_forward ?? null;
+      const phiCandidates: Array<number | null> = [
+        typeof metrics.phi === 'number' ? Math.abs(metrics.phi) : null,
+        typeof metrics.phi_flux === 'number' ? Math.abs(metrics.phi_flux) : null,
+        typeof metrics.phi_value === 'number' ? Math.abs(metrics.phi_value) : null,
+        typeof metrics.phi_forward === 'number' ? Math.abs(metrics.phi_forward) : null,
+        typeof metrics.phiForward === 'number' ? Math.abs(metrics.phiForward) : null,
+        typeof metrics.phi_reverse === 'number' ? Math.abs(metrics.phi_reverse) : null,
+        typeof metrics.phiReverse === 'number' ? Math.abs(metrics.phiReverse) : null,
+        typeof metrics.phi_sum === 'number' ? Math.abs(metrics.phi_sum) : null,
+        typeof metrics.phiSum === 'number' ? Math.abs(metrics.phiSum) : null,
+      ];
+      const phiMag = phiCandidates
+        .filter((value): value is number => value != null && Number.isFinite(value))
+        .reduce((current, value) => Math.max(current, value), Number.NEGATIVE_INFINITY);
+      const phiCriterion = minPhi === null || (Number.isFinite(phiMag) && phiMag >= minPhi);
       const fsExceeded = metrics.fs_guard_exceeded ?? null;
-
-      const phiCriterion =
-        minPhi === null ||
-        (typeof phiSum === 'number' && Number.isFinite(phiSum) && phiSum >= minPhi);
       const guardCriterion =
         fsGuard === null ||
         metrics.fs_p95 === undefined ||
