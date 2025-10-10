@@ -21,6 +21,12 @@ from cwt.orchestrator.scheduler import RunConfig, _psi_at
 
 VALID_AXES = ("rho", "tau", "zeta", "zeta_phase", "kappa")
 DEFAULT_BASE = {"rho": 1.5, "tau": 1.75, "zeta": 1.2, "zeta_phase": 0.0, "kappa": 1.0}
+
+# Axes that must not drop below a minimum value when constructing the loop.
+_AXIS_LOWER_BOUNDS: dict[str, float] = {
+    "rho": 0.0,
+    "kappa": 0.0,
+}
 DEFAULT_FS_GUARD = 0.2
 DEFAULT_SETTLE_STEPS = 40
 DEFAULT_ARTIFACTS_DIR = Path(__file__).resolve().parent / "artifacts"
@@ -133,7 +139,11 @@ def _interpolate_points(
     def _to_lambda(vec: np.ndarray) -> dict[str, float]:
         lam = dict(axis_template)
         for axis, value in zip(axes, vec):
-            lam[axis] = float(value)
+            numeric = float(value)
+            lower_bound = _AXIS_LOWER_BOUNDS.get(axis)
+            if lower_bound is not None and numeric < lower_bound:
+                numeric = lower_bound
+            lam[axis] = numeric
         return lam
 
     steps_main = max(int(steps), 2)
