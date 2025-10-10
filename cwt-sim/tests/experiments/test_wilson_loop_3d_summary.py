@@ -54,3 +54,24 @@ def test_summary_sanitizes_non_finite_statistics(monkeypatch, tmp_path):
     assert data["overlap_max"] is None
     assert data["overlap_product_abs"] is None
     assert data["fs_steps"] == [None]
+
+
+def test_loop_interpolation_respects_non_negative_axes():
+    template = dict(run.DEFAULT_BASE)
+    axes = ("tau", "zeta", "kappa")
+    center = np.array([1.15, 1.2, 0.0])
+    amplitudes = np.array([0.15, 0.15, 0.06])
+
+    keypoints = run._loop_keypoints(center, amplitudes)
+    points = run._interpolate_points(
+        keypoints,
+        axis_template=template,
+        axes=axes,
+        steps=4,
+        handle_steps=2,
+    )
+
+    kappas = [point["kappa"] for point in points]
+
+    assert all(value >= 0.0 for value in kappas)
+    assert any(value == 0.0 for value in kappas)
