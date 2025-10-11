@@ -391,6 +391,8 @@ export type GuidedLoopSummary = {
   axes: [string, string];
   extents: [number, number];
   center: Record<string, number>;
+  centerVector?: [number, number, number];
+  amplitudes?: [number, number, number];
   label: string;
   metadata?: Record<string, unknown>;
   omegaAbs?: number | null;

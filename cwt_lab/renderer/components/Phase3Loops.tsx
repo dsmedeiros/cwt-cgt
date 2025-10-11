@@ -157,6 +157,8 @@ const safeNumber = (value: number) => Number(value.toFixed(4));
 
 const toCliValue = (value: number) => value.toFixed(4).replace(/\.0+$/, '');
 
+const defaultAxisAmplitude = 0.15;
+
 const getHotspotAxes = (hotspot: Hotspot): [HotspotAxis, HotspotAxis] => {
   if (Array.isArray(hotspot.axes) && hotspot.axes.length === 2) {
     return [hotspot.axes[0], hotspot.axes[1]];
@@ -164,19 +166,87 @@ const getHotspotAxes = (hotspot: Hotspot): [HotspotAxis, HotspotAxis] => {
   return [defaultPlaneAxes[0], defaultPlaneAxes[1]];
 };
 
-const getHotspotCoordinate = (hotspot: Hotspot, axis: HotspotAxis): number | undefined => {
-  if (hotspot.coordinates && typeof hotspot.coordinates[axis] === 'number') {
-    return hotspot.coordinates[axis];
+let hasWarnedMissingCoordinate = false;
+
+const getHotspotCoordinate = (axis: HotspotAxis | string, hotspot: Hotspot): number => {
+  const canonical = axisAliasToHotspotAxis(String(axis)) ?? null;
+  const candidates: string[] = [];
+  const registerCandidate = (candidate: string | null | undefined) => {
+    const normalized = String(candidate ?? '').trim();
+    if (!normalized || candidates.includes(normalized)) {
+      return;
+    }
+    candidates.push(normalized);
+  };
+
+  registerCandidate(typeof axis === 'string' ? axis : String(axis));
+  if (canonical) {
+    registerCandidate(canonical);
   }
-  const legacyValue = (hotspot as Record<string, unknown>)[axis];
-  return typeof legacyValue === 'number' ? legacyValue : undefined;
+
+  switch (canonical) {
+    case 'rho':
+      registerCandidate('ρ');
+      break;
+    case 'tau':
+      registerCandidate('τ');
+      break;
+    case 'zeta':
+      registerCandidate('ζ');
+      break;
+    case 'zeta_phase':
+      registerCandidate('zetaPhase');
+      registerCandidate('zeta-phase');
+      registerCandidate('zetaphase');
+      registerCandidate('ζ_phase');
+      registerCandidate('ζφ');
+      break;
+    case 'kappa':
+      registerCandidate('κ');
+      break;
+    default:
+      break;
+  }
+
+  const readCoordinate = (record: Record<string, unknown> | undefined) => {
+    if (!record) {
+      return undefined;
+    }
+    for (const key of candidates) {
+      const value = record[key];
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+      }
+    }
+    return undefined;
+  };
+
+  const coordinateValue = readCoordinate(hotspot.coordinates as Record<string, unknown> | undefined);
+  if (typeof coordinateValue === 'number') {
+    return coordinateValue;
+  }
+
+  const legacyValue = readCoordinate(hotspot as Record<string, unknown>);
+  if (typeof legacyValue === 'number') {
+    return legacyValue;
+  }
+
+  if (!hasWarnedMissingCoordinate) {
+    const axisLabel = labelForAxis(canonical ?? axis);
+    const hotspotLabel = hotspot.name ?? hotspot.id ?? 'unknown hotspot';
+    // eslint-disable-next-line no-console
+    console.warn(`Missing ${axisLabel} coordinate for ${hotspotLabel}; defaulting to 1.0.`);
+    hasWarnedMissingCoordinate = true;
+  }
+
+  return 1.0;
 };
 
 const getPlaneCoordinates = (hotspot: Hotspot): [number, number] => {
   const [axisA, axisB] = getHotspotAxes(hotspot);
-  const coordA = getHotspotCoordinate(hotspot, axisA);
-  const coordB = getHotspotCoordinate(hotspot, axisB);
-  return [coordA ?? 0, coordB ?? 0];
+  const coordA = getHotspotCoordinate(axisA, hotspot);
+  const coordB = getHotspotCoordinate(axisB, hotspot);
+  return [coordA, coordB];
 };
 
 const buildCoordinateRecord = (hotspot: Hotspot): Record<string, number> => {
@@ -466,8 +536,7 @@ const buildSimplePayload = (
 const buildGuidedPayload = (
   hotspot: Hotspot,
   graph: string,
-  planeAmpI: number,
-  planeAmpJ: number,
+  axisAmplitude: (axis: string) => number,
   kappaAmp: number,
   kappaCenter: number,
   stepsList: number[],
@@ -478,7 +547,10 @@ const buildGuidedPayload = (
 ): GuidedLoopArgs => {
   const axes = getHotspotAxes(hotspot);
   const [axisI, axisJ] = axes;
-  const [centerI, centerJ] = getPlaneCoordinates(hotspot);
+  const centerI = getHotspotCoordinate(axisI, hotspot);
+  const centerJ = getHotspotCoordinate(axisJ, hotspot);
+  const planeAmpI = axisAmplitude(axisI);
+  const planeAmpJ = axisAmplitude(axisJ);
   const payload: GuidedLoopArgs = {
     // axis[0] is the handle; axes[1] × axes[2] span the loop plane
     axes3: ['kappa', axisI, axisJ],
@@ -517,6 +589,8 @@ const buildGuidedPayload = (
       axes: [axisI, axisJ],
       extents: [planeAmpI, planeAmpJ],
       center: centerRecord,
+      centerVector: [kappaCenter, centerI, centerJ],
+      amplitudes: [kappaAmp, planeAmpI, planeAmpJ],
       label: hotspot.name,
       ...(hotspot.omegaAbs !== undefined ? { omegaAbs: hotspot.omegaAbs } : {}),
       ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
@@ -791,8 +865,10 @@ const Phase3Loops = () => {
   const [simpleRuns, setSimpleRuns] = useState<SimpleLoopResult[]>([]);
   const [isSimpleRunning, setIsSimpleRunning] = useState(false);
 
-  const [planeAmplitudeI, setPlaneAmplitudeI] = useState(0.15);
-  const [planeAmplitudeJ, setPlaneAmplitudeJ] = useState(0.15);
+  const [rhoAmplitude, setRhoAmplitude] = useState(defaultAxisAmplitude);
+  const [tauAmplitude, setTauAmplitude] = useState(defaultAxisAmplitude);
+  const [zetaAmplitude, setZetaAmplitude] = useState(defaultAxisAmplitude);
+  const [zetaPhaseAmplitude, setZetaPhaseAmplitude] = useState(defaultAxisAmplitude);
   const [kappaAmplitude, setKappaAmplitude] = useState(0.06);
   const [kappaCenter, setKappaCenter] = useState(1.0);
   const [guidedStepEntries, setGuidedStepEntries] = useState<GuidedStepEntry[]>([
@@ -833,6 +909,53 @@ const Phase3Loops = () => {
   const [selectedAxisI, selectedAxisJ] = selectedPlaneAxes;
   const selectedAxisILabel = labelForAxis(selectedAxisI);
   const selectedAxisJLabel = labelForAxis(selectedAxisJ);
+
+  const axisAmp = useCallback(
+    (axis: string): number => {
+      const canonical = axisAliasToHotspotAxis(axis) ?? (axis as HotspotAxis | null);
+      switch (canonical) {
+        case 'rho':
+          return rhoAmplitude;
+        case 'tau':
+          return tauAmplitude;
+        case 'zeta':
+          return zetaAmplitude;
+        case 'zeta_phase':
+          return zetaPhaseAmplitude;
+        case 'kappa':
+          return kappaAmplitude;
+        default:
+          return defaultAxisAmplitude;
+      }
+    },
+    [kappaAmplitude, rhoAmplitude, tauAmplitude, zetaAmplitude, zetaPhaseAmplitude],
+  );
+
+  const setAxisAmplitude = useCallback(
+    (axis: HotspotAxis, value: number) => {
+      const safeValue = Number.isFinite(value) ? value : defaultAxisAmplitude;
+      switch (axis) {
+        case 'rho':
+          setRhoAmplitude(safeValue);
+          break;
+        case 'tau':
+          setTauAmplitude(safeValue);
+          break;
+        case 'zeta':
+          setZetaAmplitude(safeValue);
+          break;
+        case 'zeta_phase':
+          setZetaPhaseAmplitude(safeValue);
+          break;
+        case 'kappa':
+          setKappaAmplitude(safeValue);
+          break;
+        default:
+          break;
+      }
+    },
+    [setKappaAmplitude, setRhoAmplitude, setTauAmplitude, setZetaAmplitude, setZetaPhaseAmplitude],
+  );
 
 
   useEffect(
@@ -1321,8 +1444,7 @@ const Phase3Loops = () => {
     const payload = buildGuidedPayload(
       selectedHotspot,
       graph,
-      planeAmplitudeI,
-      planeAmplitudeJ,
+      axisAmp,
       kappaAmplitude,
       kappaCenter,
       guidedSteps,
@@ -1353,7 +1475,11 @@ const Phase3Loops = () => {
       if (!runs) {
         const simulatedMetrics: GuidedLoopRun[] = guidedSteps.map((steps, index) => {
           const seed = guidedSeed + index * 23;
-          const simpleMetrics = simulateSimpleMetrics(seed, [planeAmplitudeI, planeAmplitudeJ], guardValue);
+          const simpleMetrics = simulateSimpleMetrics(
+            seed,
+            [axisAmp(selectedAxisI), axisAmp(selectedAxisJ)],
+            guardValue,
+          );
           const metricsRecord: Record<string, number> = {
             fs_p95: simpleMetrics.fsP95,
             phi: simpleMetrics.phi,
@@ -1407,21 +1533,22 @@ const Phase3Loops = () => {
       setIsGuidedRunning(false);
     }
   }, [
+    axisAmp,
     decisionGate,
     fsGuardValidation,
     graph,
     guidedMinPhi,
     guidedSeed,
     guidedSteps,
+    selectedAxisI,
+    selectedAxisJ,
     selectedHotspot,
     selectedExperimentPath,
     selectedSubstratePath,
     setImportError,
     setImportMessage,
-    planeAmplitudeI,
     kappaAmplitude,
     kappaCenter,
-    planeAmplitudeJ,
   ]);
 
   const copyGuidedCommand = () => {
@@ -1938,32 +2065,33 @@ const Phase3Loops = () => {
             <section className="phase3__card">
               <h3>Guided loop</h3>
               <div className="phase3__grid phase3__grid--guided">
-                <label>
-                  <span>{selectedAxisILabel} amplitude</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="0.4"
-                    step="0.01"
-                    value={planeAmplitudeI}
-                    onChange={(event) => setPlaneAmplitudeI(Number(event.target.value))}
-                  />
-                  <code>{planeAmplitudeI.toFixed(2)}</code>
-                  <small className="field-hint">{`Half-width of the sweep along ${selectedAxisILabel} when guiding the loop.`}</small>
-                </label>
-                <label>
-                  <span>{selectedAxisJLabel} amplitude</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="0.4"
-                    step="0.01"
-                    value={planeAmplitudeJ}
-                    onChange={(event) => setPlaneAmplitudeJ(Number(event.target.value))}
-                  />
-                  <code>{planeAmplitudeJ.toFixed(2)}</code>
-                  <small className="field-hint">{`Adjust to explore broader ${selectedAxisJLabel} excursions without overshooting.`}</small>
-                </label>
+                {hotspotAxisOrder
+                  .filter((axis): axis is Exclude<HotspotAxis, 'kappa'> => axis !== 'kappa')
+                  .map((axis) => {
+                    const axisLabel = labelForAxis(axis);
+                    const tooltip =
+                      axis === selectedAxisI
+                        ? `Half-width of the sweep along ${axisLabel} when guiding the loop.`
+                        : axis === selectedAxisJ
+                        ? `Adjust to explore broader ${axisLabel} excursions without overshooting.`
+                        : `${axisLabel} amplitude is saved for use when swapping it into the ${selectedAxisILabel}/${selectedAxisJLabel} plane.`;
+                    const value = axisAmp(axis);
+                    return (
+                      <label key={axis}>
+                        <span>{axisLabel} amplitude</span>
+                        <input
+                          type="range"
+                          min="0"
+                          max="0.4"
+                          step="0.01"
+                          value={value}
+                          onChange={(event) => setAxisAmplitude(axis, Number(event.target.value))}
+                        />
+                        <code>{value.toFixed(2)}</code>
+                        <small className="field-hint">{tooltip}</small>
+                      </label>
+                    );
+                  })}
                 <label>
                   <span>κ amplitude</span>
                   <input
