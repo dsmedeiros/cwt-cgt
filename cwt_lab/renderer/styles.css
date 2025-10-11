@@ -1399,6 +1399,26 @@ body {
   margin: 0;
 }
 
+.phase3__warning {
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(217, 119, 6, 0.12);
+  border: 1px solid rgba(217, 119, 6, 0.35);
+  color: #92400e;
+  font-size: 0.9rem;
+}
+
+:root[data-theme='dark'] .phase3__warning {
+  background: rgba(217, 119, 6, 0.18);
+  border-color: rgba(217, 119, 6, 0.45);
+  color: #f59e0b;
+}
+
+.phase3__plane-indicator {
+  margin-bottom: 1rem;
+}
+
 .phase3__error {
   margin: 0.5rem 0 0;
   padding: 0.5rem 0.75rem;

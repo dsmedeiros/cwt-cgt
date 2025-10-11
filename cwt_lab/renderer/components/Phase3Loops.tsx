@@ -166,6 +166,14 @@ const getHotspotAxes = (hotspot: Hotspot): [HotspotAxis, HotspotAxis] => {
   return [defaultPlaneAxes[0], defaultPlaneAxes[1]];
 };
 
+const planeAxesEqual = (
+  a: [HotspotAxis, HotspotAxis],
+  b: [HotspotAxis, HotspotAxis],
+) => a[0] === b[0] && a[1] === b[1];
+
+const manualPlaneMismatchWarning =
+  'Manual plane selection diverges from the Phase 2 discovery plane. Guided heuristics assume the discovered axes pair; realign them before continuing.';
+
 let hasWarnedMissingCoordinate = false;
 
 const getHotspotCoordinate = (axis: HotspotAxis | string, hotspot: Hotspot): number => {
@@ -905,10 +913,28 @@ const Phase3Loops = () => {
     [hotspots, selectedHotspotId],
   );
 
+  const [discoveryPlane, setDiscoveryPlane] = useState<[HotspotAxis, HotspotAxis]>(() =>
+    getHotspotAxes(selectedHotspot),
+  );
+
+  useEffect(() => {
+    const fallback: [HotspotAxis, HotspotAxis] = [defaultPlaneAxes[0], defaultPlaneAxes[1]];
+    const nextAxes = selectedHotspot ? getHotspotAxes(selectedHotspot) : fallback;
+    setDiscoveryPlane((prev) => (planeAxesEqual(prev, nextAxes) ? prev : nextAxes));
+    setManualPlaneAxes((prev) => (planeAxesEqual(prev, nextAxes) ? prev : nextAxes));
+  }, [selectedHotspot]);
+
   const selectedPlaneAxes = useMemo(() => getHotspotAxes(selectedHotspot), [selectedHotspot]);
   const [selectedAxisI, selectedAxisJ] = selectedPlaneAxes;
   const selectedAxisILabel = labelForAxis(selectedAxisI);
   const selectedAxisJLabel = labelForAxis(selectedAxisJ);
+  const [discoveryAxisI, discoveryAxisJ] = discoveryPlane;
+  const discoveryAxisILabel = labelForAxis(discoveryAxisI);
+  const discoveryAxisJLabel = labelForAxis(discoveryAxisJ);
+  const manualPlaneMatchesDiscovery = useMemo(
+    () => planeAxesEqual(manualPlaneAxes, discoveryPlane),
+    [discoveryPlane, manualPlaneAxes],
+  );
 
   const axisAmp = useCallback(
     (axis: string): number => {
@@ -1846,6 +1872,9 @@ const Phase3Loops = () => {
                 </details>
               ) : null}
             </div>
+            {manualPlaneMatchesDiscovery ? null : (
+              <p className="phase3__warning" role="alert">{manualPlaneMismatchWarning}</p>
+            )}
             <button type="button" className="btn" onClick={addManualHotspot}>
               Use center
             </button>
@@ -2064,6 +2093,9 @@ const Phase3Loops = () => {
           ) : (
             <section className="phase3__card">
               <h3>Guided loop</h3>
+              <div className="phase3__plane-indicator" aria-live="polite">
+                <span className="badge">{`Plane: ${discoveryAxisILabel}–${discoveryAxisJLabel} (from Phase 2)`}</span>
+              </div>
               <div className="phase3__grid phase3__grid--guided">
                 {hotspotAxisOrder
                   .filter((axis): axis is Exclude<HotspotAxis, 'kappa'> => axis !== 'kappa')
