@@ -13,7 +13,9 @@ A multi-language research sandbox for studying **Causal Web Theory (CWT)** and t
 4. [Electron + React laboratory](#electron--react-laboratory)
    * [Node environment](#node-environment)
    * [Desktop shell commands](#desktop-shell-commands)
+   * [Global UI controls & demo mode](#global-ui-controls--demo-mode)
    * [Run manager & IPC bridge](#run-manager--ipc-bridge)
+   * [Artifact surfaces and selectors](#artifact-surfaces-and-selectors)
 5. [Run artifacts and registry](#run-artifacts-and-registry)
 6. [Testing and quality](#testing-and-quality)
 7. [Additional documentation](#additional-documentation)
@@ -23,7 +25,7 @@ A multi-language research sandbox for studying **Causal Web Theory (CWT)** and t
 Causal Web Theory treats macroscopic dynamics as emerging from local propagation on weighted, delay-aware substrates. Three coupled layers — probabilistic mass flow (`Q`), relative phase (`Θ`), and classical readout (`C`) — evolve under a geometry captured by the CWT Geometric Tensor. The codebase provides:
 
 - **`cwt-sim/`** – a Python package with placeholder-yet-structured simulators, Typer-based CLIs, and a rich library of experiments that mirror the production orchestration stack.
-- **`cwt_lab/`** – an Electron + React desktop application that fronts the simulation stack with phase-specific dashboards, run management, diagnostics, and recipe automation.
+- **`cwt_lab/`** – an Electron + React desktop application that fronts the simulation stack with phase-specific dashboards, run management, diagnostics, recipe automation, artifact analysis, and a demo catalogue for offline exploration.
 - **`electron/runner/`** – a TypeScript command builder and parser suite that backs the IPC bridge used by the desktop shell and exposes Jest-tested helpers for spawning Python processes from Node.
 - Supporting documentation (`theory.md`, `USER_GUIDE.md`) plus curated configuration templates, notebooks, and regression tests.
 
@@ -152,15 +154,29 @@ Electron-Vite launches the renderer on port `5173` and attaches the Electron hos
 - `npm --prefix cwt_lab run dist` – create distributable artifacts via Electron Builder.
 - `npm --prefix cwt_lab run pack` – generate unpacked directories for manual inspection.
 
+### Global UI controls & demo mode
+
+The application header in [`cwt_lab/renderer/App.tsx`](cwt_lab/renderer/App.tsx) exposes runtime toggles so operators can work efficiently:
+
+- **Theme toggle** – switch between light and dark palettes or press `⌥T` (Alt+T) thanks to the command centre shortcut bindings.
+- **Demo mode** – populate the Run Board, Artifact Browser, and Recipe Comparison tabs with curated sample data without connecting to a Python backend. Live registry data automatically replaces the demo catalogue once runs are available.
+- **Help drawer** – each tab registers guidance and mountain-route analogies that can be opened from the `?` control.
+- **Keyboard hints** – the header surfaces the active run (`⌥R`) and abort (`⌥A`) shortcuts so you always know which action will fire.
+
 ### Run manager & IPC bridge
 The preload script exposes a `window.CWT` API that fronts the underlying IPC bridge. Command builders defined in `cwt_lab/electron/runner/` and `electron/runner/` map UI interactions onto Python invocations (`experiments.*`, Typer CLIs, and registry helpers). Key capabilities:
 
 - Environment detection that prioritises the repo-local virtual environment, falls back through system interpreters, and records the chosen interpreter plus probe results in `cwt_lab/config.json`.
-- Run orchestration with streaming stdout capture, timeouts, artifact enumeration, and diagnostics zipping.
-- Phase-specific helpers for ridge mapping, guided Wilson loops, torus plateau scans, graph family sweeps, and optimisation recipes.
+- Run orchestration with streaming stdout capture, scrollback chunking, live tail refresh, run/experiment deletion, and diagnostics zipping surfaced through the Run Board.
+- Phase-specific helpers for ridge mapping, guided Wilson loops, torus plateau scans, graph family sweeps, and optimisation recipes. Torus plateau sweeps now expose command previews and pull saved Phase 3 summaries when available.
 - Recipe management (save/list/run/export) and preview builders so operators can vet the CLI payload before launching long jobs.
+- Artifact introspection APIs that feed Plotly dashboards, ROC plots, and recipe comparison metrics in the renderer.
 
 Consult `USER_GUIDE.md` for screenshots and a phase-by-phase walkthrough of the laboratory UI.
+
+### Artifact surfaces and selectors
+
+Global experiment and substrate selectors sourced from [`ExperimentNavigationContext`](cwt_lab/renderer/navigation/ExperimentNavigationContext.tsx) keep the renderer in sync with the on-disk registry. Tabs such as Phase 2, Phase 3, Phase 4, the Torus Plateau viewer, and the Artifact Browser listen for file-system changes via the artifacts watcher to refresh automatically when new runs land. The Artifact Browser and Recipe Comparison panels render Plotly summaries backed by registry queries or the demo catalogue, so analysts can explore metrics even before a live backend is connected.
 
 ## Run artifacts and registry
 Every workflow ultimately persists a [`RunRecord`](cwt-sim/cwt/orchestrator/scheduler.py) containing trajectories (`pQ_traj`, `theta_traj`, `psi_traj`), geometric tiles, curvature-derived bias, and readout snapshots. `save_run` writes `meta.json` plus referenced NumPy arrays, enabling downstream consumers (CLI reporters, experiments, and the Electron registry) to reload runs without recomputing dynamics. The `scripts.eval_report` CLI and the desktop Run Board both reuse this schema to display orientation, Φ flux, Fubini–Study statistics, and sign-flip checks.

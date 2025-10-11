@@ -17,15 +17,38 @@ playbook.
 These three metrics appear across the Run Board, diagnostics logs, and per-phase dashboards. Keep them in mind
 when deciding whether to tighten guards or adjust parameters.
 
+## Layout overview
+
+- **Header controls**: Use the theme toggle to switch between light and dark palettes and the `?` button to open
+  the contextual Help Drawer for whichever tab is active. Keyboard shortcuts are surfaced next to the title—`⌥R`
+  refreshes the active run action, `⌥A` aborts the current log tail or job, and `⌥T` flips the theme without
+  touching the mouse.
+- **Demo mode**: The **Demo: On/Off** toggle injects curated runs, artifacts, and recipes so you can explore the
+  UI offline. Disable it once a live registry is available to read real metrics.
+- **Experiment & substrate selectors**: Tabs that analyse saved data (Phase 2 onward, Torus Plateau, Artifact
+  Browser) share the selectors in the header. Choose an experiment to list its substrates, then pick a substrate
+  directory to scope the Phase tools. The watchers behind the scenes update the dropdowns automatically when new
+  runs land on disk.
+
 ## Phase walkthrough
 
 ### Run Board – monitor and collect diagnostics
 
 ![Run Board overview](docs/screenshots/run-board.svg)
 
-The Run Board lists the most recent calibrations along with phase labels, experiments, last-update timestamps,
-and a **Collect diagnostics** button. Use this button when support asks for logs—the UI will produce a ZIP
-bundle containing stdout, `diagnostics.json`, and environment metadata.
+The Run Board groups recent activity by experiment, showing phase badges, last-updated timestamps, and the
+artifacts directory so you can triage multi-phase calibrations quickly. Click a row to expand the runs inside,
+then use the action buttons to tail logs, collect diagnostics, or remove stale records.
+
+- **Diagnostics bundles**: Use **Collect diagnostics** when support asks for logs—the UI will produce a ZIP that
+  includes stdout chunks, `diagnostics.json`, and environment metadata.
+- **Log viewer**: **View log** streams stdout/stderr in 64 KB chunks. **Load more** backfills older output,
+  **Refresh** fetches the latest bytes, and the footer calls out the byte range currently in view. Press `⌥A`
+  to cancel a long-running tail request.
+- **Deletion workflow**: Delete individual runs or entire experiments after confirming the prompt. The table will
+  refresh automatically, and any open log viewers close to avoid dangling references.
+- **Keyboard shortcuts**: Press `⌥R` to refresh the board without leaving the keyboard. Status messages confirm
+  which action triggered after each shortcut fires.
 
 ### Phase 1 – Mapping
 
@@ -69,6 +92,25 @@ Wilson-loop CLI.
 Phase 5 drives a full optimiser over the ridge. The convergence trace shows FS and overlap improving. Export
 results once improvements plateau to avoid drift.
 
+### Torus Plateau – sweep the ridge in 3D
+
+Use the Torus Plateau tab to launch `phase4.torusPlateau` surveys and inspect their summaries. Configure the two
+axes, grid density, disorder samples, and τ/ζ centres/extents, then review the command preview before launching.
+When a run finishes, the viewer fetches `summary.json`, lists each disorder sample, and renders heatmaps plus
+guard coverage statistics so you can spot promising handles.
+
+### Artifact Browser – inspect saved outputs
+
+The Artifact Browser queries the registry (or the demo catalogue) and organises runs by phase. Filter the list by
+phase, search by tag or keyword, and select a record to reveal its key metrics. When Plotly-compatible traces are
+available the panel renders a preview chart; otherwise it shows the summary text pulled from `summary.json`.
+
+### Recipe comparison – side-by-side decisions
+
+Enable demo mode or save recipes to compare two protocols. The comparison table aligns shared metrics, reports the
+percentage deltas, and renders Plotly traces for Φ flux and guard margin so you can judge convergence histories at
+a glance.
+
 ### Env Doctor – interpreter health
 
 ![Environment doctor](docs/screenshots/env-doctor.svg)
@@ -78,6 +120,17 @@ fall back to the module-based strategy. Orange/red cards detail what failed so y
 the scan runs the status line at the top of the panel cycles through each diagnostic step so you know the
 application is still working. Use **Browse…** next to the Python executable field to pick the interpreter on
 disk—handy when pointing the lab at a Windows virtual environment or a freshly-installed interpreter.
+
+## Demo mode cheat sheet
+
+Demo mode seeds the UI with curated, deterministic data so you can rehearse workflows before wiring up the real
+registry:
+
+- **Run Board**: populates sample phase runs, log output, and diagnostics bundles.
+- **Artifact Browser**: serves a catalogue of cross-phase artifacts with metrics and Plotly previews.
+- **Recipe comparison**: includes multiple saved protocols so you can exercise the comparison workflow.
+
+Turn demo mode off once your backend is ready; the live registry APIs take over automatically.
 
 ## Troubleshooting
 
