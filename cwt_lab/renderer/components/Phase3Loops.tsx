@@ -541,7 +541,7 @@ const buildSimplePayload = (
   return payload;
 };
 
-const buildGuidedPayload = (
+export const buildGuidedPayload = (
   hotspot: Hotspot,
   graph: string,
   axisAmplitude: (axis: string) => number,
@@ -608,7 +608,7 @@ const buildGuidedPayload = (
   return payload;
 };
 
-const previewGuidedCli = async (payload: GuidedLoopArgs): Promise<string> => {
+export const previewGuidedCli = async (payload: GuidedLoopArgs): Promise<string> => {
   if (typeof window === 'undefined' || !window?.CWT?.run?.preview) {
     return 'Command preview unavailable in this environment.';
   }
