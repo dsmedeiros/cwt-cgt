@@ -928,6 +928,46 @@ const Phase3Loops = () => {
   const [selectedAxisI, selectedAxisJ] = selectedPlaneAxes;
   const selectedAxisILabel = labelForAxis(selectedAxisI);
   const selectedAxisJLabel = labelForAxis(selectedAxisJ);
+  const selectedOmegaAbs = selectedHotspot?.omegaAbs ?? null;
+  const amplitudeGuidance = useMemo(() => {
+    if (!Number.isFinite(guidedMinPhi) || guidedMinPhi <= 0) {
+      return null;
+    }
+    const fallbackOmegaAbs = 0.1;
+    const hasOmega = typeof selectedOmegaAbs === 'number' && Number.isFinite(selectedOmegaAbs) && Math.abs(selectedOmegaAbs) > 0;
+    const omegaMagnitude = hasOmega ? Math.abs(selectedOmegaAbs ?? fallbackOmegaAbs) : fallbackOmegaAbs;
+    if (!Number.isFinite(omegaMagnitude) || omegaMagnitude <= 0) {
+      return null;
+    }
+    const areaMin = guidedMinPhi / omegaMagnitude;
+    if (!Number.isFinite(areaMin) || areaMin <= 0) {
+      return null;
+    }
+    const symmetricAmplitude = Math.sqrt(areaMin / 4);
+    if (!Number.isFinite(symmetricAmplitude) || symmetricAmplitude <= 0) {
+      return null;
+    }
+    return {
+      areaMin,
+      symmetricAmplitude,
+      omegaMagnitude,
+      usingFallback: !hasOmega,
+    } as const;
+  }, [guidedMinPhi, selectedOmegaAbs]);
+  const amplitudeGuidanceText = useMemo(() => {
+    if (!amplitudeGuidance) {
+      return null;
+    }
+    const { areaMin, symmetricAmplitude, omegaMagnitude, usingFallback } = amplitudeGuidance;
+    const areaText = areaMin.toFixed(4);
+    const amplitudeText = symmetricAmplitude.toFixed(3);
+    const omegaText = omegaMagnitude.toFixed(3);
+    const axisPairLabel = `${selectedAxisILabel}/${selectedAxisJLabel}`;
+    const assumptionText = usingFallback
+      ? `Assuming |Ω| ≈ ${omegaText} because the hotspot metadata omits |Ω|.`
+      : `Using hotspot |Ω| ≈ ${omegaText}.`;
+    return `Φ guard needs ${axisPairLabel} area ≥ ${areaText}. Symmetric amplitude suggestion: ±${amplitudeText}. ${assumptionText}`;
+  }, [amplitudeGuidance, selectedAxisILabel, selectedAxisJLabel]);
   const [discoveryAxisI, discoveryAxisJ] = discoveryPlane;
   const discoveryAxisILabel = labelForAxis(discoveryAxisI);
   const discoveryAxisJLabel = labelForAxis(discoveryAxisJ);
@@ -2137,6 +2177,9 @@ const Phase3Loops = () => {
                   <code>{kappaAmplitude.toFixed(2)}</code>
                   <small className="field-hint">Gives the 3-axis loop nonzero enclosed area so Φ can register.</small>
                 </label>
+                {amplitudeGuidanceText ? (
+                  <p className="phase3__hint" role="note">{amplitudeGuidanceText}</p>
+                ) : null}
                 <label>
                   <span>κ center</span>
                   <input
