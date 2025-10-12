@@ -13,6 +13,22 @@ const sampleHeatmap: HeatmapImage = {
   label: 'Substrate A – Heatmap',
 };
 
+if (typeof PointerEvent === 'undefined') {
+  class PointerEventPolyfill extends MouseEvent {
+    pointerId: number;
+    pointerType?: string;
+
+    constructor(type: string, eventInitDict: PointerEventInit = {}) {
+      super(type, eventInitDict);
+      this.pointerId = eventInitDict.pointerId ?? 0;
+      this.pointerType = eventInitDict.pointerType;
+    }
+  }
+
+  // @ts-expect-error - polyfilling PointerEvent for the test environment.
+  globalThis.PointerEvent = PointerEventPolyfill;
+}
+
 describe('Phase1HeatmapViewer', () => {
   it('renders the viewer and closes via interactions and keyboard', async () => {
     const user = userEvent.setup();
@@ -66,28 +82,7 @@ describe('Phase1HeatmapViewer', () => {
     expect(reset).toHaveFocus();
   });
 
-  it('pans the heatmap when scrolling without modifiers', () => {
-    const onClose = vi.fn();
-
-    render(<Phase1HeatmapViewer heatmap={sampleHeatmap} onClose={onClose} />);
-
-    const canvas = document.querySelector('.phase1__heatmap-viewer-canvas');
-    const image = document.querySelector<HTMLImageElement>('.phase1__heatmap-viewer-image');
-    const slider = screen.getByRole('slider', { name: /zoom level/i });
-
-    if (!(canvas instanceof HTMLElement) || !image) {
-      throw new Error('Heatmap canvas could not be found');
-    }
-
-    fireEvent.change(slider, { target: { value: '2' } });
-
-    fireEvent.wheel(canvas, { deltaX: 30, deltaY: -10 });
-
-    expect(image.style.transform).toContain('translate3d(-30px, 10px, 0)');
-    expect(image.style.transform).toContain('scale(2)');
-  });
-
-  it('zooms the heatmap around the cursor when the user scrolls with a modifier key', () => {
+  it('zooms the heatmap around the cursor when the user scrolls', () => {
     const onClose = vi.fn();
 
     render(<Phase1HeatmapViewer heatmap={sampleHeatmap} onClose={onClose} />);
@@ -102,10 +97,57 @@ describe('Phase1HeatmapViewer', () => {
     const rectSpy = vi.spyOn(canvas, 'getBoundingClientRect');
     rectSpy.mockReturnValue(new DOMRect(0, 0, 400, 300));
 
-    fireEvent.wheel(canvas, { ctrlKey: true, deltaY: -40, clientX: 200, clientY: 150 });
+    fireEvent.wheel(canvas, { deltaY: -40, clientX: 200, clientY: 150 });
 
     expect(image.style.transform).toContain('scale(1.25)');
+    expect(image.style.transform).toContain('translate3d(0px, 0px, 0)');
 
     rectSpy.mockRestore();
+  });
+
+  it('pans the heatmap when dragging with the right mouse button while zoomed in', () => {
+    const onClose = vi.fn();
+
+    render(<Phase1HeatmapViewer heatmap={sampleHeatmap} onClose={onClose} />);
+
+    const canvas = document.querySelector('.phase1__heatmap-viewer-canvas');
+    const image = document.querySelector<HTMLImageElement>('.phase1__heatmap-viewer-image');
+    const slider = screen.getByRole('slider', { name: /zoom level/i });
+
+    if (!(canvas instanceof HTMLElement) || !image) {
+      throw new Error('Heatmap canvas could not be found');
+    }
+
+    canvas.setPointerCapture = vi.fn();
+    canvas.releasePointerCapture = vi.fn();
+
+    fireEvent.change(slider, { target: { value: '2' } });
+
+    const pointerDownEvent = new PointerEvent('pointerdown', {
+      pointerId: 1,
+      button: 2,
+      clientX: 150,
+      clientY: 150,
+      pointerType: 'mouse',
+      bubbles: true,
+    });
+    const pointerMoveEvent = new PointerEvent('pointermove', {
+      pointerId: 1,
+      clientX: 190,
+      clientY: 120,
+      bubbles: true,
+    });
+    const pointerUpEvent = new PointerEvent('pointerup', {
+      pointerId: 1,
+      bubbles: true,
+    });
+
+    fireEvent(canvas, pointerDownEvent);
+    fireEvent(canvas, pointerMoveEvent);
+    fireEvent(canvas, pointerUpEvent);
+
+    expect(canvas.setPointerCapture).toHaveBeenCalled();
+    expect(image.style.transform).toContain('translate3d(40px, -30px, 0)');
+    expect(image.style.transform).toContain('scale(2)');
   });
 });
