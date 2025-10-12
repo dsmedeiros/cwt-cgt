@@ -23,10 +23,16 @@ from baselines.common import graph_factory, grid_points  # noqa: E402
         ("random_regular", {"n": 6, "degree": 2, "seed": 1}, 6),
         ("small_world", {"n": 8, "k": 2, "p": 0.1, "seed": 5}, 8),
         ("scale_free", {"n": 7, "seed": 3}, 7),
-        ("modular", {"communities": 2, "size": 4, "p_in": 0.9, "p_out": 0.1, "seed": 2}, 8),
+        (
+            "modular",
+            {"communities": 2, "size": 4, "p_in": 0.9, "p_out": 0.1, "seed": 2},
+            8,
+        ),
     ],
 )
-def test_graph_factory_supported_graphs(kind: str, kwargs: dict[str, int | float], expected_nodes: int) -> None:
+def test_graph_factory_supported_graphs(
+    kind: str, kwargs: dict[str, int | float], expected_nodes: int
+) -> None:
     parameters = dict(kwargs)
     seed = parameters.pop("seed", 0)
     graph = graph_factory(kind, seed=seed, **parameters)
