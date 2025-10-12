@@ -159,6 +159,67 @@ const toCliValue = (value: number) => value.toFixed(4).replace(/\.0+$/, '');
 
 const defaultAxisAmplitude = 0.15;
 
+const extractSummaryAmplitudes = (raw: string): number[] => {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    return [];
+  }
+
+  if (!parsed || typeof parsed !== 'object') {
+    return [];
+  }
+
+  const values: number[] = [];
+  const register = (value: unknown) => {
+    const numeric = Number(value);
+    if (Number.isFinite(numeric)) {
+      values.push(Math.abs(numeric));
+    }
+  };
+
+  const record = parsed as Record<string, unknown>;
+  const amplitudeRecord = record.amplitudes;
+  if (amplitudeRecord && typeof amplitudeRecord === 'object') {
+    Object.values(amplitudeRecord as Record<string, unknown>).forEach(register);
+  }
+
+  const hotspots = Array.isArray((record as { hotspots?: unknown }).hotspots)
+    ? ((record as { hotspots?: unknown }).hotspots as unknown[])
+    : [];
+
+  hotspots.forEach((entry) => {
+    if (!entry || typeof entry !== 'object') {
+      return;
+    }
+    const hotspotRecord = entry as Record<string, unknown>;
+    const extents = Array.isArray(hotspotRecord.extents)
+      ? (hotspotRecord.extents as unknown[])
+      : [];
+
+    extents.forEach((extentEntry) => {
+      if (!extentEntry || typeof extentEntry !== 'object') {
+        return;
+      }
+      const extentRecord = extentEntry as Record<string, unknown>;
+      const valuesArray = Array.isArray(extentRecord.values)
+        ? extentRecord.values
+        : [];
+      valuesArray.forEach(register);
+
+      const mapCandidate =
+        (extentRecord.map as Record<string, unknown> | undefined) ??
+        (extentRecord.extent as Record<string, unknown> | undefined);
+      if (mapCandidate && typeof mapCandidate === 'object') {
+        Object.values(mapCandidate).forEach(register);
+      }
+    });
+  });
+
+  return values;
+};
+
 const getHotspotAxes = (hotspot: Hotspot): [HotspotAxis, HotspotAxis] => {
   if (Array.isArray(hotspot.axes) && hotspot.axes.length === 2) {
     return [hotspot.axes[0], hotspot.axes[1]];
@@ -880,6 +941,7 @@ const Phase3Loops = () => {
   const [zetaAmplitude, setZetaAmplitude] = useState(defaultAxisAmplitude);
   const [zetaPhaseAmplitude, setZetaPhaseAmplitude] = useState(defaultAxisAmplitude);
   const [kappaAmplitude, setKappaAmplitude] = useState(0.06);
+  const [summaryAmplitudeSamples, setSummaryAmplitudeSamples] = useState<number[]>([]);
   const [kappaCenter, setKappaCenter] = useState(1.0);
   const [guidedStepEntries, setGuidedStepEntries] = useState<GuidedStepEntry[]>([
     createGuidedStepEntry(160),
@@ -1009,6 +1071,39 @@ const Phase3Loops = () => {
     [discoveryPlane, manualPlaneAxes],
   );
 
+  const amplitudeRangeMax = useMemo(() => {
+    const candidates: number[] = [
+      rhoAmplitude,
+      tauAmplitude,
+      zetaAmplitude,
+      zetaPhaseAmplitude,
+      kappaAmplitude,
+      ...summaryAmplitudeSamples,
+    ]
+      .map((value) => (Number.isFinite(value) ? Math.abs(value) : 0))
+      .filter((value) => value > 0);
+
+    if (amplitudeGuidance?.symmetricAmplitude && Number.isFinite(amplitudeGuidance.symmetricAmplitude)) {
+      candidates.push(Math.abs(amplitudeGuidance.symmetricAmplitude));
+    }
+
+    const largest = candidates.reduce((max, value) => Math.max(max, value), 0);
+    if (largest <= 0) {
+      return 0.4;
+    }
+
+    const padded = Math.max(largest * 1.25, largest + 0.05);
+    return Math.max(0.4, Number.isFinite(padded) ? padded : largest);
+  }, [
+    amplitudeGuidance,
+    kappaAmplitude,
+    rhoAmplitude,
+    summaryAmplitudeSamples,
+    tauAmplitude,
+    zetaAmplitude,
+    zetaPhaseAmplitude,
+  ]);
+
   const axisAmp = useCallback(
     (axis: string): number => {
       const canonical = axisAliasToHotspotAxis(axis) ?? (axis as HotspotAxis | null);
@@ -1032,7 +1127,7 @@ const Phase3Loops = () => {
 
   const setAxisAmplitude = useCallback(
     (axis: HotspotAxis, value: number) => {
-      const safeValue = Number.isFinite(value) ? value : defaultAxisAmplitude;
+      const safeValue = Number.isFinite(value) && value >= 0 ? value : defaultAxisAmplitude;
       switch (axis) {
         case 'rho':
           setRhoAmplitude(safeValue);
@@ -1119,7 +1214,12 @@ const Phase3Loops = () => {
     setGuidedResult(null);
     setHotspots(defaultHotspots.map((hotspot) => ({ ...hotspot })));
     setSelectedHotspotId(defaultHotspots[0].id);
+    setSummaryAmplitudeSamples([]);
   }, [selectedExperimentPath, selectedSubstratePath]);
+
+  useEffect(() => {
+    setSummaryAmplitudeSamples([]);
+  }, [selectedSubstratePath]);
 
   const applyImportedHotspots = useCallback(
     (entries: Phase1HotspotEntry[], originKey: string, sourceLabel: string) => {
@@ -1180,6 +1280,7 @@ const Phase3Loops = () => {
 
     setImportError(null);
     setImportMessage(null);
+    setSummaryAmplitudeSamples([]);
     setIsImportingHotspots(true);
     try {
       const response = await window.CWT.run.readArtifact({
@@ -1238,6 +1339,7 @@ const Phase3Loops = () => {
 
     setImportError(null);
     setImportMessage(null);
+    setSummaryAmplitudeSamples([]);
     setIsImportingHotspots(true);
     try {
       const listResponse = await api.list({ under: selectedSubstratePath });
@@ -1266,6 +1368,23 @@ const Phase3Loops = () => {
       const substrateLabel = substrate?.name ?? 'substrate';
       applyImportedHotspots(entries, fileNode.path, `${experimentLabel}/${substrateLabel}`);
       setImportMessage(`Loaded ${entries.length} hotspots from ${experimentLabel}/${substrateLabel}.`);
+
+      const summaryNode = findArtifactNodeByName(nodes, PHASE3_SUMMARY_FILENAME);
+      if (summaryNode && window?.CWT?.artifacts?.readFile) {
+        try {
+          const summaryResponse = await window.CWT.artifacts.readFile({ path: summaryNode.path });
+          if (!summaryResponse.ok) {
+            throw new Error(summaryResponse.error ?? 'Failed to read Phase 3 summary file.');
+          }
+          const summaryPayload = summaryResponse.data as { contents?: unknown } | null;
+          const summaryContents = typeof summaryPayload?.contents === 'string' ? summaryPayload.contents : '';
+          if (summaryContents) {
+            setSummaryAmplitudeSamples(extractSummaryAmplitudes(summaryContents));
+          }
+        } catch (error) {
+          console.warn('Failed to load Phase 3 summary amplitudes:', error);
+        }
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setImportError(message);
@@ -2184,14 +2303,28 @@ const Phase3Loops = () => {
                     return (
                       <label key={axis}>
                         <span>{axisLabel} amplitude</span>
-                        <input
-                          type="range"
-                          min="0"
-                          max="0.4"
-                          step="0.01"
-                          value={value}
-                          onChange={(event) => setAxisAmplitude(axis, Number(event.target.value))}
-                        />
+                        <div className="phase3__amplitude-inputs">
+                          <input
+                            type="range"
+                            min="0"
+                            max={amplitudeRangeMax}
+                            step="0.01"
+                            value={value}
+                            onChange={(event) => setAxisAmplitude(axis, Number(event.target.value))}
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={value}
+                            onChange={(event) => {
+                              const next = Number(event.target.value);
+                              if (Number.isFinite(next)) {
+                                setAxisAmplitude(axis, Math.max(0, next));
+                              }
+                            }}
+                          />
+                        </div>
                         <code>{value.toFixed(2)}</code>
                         <small className="field-hint">{tooltip}</small>
                       </label>
@@ -2199,14 +2332,28 @@ const Phase3Loops = () => {
                   })}
                 <label>
                   <span>κ amplitude</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="0.4"
-                    step="0.01"
-                    value={kappaAmplitude}
-                    onChange={(event) => setKappaAmplitude(Number(event.target.value))}
-                  />
+                  <div className="phase3__amplitude-inputs">
+                    <input
+                      type="range"
+                      min="0"
+                      max={amplitudeRangeMax}
+                      step="0.01"
+                      value={kappaAmplitude}
+                      onChange={(event) => setKappaAmplitude(Number(event.target.value))}
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={kappaAmplitude}
+                      onChange={(event) => {
+                        const next = Number(event.target.value);
+                        if (Number.isFinite(next)) {
+                          setKappaAmplitude(Math.max(0, next));
+                        }
+                      }}
+                    />
+                  </div>
                   <code>{kappaAmplitude.toFixed(2)}</code>
                   <small className="field-hint">Gives the 3-axis loop nonzero enclosed area so Φ can register.</small>
                 </label>
