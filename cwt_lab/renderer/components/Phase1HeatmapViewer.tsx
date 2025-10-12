@@ -9,6 +9,20 @@ const MIN_ZOOM = 1;
 const MAX_ZOOM = 4;
 const ZOOM_STEP = 0.25;
 
+const DOM_DELTA_LINE = 1;
+const DOM_DELTA_PAGE = 2;
+const ESTIMATED_LINE_HEIGHT = 16;
+
+const normalizeWheelDelta = (delta: number, mode: number) => {
+  if (mode === DOM_DELTA_LINE) {
+    return delta * ESTIMATED_LINE_HEIGHT;
+  }
+  if (mode === DOM_DELTA_PAGE) {
+    return delta * (typeof window !== 'undefined' ? window.innerHeight : 800);
+  }
+  return delta;
+};
+
 const focusableSelector =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
@@ -207,6 +221,49 @@ const Phase1HeatmapViewer = ({ heatmap, onClose }: Phase1HeatmapViewerProps) => 
     setIsPanning(false);
   };
 
+  const handleWheel: React.WheelEventHandler<HTMLDivElement> = (event) => {
+    const { deltaX, deltaY, deltaMode, ctrlKey, metaKey, clientX, clientY, currentTarget } = event;
+    const normalizedDeltaX = normalizeWheelDelta(deltaX, deltaMode);
+    const normalizedDeltaY = normalizeWheelDelta(deltaY, deltaMode);
+
+    if (ctrlKey || metaKey) {
+      event.preventDefault();
+      const rect = currentTarget.getBoundingClientRect();
+      const focalPointX = clientX - rect.left - rect.width / 2;
+      const focalPointY = clientY - rect.top - rect.height / 2;
+
+      setZoom((currentZoom) => {
+        const zoomDelta = normalizedDeltaY === 0 ? 0 : -Math.sign(normalizedDeltaY) * ZOOM_STEP;
+        if (zoomDelta === 0) {
+          return currentZoom;
+        }
+        const nextZoom = clampZoom(currentZoom + zoomDelta);
+        if (nextZoom === currentZoom) {
+          return currentZoom;
+        }
+        setOffset((currentOffset) => {
+          const scaleRatio = nextZoom / currentZoom;
+          return {
+            x: focalPointX - (focalPointX - currentOffset.x) * scaleRatio,
+            y: focalPointY - (focalPointY - currentOffset.y) * scaleRatio,
+          };
+        });
+        return nextZoom;
+      });
+      return;
+    }
+
+    if (zoom === 1) {
+      return;
+    }
+
+    event.preventDefault();
+    setOffset((current) => ({
+      x: current.x - normalizedDeltaX,
+      y: current.y - normalizedDeltaY,
+    }));
+  };
+
   const transform = `translate3d(${offset.x}px, ${offset.y}px, 0) scale(${zoom})`;
   const canvasCursor = zoom > 1 ? (isPanning ? 'grabbing' : 'grab') : 'default';
 
@@ -251,6 +308,7 @@ const Phase1HeatmapViewer = ({ heatmap, onClose }: Phase1HeatmapViewerProps) => 
           className="phase1__heatmap-viewer-canvas"
           ref={canvasRef}
           onPointerDown={handlePointerDown}
+          onWheel={handleWheel}
           role="presentation"
           style={{ cursor: canvasCursor }}
         >
