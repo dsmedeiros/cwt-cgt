@@ -1,15 +1,35 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { buildGuidedPayload, previewGuidedCli } from '../Phase3Loops';
+import * as NavigationModule from '../../navigation/ExperimentNavigationContext';
+import Phase3Loops, { buildGuidedPayload, previewGuidedCli } from '../Phase3Loops';
+
+vi.mock('../ipc', () => ({
+  runs: {
+    listRecent: vi.fn().mockResolvedValue([]),
+  },
+}));
 
 vi.mock('../AdiabaticBoundaryViewer', () => ({
   __esModule: true,
   default: () => null,
 }));
 
+const originalWindow = (globalThis as { window?: Window }).window;
+
+type NavigationContextValue = ReturnType<typeof NavigationModule.useExperimentNavigation>;
+
+let navigationState: NavigationContextValue;
+let navigationSpy: ReturnType<typeof vi.spyOn<typeof NavigationModule, 'useExperimentNavigation'>> | null = null;
+
 describe('Phase3 guided helpers', () => {
   afterEach(() => {
-    delete (globalThis as any).window;
+    if (originalWindow) {
+      (globalThis as any).window = originalWindow;
+    } else {
+      delete (globalThis as any).window;
+    }
   });
 
   it('builds the guided payload and previews CLI with plane amplitudes', async () => {
@@ -113,5 +133,110 @@ describe('Phase3 guided helpers', () => {
     expect(summary.center.tau).toBe(1.15);
     expect(summary.centerVector).toEqual([kappaCenter, 0.9, 1.15]);
     expect(summary.amplitudes).toEqual([kappaAmplitude, rhoAmplitude, tauAmplitude]);
+  });
+});
+
+describe('Phase3Loops component amplitude controls', () => {
+  const readFileMock = vi.fn();
+
+  beforeEach(() => {
+    navigationState = {
+      artifactsRoot: '/tmp',
+      experiments: [],
+      experimentsError: null,
+      experimentsLoading: false,
+      selectedExperimentPath: 'exp-1',
+      setSelectedExperimentPath: vi.fn(),
+      refreshExperiments: vi.fn(),
+      hasArtifactsApi: true,
+      substrates: [],
+      substratesError: null,
+      substratesLoading: false,
+      selectedSubstratePath: 'substrate-1',
+      setSelectedSubstratePath: vi.fn(),
+      refreshSubstrates: vi.fn(),
+    } as NavigationContextValue;
+
+    navigationSpy = vi
+      .spyOn(NavigationModule, 'useExperimentNavigation')
+      .mockImplementation(() => navigationState);
+
+    const baseWindow = originalWindow ?? (globalThis as { window?: Window }).window;
+    if (!baseWindow) {
+      throw new Error('Phase3Loops component tests require a window environment.');
+    }
+
+    (globalThis as any).window = baseWindow;
+    Object.assign(baseWindow as unknown as Record<string, unknown>, {
+      CWT: {
+        artifacts: {
+          readFile: readFileMock,
+        },
+        registry: {
+          query: vi.fn(),
+        },
+      },
+    });
+    readFileMock.mockReset();
+  });
+
+  afterEach(() => {
+    navigationSpy?.mockRestore();
+    navigationSpy = null;
+    cleanup();
+    vi.clearAllMocks();
+    const currentWindow = (globalThis as { window?: Window }).window;
+    if (currentWindow && 'CWT' in currentWindow) {
+      delete (currentWindow as Record<string, unknown>).CWT;
+    }
+  });
+
+  it('extends the amplitude slider max using summary amplitudes', async () => {
+    readFileMock.mockResolvedValue({
+      ok: true,
+      data: {
+        contents: JSON.stringify({
+          amplitudes: [0.75, 0.52, 0.61],
+          graph: 'ring3',
+        }),
+      },
+    });
+
+    render(<Phase3Loops />);
+
+    const rhoSlider = (await screen.findByRole('slider', { name: /ρ amplitude/i })) as HTMLInputElement;
+
+    await waitFor(() => {
+      expect(readFileMock).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      const max = Number((rhoSlider as HTMLInputElement).max);
+      expect(max).toBeGreaterThan(0.75);
+    });
+  });
+
+  it('allows manual amplitude entries beyond the default range', async () => {
+    readFileMock.mockResolvedValue({ ok: false });
+    navigationState = {
+      ...navigationState,
+      selectedSubstratePath: null,
+    } as NavigationContextValue;
+
+    render(<Phase3Loops />);
+
+    const user = userEvent.setup();
+    const tauSlider = (await screen.findByRole('slider', { name: /τ amplitude/i })) as HTMLInputElement;
+    const tauInput = screen.getByRole('spinbutton', { name: 'τ amplitude value' });
+
+    await user.clear(tauInput);
+    await user.type(tauInput, '0.85');
+
+    await waitFor(() => {
+      expect(Number(tauSlider.value)).toBeCloseTo(0.85, 2);
+    });
+
+    const sliderMax = Number(tauSlider.max);
+    expect(sliderMax).toBeGreaterThan(0.85);
   });
 });
