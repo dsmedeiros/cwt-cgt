@@ -1,7 +1,18 @@
-# Default axis mapping for baseline simulations. This file acts as a placeholder
-# for downstream tooling that expects structured axis metadata alongside
-# generated arrays.
+# Canonical axis labels shared across baseline simulations and artifact writers.
 axes:
   time: steps
   nodes: vertex
   ensembles: run
+models:
+  ising:
+    axes:
+      tau: temperature
+  kuramoto:
+    axes:
+      kappa: coupling
+  percolation:
+    axes:
+      rho: occupation_probability
+  sis:
+    axes:
+      zeta: infection_rate
