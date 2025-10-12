@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { GuidedLoopArgs, LoopAtHotspotPayload, RegistryRunRecord } from '../types/ipc';
 import { runs } from '../ipc';
@@ -839,6 +839,8 @@ const Phase3Loops = () => {
     [manualPlaneAxes],
   );
   const [graph, setGraph] = useState(graphOptions[0].id);
+  const [graphManuallySet, setGraphManuallySet] = useState(false);
+  const previousHotspotIdRef = useRef<string | null>(null);
   const [activeTab, setActiveTab] = useState<'simple' | 'guided'>('guided');
 
   const {
@@ -912,6 +914,37 @@ const Phase3Loops = () => {
     () => hotspots.find((hotspot) => hotspot.id === selectedHotspotId) ?? hotspots[0],
     [hotspots, selectedHotspotId],
   );
+
+  const handleGraphChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
+    setGraph(event.target.value);
+    setGraphManuallySet(true);
+  }, []);
+
+  useEffect(() => {
+    const hotspotId = selectedHotspot?.id ?? null;
+    const previousId = previousHotspotIdRef.current;
+    const hotspotChanged = hotspotId !== previousId;
+
+    previousHotspotIdRef.current = hotspotId;
+
+    if (hotspotChanged) {
+      setGraphManuallySet(false);
+    }
+
+    const graphCandidate =
+      typeof selectedHotspot?.graph === 'string' ? selectedHotspot.graph.trim() : '';
+    if (!graphCandidate) {
+      return;
+    }
+
+    const normalized = graphOptions.some((option) => option.id === graphCandidate)
+      ? graphCandidate
+      : graphOptions[0].id;
+
+    if (hotspotChanged || !graphManuallySet) {
+      setGraph((prev) => (prev === normalized ? prev : normalized));
+    }
+  }, [graphManuallySet, selectedHotspot]);
 
   const [discoveryPlane, setDiscoveryPlane] = useState<[HotspotAxis, HotspotAxis]>(() =>
     getHotspotAxes(selectedHotspot),
@@ -1922,7 +1955,7 @@ const Phase3Loops = () => {
 
           <section className="phase3__section">
             <h3>Graph</h3>
-            <select value={graph} onChange={(event) => setGraph(event.target.value)}>
+            <select value={graph} onChange={handleGraphChange}>
               {graphOptions.map((option) => (
                 <option key={option.id} value={option.id} title={option.help}>
                   {option.label}
