@@ -910,6 +910,7 @@ const Phase3Loops = () => {
   const [graphInferenceError, setGraphInferenceError] = useState<string | null>(null);
   const inferredGraphCacheRef = useRef(new Map<string, string>());
   const [activeTab, setActiveTab] = useState<'simple' | 'guided'>('guided');
+  const [summaryAmplitudes, setSummaryAmplitudes] = useState<number[] | null>(null);
 
   const {
     experiments,
@@ -1087,6 +1088,70 @@ const Phase3Loops = () => {
     };
   }, [selectedSubstratePath, substrates]);
 
+  useEffect(() => {
+    setSummaryAmplitudes(null);
+    if (!selectedSubstratePath) {
+      return;
+    }
+
+    const api = typeof window !== 'undefined' ? window?.CWT?.artifacts : undefined;
+    if (!api?.readFile) {
+      return;
+    }
+
+    let cancelled = false;
+    const summaryPath = joinArtifactPath(selectedSubstratePath, PHASE3_SUMMARY_FILENAME);
+
+    const loadSummary = async () => {
+      try {
+        const response = await api.readFile({ path: summaryPath });
+        if (cancelled || !response?.ok) {
+          return;
+        }
+        const payload = response.data as { contents?: unknown } | null;
+        const contents = typeof payload?.contents === 'string' ? payload.contents : '';
+        if (!contents) {
+          return;
+        }
+
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(contents);
+        } catch (error) {
+          console.warn('Failed to parse Phase 3 summary while reading amplitudes:', error);
+          return;
+        }
+        if (cancelled) {
+          return;
+        }
+        const amplitudesRaw = Array.isArray((parsed as { amplitudes?: unknown }).amplitudes)
+          ? ((parsed as { amplitudes?: unknown }).amplitudes as unknown[])
+          : null;
+        if (!amplitudesRaw) {
+          return;
+        }
+        const sanitized = amplitudesRaw
+          .map((value) => Number(value))
+          .filter((value) => Number.isFinite(value) && Math.abs(value) > 0)
+          .map((value) => Math.abs(value));
+        if (sanitized.length === 0 || cancelled) {
+          return;
+        }
+        setSummaryAmplitudes(sanitized);
+      } catch (error) {
+        if (!cancelled) {
+          console.warn('Failed to read Phase 3 summary while loading amplitudes:', error);
+        }
+      }
+    };
+
+    void loadSummary();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedSubstratePath]);
+
   const [discoveryPlane, setDiscoveryPlane] = useState<[HotspotAxis, HotspotAxis]>(() =>
     getHotspotAxes(selectedHotspot),
   );
@@ -1205,6 +1270,49 @@ const Phase3Loops = () => {
     [experimentAxes],
   );
 
+  const amplitudeSliderMax = useMemo(() => {
+    const defaultMax = 0.4;
+    const candidates: number[] = [];
+
+    for (const axis of amplitudeAxes) {
+      const value = axisAmp(axis);
+      if (Number.isFinite(value) && value > 0) {
+        candidates.push(Math.abs(value));
+      }
+    }
+
+    if (Number.isFinite(kappaAmplitude) && kappaAmplitude > 0) {
+      candidates.push(Math.abs(kappaAmplitude));
+    }
+
+    if (summaryAmplitudes && summaryAmplitudes.length > 0) {
+      for (const value of summaryAmplitudes) {
+        if (Number.isFinite(value) && value > 0) {
+          candidates.push(Math.abs(value));
+        }
+      }
+    }
+
+    if (amplitudeGuidance?.symmetricAmplitude && amplitudeGuidance.symmetricAmplitude > 0) {
+      candidates.push(Math.abs(amplitudeGuidance.symmetricAmplitude));
+    }
+
+    if (candidates.length === 0) {
+      return defaultMax;
+    }
+
+    const highest = Math.max(...candidates);
+    const headroom = Math.max(highest * 0.1, 0.05);
+    const computed = highest + headroom;
+    return Math.max(defaultMax, Number(computed.toFixed(3)));
+  }, [
+    amplitudeAxes,
+    amplitudeGuidance?.symmetricAmplitude,
+    axisAmp,
+    kappaAmplitude,
+    summaryAmplitudes,
+  ]);
+
 
   useEffect(
     () => () => {
@@ -1272,6 +1380,7 @@ const Phase3Loops = () => {
     setGraph(defaultGraphId);
     setGraphInferenceError(null);
     inferredGraphCacheRef.current.clear();
+    setSummaryAmplitudes(null);
   }, [selectedExperimentPath, selectedSubstratePath]);
 
   const applyImportedHotspots = useCallback(
@@ -2386,14 +2495,24 @@ const Phase3Loops = () => {
                   return (
                     <label key={axis}>
                       <span>{axisLabel} amplitude</span>
-                      <input
-                        type="range"
-                        min="0"
-                        max="0.4"
-                        step="0.01"
-                        value={value}
-                        onChange={(event) => setAxisAmplitude(axis, Number(event.target.value))}
-                      />
+                      <div className="phase3__amplitude-inputs">
+                        <input
+                          type="range"
+                          min="0"
+                          max={amplitudeSliderMax}
+                          step="0.01"
+                          value={value}
+                          onChange={(event) => setAxisAmplitude(axis, Number(event.target.value))}
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={value}
+                          aria-label={`${axisLabel} amplitude value`}
+                          onChange={(event) => setAxisAmplitude(axis, Number(event.target.value))}
+                        />
+                      </div>
                       <code>{value.toFixed(2)}</code>
                       <small className="field-hint">{tooltip}</small>
                     </label>
@@ -2401,14 +2520,24 @@ const Phase3Loops = () => {
                 })}
                 <label>
                   <span>κ amplitude</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="0.4"
-                    step="0.01"
-                    value={kappaAmplitude}
-                    onChange={(event) => setKappaAmplitude(Number(event.target.value))}
-                  />
+                  <div className="phase3__amplitude-inputs">
+                    <input
+                      type="range"
+                      min="0"
+                      max={amplitudeSliderMax}
+                      step="0.01"
+                      value={kappaAmplitude}
+                      onChange={(event) => setKappaAmplitude(Number(event.target.value))}
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={kappaAmplitude}
+                      aria-label="κ amplitude value"
+                      onChange={(event) => setKappaAmplitude(Number(event.target.value))}
+                    />
+                  </div>
                   <code>{kappaAmplitude.toFixed(2)}</code>
                   <small className="field-hint">Gives the 3-axis loop nonzero enclosed area so Φ can register.</small>
                 </label>
