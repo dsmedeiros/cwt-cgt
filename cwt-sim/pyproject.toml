@@ -15,7 +15,7 @@ target-version = ["py312"]
 [tool.ruff]
 line-length = 110
 target-version = "py312"
-src = ["cwt", "experiments", "tests"]
+src = ["baselines", "cwt", "experiments", "tests"]
 extend-exclude = ["configs", "notebooks", "scripts"]
 
 [tool.ruff.lint]
@@ -24,7 +24,7 @@ ignore = ["E203"]
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
-known-first-party = ["cwt", "experiments"]
+known-first-party = ["baselines", "cwt", "experiments"]
 
 [tool.mypy]
 python_version = "3.12"

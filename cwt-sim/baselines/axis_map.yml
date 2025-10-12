@@ -1,0 +1,7 @@
+# Default axis mapping for baseline simulations. This file acts as a placeholder
+# for downstream tooling that expects structured axis metadata alongside
+# generated arrays.
+axes:
+  time: steps
+  nodes: vertex
+  ensembles: run
