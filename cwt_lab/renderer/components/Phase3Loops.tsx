@@ -1,4 +1,4 @@
-import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { GuidedLoopArgs, LoopAtHotspotPayload, RegistryRunRecord } from '../types/ipc';
 import { runs } from '../ipc';
@@ -140,18 +140,81 @@ const defaultHotspots: Hotspot[] = [
   },
 ];
 
-const graphOptions = [
+const graphCatalog: Record<
+  string,
   {
-    id: 'ring3',
+    label: string;
+    help: string;
+    aliases: readonly string[];
+  }
+> = {
+  ring3: {
     label: 'Ring-3 triad',
     help: 'Deterministic three-node loop useful for verifying calibrations and guard thresholds.',
+    aliases: ['ring-3', 'ring_3'],
   },
-  {
-    id: 'random_regular',
+  random_regular: {
     label: 'Random regular (20 nodes)',
     help: 'Generates a 20-node 3-regular digraph using the selected seed to stress-test the loop.',
+    aliases: ['random-regular', 'randomregular'],
   },
-];
+};
+
+const graphIds = Object.keys(graphCatalog);
+
+const defaultGraphId = graphIds[0] ?? 'ring3';
+
+const matchesGraphAlias = (value: string, alias: string) => {
+  const normalizedValue = value.toLowerCase();
+  const normalizedAlias = alias.toLowerCase();
+  if (!normalizedAlias) {
+    return false;
+  }
+  const sanitizedValue = normalizedValue.replace(/[^a-z0-9]/g, '');
+  const sanitizedAlias = normalizedAlias.replace(/[^a-z0-9]/g, '');
+  if (
+    sanitizedAlias &&
+    (sanitizedValue === sanitizedAlias ||
+      sanitizedValue.startsWith(sanitizedAlias) ||
+      sanitizedValue.endsWith(sanitizedAlias) ||
+      (sanitizedAlias.length >= 4 && sanitizedValue.includes(sanitizedAlias)))
+  ) {
+    return true;
+  }
+  const valueTokens = normalizedValue.split(/[^a-z0-9]+/).filter(Boolean);
+  const aliasTokens = normalizedAlias.split(/[^a-z0-9]+/).filter(Boolean);
+  if (aliasTokens.length === 0) {
+    return false;
+  }
+  let startIndex = 0;
+  for (const token of aliasTokens) {
+    const index = valueTokens.indexOf(token, startIndex);
+    if (index === -1) {
+      return false;
+    }
+    startIndex = index + 1;
+  }
+  return true;
+};
+
+const canonicalGraphId = (value: unknown): string | null => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  for (const [graphId, metadata] of Object.entries(graphCatalog)) {
+    const aliases = [graphId, ...(metadata.aliases ?? [])];
+    if (aliases.some((alias) => matchesGraphAlias(trimmed, alias))) {
+      return graphId;
+    }
+  }
+  return null;
+};
+
+const graphLabel = (graph: string) => graphCatalog[graph]?.label ?? graph;
 
 const safeNumber = (value: number) => Number(value.toFixed(4));
 
@@ -175,6 +238,9 @@ const manualPlaneMismatchWarning =
   'Manual plane selection diverges from the Phase 2 discovery plane. Guided heuristics assume the discovered axes pair; realign them before continuing.';
 
 let hasWarnedMissingCoordinate = false;
+
+const missingSubstrateGraphMessage =
+  'Substrate metadata is missing a graph label. Phase 3 loops remain disabled until metadata is available.';
 
 const getHotspotCoordinate = (axis: HotspotAxis | string, hotspot: Hotspot): number => {
   const canonical = axisAliasToHotspotAxis(String(axis)) ?? null;
@@ -614,6 +680,7 @@ export const previewGuidedCli = async (payload: GuidedLoopArgs): Promise<string>
   }
 
   const { stepsList, summary: _summary, ...rest } = payload;
+  void _summary;
   const baseParams: Record<string, unknown> = { ...rest };
   const previews: string[] = [];
 
@@ -793,6 +860,7 @@ const buildGuidedFailureReasons = ({
 
 const Phase3Loops = () => {
   const [hotspots, setHotspots] = useState<Hotspot[]>(defaultHotspots);
+  const [experimentAxes, setExperimentAxes] = useState<HotspotAxis[]>(hotspotAxisOrder);
   const [selectedHotspotId, setSelectedHotspotId] = useState<string>(defaultHotspots[0].id);
   const [manualPlaneAxes, setManualPlaneAxes] = useState<[HotspotAxis, HotspotAxis]>([
     defaultPlaneAxes[0],
@@ -838,9 +906,9 @@ const Phase3Loops = () => {
     () => hotspotAxisOrder.filter((axis) => !manualPlaneAxes.includes(axis)),
     [manualPlaneAxes],
   );
-  const [graph, setGraph] = useState(graphOptions[0].id);
-  const [graphManuallySet, setGraphManuallySet] = useState(false);
-  const previousHotspotIdRef = useRef<string | null>(null);
+  const [graph, setGraph] = useState<string | null>(defaultGraphId);
+  const [graphInferenceError, setGraphInferenceError] = useState<string | null>(null);
+  const inferredGraphCacheRef = useRef(new Map<string, string>());
   const [activeTab, setActiveTab] = useState<'simple' | 'guided'>('guided');
 
   const {
@@ -915,36 +983,109 @@ const Phase3Loops = () => {
     [hotspots, selectedHotspotId],
   );
 
-  const handleGraphChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
-    setGraph(event.target.value);
-    setGraphManuallySet(true);
-  }, []);
+  useEffect(() => {
+    const candidate = canonicalGraphId(selectedHotspot?.graph ?? null);
+    if (candidate) {
+      setGraph((prev) => (prev === candidate ? prev : candidate));
+      setGraphInferenceError(null);
+      if (selectedSubstratePath) {
+        inferredGraphCacheRef.current.set(selectedSubstratePath, candidate);
+      }
+    }
+  }, [selectedHotspot, selectedSubstratePath]);
 
   useEffect(() => {
-    const hotspotId = selectedHotspot?.id ?? null;
-    const previousId = previousHotspotIdRef.current;
-    const hotspotChanged = hotspotId !== previousId;
-
-    previousHotspotIdRef.current = hotspotId;
-
-    if (hotspotChanged) {
-      setGraphManuallySet(false);
-    }
-
-    const graphCandidate =
-      typeof selectedHotspot?.graph === 'string' ? selectedHotspot.graph.trim() : '';
-    if (!graphCandidate) {
+    if (!selectedSubstratePath) {
+      setGraph((prev) => (prev === defaultGraphId ? prev : defaultGraphId));
+      setGraphInferenceError(null);
       return;
     }
 
-    const normalized = graphOptions.some((option) => option.id === graphCandidate)
-      ? graphCandidate
-      : graphOptions[0].id;
+    setGraphInferenceError(null);
 
-    if (hotspotChanged || !graphManuallySet) {
-      setGraph((prev) => (prev === normalized ? prev : normalized));
+    const cached = inferredGraphCacheRef.current.get(selectedSubstratePath);
+    if (cached) {
+      setGraph((prev) => (prev === cached ? prev : cached));
+      setGraphInferenceError(null);
+      return;
     }
-  }, [graphManuallySet, selectedHotspot]);
+
+    const substrateNode = substrates.find((node) => node.path === selectedSubstratePath);
+    const directCandidate =
+      canonicalGraphId(substrateNode?.name ?? null) ||
+      canonicalGraphId(substrateNode?.relativePath ?? null) ||
+      canonicalGraphId(selectedSubstratePath);
+    if (directCandidate) {
+      inferredGraphCacheRef.current.set(selectedSubstratePath, directCandidate);
+      setGraph((prev) => (prev === directCandidate ? prev : directCandidate));
+      setGraphInferenceError(null);
+      return;
+    }
+
+    let cancelled = false;
+    const markMissing = () => {
+      if (cancelled) {
+        return;
+      }
+      setGraph((prev) => (prev === null ? prev : null));
+      setGraphInferenceError(missingSubstrateGraphMessage);
+    };
+
+    setGraph((prev) => (prev === null ? prev : null));
+
+    const inferFromSummary = async () => {
+      const api = typeof window !== 'undefined' ? window?.CWT?.artifacts : undefined;
+      if (!api?.readFile) {
+        markMissing();
+        return;
+      }
+
+      const summaryPath = joinArtifactPath(selectedSubstratePath, PHASE3_SUMMARY_FILENAME);
+      try {
+        const response = await api.readFile({ path: summaryPath });
+        if (!response.ok) {
+          markMissing();
+          return;
+        }
+        const payload = response.data as { contents?: unknown } | null;
+        const contents = typeof payload?.contents === 'string' ? payload.contents : '';
+        if (!contents) {
+          markMissing();
+          return;
+        }
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(contents);
+        } catch (error) {
+          console.warn('Failed to parse Phase 3 summary while inferring graph:', error);
+          markMissing();
+          return;
+        }
+        if (cancelled) {
+          return;
+        }
+        const summaryGraph =
+          canonicalGraphId((parsed as { graph?: unknown }).graph ?? null) ||
+          canonicalGraphId((parsed as { metadata?: { graph?: unknown } }).metadata?.graph ?? null);
+        if (summaryGraph) {
+          inferredGraphCacheRef.current.set(selectedSubstratePath, summaryGraph);
+          setGraph((prev) => (prev === summaryGraph ? prev : summaryGraph));
+          setGraphInferenceError(null);
+          return;
+        }
+        markMissing();
+      } catch (error) {
+        console.warn('Failed to read Phase 3 summary while inferring graph:', error);
+        markMissing();
+      }
+    };
+
+    void inferFromSummary();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedSubstratePath, substrates]);
 
   const [discoveryPlane, setDiscoveryPlane] = useState<[HotspotAxis, HotspotAxis]>(() =>
     getHotspotAxes(selectedHotspot),
@@ -1056,6 +1197,14 @@ const Phase3Loops = () => {
     [setKappaAmplitude, setRhoAmplitude, setTauAmplitude, setZetaAmplitude, setZetaPhaseAmplitude],
   );
 
+  const amplitudeAxes = useMemo(
+    () =>
+      experimentAxes.filter(
+        (axis): axis is Exclude<HotspotAxis, 'kappa'> => axis !== 'kappa',
+      ),
+    [experimentAxes],
+  );
+
 
   useEffect(
     () => () => {
@@ -1119,12 +1268,40 @@ const Phase3Loops = () => {
     setGuidedResult(null);
     setHotspots(defaultHotspots.map((hotspot) => ({ ...hotspot })));
     setSelectedHotspotId(defaultHotspots[0].id);
+    setExperimentAxes(hotspotAxisOrder);
+    setGraph(defaultGraphId);
+    setGraphInferenceError(null);
+    inferredGraphCacheRef.current.clear();
   }, [selectedExperimentPath, selectedSubstratePath]);
 
   const applyImportedHotspots = useCallback(
     (entries: Phase1HotspotEntry[], originKey: string, sourceLabel: string) => {
       const normalizedOrigin = normalizeOrigin(originKey) || originKey;
       const effectiveOrigin = normalizedOrigin || originKey;
+
+      const axesSeen = new Set<HotspotAxis>();
+      entries.forEach((entry) => {
+        entry.axes.forEach((axis) => axesSeen.add(axis));
+        for (const axis of hotspotAxisOrder) {
+          const value = entry.coordinates?.[axis];
+          if (typeof value === 'number' && Number.isFinite(value)) {
+            axesSeen.add(axis);
+          }
+        }
+      });
+      axesSeen.add('kappa');
+      const sortedAxes = hotspotAxisOrder.filter((axis) => axesSeen.has(axis));
+      setExperimentAxes(sortedAxes.length > 0 ? sortedAxes : hotspotAxisOrder);
+
+      const inferredGraph = canonicalGraphId(originKey);
+      if (inferredGraph) {
+        setGraph((prev) => (prev === inferredGraph ? prev : inferredGraph));
+        setGraphInferenceError(null);
+        if (selectedSubstratePath) {
+          inferredGraphCacheRef.current.set(selectedSubstratePath, inferredGraph);
+        }
+      }
+
       const created: Hotspot[] = entries.map((entry, index) => {
         const omegaLabel = formatOmega(entry.omegaAbs);
         const suffix = omegaLabel ? ` (|Ω| ${omegaLabel})` : '';
@@ -1162,7 +1339,15 @@ const Phase3Loops = () => {
       setImportError(null);
       setImportMessage(`Loaded ${created.length} hotspots from ${sourceLabel}.`);
     },
-    [setHotspots],
+    [
+      inferredGraphCacheRef,
+      selectedSubstratePath,
+      setExperimentAxes,
+      setHotspots,
+      setImportError,
+      setImportMessage,
+      setSelectedHotspotId,
+    ],
   );
 
   const importFromPhase1Run = useCallback(async () => {
@@ -1335,6 +1520,9 @@ const Phase3Loops = () => {
   const adaptLevelsError = formatValidationMessage(adaptLevelsValidation);
 
   const simpleRunDisabledReason = useMemo(() => {
+    if (selectedSubstratePath && !graph) {
+      return missingSubstrateGraphMessage;
+    }
     if (!extentAValidation.ok) {
       return extentAValidation.message;
     }
@@ -1355,15 +1543,20 @@ const Phase3Loops = () => {
     }
     return undefined;
   }, [
+    adaptLevelsValidation,
     extentAValidation,
     extentBValidation,
     fsGuardValidation,
-    simpleLimitValidation,
+    graph,
     neighborSettleValidation,
-    adaptLevelsValidation,
+    selectedSubstratePath,
+    simpleLimitValidation,
   ]);
 
   const guidedRunDisabledReason = useMemo(() => {
+    if (selectedSubstratePath && !graph) {
+      return missingSubstrateGraphMessage;
+    }
     if (!fsGuardValidation.ok) {
       return fsGuardValidation.message;
     }
@@ -1371,7 +1564,13 @@ const Phase3Loops = () => {
       return 'Add at least one valid step.';
     }
     return undefined;
-  }, [fsGuardValidation, guidedSteps.length, hasGuidedStepError]);
+  }, [
+    fsGuardValidation,
+    graph,
+    guidedSteps.length,
+    hasGuidedStepError,
+    selectedSubstratePath,
+  ]);
 
   const isSimpleRunDisabled = isSimpleRunning || Boolean(simpleRunDisabledReason);
   const isGuidedRunDisabled =
@@ -1431,6 +1630,12 @@ const Phase3Loops = () => {
 
     if (!selectedSubstratePath) {
       setImportError('Select a substrate before running the validator.');
+      setImportMessage(null);
+      return;
+    }
+
+    if (!graph) {
+      setImportError(missingSubstrateGraphMessage);
       setImportMessage(null);
       return;
     }
@@ -1531,6 +1736,12 @@ const Phase3Loops = () => {
 
     if (!selectedSubstratePath) {
       setImportError('Select a substrate before running the guided explorer.');
+      setImportMessage(null);
+      return;
+    }
+
+    if (!graph) {
+      setImportError(missingSubstrateGraphMessage);
       setImportMessage(null);
       return;
     }
@@ -1728,7 +1939,7 @@ const Phase3Loops = () => {
     const [ampA, ampB, ampC] = payload.amplitudes;
 
     return {
-      graph: graphOptions.find((option) => option.id === payload.graph)?.label ?? payload.graph,
+      graph: graphLabel(payload.graph),
       steps: payload.stepsList.join(', '),
       guard: payload.fsGuard != null ? toCliValue(payload.fsGuard) : 'n/a',
       minPhi: payload.minPhi != null ? toCliValue(payload.minPhi) : 'n/a',
@@ -1953,16 +2164,6 @@ const Phase3Loops = () => {
             </button>
           </section>
 
-          <section className="phase3__section">
-            <h3>Graph</h3>
-            <select value={graph} onChange={handleGraphChange}>
-              {graphOptions.map((option) => (
-                <option key={option.id} value={option.id} title={option.help}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </section>
         </aside>
 
         <div className="phase3__main">
@@ -1981,6 +2182,9 @@ const Phase3Loops = () => {
                 ×
               </button>
             </div>
+          ) : null}
+          {graphInferenceError ? (
+            <p className="phase3__error" role="alert">{graphInferenceError}</p>
           ) : null}
           <div className="phase3__tabs">
             <button
@@ -2145,7 +2349,7 @@ const Phase3Loops = () => {
                               {formatPlaneSummary(run.hotspot)}
                             </small>
                           </td>
-                          <td>{graphOptions.find((option) => option.id === run.graph)?.label ?? run.graph}</td>
+                          <td>{graphLabel(run.graph)}</td>
                           <td>{run.metrics.fsP95.toFixed(3)}</td>
                           <td>{run.metrics.phi.toFixed(3)}</td>
                           <td>{run.metrics.r.toFixed(3)}</td>
@@ -2170,33 +2374,31 @@ const Phase3Loops = () => {
                 <span className="badge">{`Plane: ${discoveryAxisILabel}–${discoveryAxisJLabel} (from Phase 2)`}</span>
               </div>
               <div className="phase3__grid phase3__grid--guided">
-                {hotspotAxisOrder
-                  .filter((axis): axis is Exclude<HotspotAxis, 'kappa'> => axis !== 'kappa')
-                  .map((axis) => {
-                    const axisLabel = labelForAxis(axis);
-                    const tooltip =
-                      axis === selectedAxisI
-                        ? `Half-width of the sweep along ${axisLabel} when guiding the loop.`
-                        : axis === selectedAxisJ
+                {amplitudeAxes.map((axis) => {
+                  const axisLabel = labelForAxis(axis);
+                  const tooltip =
+                    axis === selectedAxisI
+                      ? `Half-width of the sweep along ${axisLabel} when guiding the loop.`
+                      : axis === selectedAxisJ
                         ? `Adjust to explore broader ${axisLabel} excursions without overshooting.`
                         : `${axisLabel} amplitude is saved for use when swapping it into the ${selectedAxisILabel}/${selectedAxisJLabel} plane.`;
-                    const value = axisAmp(axis);
-                    return (
-                      <label key={axis}>
-                        <span>{axisLabel} amplitude</span>
-                        <input
-                          type="range"
-                          min="0"
-                          max="0.4"
-                          step="0.01"
-                          value={value}
-                          onChange={(event) => setAxisAmplitude(axis, Number(event.target.value))}
-                        />
-                        <code>{value.toFixed(2)}</code>
-                        <small className="field-hint">{tooltip}</small>
-                      </label>
-                    );
-                  })}
+                  const value = axisAmp(axis);
+                  return (
+                    <label key={axis}>
+                      <span>{axisLabel} amplitude</span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="0.4"
+                        step="0.01"
+                        value={value}
+                        onChange={(event) => setAxisAmplitude(axis, Number(event.target.value))}
+                      />
+                      <code>{value.toFixed(2)}</code>
+                      <small className="field-hint">{tooltip}</small>
+                    </label>
+                  );
+                })}
                 <label>
                   <span>κ amplitude</span>
                   <input
