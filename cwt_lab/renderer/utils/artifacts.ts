@@ -111,7 +111,7 @@ const HEATMAP_PATTERN = /\/(heatmaps\.png|omega_heatmap\.png)$/;
 const SUBSTRATE_MARKERS = new Set(['substrate', 'substrates']);
 
 const formatPhase1Label = (value: string, fallback: string): string => {
-  const sanitized = value.replace(/[_\-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const sanitized = value.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
   return sanitized.length > 0 ? sanitized : fallback;
 };
 
