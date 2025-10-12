@@ -38,7 +38,9 @@ def _build_ring3(n: int) -> nx.Graph:
     return nx.cycle_graph(n)
 
 
-def _build_erdos_renyi(n: int, p: float, *, seed: int | None, directed: bool) -> nx.Graph:
+def _build_erdos_renyi(
+    n: int, p: float, *, seed: int | None, directed: bool
+) -> nx.Graph:
     if directed:
         return nx.erdos_renyi_graph(n, p, seed=seed, directed=True)
     return nx.erdos_renyi_graph(n, p, seed=seed)
@@ -59,7 +61,9 @@ def _build_scale_free(n: int, *, seed: int | None) -> nx.Graph:
     return nx.Graph(G)  # collapse multi-edges and directions
 
 
-def _build_modular(communities: int, size: int, p_in: float, p_out: float, *, seed: int | None) -> nx.Graph:
+def _build_modular(
+    communities: int, size: int, p_in: float, p_out: float, *, seed: int | None
+) -> nx.Graph:
     return nx.planted_partition_graph(communities, size, p_in, p_out, seed=seed)
 
 
@@ -78,7 +82,9 @@ _GRAPH_BUILDERS: dict[str, Callable[..., nx.Graph]] = {
 }
 
 
-def graph_factory(kind: str, *, seed: int | None = None, **kwargs: float | int | bool) -> nx.Graph:
+def graph_factory(
+    kind: str, *, seed: int | None = None, **kwargs: float | int | bool
+) -> nx.Graph:
     """Create a graph with sensible defaults for several common families."""
 
     try:
@@ -102,7 +108,9 @@ def graph_factory(kind: str, *, seed: int | None = None, **kwargs: float | int |
         n = int(kwargs.pop("n", 10))
         degree = int(kwargs.pop("degree", 3))
         if kwargs:
-            raise TypeError(f"Unexpected parameters for random_regular: {sorted(kwargs)}")
+            raise TypeError(
+                f"Unexpected parameters for random_regular: {sorted(kwargs)}"
+            )
         return builder(n, degree, seed=seed)
     if kind == "small_world":
         n = int(kwargs.pop("n", 10))
