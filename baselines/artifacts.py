@@ -101,6 +101,7 @@ def write_heatmap_png(
     fig, ax = plt.subplots(figsize=figure_size)
 
     mask = ~np.isfinite(grid)
+    invert_y_axis = False
     if sns is not None:
         sns.heatmap(
             grid,
@@ -111,6 +112,7 @@ def write_heatmap_png(
             yticklabels=[_format_tick(value) for value in specs[0]["values"]],
             cbar_kws={"label": r"|Ω|"},
         )
+        invert_y_axis = True
     else:
         im = ax.imshow(grid, cmap=cmap, aspect="auto", origin="lower")
         fig.colorbar(im, ax=ax, label=r"|Ω|")
@@ -126,7 +128,8 @@ def write_heatmap_png(
     ax.set_xlabel(axis_labels[specs[1]["name"]])
     ax.set_ylabel(axis_labels[specs[0]["name"]])
     ax.set_title(r"|Ω| heatmap")
-    ax.invert_yaxis()
+    if invert_y_axis:
+        ax.invert_yaxis()
     fig.tight_layout()
 
     destination = out_path / filename
