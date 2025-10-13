@@ -7,7 +7,6 @@ models:
   ising:
     axes:
       tau: temperature
-      eta: field
   kuramoto:
     axes:
       kappa: coupling
