@@ -296,7 +296,18 @@ def spearman_correlation(x: Sequence[float], y: Sequence[float]) -> float:
 
 
 def _rankdata(values: np.ndarray) -> np.ndarray:
-    sorter = np.argsort(values)
-    ranks = np.empty_like(sorter, dtype=float)
-    ranks[sorter] = np.arange(1, len(values) + 1)
+    sorter = np.argsort(values, kind="mergesort")
+    ranks = np.empty_like(values, dtype=float)
+    sorted_values = values[sorter]
+
+    start = 0
+    n = len(values)
+    while start < n:
+        end = start + 1
+        while end < n and sorted_values[end] == sorted_values[start]:
+            end += 1
+        average_rank = 0.5 * ((start + 1) + end)
+        ranks[sorter[start:end]] = average_rank
+        start = end
+
     return ranks
