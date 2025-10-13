@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from baselines.common import graph_factory, grid_points  # noqa: E402
+from baselines.common import graph_factory, grid_points, spearman_correlation  # noqa: E402
 
 
 @pytest.mark.parametrize(
@@ -68,3 +68,9 @@ def test_grid_points_requires_complete_specification() -> None:
 
     with pytest.raises(ValueError):
         grid_points({"x": (0.0, 1.0)}, {"x": 0})
+
+
+def test_spearman_correlation_with_ties() -> None:
+    x = [1.0, 1.0, 2.0]
+    y = [3.0, 4.0, 4.0]
+    assert spearman_correlation(x, y) == pytest.approx(0.5)
