@@ -1,6 +1,6 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 
 import * as NavigationModule from '../../navigation/ExperimentNavigationContext';
 import Phase3Loops, { buildGuidedPayload, previewGuidedCli } from '../Phase3Loops';
@@ -21,7 +21,7 @@ const originalWindow = (globalThis as { window?: Window }).window;
 type NavigationContextValue = ReturnType<typeof NavigationModule.useExperimentNavigation>;
 
 let navigationState: NavigationContextValue;
-let navigationSpy: ReturnType<typeof vi.spyOn<typeof NavigationModule, 'useExperimentNavigation'>> | null = null;
+let navigationSpy: MockInstance<[], NavigationContextValue> | null = null;
 
 describe('Phase3 guided helpers', () => {
   afterEach(() => {
@@ -187,7 +187,7 @@ describe('Phase3Loops component amplitude controls', () => {
     vi.clearAllMocks();
     const currentWindow = (globalThis as { window?: Window }).window;
     if (currentWindow && 'CWT' in currentWindow) {
-      delete (currentWindow as Record<string, unknown>).CWT;
+      delete (currentWindow as { CWT?: unknown }).CWT;
     }
   });
 

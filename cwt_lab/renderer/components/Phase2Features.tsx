@@ -142,11 +142,17 @@ const Phase2Features = () => {
     return children.filter((child) => child.type === 'directory');
   }, [selectedExperiment]);
 
-  const selectedSubstrateNode = useMemo(
-    () =>
-      availableRunDirs.find((child) => child.path === selectedSubstratePath) ?? null,
-    [availableRunDirs, selectedSubstratePath],
+  const navigationErrors = useMemo(
+    () => [experimentsError, substratesError].filter((message): message is string => Boolean(message)),
+    [experimentsError, substratesError],
   );
+
+  const selectedSubstrateMissing = useMemo(() => {
+    if (!selectedSubstratePath) {
+      return false;
+    }
+    return !availableRunDirs.some((child) => child.path === selectedSubstratePath);
+  }, [availableRunDirs, selectedSubstratePath]);
 
   useEffect(() => {
     const childDirs = availableRunDirs;
@@ -517,6 +523,17 @@ const Phase2Features = () => {
           and per-sample scatter relationships before advancing to subsequent phases.
         </p>
       </header>
+
+      {navigationErrors.map((message, index) => (
+        <div key={`${message}-${index}`} className="phase2__error" role="alert">
+          {message}
+        </div>
+      ))}
+      {selectedSubstrateMissing ? (
+        <div className="phase2__error" role="alert">
+          Selected substrate is unavailable. Refresh the navigation list and try again.
+        </div>
+      ) : null}
 
       <section className="phase2__inputs" aria-labelledby="phase2-inputs-heading">
         <div className="phase2__inputs-heading">
