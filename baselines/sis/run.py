@@ -479,16 +479,22 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"Loop reports written to: {loop_path}")
 
     if axes[:2] == list(DEFAULT_AXES) and spectral_radius_value > 0 and not dataframe.empty:
-        hotspot_idx = dataframe["omega_abs"].astype(float).idxmax()
-        candidate = dataframe.loc[hotspot_idx]
-        ratio = float(candidate["infection_rate"] / candidate["recovery_rate"])
-        threshold = float(1.0 / spectral_radius_value)
-        deviation = abs(ratio - threshold)
-        print(
-            "Hotspot β/μ ratio:"
-            f" {ratio:.3f}; theoretical threshold 1/ρ(A) = {threshold:.3f};"
-            f" deviation = {deviation:.3f}"
-        )
+        if "omega_abs" in dataframe and dataframe["omega_abs"].notna().any():
+            hotspot_idx = dataframe["omega_abs"].astype(float).idxmax()
+            if not (isinstance(hotspot_idx, float) and math.isnan(hotspot_idx)):
+                candidate = dataframe.loc[hotspot_idx]
+                infection = float(candidate.get("infection_rate", float("nan")))
+                recovery = float(candidate.get("recovery_rate", float("nan")))
+                if math.isfinite(infection) and math.isfinite(recovery) and recovery != 0.0:
+                    ratio = infection / recovery
+                    threshold = float(1.0 / spectral_radius_value)
+                    deviation = abs(ratio - threshold)
+                    print(
+                        "Hotspot β/μ ratio:"
+                        f" {ratio:.3f}; theoretical threshold 1/ρ(A) = {threshold:.3f};"
+                        f" deviation = {deviation:.3f}"
+                    )
+
     return 0
 
 
