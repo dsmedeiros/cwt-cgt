@@ -127,6 +127,8 @@ const pickLatestRunDir = (root: string, before: Set<string>, after: Set<string>)
   return path.join(root, latest);
 };
 
+const BASELINE_RUNS_ROOT = '_baseline_runs';
+
 export const executeBaselineRun = async (
   payload: BaselineRunPayload,
   deps: BaselineRunDependencies,
@@ -136,11 +138,14 @@ export const executeBaselineRun = async (
   const uuid = deps.uuidFn ?? uuidv4;
   const runId = uuid();
 
+  const runScopedOutputDir =
+    payload.outputDir ?? path.join(artifactsRoot, BASELINE_RUNS_ROOT, runId);
+
   const options: BaselineCommandOptions = {
     strategy: env.strategy,
     model: payload.model,
     axisMap: payload.axisMap,
-    outputDir: payload.outputDir,
+    outputDir: runScopedOutputDir,
     steps: payload.steps,
     seed: payload.seed,
     args: payload.args,

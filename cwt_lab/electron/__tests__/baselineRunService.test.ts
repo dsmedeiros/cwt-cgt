@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
+import path from 'node:path';
 import { PassThrough } from 'node:stream';
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 
@@ -71,5 +72,41 @@ describe('executeBaselineRun', () => {
     expect(exits).toHaveLength(1);
     expect(exits[0].code).toBe(2);
     expect(errors).toEqual([{ runId: exits[0].runId, message: 'Baseline run exited with code 2' }]);
+  });
+
+  it('scopes baseline artifacts to the run identifier when no output directory is provided', async () => {
+    const runFolder = '20240101T120000__graph=grid__seed=1';
+    const uuidFn = vi.fn(() => 'run-1234');
+    const spawnMock = vi.fn(() =>
+      createChildProcess((child) => {
+        setImmediate(() => {
+          child.stdout.emit('data', Buffer.from('ok', 'utf-8'));
+          child.emit('close', 0, null);
+        });
+      }),
+    );
+
+    const readDirs = vi
+      .fn(async () => new Set<string>())
+      .mockResolvedValueOnce(new Set())
+      .mockResolvedValueOnce(new Set([runFolder]));
+
+    const payload = baselineRunPayloadSchema.parse({ model: 'ising' });
+
+    const result = await executeBaselineRun(payload, {
+      env: pythonEnv,
+      artifactsRoot,
+      spawnFn: spawnMock as unknown as typeof import('node:child_process').spawn,
+      uuidFn,
+      readRunDirs: readDirs,
+    });
+
+    expect(uuidFn).toHaveBeenCalledTimes(1);
+    expect(result.runId).toBe('run-1234');
+
+    const modelRoot = path.join(artifactsRoot, '_baseline_runs', 'run-1234', 'baselines', 'ising');
+    expect(readDirs).toHaveBeenNthCalledWith(1, modelRoot);
+    expect(readDirs).toHaveBeenNthCalledWith(2, modelRoot);
+    expect(result.outputDir).toBe(path.join(modelRoot, runFolder));
   });
 });
