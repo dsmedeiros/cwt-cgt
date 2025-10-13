@@ -12,6 +12,11 @@ import type {
   RunTailPayload,
   RunReadArtifactPayload,
   RunReadArtifactResult,
+  BaselineRunPayload,
+  BaselineRunResult,
+  BaselineRunStreamEvent,
+  BaselineRunExitEvent,
+  BaselineRunErrorEvent,
 } from './types/ipc';
 
 const unwrap = async <T>(
@@ -64,6 +69,24 @@ export const phase3 = {
       window?.CWT?.phase3?.browseHotspots?.(),
       'Phase-3 hotspot browser IPC is unavailable',
     );
+  },
+};
+
+export const baselines = {
+  async run(payload: BaselineRunPayload): Promise<BaselineRunResult> {
+    return unwrap(
+      window?.CWT?.baselines?.run?.(payload),
+      'Baseline runner IPC is unavailable',
+    );
+  },
+  onOutput(listener: (event: BaselineRunStreamEvent) => void): () => void {
+    return window?.CWT?.baselines?.onOutput?.(listener) ?? (() => {});
+  },
+  onExit(listener: (event: BaselineRunExitEvent) => void): () => void {
+    return window?.CWT?.baselines?.onExit?.(listener) ?? (() => {});
+  },
+  onError(listener: (event: BaselineRunErrorEvent) => void): () => void {
+    return window?.CWT?.baselines?.onError?.(listener) ?? (() => {});
   },
 };
 

@@ -13,6 +13,7 @@ export type BaselineRunPayload = {
   steps?: number | string | null;
   seed?: number | string | null;
   args?: Array<string | number | null>;
+  env?: Record<string, string | number | boolean | null | undefined> | null;
 };
 
 export type BaselineRunResult = {

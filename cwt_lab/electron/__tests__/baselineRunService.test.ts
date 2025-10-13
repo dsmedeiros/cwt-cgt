@@ -32,9 +32,11 @@ describe('executeBaselineRun', () => {
       outputDir: null,
       steps: '120',
       args: ['--flag'],
+      env: { CWT_LOOP_FS_GUARD: 0.75, EMPTY: '  ', nullish: null },
     });
     expect(parsed.axisMap).toBeNull();
     expect(parsed.args).toEqual(['--flag']);
+    expect(parsed.env).toEqual({ CWT_LOOP_FS_GUARD: '0.75', EMPTY: '  ' });
 
     expect(() => baselineRunPayloadSchema.parse({ model: 'unknown' } as unknown)).toThrow();
     expect(() => baselineRunPayloadSchema.parse({ model: 'ising', args: [null] } as unknown)).toThrow();
@@ -108,5 +110,34 @@ describe('executeBaselineRun', () => {
     expect(readDirs).toHaveBeenNthCalledWith(1, modelRoot);
     expect(readDirs).toHaveBeenNthCalledWith(2, modelRoot);
     expect(result.outputDir).toBe(path.join(modelRoot, runFolder));
+  });
+
+  it('merges custom environment variables into the spawned process', async () => {
+    const spawnMock = vi.fn(() =>
+      createChildProcess((child) => {
+        setImmediate(() => {
+          child.stdout.emit('data', Buffer.from('ok', 'utf-8'));
+          child.emit('close', 0, null);
+        });
+      }),
+    );
+
+    const payload = baselineRunPayloadSchema.parse({
+      model: 'ising',
+      env: { CWT_LOOP_FS_GUARD: '0.9', EXTRA_FLAG: 'enabled' },
+    });
+
+    await executeBaselineRun(payload, {
+      env: pythonEnv,
+      artifactsRoot,
+      spawnFn: spawnMock as unknown as typeof import('node:child_process').spawn,
+    });
+
+    expect(spawnMock).toHaveBeenCalledTimes(1);
+    const call = spawnMock.mock.calls[0];
+    const options = call?.[2] as { env?: NodeJS.ProcessEnv } | undefined;
+    expect(options?.env?.CWT_LOOP_FS_GUARD).toBe('0.9');
+    expect(options?.env?.EXTRA_FLAG).toBe('enabled');
+    expect(options?.env?.CWT_OUTPUT_DIR).toBeDefined();
   });
 });

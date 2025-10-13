@@ -40,6 +40,26 @@ const argsSchema = z
     return value.map((entry) => (typeof entry === 'number' ? entry : entry));
   });
 
+const envSchema = z
+  .union([z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])), z.undefined(), z.null()])
+  .transform((value) => {
+    if (!value) {
+      return null;
+    }
+    const entries: Record<string, string> = {};
+    for (const [key, rawValue] of Object.entries(value)) {
+      if (rawValue === null || rawValue === undefined) {
+        continue;
+      }
+      const normalizedKey = key.trim();
+      if (!normalizedKey) {
+        continue;
+      }
+      entries[normalizedKey] = String(rawValue);
+    }
+    return Object.keys(entries).length > 0 ? entries : null;
+  });
+
 export const baselineRunPayloadSchema = z
   .object({
     model: z.enum(['ising', 'kuramoto', 'percolation', 'sis']),
@@ -48,6 +68,7 @@ export const baselineRunPayloadSchema = z
     steps: optionalNumericSchema,
     seed: optionalNumericSchema,
     args: argsSchema,
+    env: envSchema,
   })
   .transform((value) => ({
     model: value.model as BaselineModel,
@@ -56,6 +77,7 @@ export const baselineRunPayloadSchema = z
     steps: value.steps,
     seed: value.seed,
     args: value.args,
+    env: value.env,
   }));
 
 export type BaselineRunPayload = z.infer<typeof baselineRunPayloadSchema>;
@@ -165,6 +187,11 @@ export const executeBaselineRun = async (
   };
   if (plan.pythonPath) {
     envVars.PYTHONPATH = plan.pythonPath;
+  }
+  if (payload.env) {
+    for (const [key, value] of Object.entries(payload.env)) {
+      envVars[key] = value;
+    }
   }
 
   await new Promise<void>((resolve, reject) => {
