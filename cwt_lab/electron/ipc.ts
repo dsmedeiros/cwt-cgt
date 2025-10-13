@@ -26,6 +26,7 @@ import runCouplingTuner from './couplingTuner';
 import { buildArgsFromParams } from './runner/args';
 import { correlate as correlatePhase2 } from '../../electron/runner/phase2';
 import { scanArtifacts, watchArtifacts, type ArtifactChangeEvent } from './runner/files';
+import { baselineRunPayloadSchema, executeBaselineRun } from './baselines/runService';
 
 type Envelope<T> = { ok: true; data: T } | { ok: false; error: string; data?: T };
 
@@ -669,6 +670,37 @@ ipcMain.handle(
       const cwd = payload.workdir ? path.resolve(payload.workdir) : cwtSimRoot;
       return runManager.previewCommand(payload.experiment, args, cwd);
     }, { label: 'cwt:run:preview' }),
+);
+
+ipcMain.handle('cwt:baselines:run', (event, payload) =>
+  wrap(async () => {
+    const env = ensurePythonEnvironment();
+    const parsed = baselineRunPayloadSchema.parse(payload ?? {});
+    const sender = event.sender;
+    const send = (channel: string, data: Record<string, unknown>) => {
+      if (sender.isDestroyed()) {
+        return;
+      }
+      sender.send(channel, data);
+    };
+
+    return executeBaselineRun(parsed, {
+      env,
+      artifactsRoot,
+      onStdout: ({ runId, chunk }) => {
+        send('cwt:baselines:run:output', { runId, stream: 'stdout', chunk });
+      },
+      onStderr: ({ runId, chunk }) => {
+        send('cwt:baselines:run:output', { runId, stream: 'stderr', chunk });
+      },
+      onExit: ({ runId, code, signal }) => {
+        send('cwt:baselines:run:exit', { runId, code, signal });
+      },
+      onError: ({ runId, error }) => {
+        send('cwt:baselines:run:error', { runId, message: error.message });
+      },
+    });
+  }, { label: 'cwt:baselines:run' }),
 );
 
 ipcMain.handle('cwt:run:abort', (_event, payload: { runId: string }) =>
