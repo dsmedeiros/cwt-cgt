@@ -246,7 +246,8 @@ const Phase1HeatmapViewer = ({ heatmap, onClose }: Phase1HeatmapViewerProps) => 
   }, []);
 
   const handlePointerDown: React.PointerEventHandler<HTMLDivElement> = (event) => {
-    const isMousePointer = event.pointerType === 'mouse' || event.pointerType === '' || event.pointerType === 'pen';
+    const pointerType = event.pointerType as string;
+    const isMousePointer = pointerType === 'mouse' || pointerType === '' || pointerType === 'pen';
     const isRightClick = event.button === 2;
     if ((isMousePointer && !isRightClick) || zoom === 1) {
       return;
