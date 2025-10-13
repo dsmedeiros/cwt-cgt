@@ -3,6 +3,8 @@ axes:
   time: steps
   nodes: vertex
   ensembles: run
+  rho: ρ
+  zeta: ζ
 models:
   ising:
     axes:
@@ -12,7 +14,8 @@ models:
       kappa: coupling
   percolation:
     axes:
-      rho: occupation_probability
+      rho: p
+      zeta: zeta
   sis:
     axes:
       zeta: infection_rate
