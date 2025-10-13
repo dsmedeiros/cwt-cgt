@@ -2,8 +2,13 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
+import os
+import subprocess
+import sys
+import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -372,13 +377,25 @@ def _finite_difference_curvature(
     return result
 
 
-def compute_cwt_curvature(
-    order_field: np.ndarray,
-    axis0: Sequence[float],
-    axis1: Sequence[float],
-) -> np.ndarray:
-    """Estimate curvature using a Wilson-loop construction on the order parameter."""
+_CURVATURE_CACHE: dict[str, np.ndarray] = {}
 
+
+def _curvature_cache_key(
+    order_field: np.ndarray, axis0: Sequence[float], axis1: Sequence[float]
+) -> str:
+    axis0_arr = np.asarray(axis0, dtype=float).ravel()
+    axis1_arr = np.asarray(axis1, dtype=float).ravel()
+    order_arr = np.asarray(order_field, dtype=np.complex128)
+    fingerprint = hashlib.sha1()
+    fingerprint.update(axis0_arr.tobytes())
+    fingerprint.update(axis1_arr.tobytes())
+    fingerprint.update(order_arr.view(np.float64).tobytes())
+    return fingerprint.hexdigest()
+
+
+def _compute_cwt_curvature_local(
+    order_field: np.ndarray, axis0: Sequence[float], axis1: Sequence[float]
+) -> np.ndarray:
     order = np.asarray(order_field, dtype=np.complex128)
     rows, cols = order.shape
     curvature = np.full((rows, cols), np.nan, dtype=float)
@@ -427,6 +444,64 @@ def compute_cwt_curvature(
     return curvature
 
 
+def _invoke_curvature_experiment(
+    order_field: np.ndarray,
+    axis0: Sequence[float],
+    axis1: Sequence[float],
+    *,
+    module_path: str,
+    timeout: float = 300.0,
+) -> np.ndarray:
+    """Execute an external curvature experiment returning the curvature grid.
+
+    The default implementation currently raises ``NotImplementedError`` as the
+    concrete experiment contract is repository specific.  Callers may monkeypatch
+    this helper in tests to emulate an experiment response.
+    """
+
+    raise NotImplementedError(
+        "external curvature experiment invocation is not wired up for this repository"
+    )
+
+
+def compute_cwt_curvature(
+    order_field: np.ndarray,
+    axis0: Sequence[float],
+    axis1: Sequence[float],
+    *,
+    experiment_module: str | None = None,
+    timeout: float = 300.0,
+) -> np.ndarray:
+    """Estimate curvature using a Wilson-loop construction.
+
+    Results are memoised to avoid repeated work when the same order parameter and
+    axes are provided multiple times.  When ``experiment_module`` is supplied (or
+    the ``CWT_CURVATURE_EXPERIMENT`` environment variable is set) the helper will
+    attempt to delegate to an external experiment via
+    :func:`_invoke_curvature_experiment`.  If delegation fails the local Wilson
+    loop estimator is used as a fallback to preserve the previous behaviour.
+    """
+
+    key = _curvature_cache_key(order_field, axis0, axis1)
+    cached = _CURVATURE_CACHE.get(key)
+    if cached is not None:
+        return cached.copy()
+
+    module_override = experiment_module or os.environ.get("CWT_CURVATURE_EXPERIMENT")
+    if module_override:
+        try:
+            curvature = _invoke_curvature_experiment(
+                order_field, axis0, axis1, module_path=str(module_override), timeout=timeout
+            )
+        except Exception:  # pragma: no cover - defensive fallback
+            curvature = _compute_cwt_curvature_local(order_field, axis0, axis1)
+    else:
+        curvature = _compute_cwt_curvature_local(order_field, axis0, axis1)
+
+    _CURVATURE_CACHE[key] = curvature.copy()
+    return curvature.copy()
+
+
 def _axis_spacing(values: Sequence[float], index: int) -> float:
     """Return the characteristic spacing near ``values[index]``."""
 
@@ -449,7 +524,15 @@ def _normalize_complex(value: complex) -> complex:
     return value / magnitude
 
 
-def run_cwt_loop(
+def _coerce_float(value: object) -> float | None:
+    try:
+        numeric = float(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return None
+    return numeric if math.isfinite(numeric) else None
+
+
+def _run_cwt_loop_local(
     adjacency: np.ndarray,
     record: Mapping[str, object],
     kappa_values: Sequence[float],
@@ -463,7 +546,7 @@ def run_cwt_loop(
     base_seed: int | None,
     delta_scale: float,
 ) -> Mapping[str, object]:
-    """Evaluate a Wilson loop around ``record`` and return a JSON payload."""
+    """Evaluate a Wilson loop locally around ``record`` without external tooling."""
 
     i = int(record["kappa_index"])
     j = int(record["sigma_index"])
@@ -557,6 +640,248 @@ def run_cwt_loop(
         ],
     }
     return loop_report
+
+
+_DEFAULT_LOOP_MODULE = "experiments.loop_at_hotspot.run"
+_LOOP_TIMEOUT = 300.0
+
+
+def _run_cwt_loop_experiment(
+    base_report: Mapping[str, object],
+    *,
+    module_path: str,
+    descriptor: Mapping[str, object],
+    center_axes: tuple[str, str],
+    extent_scale: float,
+    sample_steps: int,
+    warmup_steps: int,
+    seed: int | None,
+    timeout: float,
+) -> dict[str, object]:
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_root = Path(tmp_dir)
+        hotspot_path = tmp_root / "hotspots.json"
+        summary_path = tmp_root / "summary.json"
+        hotspot_path.write_text(json.dumps(descriptor, indent=2, ensure_ascii=False), encoding="utf-8")
+
+        extent_value = max(float(extent_scale), 1e-4)
+        axis_i, axis_j = center_axes
+        command = [
+            sys.executable,
+            "-m",
+            module_path,
+            "--hotspots",
+            str(hotspot_path),
+            "--axes",
+            axis_i,
+            axis_j,
+            "--extents",
+            f"{extent_value:.12g}",
+            "--limit",
+            "1",
+            "--save-summary",
+            str(summary_path),
+            "--base-steps",
+            str(max(int(sample_steps), 1)),
+            "--neighbor-settle-steps",
+            str(max(int(warmup_steps), 1)),
+        ]
+
+        graph_kind = None
+        center_meta = base_report.get("center")
+        if isinstance(center_meta, Mapping):
+            graph_kind = center_meta.get("graph")
+        if not graph_kind:
+            graph_kind = base_report.get("graph_kind")
+        if not graph_kind:
+            graph_kind = descriptor.get("graph")
+        if not graph_kind:
+            top_tiles = descriptor.get("top_tiles")
+            if isinstance(top_tiles, Sequence):
+                for entry in top_tiles:
+                    if isinstance(entry, Mapping):
+                        graph_kind = entry.get("graph_kind")
+                        if graph_kind:
+                            break
+        if graph_kind:
+            command.extend(["--graph", str(graph_kind)])
+
+        fs_guard = None
+        loop_meta = base_report.get("loop")
+        if isinstance(loop_meta, Mapping):
+            fs_guard = loop_meta.get("fs_guard")
+        if fs_guard is None:
+            fs_guard = os.environ.get("CWT_LOOP_FS_GUARD")
+        guard_value = _coerce_float(fs_guard)
+        if guard_value is not None:
+            command.extend(["--fs-guard", f"{guard_value:.12g}"])
+
+        if seed is not None:
+            command.extend(["--seed", str(int(seed))])
+
+        env = os.environ.copy()
+        env.setdefault("PYTHONHASHSEED", "0")
+        if seed is not None:
+            env.setdefault("CWT_SEED", str(int(seed)))
+
+        subprocess.run(command, check=True, env=env, timeout=timeout)
+
+        if not summary_path.exists():
+            raise RuntimeError("loop experiment completed without producing a summary")
+
+        payload = json.loads(summary_path.read_text(encoding="utf-8"))
+        hotspots = payload.get("hotspots")
+        if not isinstance(hotspots, list) or not hotspots:
+            raise RuntimeError("loop experiment summary did not contain hotspots")
+        hotspot = hotspots[0]
+        if not isinstance(hotspot, Mapping):
+            raise RuntimeError("loop experiment hotspot entry is not a mapping")
+
+        extents = hotspot.get("extents")
+        if not isinstance(extents, list) or not extents:
+            raise RuntimeError("loop experiment hotspot missing extent summaries")
+        extent_entry = extents[0]
+        if not isinstance(extent_entry, Mapping):
+            raise RuntimeError("loop experiment extent summary is not a mapping")
+
+        extent_spec = extent_entry.get("extents")
+        axis_map: Mapping[str, object] = {}
+        if isinstance(extent_spec, Mapping):
+            candidate = extent_spec.get("map")
+            if isinstance(candidate, Mapping):
+                axis_map = candidate
+
+        def _orientation_stats(name: str) -> dict[str, object]:
+            payload_inner = extent_entry.get(name)
+            if not isinstance(payload_inner, Mapping):
+                return {"orientation": name, "available": False}
+            phi = _coerce_float(payload_inner.get("phi"))
+            memory = payload_inner.get("memory")
+            readout = None
+            if isinstance(memory, list) and memory:
+                readout = _coerce_float(memory[-1])
+            return {
+                "orientation": name,
+                "available": True,
+                "phi": phi,
+                "phi_abs": abs(phi) if isinstance(phi, float) and math.isfinite(phi) else None,
+                "phi_missing": bool(payload_inner.get("phi_missing")),
+                "fs_p95": _coerce_float(payload_inner.get("fs_p95")),
+                "fs_guard_exceeded": bool(payload_inner.get("fs_guard_exceeded")),
+                "readout": readout,
+            }
+
+        orientations = [_orientation_stats("ccw"), _orientation_stats("cw")]
+        phi_candidates = [item.get("phi") for item in orientations if isinstance(item.get("phi"), float)]
+        phi_abs = max((abs(value) for value in phi_candidates if math.isfinite(value)), default=float("nan"))
+        guard_flag = any(bool(item.get("fs_guard_exceeded")) for item in orientations)
+
+        return {
+            "module": module_path,
+            "orientations": orientations,
+            "extent": {axis: _coerce_float(axis_map.get(axis)) for axis in center_axes},
+            "phi_abs": phi_abs,
+            "fs_guard_exceeded": guard_flag,
+            "summary_path": str(summary_path),
+        }
+
+
+def run_cwt_loop(
+    adjacency: np.ndarray,
+    record: Mapping[str, object],
+    kappa_values: Sequence[float],
+    sigma_values: Sequence[float],
+    *,
+    dt: float,
+    warmup_steps: int,
+    sample_steps: int,
+    integration: str,
+    intrinsic_mean: float,
+    base_seed: int | None,
+    delta_scale: float,
+) -> Mapping[str, object]:
+    """Evaluate a Wilson loop around ``record``.
+
+    The local Wilson-loop estimate is always returned.  When an external
+    experiment module is available the report is enriched with its telemetry,
+    while gracefully degrading if the probe fails or times out.
+    """
+
+    base_report = _run_cwt_loop_local(
+        adjacency,
+        record,
+        kappa_values,
+        sigma_values,
+        dt=dt,
+        warmup_steps=warmup_steps,
+        sample_steps=sample_steps,
+        integration=integration,
+        intrinsic_mean=intrinsic_mean,
+        base_seed=base_seed,
+        delta_scale=delta_scale,
+    )
+
+    module_override = None
+    if isinstance(record.get("loop_experiment"), str):
+        module_override = str(record["loop_experiment"])
+    module_path = module_override or os.environ.get("CWT_LOOP_EXPERIMENT") or _DEFAULT_LOOP_MODULE
+
+    center = base_report.get("center") if isinstance(base_report.get("center"), Mapping) else {}
+    center_kappa = _coerce_float(center.get("kappa")) if center else None
+    if center_kappa is None:
+        center_kappa = _coerce_float(record.get("kappa"))
+    center_sigma = _coerce_float(center.get("sigma")) if center else None
+    if center_sigma is None:
+        center_sigma = _coerce_float(record.get("sigma"))
+
+    descriptor = {
+        "axes": ["kappa", "sigma"],
+        "top_tiles": [
+            {
+                "indices": [int(record.get("kappa_index", 0)), int(record.get("sigma_index", 0))],
+                "coordinates": {"kappa": center_kappa or 0.0, "sigma": center_sigma or 0.0},
+                "omega": _coerce_float(record.get("omega")),
+                "omega_abs": _coerce_float(record.get("omega_abs")),
+                "graph_kind": record.get("graph_kind"),
+            }
+        ],
+    }
+
+    warnings: list[str] = []
+    try:
+        experiment_report = _run_cwt_loop_experiment(
+            base_report,
+            module_path=module_path,
+            descriptor=descriptor,
+            center_axes=("kappa", "sigma"),
+            extent_scale=max(
+                float(base_report.get("loop", {}).get("span_kappa", 0.0))
+                if isinstance(base_report.get("loop"), Mapping)
+                else 0.0,
+                float(base_report.get("loop", {}).get("span_sigma", 0.0))
+                if isinstance(base_report.get("loop"), Mapping)
+                else 0.0,
+                float(delta_scale),
+            ),
+            sample_steps=sample_steps,
+            warmup_steps=warmup_steps,
+            seed=base_seed,
+            timeout=_LOOP_TIMEOUT,
+        )
+        base_report = dict(base_report)
+        base_report["experiment"] = experiment_report
+    except subprocess.TimeoutExpired:
+        warnings.append("loop_experiment_timeout")
+    except FileNotFoundError as exc:
+        warnings.append(f"loop_experiment_missing:{exc}")
+    except Exception as exc:  # pragma: no cover - defensive catch-all
+        warnings.append(f"loop_experiment_error:{exc}")
+
+    if warnings:
+        base_report = dict(base_report)
+        base_report.setdefault("warnings", warnings)
+
+    return base_report
 
 
 def _collect_records(
