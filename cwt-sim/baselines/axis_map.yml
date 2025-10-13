@@ -16,3 +16,4 @@ models:
   sis:
     axes:
       zeta: infection_rate
+      mu: recovery_rate
