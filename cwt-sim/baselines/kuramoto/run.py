@@ -695,6 +695,14 @@ def _run_cwt_loop_experiment(
             graph_kind = base_report.get("graph_kind")
         if not graph_kind:
             graph_kind = descriptor.get("graph")
+        if not graph_kind:
+            top_tiles = descriptor.get("top_tiles")
+            if isinstance(top_tiles, Sequence):
+                for entry in top_tiles:
+                    if isinstance(entry, Mapping):
+                        graph_kind = entry.get("graph_kind")
+                        if graph_kind:
+                            break
         if graph_kind:
             command.extend(["--graph", str(graph_kind)])
 

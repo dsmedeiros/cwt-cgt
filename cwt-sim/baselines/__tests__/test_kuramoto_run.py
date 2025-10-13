@@ -159,6 +159,68 @@ def test_run_cwt_loop_enriches_with_experiment(monkeypatch) -> None:
     assert captured["warmup_steps"] == 5
     assert "warnings" not in result
 
+
+def test_run_cwt_loop_experiment_uses_descriptor_graph(monkeypatch) -> None:
+    """Loop experiments fall back to descriptor metadata for the graph kind."""
+
+    command_capture: dict[str, object] = {}
+
+    def fake_run(command: list[str], check: bool, env: Mapping[str, str], timeout: float) -> None:  # type: ignore[override]
+        assert check is True
+        command_capture["command"] = list(command)
+        command_capture["env"] = dict(env)
+        command_capture["timeout"] = timeout
+
+        summary_flag = command.index("--save-summary")
+        summary_path = Path(command[summary_flag + 1])
+        summary_path.write_text(
+            json.dumps(
+                {
+                    "hotspots": [
+                        {
+                            "extents": [
+                                {
+                                    "extents": {"map": {"kappa": 0.1, "sigma": 0.2}},
+                                    "ccw": {"phi": 1.0, "fs_p95": 0.5, "fs_guard_exceeded": False},
+                                    "cw": {"phi": -1.0, "fs_p95": 0.6, "fs_guard_exceeded": False},
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    monkeypatch.setattr(kuramoto_run.subprocess, "run", fake_run)
+
+    report = kuramoto_run._run_cwt_loop_experiment(
+        base_report={"center": {"kappa": 0.3}},
+        module_path="stub.loop",
+        descriptor={
+            "axes": ["kappa", "sigma"],
+            "top_tiles": [
+                {"indices": [0, 0], "coordinates": {"kappa": 0.3, "sigma": 0.1}, "graph_kind": "ring_star"}
+            ],
+        },
+        center_axes=("kappa", "sigma"),
+        extent_scale=0.05,
+        sample_steps=4,
+        warmup_steps=2,
+        seed=11,
+        timeout=123.0,
+    )
+
+    command = command_capture["command"]
+    assert "--graph" in command
+    graph_index = command.index("--graph")
+    assert command[graph_index + 1] == "ring_star"
+    assert command_capture["timeout"] == 123.0
+    env = command_capture["env"]
+    assert env["PYTHONHASHSEED"] == "0"
+    assert env["CWT_SEED"] == "11"
+    assert report["module"] == "stub.loop"
+
 def test_cli_produces_artifacts(tmp_path: Path) -> None:
     """Running the CLI with a small grid writes metrics and artifacts."""
 
