@@ -1,7 +1,16 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { IpcRendererEvent } from 'electron';
 
-import type { IpcEnvelope, RendererIpc, ArtifactsWatchEvent } from '../renderer/types/ipc';
+import type {
+  IpcEnvelope,
+  RendererIpc,
+  ArtifactsWatchEvent,
+  BaselineRunPayload,
+  BaselineRunResult,
+  BaselineRunStreamEvent,
+  BaselineRunExitEvent,
+  BaselineRunErrorEvent,
+} from '../renderer/types/ipc';
 
 const invoke = <T>(channel: string, payload?: unknown) =>
   ipcRenderer.invoke(channel, payload) as Promise<IpcEnvelope<T>>;
@@ -24,6 +33,39 @@ const api = {
     collectDiagnostics: (payload) => invoke('cwt:run:collect-diagnostics', payload),
     delete: (payload) => invoke('cwt:run:delete', payload),
     readArtifact: (payload) => invoke('cwt:run:read-artifact', payload),
+  },
+  baselines: {
+    run: (payload: BaselineRunPayload) => invoke<BaselineRunResult>('cwt:baselines:run', payload),
+    onOutput: (listener) => {
+      const channel = 'cwt:baselines:run:output';
+      const handler = (_event: IpcRendererEvent, payload: BaselineRunStreamEvent) => {
+        listener(payload);
+      };
+      ipcRenderer.on(channel, handler);
+      return () => {
+        ipcRenderer.removeListener(channel, handler);
+      };
+    },
+    onExit: (listener) => {
+      const channel = 'cwt:baselines:run:exit';
+      const handler = (_event: IpcRendererEvent, payload: BaselineRunExitEvent) => {
+        listener(payload);
+      };
+      ipcRenderer.on(channel, handler);
+      return () => {
+        ipcRenderer.removeListener(channel, handler);
+      };
+    },
+    onError: (listener) => {
+      const channel = 'cwt:baselines:run:error';
+      const handler = (_event: IpcRendererEvent, payload: BaselineRunErrorEvent) => {
+        listener(payload);
+      };
+      ipcRenderer.on(channel, handler);
+      return () => {
+        ipcRenderer.removeListener(channel, handler);
+      };
+    },
   },
   phase1: {
     map: (params) => invoke('cwt:phase1:map', params),

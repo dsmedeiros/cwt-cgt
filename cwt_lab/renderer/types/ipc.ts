@@ -4,6 +4,43 @@ export type IpcEnvelope<T> = { ok: true; data: T } | { ok: false; error: string;
 
 export type PythonStrategy = 'module' | 'py_path' | 'installed';
 
+export type BaselineModel = 'ising' | 'kuramoto' | 'percolation' | 'sis';
+
+export type BaselineRunPayload = {
+  model: BaselineModel;
+  axisMap?: string | null;
+  outputDir?: string | null;
+  steps?: number | string | null;
+  seed?: number | string | null;
+  args?: Array<string | number | null>;
+};
+
+export type BaselineRunResult = {
+  runId: string;
+  model: BaselineModel;
+  outputDir: string | null;
+  command: string;
+  args: string[];
+  cli: string;
+};
+
+export type BaselineRunStreamEvent = {
+  runId: string;
+  stream: 'stdout' | 'stderr';
+  chunk: string;
+};
+
+export type BaselineRunExitEvent = {
+  runId: string;
+  code: number | null;
+  signal: NodeJS.Signals | null;
+};
+
+export type BaselineRunErrorEvent = {
+  runId: string;
+  message: string;
+};
+
 export type GraphFamilyThumbnail = {
   name: string;
   path: string | null;
@@ -504,6 +541,12 @@ export interface RendererIpc {
     readArtifact: (
       payload: RunReadArtifactPayload,
     ) => Promise<IpcEnvelope<RunReadArtifactResult>>;
+  };
+  baselines: {
+    run: (payload: BaselineRunPayload) => Promise<IpcEnvelope<BaselineRunResult>>;
+    onOutput: (listener: (event: BaselineRunStreamEvent) => void) => () => void;
+    onExit: (listener: (event: BaselineRunExitEvent) => void) => () => void;
+    onError: (listener: (event: BaselineRunErrorEvent) => void) => () => void;
   };
   phase1: {
     map: (params: Record<string, unknown>) => Promise<IpcEnvelope<RunCreateResult>>;
