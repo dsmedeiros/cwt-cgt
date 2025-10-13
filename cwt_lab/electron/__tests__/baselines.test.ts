@@ -41,11 +41,13 @@ describe('cmdBaseline', () => {
       });
 
       expect(plan.command).toBe(pythonExe);
-      expect(plan.cwd).toBe(cwtSimRoot);
-      expect(plan.pythonPath).toBeNull();
+      expect(plan.cwd).toBe(repoRoot);
+      expect(plan.pythonPath).toBeTruthy();
+      expect(plan.pythonPath ?? '').toContain(repoRoot);
+      expect(plan.pythonPath ?? '').toContain(cwtSimRoot);
       expect(plan.args.slice(0, 2)).toEqual(['-m', `baselines.${model}.run`]);
       expect(plan.args.slice(2)).toEqual([...sharedArgs, ...extraArgs]);
-      expect(plan.cli).toContain(`cd ${cwtSimRoot}`);
+      expect(plan.cli).toContain(`cd ${repoRoot}`);
     },
   );
 
@@ -65,12 +67,13 @@ describe('cmdBaseline', () => {
       });
 
       expect(plan.command).toBe('python3');
-      expect(plan.cwd).toBe(cwtSimRoot);
+      expect(plan.cwd).toBe(repoRoot);
       expect(plan.args[0]).toBe(path.join(repoRoot, 'cwt-sim', 'baselines', model, 'run.py'));
       expect(plan.args.slice(1)).toEqual([...sharedArgs, '--flag', 'value']);
       expect(plan.pythonPath).toBeTruthy();
       expect(plan.pythonPath ?? '').toContain(cwtSimRoot);
-      expect(plan.cli).toContain(`cd ${cwtSimRoot}`);
+      expect(plan.pythonPath ?? '').toContain(repoRoot);
+      expect(plan.cli).toContain(`cd ${repoRoot}`);
     },
   );
 

@@ -98,19 +98,22 @@ export const cmdBaseline = (
     moduleArgs.push(...extras);
   }
 
+  const pythonPathEntries = [repoRoot, cwtSimRoot];
+
   const invocation = planModuleInvocation({
     pythonExe,
     strategy: options.strategy,
     repoRoot,
     moduleName,
     args: moduleArgs,
-    pythonPathEntries: [cwtSimRoot],
+    pythonPathEntries,
   });
 
-  const cwd = cwtSimRoot;
+  const cwd = repoRoot;
   const command = invocation.command;
   const args = [...invocation.args];
-  const pythonPath = invocation.pythonPath;
+  const pythonPath =
+    invocation.pythonPath ?? pythonPathEntries.filter(Boolean).join(path.delimiter);
   const cli = formatCli({ command, args, cwd, pythonPath });
 
   return {
