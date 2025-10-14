@@ -18,7 +18,7 @@ type StreamHandler = (event: { runId: string; chunk: string; stream: 'stdout' | 
 type ExitHandler = (event: { runId: string; code: number | null; signal: NodeJS.Signals | null }) => void;
 type ErrorHandler = (event: { runId: string; message: string }) => void;
 type AlignmentHandler = (event: BaselineAlignmentProgressEvent) => void;
-const globalWindow = window as typeof window & { CWT?: Partial<RendererIpc> };
+const globalWindow = window as typeof window & { CWT: RendererIpc };
 
 const okEnvelope = <T,>(data: T): IpcEnvelope<T> => ({ ok: true, data });
 
@@ -136,7 +136,7 @@ describe('Baselines component', () => {
       };
     });
 
-    globalWindow.CWT = {
+    const cwtMock = {
       artifacts: {
         readFile: artifactsReadFileMock,
         list: artifactsListMock,
@@ -144,16 +144,9 @@ describe('Baselines component', () => {
         unwatch: artifactsUnwatchMock,
         onDidChange: artifactsOnDidChangeMock,
       },
-      baselines: {
-        alignment: alignmentMock,
-        onAlignmentProgress: (handler: AlignmentHandler) => {
-          alignmentHandlers.push(handler);
-          return () => {
-            alignmentHandlers = alignmentHandlers.filter((entry) => entry !== handler);
-          };
-        },
-      },
-    } as Partial<RendererIpc>;
+    } satisfies Partial<RendererIpc>;
+
+    globalWindow.CWT = cwtMock as RendererIpc;
 
     alignmentMock.mockResolvedValue({
       exportId: 'baselines_alignment_demo',
