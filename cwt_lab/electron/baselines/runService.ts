@@ -32,12 +32,24 @@ const optionalNumericSchema = z
   });
 
 const argsSchema = z
-  .union([z.array(z.union([z.string(), z.number()])), z.null(), z.undefined()])
+  .union([
+    z.array(z.union([z.string(), z.number(), z.null(), z.undefined()])),
+    z.null(),
+    z.undefined(),
+  ])
   .transform((value) => {
     if (!value) {
       return null;
     }
-    return value.map((entry) => (typeof entry === 'number' ? entry : entry));
+    const sanitized = value
+      .map((entry) => {
+        if (entry == null) {
+          return null;
+        }
+        return typeof entry === 'number' ? entry : entry;
+      })
+      .filter((entry): entry is string | number => entry != null);
+    return sanitized.length > 0 ? sanitized : null;
   });
 
 const optionalBooleanSchema = z

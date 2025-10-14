@@ -8,6 +8,7 @@ import type {
   BaselineRunExitEvent,
   BaselineRunResult,
   BaselineRunStreamEvent,
+  IpcEnvelope,
 } from '../types/ipc';
 
 const DEFAULT_AXIS_MAP_PATH = 'cwt-sim/baselines/axis_map.yml';
@@ -346,6 +347,17 @@ const flattenArtifactNodes = (nodes: unknown[]): Array<{ name: string; path: str
   return result;
 };
 
+const unwrapEnvelope = <T,>(
+  response: IpcEnvelope<T> | null | undefined,
+  context: string,
+): T => {
+  if (!response || !response.ok) {
+    const details = response?.error ? `: ${response.error}` : '';
+    throw new Error(`Failed to ${context}${details}`);
+  }
+  return response.data;
+};
+
 const formatCoordinates = (coordinates: Record<string, unknown>): string => {
   const entries = Object.entries(coordinates)
     .filter(([key]) => key)
@@ -493,17 +505,19 @@ const loadArtifactsForRun = async (
   const topTilesPath = joinPath(normalizedDir, 'top_omega_tiles.json');
   const metricsPath = joinPath(normalizedDir, 'metrics.csv');
 
-  const [topTilesPayload, metricsPayload] = await Promise.all([
+  const [topTilesResponse, metricsResponse] = await Promise.all([
     artifactsApi.readFile({ path: topTilesPath }),
     artifactsApi.readFile({ path: metricsPath }),
   ]);
 
-  const topTilesRaw = topTilesPayload?.contents ?? '';
+  const topTilesData = unwrapEnvelope(topTilesResponse, 'read top_omega_tiles.json');
+  const topTilesRaw = topTilesData.contents ?? '';
   if (!topTilesRaw) {
     throw new Error('top_omega_tiles.json is missing or empty.');
   }
   const topTilesJson = JSON.parse(topTilesRaw) as Record<string, unknown>;
-  const metricsRows = parseCsv(metricsPayload?.contents ?? '');
+  const metricsData = metricsResponse && metricsResponse.ok ? metricsResponse.data : null;
+  const metricsRows = parseCsv(metricsData?.contents ?? '');
   const axes = Array.isArray(topTilesJson.axes)
     ? (topTilesJson.axes as Array<Record<string, unknown>>)
         .map((axis) => (typeof axis.name === 'string' ? axis.name : null))
@@ -565,18 +579,30 @@ const loadArtifactsForRun = async (
   const loopsDir = joinPath(normalizedDir, 'loops');
   if (artifactsApi.list) {
     try {
-      const listing = await artifactsApi.list({ under: loopsDir });
-      if (Array.isArray(listing)) {
-        const files = flattenArtifactNodes(listing).filter((node) => node.name.endsWith('.json'));
+      const listingResponse = await artifactsApi.list({ under: loopsDir });
+      const listingData =
+        listingResponse && listingResponse.ok && Array.isArray(listingResponse.data)
+          ? (listingResponse.data as unknown[])
+          : [];
+      if (listingData.length > 0) {
+        const files = flattenArtifactNodes(listingData).filter((node) => node.name.endsWith('.json'));
         if (files.length > 0) {
           const reports = await Promise.all(
             files.map(async (file) => {
-              const payload = await artifactsApi.readFile({ path: file.path });
-              const data = payload?.contents ? JSON.parse(payload.contents) : null;
-              return buildLoopSummary(data, file.path);
+              try {
+                const fileResponse = await artifactsApi.readFile({ path: file.path });
+                if (!fileResponse.ok) {
+                  return null;
+                }
+                const fileRaw = fileResponse.data.contents ?? '';
+                const data = fileRaw ? JSON.parse(fileRaw) : null;
+                return buildLoopSummary(data, file.path);
+              } catch {
+                return null;
+              }
             }),
           );
-          loopSummaries = reports;
+          loopSummaries = reports.filter((report): report is LoopSummary => Boolean(report));
         }
       }
     } catch {

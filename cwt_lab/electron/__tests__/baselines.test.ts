@@ -91,7 +91,7 @@ describe('cmdBaseline', () => {
       outputDir: '',
       steps: undefined,
       seed: '',
-      args: [null, '--flag', undefined, 'value'],
+      args: [null, '--flag', undefined, 'value'] as unknown as Array<string | number>,
     });
 
     expect(plan.args).toEqual(['-m', 'baselines.ising.run', '--flag', 'value']);

@@ -6,22 +6,20 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import Baselines from '../Baselines';
+import type {
+  ArtifactsReadFilePayload,
+  IpcEnvelope,
+  RendererIpc,
+} from '../../types/ipc';
 
 type StreamHandler = (event: { runId: string; chunk: string; stream: 'stdout' | 'stderr' }) => void;
 type ExitHandler = (event: { runId: string; code: number | null; signal: NodeJS.Signals | null }) => void;
 type ErrorHandler = (event: { runId: string; message: string }) => void;
 type ArtifactNode = { type: string; name: string; path: string; children?: ArtifactNode[] };
 
-declare global {
-  interface Window {
-    CWT?: {
-      artifacts?: {
-        readFile?: (request: { path: string }) => Promise<{ contents: string }>;
-        list?: (request: { under: string }) => Promise<Array<{ type: string; name: string; path: string; children?: unknown[] }>>;
-      };
-    };
-  }
-}
+const globalWindow = window as typeof window & { CWT?: RendererIpc };
+
+const okEnvelope = <T,>(data: T): IpcEnvelope<T> => ({ ok: true, data });
 
 const runMock = vi.fn();
 let outputHandlers: StreamHandler[] = [];
@@ -84,8 +82,8 @@ vi.mock('../../ipc', () => ({
 const AXIS_MAP_PATH = 'cwt-sim/baselines/axis_map.yml';
 
 describe('Baselines component', () => {
-  const readFileMock = vi.fn<Promise<{ contents: string }>, [{ path: string }]>();
-  const listMock = vi.fn<Promise<ArtifactNode[]>, [{ under: string }]>();
+  const readFileMock = vi.fn();
+  const listMock = vi.fn();
 
   beforeEach(() => {
     runMock.mockReset();
@@ -95,18 +93,18 @@ describe('Baselines component', () => {
     readFileMock.mockReset();
     listMock.mockReset();
 
-    window.CWT = {
+    globalWindow.CWT = {
       artifacts: {
-        readFile: readFileMock,
-        list: listMock,
+        readFile: readFileMock as unknown as RendererIpc['artifacts']['readFile'],
+        list: listMock as unknown as RendererIpc['artifacts']['list'],
       },
-    };
+    } as RendererIpc;
   });
 
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
-    delete window.CWT;
+    delete (globalWindow as { CWT?: RendererIpc }).CWT;
   });
 
   it('submits the baseline payload and renders artifacts', async () => {
@@ -158,18 +156,20 @@ describe('Baselines component', () => {
       loopMetrics: null,
     });
 
-    listMock.mockResolvedValue([
-      { type: 'file', name: 'loop-1.json', path: '/tmp/baselines/run-1/loops/loop-1.json' },
-    ]);
+    listMock.mockResolvedValue(
+      okEnvelope([
+        { type: 'file', name: 'loop-1.json', path: '/tmp/baselines/run-1/loops/loop-1.json' },
+      ]) as IpcEnvelope<unknown>,
+    );
 
-    readFileMock.mockImplementation(async ({ path }) => {
+    readFileMock.mockImplementation(async ({ path }: ArtifactsReadFilePayload) => {
       if (path.endsWith('top_omega_tiles.json')) {
-        return { contents: JSON.stringify(topTiles) };
+        return okEnvelope({ path, contents: JSON.stringify(topTiles) });
       }
       if (path.endsWith('metrics.csv')) {
-        return { contents: metricsCsv };
+        return okEnvelope({ path, contents: metricsCsv });
       }
-      return { contents: JSON.stringify(loopReport) };
+      return okEnvelope({ path, contents: JSON.stringify(loopReport) });
     });
 
     const user = userEvent.setup();
@@ -224,8 +224,10 @@ describe('Baselines component', () => {
       loopMetrics: null,
     });
 
-    listMock.mockResolvedValue([]);
-    readFileMock.mockResolvedValue({ contents: JSON.stringify({ axes: [], top_tiles: [] }) });
+    listMock.mockResolvedValue(okEnvelope([]) as IpcEnvelope<unknown>);
+    readFileMock.mockResolvedValue(
+      okEnvelope({ path: '/tmp/stream/top_omega_tiles.json', contents: JSON.stringify({ axes: [], top_tiles: [] }) }),
+    );
 
     const user = userEvent.setup();
     render(<Baselines />);
