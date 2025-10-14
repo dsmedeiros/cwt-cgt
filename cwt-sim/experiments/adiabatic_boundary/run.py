@@ -24,13 +24,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
 
+import networkx as nx
 import numpy as np
 
 from cwt.geometry.curvature import curvature_tile
 from cwt.geometry.fs_distance import fs_distance
 from cwt.geometry.psi import build_psi
-from cwt.graph.factories import ring3_hetero
-from cwt.graph.substrate import GraphSubstrate
+from cwt.graph.factories import from_edgelist, ring3_hetero
+from cwt.graph.substrate import GraphSubstrate, build_substrate
 from cwt.layers.state import LayersState, wrap_angles
 from cwt.orchestrator.param_path import ParameterPath
 
@@ -164,6 +165,187 @@ def _adiabatic_factor(fs_p95: float, steps: int, extent: float) -> float:
     discretisation = 1.0 / (1.0 + 0.015 * max(0, steps - 80))
     spread = 1.0 / (1.0 + 180.0 * abs(extent))
     return float(np.clip(smooth * discretisation * spread, 0.0, 1.0))
+
+
+def _maybe_cast_node(label: object) -> int | str:
+    """Attempt to interpret a node label as an integer when reasonable."""
+
+    if isinstance(label, (int, np.integer)):
+        return int(label)
+    if isinstance(label, str):
+        stripped = label.strip()
+        if stripped:
+            try:
+                return int(stripped)
+            except ValueError:
+                return stripped
+    return str(label)
+
+
+def _load_substrate_file(path: Path) -> GraphSubstrate:
+    """Load a graph substrate from a supported artifact file."""
+
+    suffix = path.suffix.lower()
+    if suffix in {".graphml", ".gml", ".gexf"}:
+        read_fn = {
+            ".graphml": nx.read_graphml,
+            ".gml": nx.read_gml,
+            ".gexf": nx.read_gexf,
+        }[suffix]
+        G = read_fn(path)
+        for _, _, data in G.edges(data=True):
+            data.setdefault("weight", 1.0)
+            data.setdefault("delay", 1.0)
+        return build_substrate(nx.DiGraph(G))
+
+    if suffix in {".gpickle", ".pickle"}:
+        G = nx.read_gpickle(path)
+        for _, _, data in G.edges(data=True):
+            data.setdefault("weight", 1.0)
+            data.setdefault("delay", 1.0)
+        return build_substrate(nx.DiGraph(G))
+
+    if suffix in {".edgelist", ".txt"}:
+        edges: list[tuple[int | str, int | str, float, float]] = []
+        with path.open("r", encoding="utf-8") as handle:
+            for raw_line in handle:
+                line = raw_line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                parts = line.split()
+                if len(parts) < 2:
+                    continue
+                source = _maybe_cast_node(parts[0])
+                target = _maybe_cast_node(parts[1])
+                weight = float(parts[2]) if len(parts) >= 3 else 1.0
+                delay = float(parts[3]) if len(parts) >= 4 else 1.0
+                edges.append((source, target, weight, delay))
+        if not edges:
+            raise ValueError(f"No edges found in {path}")
+        return from_edgelist(edges)
+
+    if suffix == ".csv":
+        edges = []
+        with path.open("r", encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle)
+            if not reader.fieldnames or {"source", "target"}.difference(reader.fieldnames):
+                raise ValueError(
+                    "CSV substrate artifact must include 'source' and 'target' columns"
+                )
+            for row in reader:
+                source = _maybe_cast_node(row["source"])
+                target = _maybe_cast_node(row["target"])
+                weight_raw = row.get("weight", "")
+                delay_raw = row.get("delay", "")
+                weight = float(weight_raw) if weight_raw not in {None, ""} else 1.0
+                delay = float(delay_raw) if delay_raw not in {None, ""} else 1.0
+                edges.append((source, target, weight, delay))
+        if not edges:
+            raise ValueError(f"No edges found in {path}")
+        return from_edgelist(edges)
+
+    if suffix == ".json":
+        with path.open("r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+
+        if isinstance(payload, dict):
+            if "links" in payload:
+                try:
+                    G = nx.node_link_graph(payload, directed=True, multigraph=False)
+                except Exception as exc:
+                    raise ValueError(f"Unsupported node-link JSON format in {path}") from exc
+                for _, _, data in G.edges(data=True):
+                    data.setdefault("weight", 1.0)
+                    data.setdefault("delay", 1.0)
+                return build_substrate(nx.DiGraph(G))
+
+            edges_payload = payload.get("edges")
+            if isinstance(edges_payload, list):
+                edges: list[tuple[int | str, int | str, float, float]] = []
+                for entry in edges_payload:
+                    source: int | str
+                    target: int | str
+                    weight = 1.0
+                    delay = 1.0
+                    if isinstance(entry, dict):
+                        try:
+                            source = _maybe_cast_node(entry["source"])
+                            target = _maybe_cast_node(entry["target"])
+                        except KeyError as exc:  # pragma: no cover - defensive
+                            raise ValueError(
+                                f"Edge dictionary missing {exc.args[0]!r} key in {path}"
+                            ) from exc
+                        weight = float(entry.get("weight", 1.0))
+                        delay = float(entry.get("delay", 1.0))
+                    elif isinstance(entry, (list, tuple)) and len(entry) >= 2:
+                        source = _maybe_cast_node(entry[0])
+                        target = _maybe_cast_node(entry[1])
+                        if len(entry) >= 3:
+                            weight = float(entry[2])
+                        if len(entry) >= 4:
+                            delay = float(entry[3])
+                    else:
+                        raise ValueError(f"Unsupported edge entry {entry!r} in {path}")
+                    edges.append((source, target, weight, delay))
+                if edges:
+                    return from_edgelist(edges)
+
+        raise ValueError(f"Unsupported JSON substrate format in {path}")
+
+    if suffix == ".npz":
+        with np.load(path, allow_pickle=True) as payload:
+            if "edges" in payload:
+                edges_array = payload["edges"]
+                edges = []
+                for item in edges_array:
+                    if len(item) < 2:
+                        continue
+                    source = _maybe_cast_node(item[0])
+                    target = _maybe_cast_node(item[1])
+                    weight = float(item[2]) if len(item) >= 3 else 1.0
+                    delay = float(item[3]) if len(item) >= 4 else 1.0
+                    edges.append((source, target, weight, delay))
+                if edges:
+                    return from_edgelist(edges)
+
+    raise ValueError(f"Unrecognised substrate artifact format: {path}")
+
+
+def _load_substrate_artifact(path: Path) -> GraphSubstrate:
+    """Load a substrate artifact from a file or directory."""
+
+    candidate = path.expanduser()
+    if not candidate.exists():
+        raise FileNotFoundError(f"substrate artifact {candidate} does not exist")
+
+    if candidate.is_file():
+        return _load_substrate_file(candidate)
+
+    search_order = [
+        "substrate.json",
+        "graph.json",
+        "graph.graphml",
+        "graph.gml",
+        "graph.gexf",
+        "graph.gpickle",
+        "edges.csv",
+        "edges.json",
+        "edges.npz",
+    ]
+
+    for name in search_order:
+        target = candidate / name
+        if target.exists():
+            return _load_substrate_file(target)
+
+    for child in sorted(candidate.iterdir()):
+        if child.is_file():
+            try:
+                return _load_substrate_file(child)
+            except ValueError:
+                continue
+
+    raise FileNotFoundError(f"Could not locate a substrate artifact inside {candidate}")
 
 
 def _run_sample(
@@ -381,6 +563,16 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--extents", nargs="+", default=["0.02", "0.04", "0.08"])
     parser.add_argument("--steps", nargs="+", default=["400", "200", "120", "80"])
     parser.add_argument("--grid-size", type=int, default=6)
+    parser.add_argument(
+        "--substrate-dir",
+        type=Path,
+        default=None,
+        help=(
+            "Optional path to a substrate artifact directory or file. When provided, "
+            "the graph substrate is loaded from this location instead of using the "
+            "default ring3_hetero substrate."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -393,7 +585,10 @@ def main(argv: Sequence[str] | None = None) -> None:
     extent_values = _parse_float_list(args.extents)
     step_values = _parse_int_list(args.steps)
 
-    substrate = ring3_hetero()
+    if args.substrate_dir is not None:
+        substrate = _load_substrate_artifact(Path(args.substrate_dir))
+    else:
+        substrate = ring3_hetero()
 
     samples: list[SampleResult] = []
     for extent in extent_values:
