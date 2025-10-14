@@ -3600,6 +3600,30 @@ body {
   gap: 0.5rem;
 }
 
+.baselines__demo-button {
+  border: 1px solid var(--color-primary);
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  padding: 0.45rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+.baselines__demo-button:hover,
+.baselines__demo-button:focus-visible {
+  outline: none;
+  background: var(--color-primary-hover);
+  color: var(--color-primary-contrast);
+  border-color: transparent;
+}
+
+.baselines__demo-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .baselines__tips-button {
   border: 1px solid var(--color-border);
   border-radius: 999px;
@@ -3617,6 +3641,27 @@ body {
   background: var(--color-primary);
   color: var(--color-primary-contrast);
   border-color: transparent;
+}
+
+.baselines__alignment-progress {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+.baselines__alignment-progress li + li {
+  margin-top: 0.25rem;
+}
+
+.baselines__alignment-result {
+  margin: 0.5rem 0 0;
+  font-size: 0.95rem;
+}
+
+.baselines__alignment-result code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
 }
 
 .baselines__form {

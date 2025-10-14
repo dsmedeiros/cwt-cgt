@@ -49,6 +49,50 @@ export type BaselineRunErrorEvent = {
   message: string;
 };
 
+export type BaselineAlignmentRunSummary = {
+  index: number;
+  model: BaselineModel;
+  label: string;
+  runId: string;
+  artifactsDir: string;
+  relativePath: string;
+  seed: number;
+  args: string[];
+};
+
+export type BaselineAlignmentResult = {
+  exportId: string;
+  zipPath: string;
+  startedAt: number;
+  completedAt: number;
+  runs: BaselineAlignmentRunSummary[];
+  readmePath: string;
+};
+
+export type BaselineAlignmentProgressEvent =
+  | { kind: 'start'; totalRuns: number }
+  | { kind: 'run-start'; index: number; totalRuns: number; model: BaselineModel; label: string; seed: number }
+  | {
+      kind: 'run-complete';
+      index: number;
+      totalRuns: number;
+      model: BaselineModel;
+      label: string;
+      runId: string;
+      artifactsDir: string;
+    }
+  | {
+      kind: 'run-error';
+      index: number;
+      totalRuns: number;
+      model: BaselineModel;
+      label: string;
+      message: string;
+    }
+  | { kind: 'packing'; totalRuns: number }
+  | { kind: 'complete'; totalRuns: number; zipPath: string; exportId: string }
+  | { kind: 'error'; message: string };
+
 export type GraphFamilyThumbnail = {
   name: string;
   path: string | null;
@@ -555,6 +599,8 @@ export interface RendererIpc {
     onOutput: (listener: (event: BaselineRunStreamEvent) => void) => () => void;
     onExit: (listener: (event: BaselineRunExitEvent) => void) => () => void;
     onError: (listener: (event: BaselineRunErrorEvent) => void) => () => void;
+    alignment: () => Promise<IpcEnvelope<BaselineAlignmentResult>>;
+    onAlignmentProgress: (listener: (event: BaselineAlignmentProgressEvent) => void) => () => void;
   };
   phase1: {
     map: (params: Record<string, unknown>) => Promise<IpcEnvelope<RunCreateResult>>;

@@ -8,6 +8,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Baselines from '../Baselines';
 import type {
   ArtifactsReadFilePayload,
+  BaselineAlignmentResult,
+  BaselineAlignmentProgressEvent,
   IpcEnvelope,
   RendererIpc,
 } from '../../types/ipc';
@@ -15,14 +17,38 @@ import type {
 type StreamHandler = (event: { runId: string; chunk: string; stream: 'stdout' | 'stderr' }) => void;
 type ExitHandler = (event: { runId: string; code: number | null; signal: NodeJS.Signals | null }) => void;
 type ErrorHandler = (event: { runId: string; message: string }) => void;
-const globalWindow = window as typeof window & { CWT?: RendererIpc };
+type AlignmentHandler = (event: BaselineAlignmentProgressEvent) => void;
+const globalWindow = window as typeof window & { CWT: RendererIpc };
 
 const okEnvelope = <T,>(data: T): IpcEnvelope<T> => ({ ok: true, data });
 
 const runMock = vi.fn();
+const alignmentMock = vi.fn<[], Promise<BaselineAlignmentResult>>();
+const artifactsReadFileMock = vi.fn<
+  Parameters<RendererIpc['artifacts']['readFile']>,
+  ReturnType<RendererIpc['artifacts']['readFile']>
+>();
+const artifactsListMock = vi.fn<
+  Parameters<RendererIpc['artifacts']['list']>,
+  ReturnType<RendererIpc['artifacts']['list']>
+>();
+const artifactsWatchMock = vi.fn<
+  Parameters<RendererIpc['artifacts']['watch']>,
+  ReturnType<RendererIpc['artifacts']['watch']>
+>();
+const artifactsUnwatchMock = vi.fn<
+  Parameters<RendererIpc['artifacts']['unwatch']>,
+  ReturnType<RendererIpc['artifacts']['unwatch']>
+>();
+const artifactsOnDidChangeMock = vi.fn<
+  Parameters<RendererIpc['artifacts']['onDidChange']>,
+  ReturnType<RendererIpc['artifacts']['onDidChange']>
+>();
 let outputHandlers: StreamHandler[] = [];
 let exitHandlers: ExitHandler[] = [];
 let errorHandlers: ErrorHandler[] = [];
+let alignmentHandlers: AlignmentHandler[] = [];
+let artifactsDidChangeHandlers: Parameters<RendererIpc['artifacts']['onDidChange']>[0][] = [];
 
 const FIXTURES_ROOT = path.resolve(process.cwd(), '..', 'cwt-sim/baselines/__fixtures__');
 
@@ -74,35 +100,68 @@ vi.mock('../../ipc', () => ({
         errorHandlers = errorHandlers.filter((entry) => entry !== handler);
       };
     },
+    alignment: () => alignmentMock(),
+    onAlignmentProgress: (handler: AlignmentHandler) => {
+      alignmentHandlers.push(handler);
+      return () => {
+        alignmentHandlers = alignmentHandlers.filter((entry) => entry !== handler);
+      };
+    },
   },
 }));
 
 const AXIS_MAP_PATH = 'cwt-sim/baselines/axis_map.yml';
 
 describe('Baselines component', () => {
-  const readFileMock = vi.fn();
-  const listMock = vi.fn();
-
   beforeEach(() => {
     runMock.mockReset();
+    alignmentMock.mockReset();
     outputHandlers = [];
     exitHandlers = [];
     errorHandlers = [];
-    readFileMock.mockReset();
-    listMock.mockReset();
+    alignmentHandlers = [];
+    artifactsDidChangeHandlers = [];
+    artifactsReadFileMock.mockReset();
+    artifactsListMock.mockReset();
+    artifactsWatchMock.mockReset();
+    artifactsUnwatchMock.mockReset();
+    artifactsOnDidChangeMock.mockReset();
 
-    globalWindow.CWT = {
+    artifactsWatchMock.mockResolvedValue(okEnvelope({ id: 1 }));
+    artifactsUnwatchMock.mockResolvedValue(okEnvelope({ id: 1 }));
+    artifactsOnDidChangeMock.mockImplementation((handler) => {
+      artifactsDidChangeHandlers.push(handler);
+      return () => {
+        artifactsDidChangeHandlers = artifactsDidChangeHandlers.filter((entry) => entry !== handler);
+      };
+    });
+
+    const cwtMock = {
       artifacts: {
-        readFile: readFileMock as unknown as RendererIpc['artifacts']['readFile'],
-        list: listMock as unknown as RendererIpc['artifacts']['list'],
+        readFile: artifactsReadFileMock,
+        list: artifactsListMock,
+        watch: artifactsWatchMock,
+        unwatch: artifactsUnwatchMock,
+        onDidChange: artifactsOnDidChangeMock,
       },
-    } as RendererIpc;
+    } satisfies Partial<RendererIpc>;
+
+    globalWindow.CWT = cwtMock as RendererIpc;
+
+    alignmentMock.mockResolvedValue({
+      exportId: 'baselines_alignment_demo',
+      zipPath: '/tmp/bundle.zip',
+      startedAt: 1,
+      completedAt: 2,
+      runs: [],
+      readmePath: 'baselines_alignment_demo/README.md',
+    });
   });
 
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
-    delete (globalWindow as { CWT?: RendererIpc }).CWT;
+    Reflect.deleteProperty(globalWindow, 'CWT');
   });
 
   it('submits the baseline payload and renders artifacts', async () => {
@@ -154,13 +213,13 @@ describe('Baselines component', () => {
       loopMetrics: null,
     });
 
-    listMock.mockResolvedValue(
+    artifactsListMock.mockResolvedValue(
       okEnvelope([
         { type: 'file', name: 'loop-1.json', path: '/tmp/baselines/run-1/loops/loop-1.json' },
       ]) as IpcEnvelope<unknown>,
     );
 
-    readFileMock.mockImplementation(async ({ path }: ArtifactsReadFilePayload) => {
+    artifactsReadFileMock.mockImplementation(async ({ path }: ArtifactsReadFilePayload) => {
       if (path.endsWith('top_omega_tiles.json')) {
         return okEnvelope({ path, contents: JSON.stringify(topTiles) });
       }
@@ -191,7 +250,7 @@ describe('Baselines component', () => {
       exitHandlers.forEach((handler) => handler({ runId: 'run-1', code: 0, signal: null }));
     });
 
-    await waitFor(() => expect(readFileMock).toHaveBeenCalled());
+    await waitFor(() => expect(artifactsReadFileMock).toHaveBeenCalled());
 
     expect(await screen.findByAltText('|Ω| heatmap')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /proxy/i })).toBeInTheDocument();
@@ -222,8 +281,8 @@ describe('Baselines component', () => {
       loopMetrics: null,
     });
 
-    listMock.mockResolvedValue(okEnvelope([]) as IpcEnvelope<unknown>);
-    readFileMock.mockResolvedValue(
+    artifactsListMock.mockResolvedValue(okEnvelope([]) as IpcEnvelope<unknown>);
+    artifactsReadFileMock.mockResolvedValue(
       okEnvelope({ path: '/tmp/stream/top_omega_tiles.json', contents: JSON.stringify({ axes: [], top_tiles: [] }) }),
     );
 

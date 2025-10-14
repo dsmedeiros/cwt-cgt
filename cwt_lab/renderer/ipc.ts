@@ -17,6 +17,8 @@ import type {
   BaselineRunStreamEvent,
   BaselineRunExitEvent,
   BaselineRunErrorEvent,
+  BaselineAlignmentResult,
+  BaselineAlignmentProgressEvent,
 } from './types/ipc';
 
 const unwrap = async <T>(
@@ -79,6 +81,12 @@ export const baselines = {
       'Baseline runner IPC is unavailable',
     );
   },
+  async alignment(): Promise<BaselineAlignmentResult> {
+    return unwrap(
+      window?.CWT?.baselines?.alignment?.(),
+      'Baseline alignment IPC is unavailable',
+    );
+  },
   onOutput(listener: (event: BaselineRunStreamEvent) => void): () => void {
     return window?.CWT?.baselines?.onOutput?.(listener) ?? (() => {});
   },
@@ -87,6 +95,11 @@ export const baselines = {
   },
   onError(listener: (event: BaselineRunErrorEvent) => void): () => void {
     return window?.CWT?.baselines?.onError?.(listener) ?? (() => {});
+  },
+  onAlignmentProgress(
+    listener: (event: BaselineAlignmentProgressEvent) => void,
+  ): () => void {
+    return window?.CWT?.baselines?.onAlignmentProgress?.(listener) ?? (() => {});
   },
 };
 
