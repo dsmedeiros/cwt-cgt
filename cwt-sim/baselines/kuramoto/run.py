@@ -1,4 +1,5 @@
 """CLI for the Kuramoto oscillator baseline."""
+
 from __future__ import annotations
 
 import argparse
@@ -155,9 +156,7 @@ def _parse_graph_params(pairs: Sequence[str]) -> dict[str, float | int | bool]:
     params: dict[str, float | int | bool] = {}
     for item in pairs:
         if "=" not in item:
-            raise argparse.ArgumentTypeError(
-                f"Graph parameter '{item}' must follow the KEY=VALUE format."
-            )
+            raise argparse.ArgumentTypeError(f"Graph parameter '{item}' must follow the KEY=VALUE format.")
         key, raw_value = item.split("=", 1)
         key = key.strip()
         if not key:
@@ -392,9 +391,7 @@ def _finite_difference_curvature(
 _CURVATURE_CACHE: dict[str, np.ndarray] = {}
 
 
-def _curvature_cache_key(
-    order_field: np.ndarray, axis0: Sequence[float], axis1: Sequence[float]
-) -> str:
+def _curvature_cache_key(order_field: np.ndarray, axis0: Sequence[float], axis1: Sequence[float]) -> str:
     axis0_arr = np.asarray(axis0, dtype=float).ravel()
     axis1_arr = np.asarray(axis1, dtype=float).ravel()
     order_arr = np.asarray(order_field, dtype=np.complex128)
@@ -429,10 +426,14 @@ def _compute_cwt_curvature_local(
             psi_tr = phases[i + 1, j + 1]
             psi_tl = phases[i, j + 1]
             loop = (
-                np.conjugate(psi_bl) * psi_br
-                * np.conjugate(psi_br) * psi_tr
-                * np.conjugate(psi_tr) * psi_tl
-                * np.conjugate(psi_tl) * psi_bl
+                np.conjugate(psi_bl)
+                * psi_br
+                * np.conjugate(psi_br)
+                * psi_tr
+                * np.conjugate(psi_tr)
+                * psi_tl
+                * np.conjugate(psi_tl)
+                * psi_bl
             )
             area = delta0 * delta1
             if area == 0.0:
@@ -471,9 +472,7 @@ def _invoke_curvature_experiment(
     this helper in tests to emulate an experiment response.
     """
 
-    raise NotImplementedError(
-        "external curvature experiment invocation is not wired up for this repository"
-    )
+    raise NotImplementedError("external curvature experiment invocation is not wired up for this repository")
 
 
 def compute_cwt_curvature(
@@ -608,10 +607,14 @@ def _run_cwt_loop_local(
     psi_tl = _normalize_complex(corners["top_left"]["order_parameter"])
 
     plaquette = (
-        psi_bl.conjugate() * psi_br
-        * psi_br.conjugate() * psi_tr
-        * psi_tr.conjugate() * psi_tl
-        * psi_tl.conjugate() * psi_bl
+        psi_bl.conjugate()
+        * psi_br
+        * psi_br.conjugate()
+        * psi_tr
+        * psi_tr.conjugate()
+        * psi_tl
+        * psi_tl.conjugate()
+        * psi_bl
     )
 
     extent_kappa = abs(corners["top_right"]["kappa"] - corners["top_left"]["kappa"])
@@ -645,7 +648,7 @@ def _run_cwt_loop_local(
                 "order_parameter": {
                     "real": float(complex(payload["order_parameter"]).real),
                     "imag": float(complex(payload["order_parameter"]).imag),
-                    "magnitude": float(abs(payload["order_parameter"]))
+                    "magnitude": float(abs(payload["order_parameter"])),
                 },
             }
             for label, payload in corners.items()
@@ -739,9 +742,7 @@ def _run_cwt_loop_experiment(
         experiment_warnings: list[str] = []
 
         def _warn_overrun(elapsed: float) -> None:
-            message = (
-                f"Loop experiment runtime {elapsed:.3f}s exceeded the {timeout:.3f}s budget."
-            )
+            message = f"Loop experiment runtime {elapsed:.3f}s exceeded the {timeout:.3f}s budget."
             warnings.warn(message, RuntimeWarning)
             experiment_warnings.append(message)
 
@@ -885,12 +886,16 @@ def run_cwt_loop(
             descriptor=descriptor,
             center_axes=("kappa", "sigma"),
             extent_scale=max(
-                float(base_report.get("loop", {}).get("span_kappa", 0.0))
-                if isinstance(base_report.get("loop"), Mapping)
-                else 0.0,
-                float(base_report.get("loop", {}).get("span_sigma", 0.0))
-                if isinstance(base_report.get("loop"), Mapping)
-                else 0.0,
+                (
+                    float(base_report.get("loop", {}).get("span_kappa", 0.0))
+                    if isinstance(base_report.get("loop"), Mapping)
+                    else 0.0
+                ),
+                (
+                    float(base_report.get("loop", {}).get("span_sigma", 0.0))
+                    if isinstance(base_report.get("loop"), Mapping)
+                    else 0.0
+                ),
                 float(delta_scale),
             ),
             sample_steps=sample_steps,
@@ -1032,9 +1037,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
     budget_notes: list[str] = []
 
     def _warn_overrun(elapsed: float) -> None:
-        message = (
-            f"Kuramoto sweep runtime {elapsed:.3f}s exceeded the {time_budget:.3f}s budget."
-        )
+        message = f"Kuramoto sweep runtime {elapsed:.3f}s exceeded the {time_budget:.3f}s budget."
         warnings.warn(message, RuntimeWarning)
         budget_notes.append(message)
 

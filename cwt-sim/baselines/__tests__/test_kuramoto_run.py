@@ -251,6 +251,7 @@ def test_run_cwt_loop_experiment_uses_descriptor_graph(monkeypatch) -> None:
     assert env["CWT_SEED"] == "11"
     assert report["module"] == "stub.loop"
 
+
 def test_cli_produces_artifacts(tmp_path: Path) -> None:
     """Running the CLI with a small grid writes metrics and artifacts."""
 
