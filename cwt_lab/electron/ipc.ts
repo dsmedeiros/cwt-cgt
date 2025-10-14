@@ -699,6 +699,54 @@ ipcMain.handle('cwt:baselines:run', (event, payload) =>
       onError: ({ runId, error }) => {
         send('cwt:baselines:run:error', { runId, message: error.message });
       },
+    }).then(async (result) => {
+      try {
+        const baseRecord = {
+          id: result.runId,
+          createdAt: result.startedAt,
+          updatedAt: result.completedAt,
+          status: result.status,
+          command: result.command,
+          args: result.args,
+          cwd: result.cwd,
+          phase: 'baseline',
+          experiment: result.model,
+          label: `${result.model} baseline`,
+          artifactsDir: result.artifactsDir,
+          metrics: result.loopMetrics ?? null,
+        } as const;
+
+        runManager.recordExternalRun(baseRecord);
+
+        if (result.status === 'complete') {
+          try {
+            const summaryMetrics = await runManager.collectRunMetrics(result.runId);
+            const combined = {
+              ...(summaryMetrics ?? {}),
+              ...(result.loopMetrics ?? {}),
+            } satisfies Record<string, number | null>;
+            if (Object.keys(combined).length > 0) {
+              runManager.recordExternalRun({
+                ...baseRecord,
+                updatedAt: Date.now(),
+                metrics: combined,
+              });
+            }
+          } catch (metricsError) {
+            console.warn(
+              `[IPC] Failed to collect summary metrics for baseline run ${result.runId}:`,
+              metricsError,
+            );
+          }
+        }
+      } catch (registryError) {
+        console.warn(
+          `[IPC] Failed to record baseline run ${result.runId} in the registry:`,
+          registryError,
+        );
+      }
+
+      return result;
     });
   }, { label: 'cwt:baselines:run' }),
 );

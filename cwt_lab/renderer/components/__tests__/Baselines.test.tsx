@@ -100,9 +100,15 @@ describe('Baselines component', () => {
       runId: 'run-1',
       model: 'ising',
       outputDir: '/tmp/baselines/run-1',
+      artifactsDir: '/tmp/baselines/run-1',
       command: 'python',
       args: ['--graph-kind', 'lattice_2d'],
       cli: 'baseline --model ising',
+      cwd: '/workspace',
+      status: 'complete',
+      startedAt: 1,
+      completedAt: 2,
+      loopMetrics: null,
     });
 
     listMock.mockResolvedValue([
@@ -155,9 +161,15 @@ describe('Baselines component', () => {
       runId: 'run-stream',
       model: 'ising',
       outputDir: '/tmp/stream',
+      artifactsDir: '/tmp/stream',
       command: 'python',
       args: [],
       cli: 'baseline',
+      cwd: '/workspace',
+      status: 'complete',
+      startedAt: 1,
+      completedAt: 2,
+      loopMetrics: null,
     });
 
     listMock.mockResolvedValue([]);

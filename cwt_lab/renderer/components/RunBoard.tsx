@@ -100,12 +100,21 @@ const formatPhaseLabel = (phase: string | null | undefined) => {
     return null;
   }
 
-  const match = /^phase(\d+)/i.exec(phase);
+  const trimmed = phase.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  if (trimmed.toLowerCase() === 'baseline') {
+    return 'Baseline';
+  }
+
+  const match = /^phase(\d+)/i.exec(trimmed);
   if (match) {
     return `Phase ${match[1]}`;
   }
 
-  return phase.replace(/[-_]/g, ' ');
+  return trimmed.replace(/[-_]/g, ' ');
 };
 
 type ExperimentGroup = {

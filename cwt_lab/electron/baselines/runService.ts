@@ -99,6 +99,219 @@ const readRunDirectories: RunDirsReader = async (root) => {
 
 const toUtf8 = (chunk: Buffer): string => chunk.toString('utf-8');
 
+const WORKSPACE_ROOT = '_runs';
+const LOG_FILENAME = 'stdout.log';
+
+const parseFiniteNumber = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const numeric = Number(value);
+    if (Number.isFinite(numeric)) {
+      return numeric;
+    }
+  }
+  return null;
+};
+
+const readJsonFile = async (filePath: string): Promise<unknown | null> => {
+  try {
+    const raw = await fs.readFile(filePath, 'utf-8');
+    return JSON.parse(raw) as unknown;
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException | null)?.code;
+    if (code === 'ENOENT') {
+      return null;
+    }
+    console.warn(`[baseline] Failed to read ${filePath}:`, error);
+    return null;
+  }
+};
+
+const normaliseRecord = (payload: unknown): Record<string, unknown> | null => {
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+  return payload as Record<string, unknown>;
+};
+
+const collectLoopReports = async (artifactsDir: string): Promise<Record<string, unknown>[]> => {
+  const records: Record<string, unknown>[] = [];
+
+  const loopReports = await readJsonFile(path.join(artifactsDir, 'loop_reports.json'));
+  if (Array.isArray(loopReports)) {
+    for (const entry of loopReports) {
+      const record = normaliseRecord(entry);
+      if (record) {
+        records.push(record);
+      }
+    }
+  } else {
+    const record = normaliseRecord(loopReports);
+    if (record) {
+      records.push(record);
+    }
+  }
+
+  const loopsDir = path.join(artifactsDir, 'loops');
+  try {
+    const files = await fs.readdir(loopsDir, { withFileTypes: true });
+    const jsonFiles = files
+      .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.json'))
+      .map((entry) => path.join(loopsDir, entry.name));
+    for (const file of jsonFiles) {
+      const data = await readJsonFile(file);
+      const record = normaliseRecord(data);
+      if (record) {
+        records.push(record);
+      }
+    }
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException | null)?.code;
+    if (code !== 'ENOENT') {
+      console.warn(`[baseline] Failed to enumerate loops under ${loopsDir}:`, error);
+    }
+  }
+
+  return records;
+};
+
+const extractLoopMetrics = (records: Record<string, unknown>[]): Record<string, number | null> | null => {
+  if (records.length === 0) {
+    return null;
+  }
+
+  let omegaAbsSum = 0;
+  let omegaAbsCount = 0;
+  let omegaAbsMax: number | null = null;
+  let phiAbsMax: number | null = null;
+  let guardHits = 0;
+  let guardMin: number | null = null;
+  let signFlipCount = 0;
+  let trustworthyCount = 0;
+
+  const toRecord = (value: unknown): Record<string, unknown> | null =>
+    value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
+
+  for (const record of records) {
+    const loop = toRecord(record.loop);
+    const orientations = Array.isArray(record.orientations)
+      ? (record.orientations as unknown[])
+      : [];
+
+    const omegaCandidates: Array<number | null> = [
+      parseFiniteNumber(record.omega_abs),
+      loop ? parseFiniteNumber(loop.omega_abs) : null,
+    ];
+    const omegaAbs = omegaCandidates.find((candidate) => candidate !== null) ?? null;
+    if (omegaAbs !== null) {
+      omegaAbsSum += omegaAbs;
+      omegaAbsCount += 1;
+      omegaAbsMax = omegaAbsMax === null ? omegaAbs : Math.max(omegaAbsMax, omegaAbs);
+    }
+
+    let phiAbs: number | null = parseFiniteNumber(record.phi_abs);
+    if (loop) {
+      const loopPhi = parseFiniteNumber(loop.phi_abs ?? loop.phi);
+      if (loopPhi !== null) {
+        phiAbs = phiAbs === null ? Math.abs(loopPhi) : Math.max(phiAbs, Math.abs(loopPhi));
+      }
+    }
+    for (const entry of orientations) {
+      const orientation = toRecord(entry);
+      if (!orientation) {
+        continue;
+      }
+      const phi = parseFiniteNumber(orientation.phi);
+      if (phi !== null) {
+        phiAbs = phiAbs === null ? Math.abs(phi) : Math.max(phiAbs, Math.abs(phi));
+      }
+      if (orientation.fs_guard_exceeded) {
+        guardHits += 1;
+      }
+    }
+    if (phiAbs !== null) {
+      phiAbsMax = phiAbsMax === null ? phiAbs : Math.max(phiAbsMax, phiAbs);
+    }
+
+    const guardCandidates: Array<number | null> = [
+      parseFiniteNumber(record.fs_guard),
+      loop ? parseFiniteNumber(loop.fs_guard) : null,
+    ];
+    const guardValue = guardCandidates.find((candidate) => candidate !== null) ?? null;
+    if (guardValue !== null) {
+      guardMin = guardMin === null ? guardValue : Math.min(guardMin, guardValue);
+    }
+
+    const guardFlag = Boolean(
+      record.fs_guard_exceeded ||
+        record.fs_guard_triggered ||
+        (loop && (loop.fs_guard_triggered || loop.fs_guard_exceeded)) ||
+        record.status === 'rejected',
+    );
+    if (guardFlag) {
+      guardHits += 1;
+    }
+
+    if (loop?.sign_flip_detected) {
+      signFlipCount += 1;
+    }
+
+    const trusted =
+      !guardFlag &&
+      ((phiAbs !== null && phiAbs > 0.2) || (omegaAbs !== null && Math.abs(omegaAbs) > 0.2));
+    if (trusted) {
+      trustworthyCount += 1;
+    }
+  }
+
+  const metrics: Record<string, number | null> = {
+    loop_count: records.length,
+  };
+
+  if (omegaAbsCount > 0) {
+    metrics.loop_omega_abs_mean = omegaAbsSum / omegaAbsCount;
+  }
+  if (omegaAbsMax !== null) {
+    metrics.loop_omega_abs_max = omegaAbsMax;
+  }
+  if (phiAbsMax !== null) {
+    metrics.loop_phi_abs_max = phiAbsMax;
+  }
+  if (guardMin !== null) {
+    metrics.loop_fs_guard_min = guardMin;
+  }
+  if (guardHits > 0) {
+    metrics.loop_fs_guard_violations = guardHits;
+  }
+  if (signFlipCount > 0) {
+    metrics.loop_sign_flip_count = signFlipCount;
+  }
+  if (trustworthyCount > 0) {
+    metrics.loop_trustworthy_count = trustworthyCount;
+    metrics.loop_trustworthy_fraction = trustworthyCount / records.length;
+  }
+
+  return metrics;
+};
+
+const collectLoopMetrics = async (
+  artifactsDir: string | null,
+): Promise<Record<string, number | null> | null> => {
+  if (!artifactsDir) {
+    return null;
+  }
+  const records = await collectLoopReports(artifactsDir);
+  return extractLoopMetrics(records);
+};
+
+const writeRunLog = async (artifactsDir: string, runId: string, buffer: Buffer) => {
+  const workspaceDir = path.join(artifactsDir, WORKSPACE_ROOT, runId);
+  await fs.mkdir(workspaceDir, { recursive: true });
+  await fs.writeFile(path.join(workspaceDir, LOG_FILENAME), buffer);
+};
+
 export type BaselineRunHooks = {
   onStdout?: (event: { runId: string; chunk: string }) => void;
   onStderr?: (event: { runId: string; chunk: string }) => void;
@@ -118,9 +331,15 @@ export type BaselineRunResult = {
   runId: string;
   model: BaselineModel;
   outputDir: string | null;
+  artifactsDir: string;
   command: string;
   args: string[];
+  cwd: string;
   cli: string;
+  status: 'complete';
+  startedAt: number;
+  completedAt: number;
+  loopMetrics: Record<string, number | null> | null;
 };
 
 const toChildProcess = (child: ChildProcessWithoutNullStreams | null) => {
@@ -159,9 +378,12 @@ export const executeBaselineRun = async (
   const spawnImpl = deps.spawnFn ?? spawn;
   const uuid = deps.uuidFn ?? uuidv4;
   const runId = uuid();
+  const startedAt = Date.now();
 
   const runScopedOutputDir =
     payload.outputDir ?? path.join(artifactsRoot, BASELINE_RUNS_ROOT, runId);
+
+  await fs.mkdir(runScopedOutputDir, { recursive: true });
 
   const options: BaselineCommandOptions = {
     strategy: env.strategy,
@@ -194,6 +416,8 @@ export const executeBaselineRun = async (
     }
   }
 
+  const logChunks: Buffer[] = [];
+
   await new Promise<void>((resolve, reject) => {
     const child = toChildProcess(
       spawnImpl(plan.command, plan.args, {
@@ -203,10 +427,12 @@ export const executeBaselineRun = async (
     );
 
     child.stdout.on('data', (chunk: Buffer) => {
+      logChunks.push(chunk);
       deps.onStdout?.({ runId, chunk: toUtf8(chunk) });
     });
 
     child.stderr.on('data', (chunk: Buffer) => {
+      logChunks.push(chunk);
       deps.onStderr?.({ runId, chunk: toUtf8(chunk) });
     });
 
@@ -229,14 +455,30 @@ export const executeBaselineRun = async (
 
   const after = await readDirs(modelRoot);
   const outputDir = pickLatestRunDir(modelRoot, before, after);
+  const completedAt = Date.now();
+  const artifactsDir = outputDir ?? runScopedOutputDir;
+
+  try {
+    await writeRunLog(artifactsDir, runId, Buffer.concat(logChunks));
+  } catch (error) {
+    console.warn(`[baseline] Failed to persist stdout log for ${runId}:`, error);
+  }
+
+  const loopMetrics = await collectLoopMetrics(outputDir);
 
   return {
     runId,
     model: payload.model,
     outputDir,
+    artifactsDir,
     command: plan.command,
     args: [...plan.args],
+    cwd: plan.cwd,
     cli: plan.cli,
+    status: 'complete',
+    startedAt,
+    completedAt,
+    loopMetrics,
   } satisfies BaselineRunResult;
 };
 

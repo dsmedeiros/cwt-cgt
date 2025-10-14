@@ -476,7 +476,8 @@ const loadArtifactsForRun = async (
   model: BaselineModel,
   run: BaselineRunResult,
 ): Promise<BaselineArtifacts> => {
-  if (!run.outputDir) {
+  const resolvedDir = run.outputDir ?? run.artifactsDir;
+  if (!resolvedDir) {
     throw new Error('Baseline run did not report an artifact directory.');
   }
   const artifactsApi = window?.CWT?.artifacts;
@@ -484,7 +485,7 @@ const loadArtifactsForRun = async (
     throw new Error('Artifacts IPC is unavailable.');
   }
 
-  const normalizedDir = normalizePath(run.outputDir);
+  const normalizedDir = normalizePath(resolvedDir);
   const heatmapPath = joinPath(normalizedDir, 'omega_abs_heatmap.png');
   const topTilesPath = joinPath(normalizedDir, 'top_omega_tiles.json');
   const metricsPath = joinPath(normalizedDir, 'metrics.csv');
