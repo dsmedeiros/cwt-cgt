@@ -22,6 +22,12 @@ exports[`Baselines component > submits the baseline payload and renders artifact
         class="baselines__header-actions"
       >
         <button
+          class="baselines__demo-button"
+          type="button"
+        >
+          Run theory alignment demo
+        </button>
+        <button
           aria-label="Show baseline model tips"
           class="baselines__tips-button"
           type="button"

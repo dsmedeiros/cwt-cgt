@@ -17,7 +17,13 @@ import {
 } from './runner/env';
 import { RunManager, type RunMetadata } from './runner/runManager';
 import { artifactsRoot, cwtSimRoot, repoRoot } from './paths';
-import type { GuidedLoopArgs, GuidedLoopSummary, LoopAtHotspotPayload } from '../renderer/types/ipc';
+import type {
+  BaselineAlignmentProgressEvent,
+  BaselineAlignmentResult,
+  GuidedLoopArgs,
+  GuidedLoopSummary,
+  LoopAtHotspotPayload,
+} from '../renderer/types/ipc';
 import { runAdiabaticBoundary } from './adiabaticBoundary';
 import { cmdGraphFamily } from './graphFamily';
 import cmdInverseDesign from './inverseDesign';
@@ -27,6 +33,7 @@ import { buildArgsFromParams } from './runner/args';
 import { correlate as correlatePhase2 } from '../../electron/runner/phase2';
 import { scanArtifacts, watchArtifacts, type ArtifactChangeEvent } from './runner/files';
 import { baselineRunPayloadSchema, executeBaselineRun } from './baselines/runService';
+import { runBaselineAlignment } from './baselines/alignment';
 
 type Envelope<T> = { ok: true; data: T } | { ok: false; error: string; data?: T };
 
@@ -749,6 +756,34 @@ ipcMain.handle('cwt:baselines:run', (event, payload) =>
       return result;
     });
   }, { label: 'cwt:baselines:run' }),
+);
+
+ipcMain.handle('cwt:baselines:alignment', (event) =>
+  wrap(async () => {
+    const env = ensurePythonEnvironment();
+    const sender = event.sender;
+    const send = (progress: BaselineAlignmentProgressEvent) => {
+      if (sender.isDestroyed()) {
+        return;
+      }
+      sender.send('cwt:baselines:alignment:progress', progress);
+    };
+
+    try {
+      const result = await runBaselineAlignment({
+        env,
+        artifactsRoot,
+        onProgress: send,
+      });
+      return result satisfies BaselineAlignmentResult;
+    } catch (error) {
+      send({
+        kind: 'error',
+        message: (error as Error).message ?? 'Theory alignment demo failed.',
+      });
+      throw error;
+    }
+  }, { label: 'cwt:baselines:alignment' }),
 );
 
 ipcMain.handle('cwt:run:abort', (_event, payload: { runId: string }) =>

@@ -8,6 +8,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Baselines from '../Baselines';
 import type {
   ArtifactsReadFilePayload,
+  BaselineAlignmentProgressEvent,
+  BaselineAlignmentResult,
   IpcEnvelope,
   RendererIpc,
 } from '../../types/ipc';
@@ -15,14 +17,17 @@ import type {
 type StreamHandler = (event: { runId: string; chunk: string; stream: 'stdout' | 'stderr' }) => void;
 type ExitHandler = (event: { runId: string; code: number | null; signal: NodeJS.Signals | null }) => void;
 type ErrorHandler = (event: { runId: string; message: string }) => void;
+type AlignmentHandler = (event: BaselineAlignmentProgressEvent) => void;
 const globalWindow = window as typeof window & { CWT?: RendererIpc };
 
 const okEnvelope = <T,>(data: T): IpcEnvelope<T> => ({ ok: true, data });
 
 const runMock = vi.fn();
+const alignmentMock = vi.fn<[], Promise<BaselineAlignmentResult>>();
 let outputHandlers: StreamHandler[] = [];
 let exitHandlers: ExitHandler[] = [];
 let errorHandlers: ErrorHandler[] = [];
+let alignmentHandlers: AlignmentHandler[] = [];
 
 const FIXTURES_ROOT = path.resolve(process.cwd(), '..', 'cwt-sim/baselines/__fixtures__');
 
@@ -74,6 +79,13 @@ vi.mock('../../ipc', () => ({
         errorHandlers = errorHandlers.filter((entry) => entry !== handler);
       };
     },
+    alignment: () => alignmentMock(),
+    onAlignmentProgress: (handler: AlignmentHandler) => {
+      alignmentHandlers.push(handler);
+      return () => {
+        alignmentHandlers = alignmentHandlers.filter((entry) => entry !== handler);
+      };
+    },
   },
 }));
 
@@ -85,9 +97,11 @@ describe('Baselines component', () => {
 
   beforeEach(() => {
     runMock.mockReset();
+    alignmentMock.mockReset();
     outputHandlers = [];
     exitHandlers = [];
     errorHandlers = [];
+    alignmentHandlers = [];
     readFileMock.mockReset();
     listMock.mockReset();
 
@@ -96,7 +110,25 @@ describe('Baselines component', () => {
         readFile: readFileMock as unknown as RendererIpc['artifacts']['readFile'],
         list: listMock as unknown as RendererIpc['artifacts']['list'],
       },
+      baselines: {
+        alignment: alignmentMock,
+        onAlignmentProgress: (handler: AlignmentHandler) => {
+          alignmentHandlers.push(handler);
+          return () => {
+            alignmentHandlers = alignmentHandlers.filter((entry) => entry !== handler);
+          };
+        },
+      } as RendererIpc['baselines'],
     } as RendererIpc;
+
+    alignmentMock.mockResolvedValue({
+      exportId: 'baselines_alignment_demo',
+      zipPath: '/tmp/bundle.zip',
+      startedAt: 1,
+      completedAt: 2,
+      runs: [],
+      readmePath: 'baselines_alignment_demo/README.md',
+    });
   });
 
   afterEach(() => {

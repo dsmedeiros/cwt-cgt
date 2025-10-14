@@ -10,6 +10,8 @@ import type {
   BaselineRunStreamEvent,
   BaselineRunExitEvent,
   BaselineRunErrorEvent,
+  BaselineAlignmentResult,
+  BaselineAlignmentProgressEvent,
 } from '../renderer/types/ipc';
 
 const invoke = <T>(channel: string, payload?: unknown) =>
@@ -36,6 +38,7 @@ const api = {
   },
   baselines: {
     run: (payload: BaselineRunPayload) => invoke<BaselineRunResult>('cwt:baselines:run', payload),
+    alignment: () => invoke<BaselineAlignmentResult>('cwt:baselines:alignment'),
     onOutput: (listener) => {
       const channel = 'cwt:baselines:run:output';
       const handler = (_event: IpcRendererEvent, payload: BaselineRunStreamEvent) => {
@@ -59,6 +62,16 @@ const api = {
     onError: (listener) => {
       const channel = 'cwt:baselines:run:error';
       const handler = (_event: IpcRendererEvent, payload: BaselineRunErrorEvent) => {
+        listener(payload);
+      };
+      ipcRenderer.on(channel, handler);
+      return () => {
+        ipcRenderer.removeListener(channel, handler);
+      };
+    },
+    onAlignmentProgress: (listener) => {
+      const channel = 'cwt:baselines:alignment:progress';
+      const handler = (_event: IpcRendererEvent, payload: BaselineAlignmentProgressEvent) => {
         listener(payload);
       };
       ipcRenderer.on(channel, handler);

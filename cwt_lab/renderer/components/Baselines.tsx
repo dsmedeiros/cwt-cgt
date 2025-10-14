@@ -3,6 +3,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import HelpDrawer from './HelpDrawer';
 import { baselines as baselinesIpc } from '../ipc';
 import type {
+  BaselineAlignmentProgressEvent,
   BaselineModel,
   BaselineRunErrorEvent,
   BaselineRunExitEvent,
@@ -365,6 +366,27 @@ const formatCoordinates = (coordinates: Record<string, unknown>): string => {
   return entries.length > 0 ? entries.join(', ') : 'n/a';
 };
 
+const describeAlignmentEvent = (event: BaselineAlignmentProgressEvent): string => {
+  switch (event.kind) {
+    case 'start':
+      return `Launching ${event.totalRuns} baseline runs for theory alignment…`;
+    case 'run-start':
+      return `Run ${event.index + 1}/${event.totalRuns} (${event.label}) started (seed ${event.seed}).`;
+    case 'run-complete':
+      return `Run ${event.index + 1}/${event.totalRuns} (${event.label}) finished – artifacts stored at ${event.artifactsDir}.`;
+    case 'run-error':
+      return `Run ${event.index + 1}/${event.totalRuns} (${event.label}) failed: ${event.message}`;
+    case 'packing':
+      return 'Collecting theory alignment artifacts into export bundle…';
+    case 'complete':
+      return `Theory alignment bundle ready at ${event.zipPath}.`;
+    case 'error':
+      return `Theory alignment demo failed: ${event.message}`;
+    default:
+      return 'Theory alignment progress updated.';
+  }
+};
+
 const buildLoopSummary = (payload: unknown, filePath: string): LoopSummary => {
   const base: LoopSummary = {
     id: filePath,
@@ -643,6 +665,10 @@ export default function Baselines() {
   const [artifactsLoading, setArtifactsLoading] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [heatmapMode, setHeatmapMode] = useState<'cwt' | 'proxy'>('cwt');
+  const [alignmentRunning, setAlignmentRunning] = useState(false);
+  const [alignmentProgress, setAlignmentProgress] = useState<string[]>([]);
+  const [alignmentError, setAlignmentError] = useState<string | null>(null);
+  const [alignmentZipPath, setAlignmentZipPath] = useState<string | null>(null);
 
   const pendingRunRef = useRef(false);
   const activeRunRef = useRef<string | null>(null);
@@ -695,6 +721,21 @@ export default function Baselines() {
       stopOutput();
       stopExit();
       stopError();
+    };
+  }, []);
+
+  useEffect(() => {
+    const stop = baselinesIpc.onAlignmentProgress((event: BaselineAlignmentProgressEvent) => {
+      setAlignmentProgress((current) => [...current, describeAlignmentEvent(event)]);
+      if (event.kind === 'run-error' || event.kind === 'error') {
+        setAlignmentError(event.message);
+      }
+      if (event.kind === 'complete') {
+        setAlignmentZipPath(event.zipPath);
+      }
+    });
+    return () => {
+      stop();
     };
   }, []);
 
@@ -822,9 +863,31 @@ export default function Baselines() {
     return { args, env };
   };
 
+  const handleAlignmentDemo = async () => {
+    if (alignmentRunning || running) {
+      return;
+    }
+    setAlignmentRunning(true);
+    setAlignmentProgress([]);
+    setAlignmentError(null);
+    setAlignmentZipPath(null);
+    setStatusMessage('Running theory alignment demo…');
+    try {
+      const result = await baselinesIpc.alignment();
+      setAlignmentZipPath(result.zipPath);
+      setStatusMessage('Theory alignment bundle ready.');
+    } catch (error) {
+      const message = (error as Error).message ?? 'Theory alignment demo failed.';
+      setAlignmentError(message);
+      setStatusMessage('Theory alignment demo failed.');
+    } finally {
+      setAlignmentRunning(false);
+    }
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (running) {
+    if (running || alignmentRunning) {
       return;
     }
     setStatusMessage('Launching baseline run…');
@@ -885,6 +948,14 @@ export default function Baselines() {
         <div className="baselines__header-actions">
           <button
             type="button"
+            className="baselines__demo-button"
+            onClick={handleAlignmentDemo}
+            disabled={alignmentRunning || running}
+          >
+            {alignmentRunning ? 'Preparing theory demo…' : 'Run theory alignment demo'}
+          </button>
+          <button
+            type="button"
             className="baselines__tips-button"
             onClick={() => setHelpOpen(true)}
             aria-label="Show baseline model tips"
@@ -895,7 +966,7 @@ export default function Baselines() {
       </header>
 
       <form className="baselines__form" onSubmit={handleSubmit} aria-label="Baseline configuration">
-        <fieldset className="baselines__fieldset" disabled={running}>
+        <fieldset className="baselines__fieldset" disabled={running || alignmentRunning}>
           <div className="baselines__form-grid">
             <label className="baselines__field">
               <span className="baselines__field-label">Model</span>
@@ -1109,8 +1180,8 @@ export default function Baselines() {
         </fieldset>
 
         <footer className="baselines__actions">
-          <button type="submit" className="baselines__submit" disabled={running}>
-            {running ? 'Running…' : 'Run baseline'}
+          <button type="submit" className="baselines__submit" disabled={running || alignmentRunning}>
+            {running ? 'Running…' : alignmentRunning ? 'Theory demo running…' : 'Run baseline'}
           </button>
           <div className="baselines__meta">
             {stepsValue !== null ? <span>Steps: {stepsValue}</span> : null}
@@ -1123,6 +1194,19 @@ export default function Baselines() {
       <section className="baselines__status" aria-live="polite">
         {statusMessage ? <p className="baselines__status-message">{statusMessage}</p> : null}
         {errorMessage ? <p className="baselines__status-error">{errorMessage}</p> : null}
+        {alignmentProgress.length > 0 ? (
+          <ul className="baselines__alignment-progress">
+            {alignmentProgress.map((line, index) => (
+              <li key={`alignment-${index}`}>{line}</li>
+            ))}
+          </ul>
+        ) : null}
+        {alignmentZipPath ? (
+          <p className="baselines__alignment-result">
+            Bundle saved to <code>{alignmentZipPath}</code>
+          </p>
+        ) : null}
+        {alignmentError ? <p className="baselines__status-error">{alignmentError}</p> : null}
       </section>
 
       <section className="baselines__log" aria-label="Baseline run output">
