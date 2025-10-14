@@ -205,8 +205,41 @@ export const runAdiabaticBoundary = async (
 
   const completion = await runManager.waitForCompletion(runId);
   if (completion.status !== 'complete' || completion.exitCode !== 0) {
-    const reason = completion.error ?? `exit code ${completion.exitCode}`;
-    throw new Error(`adiabatic boundary sweep failed: ${reason}`);
+    let failureReason: string | null = completion.error ?? null;
+    let tailSnippet: string | null = null;
+    let tailError: string | null = null;
+
+    try {
+      const tailChunk = await runManager.tail(runId, -8_192, 8_192);
+      if (tailChunk.failureDetails) {
+        failureReason = tailChunk.failureDetails;
+      }
+
+      const trimmedOutput = tailChunk.output.trim();
+      if (trimmedOutput) {
+        const recentLines = trimmedOutput.split(/\r?\n/).slice(-20);
+        tailSnippet = recentLines.join('\n');
+      }
+    } catch (error) {
+      tailError = error instanceof Error ? error.message : String(error);
+    }
+
+    if (!failureReason) {
+      const exitCode = Number.isFinite(completion.exitCode)
+        ? completion.exitCode
+        : null;
+      failureReason = exitCode != null ? `exit code ${exitCode}` : 'unknown error';
+    }
+
+    const messageParts = [`adiabatic boundary sweep failed: ${failureReason}`];
+    if (tailSnippet) {
+      messageParts.push(`Recent output:\n${tailSnippet}`);
+    }
+    if (tailError) {
+      messageParts.push(`Additionally, failed to read run logs: ${tailError}`);
+    }
+
+    throw new Error(messageParts.join('\n\n'));
   }
 
   const surfacePath = path.join(outputDir, 'kappa_surface.csv');
