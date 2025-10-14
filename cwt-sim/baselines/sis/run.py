@@ -95,8 +95,7 @@ def get_parser() -> argparse.ArgumentParser:
         metavar=("ROWS", "COLS"),
         default=(12, 12),
         help=(
-            "Dimensions of the lattice_2d substrate when --graph-kind=lattice_2d "
-            "(default: %(default)s)."
+            "Dimensions of the lattice_2d substrate when --graph-kind=lattice_2d " "(default: %(default)s)."
         ),
     )
     parser.add_argument(
@@ -109,9 +108,7 @@ def get_parser() -> argparse.ArgumentParser:
         "--warmup",
         type=int,
         default=16,
-        help=(
-            "Number of initial steps discarded when computing statistics (default: %(default)s)."
-        ),
+        help=("Number of initial steps discarded when computing statistics (default: %(default)s)."),
     )
     parser.add_argument(
         "--top-k",
@@ -156,9 +153,7 @@ def _parse_graph_params(pairs: Sequence[str]) -> dict[str, float | int | bool]:
     params: dict[str, float | int | bool] = {}
     for item in pairs:
         if "=" not in item:
-            raise argparse.ArgumentTypeError(
-                f"Graph parameter '{item}' must follow the KEY=VALUE format."
-            )
+            raise argparse.ArgumentTypeError(f"Graph parameter '{item}' must follow the KEY=VALUE format.")
         key, raw_value = item.split("=", 1)
         key = key.strip()
         if not key:
@@ -202,6 +197,36 @@ def _axis_alias(name: str) -> str:
     return name
 
 
+def _resolve_sis_parameters(
+    axis_names: Sequence[str],
+    axis_aliases: Sequence[str],
+    values: Sequence[float],
+) -> tuple[float, float, dict[str, float]]:
+    """Map axis values onto the infection and recovery parameters."""
+
+    if len(axis_names) != len(axis_aliases) or len(axis_names) != len(values):
+        raise ValueError("Axis configuration must provide one value per axis.")
+
+    value_map: dict[str, float] = {}
+    for name, alias, raw_value in zip(axis_names, axis_aliases, values):
+        value = float(raw_value)
+        value_map[name] = value
+        value_map[alias] = value
+
+    infection_rate = value_map.get("zeta")
+    if infection_rate is None:
+        infection_rate = value_map.get("infection_rate")
+
+    recovery_rate = value_map.get("mu")
+    if recovery_rate is None:
+        recovery_rate = value_map.get("recovery_rate")
+
+    if infection_rate is None or recovery_rate is None:
+        raise ValueError("SIS sweeps require axes mapped to infection and recovery rates.")
+
+    return float(infection_rate), float(recovery_rate), value_map
+
+
 def _default_axis_range(name: str) -> tuple[float, float]:
     alias = _axis_alias(name)
     if alias == "zeta":
@@ -214,16 +239,12 @@ def _default_axis_range(name: str) -> tuple[float, float]:
 def _resolve_axis_ranges(
     axis_names: Sequence[str], overrides: Optional[Iterable[Sequence[str]]]
 ) -> dict[str, tuple[float, float]]:
-    ranges: dict[str, tuple[float, float]] = {
-        axis: _default_axis_range(axis) for axis in axis_names
-    }
+    ranges: dict[str, tuple[float, float]] = {axis: _default_axis_range(axis) for axis in axis_names}
     if overrides is None:
         return ranges
     for triple in overrides:
         if len(triple) != 3:
-            raise argparse.ArgumentTypeError(
-                "Axis range overrides must supply AXIS MIN MAX entries."
-            )
+            raise argparse.ArgumentTypeError("Axis range overrides must supply AXIS MIN MAX entries.")
         axis_name, lower, upper = triple
         target = None
         for axis in axis_names:
@@ -246,9 +267,7 @@ def _resolve_grid_size(axis_names: Sequence[str], sizes: Sequence[int]) -> dict[
     for axis, size in zip(axis_names, sizes):
         count = int(size)
         if count <= 0:
-            raise argparse.ArgumentTypeError(
-                f"Grid size must be positive for axis '{axis}' (got {count})."
-            )
+            raise argparse.ArgumentTypeError(f"Grid size must be positive for axis '{axis}' (got {count}).")
         resolved[axis] = count
     return resolved
 
@@ -312,9 +331,7 @@ def simulate_sis(
     return SimulationResult(prevalence=prevalence)
 
 
-def _gradient_magnitude(
-    grid: np.ndarray, axis0: Sequence[float], axis1: Sequence[float]
-) -> np.ndarray:
+def _gradient_magnitude(grid: np.ndarray, axis0: Sequence[float], axis1: Sequence[float]) -> np.ndarray:
     edge_order = 1 if grid.shape[0] < 3 or grid.shape[1] < 3 else 2
     g0, g1 = np.gradient(grid, axis0, axis1, edge_order=edge_order)
     return np.hypot(g0, g1)
@@ -393,9 +410,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         ),
     )
 
-    ranges_for_grid = {
-        axis: axis_ranges[axis] for axis in axis_names
-    }
+    ranges_for_grid = {axis: axis_ranges[axis] for axis in axis_names}
     points = grid_points(ranges_for_grid, grid_spec, axes=axis_names)
 
     graph_params = _parse_graph_params(namespace.graph_param)
@@ -442,12 +457,15 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
             j = int(payload[f"{axis_names[1]}_index"])
             value0 = float(payload[axis_names[0]])
             value1 = float(payload[axis_names[1]])
+            infection_rate, recovery_rate, value_map = _resolve_sis_parameters(
+                axis_names, axis_aliases, (value0, value1)
+            )
             seed_offset = seed_value + index
             rng = np.random.default_rng(seed_offset)
             result = simulate_sis(
                 adjacency,
-                infection_rate=value0,
-                recovery_rate=value1,
+                infection_rate=infection_rate,
+                recovery_rate=recovery_rate,
                 steps=steps,
                 initial_prevalence=float(namespace.initial_prevalence),
                 rng=rng,
@@ -466,13 +484,11 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
             maximum = float(np.max(observed)) if observed.size else 0.0
             final = float(result.prevalence[-1]) if result.prevalence.size else 0.0
 
-            alias_values = {
-                axis_aliases[idx]: (value0 if idx == 0 else value1) for idx in range(2)
-            }
+            alias_values = {alias: value_map[alias] for alias in axis_aliases}
             r0_proxy = float("inf")
-            if value1 > 0.0:
-                r0_proxy = float(spectral_radius * value0 / value1)
-            elif value0 == 0.0:
+            if recovery_rate > 0.0:
+                r0_proxy = float(spectral_radius * infection_rate / recovery_rate)
+            elif infection_rate == 0.0:
                 r0_proxy = 0.0
 
             prevalence_grid[i, j] = mean
@@ -505,6 +521,9 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
                 "spectral_radius": spectral_radius,
                 "R0_proxy": r0_proxy,
             }
+
+            record.setdefault("infection_rate", infection_rate)
+            record.setdefault("recovery_rate", recovery_rate)
 
             for key, value in graph_params.items():
                 record[f"graph_param_{key}"] = value

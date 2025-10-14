@@ -1,9 +1,13 @@
+# ruff: noqa: E402,I001
+
 """Tests for the SIS baseline driver."""
 
 from __future__ import annotations
 
+import csv
 import importlib
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -11,8 +15,9 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-import baselines  # noqa: F401  # pylint: disable=unused-import
-import numpy as np
+import baselines  # noqa: E402,F401  # pylint: disable=unused-import
+import pytest  # noqa: E402
+import numpy as np  # noqa: E402
 
 sis_run = importlib.import_module("_cwt_sim_baselines.sis.run")
 
@@ -106,3 +111,66 @@ def test_cli_produces_sis_artifacts(tmp_path: Path) -> None:
     report = json.loads(loop_files[0].read_text(encoding="utf-8"))
     assert "prevalence_trace" in report
     assert isinstance(report.get("near_critical"), bool)
+
+
+def test_cli_respects_axis_aliases(tmp_path: Path) -> None:
+    """Reordering the axes preserves infection and recovery semantics."""
+
+    argv = [
+        "--output-dir",
+        str(tmp_path),
+        "--axes",
+        "recovery_rate",
+        "infection_rate",
+        "--grid-size",
+        "2",
+        "2",
+        "--range",
+        "infection_rate",
+        "0.7",
+        "0.8",
+        "--range",
+        "recovery_rate",
+        "0.1",
+        "0.2",
+        "--steps",
+        "18",
+        "--warmup",
+        "2",
+        "--initial-prevalence",
+        "0.2",
+        "--graph-kind",
+        "random_regular",
+        "--graph-param",
+        "n=6",
+        "--graph-param",
+        "degree=3",
+        "--seed",
+        "11",
+    ]
+
+    sis_run.main(argv)
+
+    runs_root = tmp_path / "baselines" / "sis"
+    runs = sorted(runs_root.glob("*")) if runs_root.exists() else []
+    assert runs, "expected an experiment directory to be created"
+    run_dir = runs[-1]
+
+    metrics = run_dir / "metrics.csv"
+    assert metrics.exists()
+
+    with metrics.open("r", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        rows = list(reader)
+
+    assert rows, "expected metrics to contain entries"
+    for row in rows:
+        infection_rate = float(row["infection_rate"])
+        recovery_rate = float(row["recovery_rate"])
+        assert infection_rate == pytest.approx(0.7) or infection_rate == pytest.approx(0.8)
+        assert recovery_rate == pytest.approx(0.1) or recovery_rate == pytest.approx(0.2)
+        spectral_radius = float(row["spectral_radius"])
+        expected_r0 = spectral_radius * infection_rate / recovery_rate
+        assert float(row["R0_proxy"]) == pytest.approx(expected_r0)
+        if math.isfinite(recovery_rate) and recovery_rate > 0:
+            assert float(row["R0_proxy"]) > 1.0
