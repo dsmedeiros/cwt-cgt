@@ -31,6 +31,8 @@ type NavigationContextValue = ReturnType<typeof NavigationModule.useExperimentNa
 
 let navigationState: NavigationContextValue;
 let navigationSpy: MockInstance<[], NavigationContextValue> | null = null;
+let guidedLoopMock: MockInstance<[], any> | null = null;
+let runPreviewMock: MockInstance<[], any> | null = null;
 
 describe('Phase3 guided helpers', () => {
   afterEach(() => {
@@ -72,10 +74,15 @@ describe('Phase3 guided helpers', () => {
       0.2,
       0.05,
       7,
+      undefined,
+      64,
+      192,
     );
 
     expect(payload.axes3).toEqual(['kappa', 'rho', 'tau']);
     expect(payload.center).toEqual([kappaCenter, 0.9, 1.15]);
+    expect(payload.settle).toBe(64);
+    expect(payload.handleSteps).toBe(192);
 
     const previewMock = vi.fn().mockImplementation(async (request: any) => {
       const planeAmplitudes = request.args.amplitudes.slice(1).join(', ');
@@ -131,6 +138,8 @@ describe('Phase3 guided helpers', () => {
       0.04,
       17,
       '/tmp/summary.json',
+      72,
+      144,
     );
 
     expect(payload.summary).toBeDefined();
@@ -142,6 +151,10 @@ describe('Phase3 guided helpers', () => {
     expect(summary.center.tau).toBe(1.15);
     expect(summary.centerVector).toEqual([kappaCenter, 0.9, 1.15]);
     expect(summary.amplitudes).toEqual([kappaAmplitude, rhoAmplitude, tauAmplitude]);
+    expect(summary.settle).toBe(72);
+    expect(summary.handleSteps).toBe(144);
+    expect(summary.stepsList).toEqual([128, 256]);
+    expect(summary.fsGuard).toBe(0.18);
   });
 });
 
@@ -158,7 +171,14 @@ describe('Phase3Loops component amplitude controls', () => {
       setSelectedExperimentPath: vi.fn(),
       refreshExperiments: vi.fn(),
       hasArtifactsApi: true,
-      substrates: [],
+      substrates: [
+        {
+          name: 'ring3 substrate',
+          path: 'substrate-1',
+          relativePath: 'ring3-substrate',
+          type: 'directory',
+        },
+      ],
       substratesError: null,
       substratesLoading: false,
       selectedSubstratePath: 'substrate-1',
@@ -180,6 +200,8 @@ describe('Phase3Loops component amplitude controls', () => {
     }
 
     (globalThis as any).window = baseWindow;
+    guidedLoopMock = vi.fn().mockResolvedValue({ ok: true, data: { runs: [], satisfied: false } });
+    runPreviewMock = vi.fn().mockResolvedValue({ ok: true, data: { cli: 'preview' } });
     Object.assign(baseWindow as unknown as Record<string, unknown>, {
       CWT: {
         artifacts: {
@@ -187,6 +209,12 @@ describe('Phase3Loops component amplitude controls', () => {
         },
         registry: {
           query: vi.fn(),
+        },
+        phase3: {
+          guidedLoop: guidedLoopMock,
+        },
+        run: {
+          preview: runPreviewMock,
         },
       },
     });
@@ -196,6 +224,8 @@ describe('Phase3Loops component amplitude controls', () => {
   afterEach(() => {
     navigationSpy?.mockRestore();
     navigationSpy = null;
+    guidedLoopMock = null;
+    runPreviewMock = null;
     cleanup();
     vi.clearAllMocks();
     const currentWindow = (globalThis as { window?: Window }).window;
@@ -234,8 +264,6 @@ describe('Phase3Loops component amplitude controls', () => {
 
   it('gates loop controls until the adiabatic sweep succeeds for the hotspot', async () => {
     readFileMock.mockResolvedValue({ ok: false });
-    navigationState.selectedSubstratePath = null as NavigationContextValue['selectedSubstratePath'];
-
     render(<Phase3Loops />);
 
     const user = userEvent.setup();
@@ -313,6 +341,227 @@ describe('Phase3Loops component amplitude controls', () => {
     await waitFor(() => {
       expect(runButton).not.toBeDisabled();
     });
+  });
+
+  it('applies adiabatic recommendations to guided controls', async () => {
+    readFileMock.mockResolvedValue({ ok: false });
+
+    render(<Phase3Loops />);
+
+    await waitFor(() => {
+      expect(viewerOnResult).toBeInstanceOf(Function);
+      expect(latestViewerProps?.hotspot?.id).toBeTruthy();
+    });
+
+    const hotspotId = latestViewerProps!.hotspot!.id;
+    const graphId = (latestViewerProps?.graphId as string | null) ?? 'ring3';
+    const boundaryResult = {
+      runId: 'adiabatic-2',
+      outputDir: '/tmp/adiabatic',
+      surface: [
+        { extent: 0.2, steps: 200, flux: 0.012, area: null, kappa1: null, readout: null, fsMean: null, fsP95: 0.07 },
+        { extent: 0.25, steps: 260, flux: 0.01, area: null, kappa1: null, readout: null, fsMean: null, fsP95: 0.09 },
+        { extent: 0.3, steps: 320, flux: 0.015, area: null, kappa1: null, readout: null, fsMean: null, fsP95: 0.11 },
+      ],
+      histograms: [],
+      boundary: [
+        {
+          extent: 0.25,
+          boundarySteps: 120,
+          referenceKappa: 1.0,
+          boundaryKappa: 1.08,
+          boundaryFsP95: 0.07,
+        },
+      ],
+      recommendation: { extent: 0.24, steps: 240, fsP95: 0.085 },
+      fsGuard: { recommended: 0.1, maxObserved: 0.12 },
+      referenceKappa: 1.0,
+    };
+
+    act(() => {
+      viewerOnResult?.({
+        status: 'running',
+        requestId: 1,
+        hotspotId,
+        graphId,
+      });
+    });
+
+    act(() => {
+      viewerOnResult?.({
+        status: 'success',
+        requestId: 1,
+        hotspotId,
+        graphId,
+        result: boundaryResult,
+      });
+    });
+
+    const tauInput = (await screen.findByRole('spinbutton', { name: 'τ amplitude value' })) as HTMLInputElement;
+    const zetaInput = screen.getByRole('spinbutton', { name: 'ζ amplitude value' }) as HTMLInputElement;
+    const kappaInput = screen.getByRole('spinbutton', { name: 'κ amplitude value' }) as HTMLInputElement;
+    expect(Number(tauInput.value)).toBeCloseTo(0.25, 2);
+    expect(Number(zetaInput.value)).toBeCloseTo(0.25, 2);
+    expect(Number(kappaInput.value)).toBeCloseTo(0.08, 2);
+
+    const guardInputs = await screen.findAllByLabelText(/FS guard/i, { selector: 'input' });
+    guardInputs.forEach((input) => {
+      expect((input as HTMLInputElement).value).toBe('0.1');
+    });
+
+    const user = userEvent.setup();
+    const guidedSettle = (await screen.findByLabelText(/Guided settle steps/i)) as HTMLInputElement;
+    const handleInput = (await screen.findByLabelText(/Handle steps/i)) as HTMLInputElement;
+    expect(guidedSettle.value).toBe('52');
+    expect(handleInput.value).toBe('120');
+
+    const simpleTab = screen.getByRole('button', { name: /Simple loop/i });
+    await act(async () => {
+      await user.click(simpleTab);
+    });
+    const simpleSettle = await screen.findByLabelText(/Settle steps/i);
+    expect((simpleSettle as HTMLInputElement).value).toBe('52');
+
+    const guidedTab = screen.getByRole('button', { name: /Guided loop/i });
+    await act(async () => {
+      await user.click(guidedTab);
+    });
+
+    const stepInputs = screen.getAllByPlaceholderText('e.g. 320') as HTMLInputElement[];
+    const stepValues = stepInputs.map((input) => input.value);
+    expect(stepValues).toEqual(['200', '240', '260']);
+
+    const calibrateButton = screen.getByRole('button', { name: /Calibrate & Run/i });
+    expect(calibrateButton).not.toBeDisabled();
+  });
+
+  it('flags a calm basin and keeps calibration gated', async () => {
+    readFileMock.mockResolvedValue({ ok: false });
+
+    render(<Phase3Loops />);
+
+    await waitFor(() => {
+      expect(viewerOnResult).toBeInstanceOf(Function);
+    });
+
+    const energeticHotspot = await screen.findByRole('radio', { name: /Energetic Ridge/i });
+    const user = userEvent.setup();
+    await act(async () => {
+      await user.click(energeticHotspot);
+    });
+
+    await waitFor(() => {
+      expect(latestViewerProps?.hotspot?.name).toMatch(/Energetic Ridge/);
+    });
+
+    const calmBoundary = {
+      runId: 'adiabatic-calm',
+      outputDir: '/tmp/adiabatic',
+      surface: [
+        { extent: 0.12, steps: 160, flux: 0.0008, area: null, kappa1: null, readout: null, fsMean: null, fsP95: 0.004 },
+        { extent: 0.14, steps: 200, flux: 0.0012, area: null, kappa1: null, readout: null, fsMean: null, fsP95: 0.006 },
+        { extent: 0.16, steps: 220, flux: 0.0018, area: null, kappa1: null, readout: null, fsMean: null, fsP95: 0.008 },
+      ],
+      histograms: [],
+      boundary: [],
+      recommendation: { extent: 0.14, steps: 200, fsP95: 0.006 },
+      fsGuard: { recommended: 0.05, maxObserved: 0.07 },
+      referenceKappa: 1.0,
+    };
+
+    const calmHotspotId = latestViewerProps!.hotspot!.id;
+    const calmGraphId = (latestViewerProps?.graphId as string | null) ?? 'ring3';
+
+    act(() => {
+      viewerOnResult?.({
+        status: 'success',
+        requestId: 7,
+        hotspotId: calmHotspotId,
+        graphId: calmGraphId,
+        result: calmBoundary,
+      });
+    });
+
+    const calmMessages = await screen.findAllByText(/adiabatic sweep identified a calm basin/i);
+    expect(calmMessages.length).toBeGreaterThan(0);
+    const calibrateButton = screen.getByRole('button', { name: /Calibrate & Run/i });
+    expect(calibrateButton).toBeDisabled();
+    await waitFor(() => {
+      expect(latestViewerProps?.hotspot?.calm).toBe(true);
+    });
+  });
+
+  it('passes tuned settle and handle steps in the guided payload', async () => {
+    readFileMock.mockResolvedValue({ ok: false });
+
+    render(<Phase3Loops />);
+
+    await waitFor(() => {
+      expect(viewerOnResult).toBeInstanceOf(Function);
+      expect(latestViewerProps?.hotspot?.id).toBeTruthy();
+    });
+
+    const hotspotId = latestViewerProps!.hotspot!.id;
+    const graphId = (latestViewerProps?.graphId as string | null) ?? 'ring3';
+    const boundaryResult = {
+      runId: 'adiabatic-run',
+      outputDir: '/tmp/adiabatic',
+      surface: [
+        { extent: 0.22, steps: 220, flux: 0.015, area: null, kappa1: null, readout: null, fsMean: null, fsP95: 0.08 },
+        { extent: 0.26, steps: 280, flux: 0.017, area: null, kappa1: null, readout: null, fsMean: null, fsP95: 0.09 },
+      ],
+      histograms: [],
+      boundary: [
+        {
+          extent: 0.24,
+          boundarySteps: 140,
+          referenceKappa: 1.0,
+          boundaryKappa: 1.09,
+          boundaryFsP95: 0.08,
+        },
+      ],
+      recommendation: { extent: 0.23, steps: 240, fsP95: 0.085 },
+      fsGuard: { recommended: 0.09, maxObserved: 0.1 },
+      referenceKappa: 1.0,
+    };
+
+    act(() => {
+      viewerOnResult?.({
+        status: 'success',
+        requestId: 11,
+        hotspotId,
+        graphId,
+        result: boundaryResult,
+      });
+    });
+
+    const user = userEvent.setup();
+    const calibrateButton = await screen.findByRole('button', { name: /Calibrate & Run/i });
+    await waitFor(() => {
+      const stepValues = screen
+        .getAllByPlaceholderText('e.g. 320')
+        .map((input) => (input as HTMLInputElement).value);
+      expect(stepValues).toEqual(['220', '240', '280']);
+    });
+    await waitFor(() => {
+      expect(calibrateButton).not.toBeDisabled();
+    });
+    await act(async () => {
+      await user.click(calibrateButton);
+    });
+
+    await waitFor(() => {
+      expect(guidedLoopMock).toHaveBeenCalled();
+    });
+
+    const callArgs = guidedLoopMock!.mock.calls[0][0];
+    expect(callArgs.settle).toBe(56);
+    expect(callArgs.handleSteps).toBe(140);
+    expect(callArgs.stepsList).toEqual([220, 240, 280]);
+    expect(callArgs.summary?.settle).toBe(56);
+    expect(callArgs.summary?.handleSteps).toBe(140);
+    expect(callArgs.summary?.stepsList).toEqual([220, 240, 280]);
+    expect(callArgs.summary?.fsGuard).toBe(0.09);
   });
 
   it('allows manual amplitude entries beyond the default range', async () => {

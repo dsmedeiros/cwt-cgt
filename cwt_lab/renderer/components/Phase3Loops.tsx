@@ -371,6 +371,151 @@ const normalizeOrigin = (value: string | null | undefined) =>
 
 const PHASE3_SUMMARY_FILENAME = 'phase3_loop_summary.json';
 
+type AdiabaticGuidance = {
+  planeAmplitude: number | null;
+  kappaAmplitude: number | null;
+  guard: number | null;
+  settle: number | null;
+  handle: number | null;
+  steps: number[];
+  calm: boolean;
+};
+
+const calmFluxThreshold = 0.003;
+const calmFsThreshold = 0.02;
+const calmBasinMessage =
+  'Adiabatic sweep identified a calm basin (Φ≈0 with low FS). Broaden the plane or select a livelier hotspot before running loops.';
+
+const toPositiveNumber = (value: unknown): number | null => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return null;
+  }
+  return numeric;
+};
+
+const toPositiveFloat = (value: unknown): number | null => {
+  const numeric = toPositiveNumber(value);
+  if (numeric === null || Math.abs(numeric) <= 0) {
+    return null;
+  }
+  return Math.abs(numeric);
+};
+
+const toPositiveInteger = (value: unknown): number | null => {
+  const numeric = toPositiveNumber(value);
+  if (numeric === null || !Number.isInteger(numeric) || numeric <= 0) {
+    return null;
+  }
+  return numeric;
+};
+
+const analyzeAdiabaticGuidance = (result: AdiabaticBoundaryResult): AdiabaticGuidance => {
+  const guardRecommended = toPositiveFloat(result.fsGuard?.recommended);
+  const guardFallback = toPositiveFloat(result.fsGuard?.maxObserved);
+  const guard = guardRecommended ?? guardFallback ?? null;
+
+  const surface = Array.isArray(result.surface) ? result.surface : [];
+  const samples = surface
+    .map((sample) => ({
+      extent: toPositiveFloat(sample.extent),
+      steps: toPositiveInteger(sample.steps),
+      fsP95: toPositiveFloat(sample.fsP95),
+      flux: toPositiveFloat(sample.flux),
+    }))
+    .filter((sample) => sample.extent !== null && sample.steps !== null) as Array<{
+    extent: number;
+    steps: number;
+    fsP95: number | null;
+    flux: number | null;
+  }>;
+
+  const guardForFilter = guard ?? Number.POSITIVE_INFINITY;
+  const underGuard = samples.filter(
+    (sample) => sample.fsP95 !== null && sample.fsP95 <= guardForFilter,
+  );
+  const candidateSamples = underGuard.length > 0 ? underGuard : samples;
+  const sortedCandidates = [...candidateSamples].sort((a, b) => {
+    if (a.extent === b.extent) {
+      return b.steps - a.steps;
+    }
+    return b.extent - a.extent;
+  });
+  const bestSample = sortedCandidates[0] ?? null;
+
+  const recommendationExtent = toPositiveFloat(result.recommendation?.extent);
+  let planeAmplitude = bestSample?.extent ?? null;
+  if (recommendationExtent !== null) {
+    planeAmplitude = planeAmplitude !== null ? Math.max(planeAmplitude, recommendationExtent) : recommendationExtent;
+  }
+
+  const recommendationSteps = toPositiveInteger(result.recommendation?.steps);
+  const stepSet = new Set<number>();
+  if (recommendationSteps !== null) {
+    stepSet.add(recommendationSteps);
+  }
+  if (bestSample) {
+    stepSet.add(bestSample.steps);
+  }
+  const extentThreshold = planeAmplitude !== null ? planeAmplitude * 0.75 : 0;
+  candidateSamples
+    .filter((sample) => planeAmplitude === null || sample.extent >= extentThreshold)
+    .forEach((sample) => {
+      stepSet.add(sample.steps);
+    });
+  const steps = Array.from(stepSet)
+    .filter((value): value is number => Number.isFinite(value))
+    .sort((a, b) => a - b);
+  const limitedSteps = steps.length > 0 ? steps.slice(Math.max(steps.length - 4, 0)) : steps;
+
+  const boundary = Array.isArray(result.boundary) ? result.boundary : [];
+  const referenceKappa = toPositiveFloat(result.referenceKappa);
+  const kappaCandidates = boundary
+    .map((entry) => {
+      const ref = toPositiveFloat(entry.referenceKappa) ?? referenceKappa;
+      const boundaryKappa = toPositiveFloat(entry.boundaryKappa);
+      if (ref === null || boundaryKappa === null) {
+        return null;
+      }
+      return Math.abs(boundaryKappa - ref);
+    })
+    .filter((value): value is number => value !== null && Number.isFinite(value));
+  const kappaAmplitude = kappaCandidates.length > 0 ? Math.max(...kappaCandidates) : null;
+
+  const handleCandidates = boundary
+    .map((entry) => toPositiveInteger(entry.boundarySteps))
+    .filter((value): value is number => value !== null);
+  const handle = handleCandidates.length > 0
+    ? Math.max(...handleCandidates)
+    : bestSample
+      ? Math.max(40, Math.round(bestSample.steps * 0.5))
+      : null;
+
+  const settle = bestSample ? Math.max(20, Math.round(bestSample.steps * 0.2)) : null;
+
+  const fluxValues = samples
+    .map((sample) => sample.flux)
+    .filter((value): value is number => value !== null && Number.isFinite(value));
+  const fsValues = samples
+    .map((sample) => sample.fsP95)
+    .filter((value): value is number => value !== null && Number.isFinite(value));
+  const calm =
+    fluxValues.length > 0 &&
+    fsValues.length > 0 &&
+    Math.max(...fluxValues) < calmFluxThreshold &&
+    Math.max(...fsValues) < calmFsThreshold;
+
+  return {
+    planeAmplitude,
+    kappaAmplitude,
+    guard,
+    settle,
+    handle,
+    steps: limitedSteps,
+    calm,
+  };
+};
+
 type GuidedStepEntry = {
   id: string;
   value: string;
@@ -628,6 +773,8 @@ export const buildGuidedPayload = (
   minPhi: number,
   seed: number,
   summaryPath?: string | null,
+  settle?: number,
+  handleSteps?: number,
 ): GuidedLoopArgs => {
   const axes = getHotspotAxes(hotspot);
   const [axisI, axisJ] = axes;
@@ -646,6 +793,13 @@ export const buildGuidedPayload = (
     minPhi,
     seed,
   };
+
+  if (settle !== undefined && settle !== null) {
+    payload.settle = settle;
+  }
+  if (handleSteps !== undefined && handleSteps !== null) {
+    payload.handleSteps = handleSteps;
+  }
 
   if (summaryPath) {
     const centerRecord: Record<string, number> = {
@@ -676,6 +830,11 @@ export const buildGuidedPayload = (
       centerVector: [kappaCenter, centerI, centerJ],
       amplitudes: [kappaAmp, planeAmpI, planeAmpJ],
       label: hotspot.name,
+      ...(settle !== undefined && settle !== null ? { settle } : {}),
+      ...(handleSteps !== undefined && handleSteps !== null ? { handleSteps } : {}),
+      ...(stepsList.length > 0 ? { stepsList } : {}),
+      ...(Number.isFinite(fsGuard) ? { fsGuard } : {}),
+      ...(Number.isFinite(minPhi) ? { minPhi } : {}),
       ...(hotspot.omegaAbs !== undefined ? { omegaAbs: hotspot.omegaAbs } : {}),
       ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
     };
@@ -929,6 +1088,7 @@ const Phase3Loops = () => {
     result: AdiabaticBoundaryResult | null;
     error: string | null;
     calm: boolean | null;
+    calmBasin: boolean;
   };
   const [adiabaticSnapshots, setAdiabaticSnapshots] = useState<Record<string, AdiabaticSnapshotEntry>>({});
 
@@ -981,6 +1141,8 @@ const Phase3Loops = () => {
   ]);
   const [guidedMinPhi, setGuidedMinPhi] = useState(0.02);
   const [guidedSeed, setGuidedSeed] = useState(2024);
+  const [guidedSettleInput, setGuidedSettleInput] = useState('40');
+  const [guidedHandleInput, setGuidedHandleInput] = useState('160');
   const [guidedResult, setGuidedResult] = useState<GuidedLoopResult | null>(null);
   const [isGuidedRunning, setIsGuidedRunning] = useState(false);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
@@ -1009,7 +1171,8 @@ const Phase3Loops = () => {
   );
 
   const adiabaticGraphKey = useMemo(() => graph ?? '__default__', [graph]);
-  const currentAdiabaticSnapshot = adiabaticSnapshots[adiabaticGraphKey] ?? null;
+  const currentAdiabaticSnapshot =
+    adiabaticSnapshots[adiabaticGraphKey] ?? adiabaticSnapshots['__default__'] ?? null;
 
   const adiabaticGateMessage = useMemo(() => {
     if (!selectedHotspot) {
@@ -1033,12 +1196,78 @@ const Phase3Loops = () => {
     if (currentAdiabaticSnapshot.status !== 'success') {
       return adiabaticGateBaseMessage;
     }
+    if (currentAdiabaticSnapshot.calmBasin) {
+      return calmBasinMessage;
+    }
     return null;
   }, [currentAdiabaticSnapshot, graph, selectedHotspot]);
+
+  const setAxisAmplitude = useCallback(
+    (axis: HotspotAxis, value: number) => {
+      const safeValue = Number.isFinite(value) ? value : defaultAxisAmplitude;
+      switch (axis) {
+        case 'rho':
+          setRhoAmplitude(safeValue);
+          break;
+        case 'tau':
+          setTauAmplitude(safeValue);
+          break;
+        case 'zeta':
+          setZetaAmplitude(safeValue);
+          break;
+        case 'zeta_phase':
+          setZetaPhaseAmplitude(safeValue);
+          break;
+        case 'kappa':
+          setKappaAmplitude(safeValue);
+          break;
+        default:
+          break;
+      }
+    },
+    [setKappaAmplitude, setRhoAmplitude, setTauAmplitude, setZetaAmplitude, setZetaPhaseAmplitude],
+  );
 
   const handleAdiabaticStatus = useCallback(
     (update: AdiabaticBoundaryStatusUpdate) => {
       const key = update.graphId ?? '__default__';
+      let guidance: AdiabaticGuidance | null = null;
+      if (update.status === 'success' && update.result) {
+        guidance = analyzeAdiabaticGuidance(update.result);
+        if (guidance && update.hotspotId) {
+          const calmFlag = guidance.calm;
+          setHotspots((prev) =>
+            prev.map((hotspot) =>
+              hotspot.id === update.hotspotId ? { ...hotspot, calm: calmFlag } : hotspot,
+            ),
+          );
+        }
+        if (guidance && update.hotspotId && selectedHotspot && update.hotspotId === selectedHotspot.id) {
+          const axes = getHotspotAxes(selectedHotspot);
+          if (guidance.planeAmplitude !== null) {
+            const planeAmplitude = guidance.planeAmplitude;
+            axes.forEach((axis) => setAxisAmplitude(axis, planeAmplitude));
+          }
+          if (guidance.kappaAmplitude !== null) {
+            setKappaAmplitude(guidance.kappaAmplitude);
+          }
+          if (guidance.guard !== null) {
+            const guardString = String(Number(guidance.guard.toFixed(3)));
+            setFsGuardInput(guardString);
+          }
+          if (guidance.settle !== null) {
+            const settleString = String(guidance.settle);
+            setNeighborSettleInput(settleString);
+            setGuidedSettleInput(settleString);
+          }
+          if (guidance.handle !== null) {
+            setGuidedHandleInput(String(guidance.handle));
+          }
+          if (guidance.steps.length > 0) {
+            setGuidedStepEntries(guidance.steps.map((value) => createGuidedStepEntry(value)));
+          }
+        }
+      }
       setAdiabaticSnapshots((prev) => {
         const existing = prev[key];
         if (existing && update.requestId < existing.requestId) {
@@ -1050,6 +1279,12 @@ const Phase3Loops = () => {
         } else if (update.status === 'idle') {
           nextResult = null;
         }
+        let calmBasin = existing?.calmBasin ?? false;
+        if (update.status === 'success') {
+          calmBasin = guidance?.calm ?? false;
+        } else if (update.status === 'running' || update.status === 'idle' || update.status === 'error') {
+          calmBasin = false;
+        }
         const nextEntry: AdiabaticSnapshotEntry = {
           status: update.status,
           requestId: update.requestId,
@@ -1058,11 +1293,22 @@ const Phase3Loops = () => {
           result: nextResult,
           error: update.status === 'error' ? update.error : null,
           calm: existing?.calm ?? null,
+          calmBasin,
         };
         return { ...prev, [key]: nextEntry };
       });
     },
-    [],
+    [
+      selectedHotspot,
+      setAxisAmplitude,
+      setFsGuardInput,
+      setGuidedHandleInput,
+      setGuidedSettleInput,
+      setGuidedStepEntries,
+      setHotspots,
+      setKappaAmplitude,
+      setNeighborSettleInput,
+    ],
   );
 
   const handleAdiabaticCalm = useCallback(
@@ -1089,6 +1335,7 @@ const Phase3Loops = () => {
           [key]: {
             ...existing,
             calm: update.calm,
+            calmBasin: existing.calmBasin,
           },
         };
       });
@@ -1346,32 +1593,6 @@ const Phase3Loops = () => {
       }
     },
     [kappaAmplitude, rhoAmplitude, tauAmplitude, zetaAmplitude, zetaPhaseAmplitude],
-  );
-
-  const setAxisAmplitude = useCallback(
-    (axis: HotspotAxis, value: number) => {
-      const safeValue = Number.isFinite(value) ? value : defaultAxisAmplitude;
-      switch (axis) {
-        case 'rho':
-          setRhoAmplitude(safeValue);
-          break;
-        case 'tau':
-          setTauAmplitude(safeValue);
-          break;
-        case 'zeta':
-          setZetaAmplitude(safeValue);
-          break;
-        case 'zeta_phase':
-          setZetaPhaseAmplitude(safeValue);
-          break;
-        case 'kappa':
-          setKappaAmplitude(safeValue);
-          break;
-        default:
-          break;
-      }
-    },
-    [setKappaAmplitude, setRhoAmplitude, setTauAmplitude, setZetaAmplitude, setZetaPhaseAmplitude],
   );
 
   const amplitudeAxes = useMemo(
@@ -1730,6 +1951,16 @@ const Phase3Loops = () => {
     return { errors, steps };
   }, [guidedStepEntries]);
   const guidedSteps = guidedStepAnalysis.steps;
+  const guidedSettleValidation = useMemo(
+    () => validateSettleSteps(guidedSettleInput),
+    [guidedSettleInput],
+  );
+  const guidedHandleValidation = useMemo(
+    () => validateSteps(guidedHandleInput),
+    [guidedHandleInput],
+  );
+  const guidedSettleNumber = guidedSettleValidation.ok ? guidedSettleValidation.value : null;
+  const guidedHandleNumber = guidedHandleValidation.ok ? guidedHandleValidation.value : null;
   const adiabaticExtentSeeds = useMemo(() => {
     const seeds = new Set<number>();
     if (extentAValidation.ok) {
@@ -1762,6 +1993,8 @@ const Phase3Loops = () => {
   const simpleLimitError = formatValidationMessage(simpleLimitValidation);
   const settleStepsError = formatValidationMessage(neighborSettleValidation);
   const adaptLevelsError = formatValidationMessage(adaptLevelsValidation);
+  const guidedSettleError = formatValidationMessage(guidedSettleValidation);
+  const guidedHandleError = formatValidationMessage(guidedHandleValidation);
 
   const simpleRunDisabledReason = useMemo(() => {
     if (adiabaticGateMessage) {
@@ -1811,6 +2044,12 @@ const Phase3Loops = () => {
     if (!fsGuardValidation.ok) {
       return fsGuardValidation.message;
     }
+    if (!guidedSettleValidation.ok) {
+      return guidedSettleValidation.message;
+    }
+    if (!guidedHandleValidation.ok) {
+      return guidedHandleValidation.message;
+    }
     if (!hasGuidedStepError && guidedSteps.length === 0) {
       return 'Add at least one valid step.';
     }
@@ -1819,6 +2058,8 @@ const Phase3Loops = () => {
     adiabaticGateMessage,
     fsGuardValidation,
     graph,
+    guidedHandleValidation,
+    guidedSettleValidation,
     guidedSteps.length,
     hasGuidedStepError,
     selectedSubstratePath,
@@ -1976,7 +2217,13 @@ const Phase3Loops = () => {
   };
 
   const runGuidedLoop = useCallback(async () => {
-    if (!selectedHotspot || !fsGuardValidation.ok || guidedSteps.length === 0) {
+    if (
+      !selectedHotspot ||
+      !fsGuardValidation.ok ||
+      !guidedSettleValidation.ok ||
+      !guidedHandleValidation.ok ||
+      guidedSteps.length === 0
+    ) {
       return;
     }
 
@@ -2014,6 +2261,8 @@ const Phase3Loops = () => {
       guidedMinPhi,
       guidedSeed,
       summaryPath,
+      guidedSettleNumber ?? undefined,
+      guidedHandleNumber ?? undefined,
     );
     const payloadWithExperiment: GuidedLoopArgs = {
       ...payload,
@@ -2099,8 +2348,12 @@ const Phase3Loops = () => {
     decisionGate,
     fsGuardValidation,
     graph,
+    guidedHandleNumber,
+    guidedHandleValidation,
     guidedMinPhi,
     guidedSeed,
+    guidedSettleNumber,
+    guidedSettleValidation,
     guidedSteps,
     selectedAxisI,
     selectedAxisJ,
@@ -2196,6 +2449,7 @@ const Phase3Loops = () => {
       guard: payload.fsGuard != null ? toCliValue(payload.fsGuard) : 'n/a',
       minPhi: payload.minPhi != null ? toCliValue(payload.minPhi) : 'n/a',
       settle: payload.settle != null ? String(payload.settle) : 'n/a',
+      handle: payload.handleSteps != null ? String(payload.handleSteps) : 'n/a',
       seed: payload.seed != null ? String(payload.seed) : 'n/a',
       center: `${axisBLabel}=${toCliValue(centerPlaneA)}, ${axisCLabel}=${toCliValue(centerPlaneB)}`,
       amplitudes: `${axisALabel}±${toCliValue(ampA)}, ${axisBLabel}±${toCliValue(ampB)}, ${axisCLabel}±${toCliValue(ampC)}`,
@@ -2730,6 +2984,36 @@ const Phase3Loops = () => {
                   </small>
                 </label>
                 <label>
+                  <span>Guided settle steps</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="2000"
+                    step="1"
+                    value={guidedSettleInput}
+                    onChange={(event) => setGuidedSettleInput(event.target.value)}
+                  />
+                  <small className="field-hint">
+                    Pause between guided passes to let neighbours settle.
+                    {guidedSettleError ? <span className="field-error"> {guidedSettleError}</span> : null}
+                  </small>
+                </label>
+                <label>
+                  <span>Handle steps</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="4000"
+                    step="1"
+                    value={guidedHandleInput}
+                    onChange={(event) => setGuidedHandleInput(event.target.value)}
+                  />
+                  <small className="field-hint">
+                    Sets the κ handle length before entering the plane loop.
+                    {guidedHandleError ? <span className="field-error"> {guidedHandleError}</span> : null}
+                  </small>
+                </label>
+                <label>
                   <span>min Φ</span>
                   <input
                     type="number"
@@ -2864,6 +3148,10 @@ const Phase3Loops = () => {
                         <div className="phase3__recommended-item">
                           <dt>Settle steps</dt>
                           <dd>{guidedRecommendations.settle}</dd>
+                        </div>
+                        <div className="phase3__recommended-item">
+                          <dt>Handle steps</dt>
+                          <dd>{guidedRecommendations.handle}</dd>
                         </div>
                         <div className="phase3__recommended-item">
                           <dt>Seed</dt>
