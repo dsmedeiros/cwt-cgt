@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { cmdBaseline, type BaselineCommandOptions } from '../baselines';
 import { cwtSimRoot, repoRoot } from '../paths';
@@ -50,6 +50,27 @@ describe('cmdBaseline', () => {
       expect(plan.cli).toContain(`cd ${repoRoot}`);
     },
   );
+
+  it('resolves axis map relative to the repo when cwd differs', () => {
+    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(path.join(repoRoot, 'cwt_lab'));
+    try {
+      const plan = cmdBaseline(pythonExe, {
+        strategy: 'module',
+        model: 'ising',
+        axisMap: 'cwt-sim/baselines/axis_map.yml',
+        args: [],
+      });
+
+      expect(plan.args.slice(0, 4)).toEqual([
+        '-m',
+        'baselines.ising.run',
+        '--axis-map',
+        path.join(repoRoot, 'cwt-sim', 'baselines', 'axis_map.yml'),
+      ]);
+    } finally {
+      cwdSpy.mockRestore();
+    }
+  });
 
   it.each([
     ['ising'],
