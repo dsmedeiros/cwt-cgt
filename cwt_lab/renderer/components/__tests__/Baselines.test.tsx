@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
 import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -24,6 +27,35 @@ const runMock = vi.fn();
 let outputHandlers: StreamHandler[] = [];
 let exitHandlers: ExitHandler[] = [];
 let errorHandlers: ErrorHandler[] = [];
+
+const FIXTURES_ROOT = path.resolve(process.cwd(), '..', 'cwt-sim/baselines/__fixtures__');
+
+const parseFixtureCsv = (filename: string): Array<Record<string, string>> => {
+  const raw = readFileSync(path.join(FIXTURES_ROOT, filename), 'utf8');
+  const lines = raw.trim().split(/\r?\n/);
+  if (lines.length === 0) {
+    return [];
+  }
+  const headers = lines[0].split(',').map((header) => header.trim());
+  return lines.slice(1).map((line) => {
+    const cells = line.split(',');
+    return headers.reduce<Record<string, string>>((record, header, index) => {
+      record[header] = cells[index]?.trim() ?? '';
+      return record;
+    }, {});
+  });
+};
+
+const formatNumber = (value: number, digits = 3): string => {
+  if (!Number.isFinite(value)) {
+    return '—';
+  }
+  if (Math.abs(value) >= 1000 || Math.abs(value) < 0.001) {
+    return value.toExponential(2);
+  }
+  const fixed = value.toFixed(digits);
+  return fixed.replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
+};
 
 vi.mock('../../ipc', () => ({
   baselines: {
@@ -78,22 +110,36 @@ describe('Baselines component', () => {
   });
 
   it('submits the baseline payload and renders artifacts', async () => {
+    const metricsRows = parseFixtureCsv('tiny_grid_ising.csv');
+    expect(metricsRows.length).toBeGreaterThan(0);
+    const peak = metricsRows.reduce((best, current) =>
+      Number.parseFloat(current.omega_abs) > Number.parseFloat(best.omega_abs) ? current : best,
+    );
+    const peakIndices = [Number.parseInt(peak.T_index, 10), Number.parseInt(peak.h_index, 10)];
+    const peakCoordinates = { T: Number.parseFloat(peak.T), h: Number.parseFloat(peak.h) };
     const topTiles = {
       axes: [{ name: 'T' }, { name: 'h' }],
       top_tiles: [
         {
-          indices: [0, 1],
-          coordinates: { T: 2, h: 0.1 },
-          omega_abs: 0.42,
+          indices: peakIndices,
+          coordinates: peakCoordinates,
+          omega_abs: Number.parseFloat(peak.omega_abs),
         },
       ],
     };
-    const metricsCsv = 'T_index,h_index,omega_abs,M_mean\n0,1,0.42,0.11\n';
+    const metricsCsv = readFileSync(
+      path.join(FIXTURES_ROOT, 'tiny_grid_ising.csv'),
+      'utf8',
+    );
     const loopReport = {
-      indices: [0, 1],
-      loop: { omega_abs: 0.36, area: 1.25 },
-      center: { T: 2, h: 0.1, omega: 0.5, M_mean: 0.2 },
-      phi_abs: 0.35,
+      indices: peakIndices,
+      loop: { omega_abs: 0.5, area: 1.25 },
+      center: {
+        T: peakCoordinates.T,
+        h: peakCoordinates.h,
+        omega: Number.parseFloat(peak.omega_abs),
+        M_mean: Number.parseFloat(peak.M_mean),
+      },
     };
 
     runMock.mockResolvedValueOnce({
@@ -150,7 +196,10 @@ describe('Baselines component', () => {
     expect(await screen.findByAltText('Baseline heatmap')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 4, name: /top 1 tiles/i })).toBeInTheDocument();
     const topkTable = screen.getByRole('table');
-    expect(within(topkTable).getByText(/T=2, h=0.1/)).toBeInTheDocument();
+    const expectedCoords = `T=${formatNumber(peakCoordinates.T)}, h=${formatNumber(
+      peakCoordinates.h,
+    )}`;
+    expect(within(topkTable).getByText(expectedCoords)).toBeInTheDocument();
     expect(screen.getByText(/Aligned with theory/)).toBeInTheDocument();
 
     expect(container).toMatchSnapshot();
