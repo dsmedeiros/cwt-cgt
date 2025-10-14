@@ -9,6 +9,7 @@ export type BaselineModel = 'ising' | 'kuramoto' | 'percolation' | 'sis';
 export type BaselineRunPayload = {
   model: BaselineModel;
   axisMap?: string | null;
+  mapToCwt?: boolean | null;
   outputDir?: string | null;
   steps?: number | string | null;
   seed?: number | string | null;

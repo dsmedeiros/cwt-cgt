@@ -40,6 +40,15 @@ const argsSchema = z
     return value.map((entry) => (typeof entry === 'number' ? entry : entry));
   });
 
+const optionalBooleanSchema = z
+  .union([z.boolean(), z.null(), z.undefined()])
+  .transform((value) => {
+    if (value === null || value === undefined) {
+      return null;
+    }
+    return Boolean(value);
+  });
+
 const envSchema = z
   .union([z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])), z.undefined(), z.null()])
   .transform((value) => {
@@ -64,6 +73,7 @@ export const baselineRunPayloadSchema = z
   .object({
     model: z.enum(['ising', 'kuramoto', 'percolation', 'sis']),
     axisMap: optionalPathSchema,
+    mapToCwt: optionalBooleanSchema,
     outputDir: optionalPathSchema,
     steps: optionalNumericSchema,
     seed: optionalNumericSchema,
@@ -73,6 +83,7 @@ export const baselineRunPayloadSchema = z
   .transform((value) => ({
     model: value.model as BaselineModel,
     axisMap: value.axisMap,
+    mapToCwt: value.mapToCwt,
     outputDir: value.outputDir,
     steps: value.steps,
     seed: value.seed,
@@ -393,6 +404,7 @@ export const executeBaselineRun = async (
     steps: payload.steps,
     seed: payload.seed,
     args: payload.args,
+    mapToCwt: payload.mapToCwt ?? undefined,
   };
 
   const plan = cmdBaseline(env.executable, options);

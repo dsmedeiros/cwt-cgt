@@ -40,6 +40,7 @@ type ObservablesColumn = { key: string; label: string };
 type TopTileRow = {
   coordinates: string;
   omegaAbs: string;
+  omegaAbsProxy: string;
   observables: Record<string, string>;
 };
 
@@ -54,6 +55,7 @@ type LoopSummary = {
 type BaselineArtifacts = {
   outputDir: string;
   heatmapPath: string | null;
+  proxyHeatmapPath: string | null;
   topTiles: TopTileRow[];
   topTileCount: number;
   observables: ObservablesColumn[];
@@ -487,6 +489,7 @@ const loadArtifactsForRun = async (
 
   const normalizedDir = normalizePath(resolvedDir);
   const heatmapPath = joinPath(normalizedDir, 'omega_abs_heatmap.png');
+  const proxyHeatmapPath = joinPath(normalizedDir, 'omega_heatmap_proxy.png');
   const topTilesPath = joinPath(normalizedDir, 'top_omega_tiles.json');
   const metricsPath = joinPath(normalizedDir, 'metrics.csv');
 
@@ -506,6 +509,15 @@ const loadArtifactsForRun = async (
         .map((axis) => (typeof axis.name === 'string' ? axis.name : null))
         .filter((axis): axis is string => Boolean(axis))
     : [];
+
+  const metricsProxyAvailable = metricsRows.some((row) => {
+    const proxyValue = row.omega_abs_proxy ?? row.omegaAbsProxy;
+    if (proxyValue == null || proxyValue === '') {
+      return false;
+    }
+    const numeric = Number(proxyValue);
+    return Number.isFinite(numeric);
+  });
 
   const metricsByIndex = new Map<string, Record<string, string>>();
   for (const row of metricsRows) {
@@ -535,12 +547,19 @@ const loadArtifactsForRun = async (
       const raw = metricsRow[column.key];
       observableValues[column.key] = raw != null && raw !== '' ? formatNumber(raw) : '—';
     }
+    const proxyRaw =
+      entry.omega_abs_proxy ?? metricsRow.omega_abs_proxy ?? metricsRow.omegaAbsProxy ?? null;
+    const omegaAbsProxy =
+      proxyRaw != null && proxyRaw !== '' ? formatNumber(proxyRaw) : '—';
     return {
       coordinates: formatCoordinates(coordinates),
       omegaAbs: formatNumber(entry.omega_abs ?? metricsRow.omega_abs),
+      omegaAbsProxy,
       observables: observableValues,
     };
   });
+
+  const proxyAvailable = metricsProxyAvailable || rows.some((row) => row.omegaAbsProxy !== '—');
 
   let loopSummaries: LoopSummary[] = [];
   const loopsDir = joinPath(normalizedDir, 'loops');
@@ -568,6 +587,7 @@ const loadArtifactsForRun = async (
   return {
     outputDir: normalizedDir,
     heatmapPath,
+    proxyHeatmapPath: proxyAvailable ? proxyHeatmapPath : null,
     topTiles: rows,
     topTileCount: rows.length,
     observables,
@@ -596,6 +616,7 @@ export default function Baselines() {
   const [artifactsError, setArtifactsError] = useState<string | null>(null);
   const [artifactsLoading, setArtifactsLoading] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [heatmapMode, setHeatmapMode] = useState<'cwt' | 'proxy'>('cwt');
 
   const pendingRunRef = useRef(false);
   const activeRunRef = useRef<string | null>(null);
@@ -678,6 +699,18 @@ export default function Baselines() {
       cancelled = true;
     };
   }, [lastResult]);
+
+  useEffect(() => {
+    if (!artifacts?.proxyHeatmapPath) {
+      setHeatmapMode('cwt');
+    }
+  }, [artifacts?.proxyHeatmapPath]);
+
+  useEffect(() => {
+    if (artifacts) {
+      setHeatmapMode('cwt');
+    }
+  }, [artifacts?.outputDir]);
 
   const handleModelChange = (event: FormEvent<HTMLSelectElement>) => {
     const next = event.currentTarget.value as BaselineModel;
@@ -781,6 +814,7 @@ export default function Baselines() {
       const payload = {
         model,
         axisMap: form.mapToCwt ? DEFAULT_AXIS_MAP_PATH : null,
+        mapToCwt: form.mapToCwt,
         steps: form.steps.trim() ? form.steps.trim() : null,
         seed: form.seed.trim() ? form.seed.trim() : null,
         args,
@@ -805,6 +839,11 @@ export default function Baselines() {
     return artifacts.loopSummaries.some((summary) => summary.trustworthy);
   }, [artifacts]);
   const observablesColumns = artifacts?.observables ?? OBSERVABLE_FIELDS[model];
+  const proxyAvailable = Boolean(artifacts?.proxyHeatmapPath);
+  const activeHeatmapPath =
+    heatmapMode === 'proxy' && proxyAvailable ? artifacts?.proxyHeatmapPath : artifacts?.heatmapPath;
+  const heatmapCaption =
+    heatmapMode === 'proxy' && proxyAvailable ? '|Ω| proxy heatmap' : '|Ω| heatmap';
   const stepsValue = parseFiniteNumber(form.steps);
   const seedValue = parseFiniteNumber(form.seed);
 
@@ -1086,13 +1125,40 @@ export default function Baselines() {
         {artifacts ? (
           <div className="baselines__results-grid">
             <figure className="baselines__heatmap" aria-label="Omega heatmap">
-              {artifacts.heatmapPath ? (
-                <img src={toFileUrl(artifacts.heatmapPath)} alt="Baseline heatmap" />
+              {proxyAvailable ? (
+                <div className="baselines__heatmap-toggle" role="group" aria-label="Select heatmap mode">
+                  <button
+                    type="button"
+                    className={
+                      heatmapMode === 'cwt'
+                        ? 'baselines__heatmap-toggle-button baselines__heatmap-toggle-button--active'
+                        : 'baselines__heatmap-toggle-button'
+                    }
+                    onClick={() => setHeatmapMode('cwt')}
+                  >
+                    CWT
+                  </button>
+                  <button
+                    type="button"
+                    className={
+                      heatmapMode === 'proxy'
+                        ? 'baselines__heatmap-toggle-button baselines__heatmap-toggle-button--active'
+                        : 'baselines__heatmap-toggle-button'
+                    }
+                    onClick={() => setHeatmapMode('proxy')}
+                    disabled={!proxyAvailable}
+                  >
+                    Proxy
+                  </button>
+                </div>
+              ) : null}
+              {activeHeatmapPath ? (
+                <img src={toFileUrl(activeHeatmapPath)} alt={heatmapCaption} />
               ) : (
                 <div className="baselines__heatmap-missing">Heatmap artifact unavailable.</div>
               )}
               <figcaption>
-                |Ω| heatmap · saved under <code>{artifacts.outputDir}</code>
+                {heatmapCaption} · saved under <code>{artifacts.outputDir}</code>
               </figcaption>
             </figure>
 
@@ -1106,6 +1172,7 @@ export default function Baselines() {
                     <tr>
                       <th scope="col">Coordinates</th>
                       <th scope="col">|Ω|</th>
+                      <th scope="col">|Ω| proxy</th>
                       {observablesColumns.map((column) => (
                         <th scope="col" key={column.key}>
                           {column.label}
@@ -1116,13 +1183,14 @@ export default function Baselines() {
                   <tbody>
                     {artifacts.topTiles.length === 0 ? (
                       <tr>
-                        <td colSpan={2 + observablesColumns.length}>No top tiles reported.</td>
+                        <td colSpan={3 + observablesColumns.length}>No top tiles reported.</td>
                       </tr>
                     ) : (
                       artifacts.topTiles.map((row, index) => (
                         <tr key={`${row.coordinates}-${index}`}>
                           <td>{row.coordinates}</td>
                           <td>{row.omegaAbs}</td>
+                          <td>{row.omegaAbsProxy}</td>
                           {observablesColumns.map((column) => (
                             <td key={column.key}>{row.observables[column.key]}</td>
                           ))}

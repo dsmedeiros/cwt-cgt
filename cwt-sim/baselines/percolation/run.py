@@ -17,6 +17,7 @@ from baselines import BaselineRunConfig, build_shared_parser
 from baselines.artifacts import ensure_outdir, write_heatmap_png, write_top_tiles
 from baselines.common import (
     Accumulator,
+    combine_proxy_magnitudes,
     graph_factory,
     seed_everything,
     time_budget_guard,
@@ -558,6 +559,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         steps=namespace.steps,
         seed=namespace.seed,
         time_budget=namespace.time_budget,
+        map_to_cwt=namespace.map_to_cwt,
     )
 
     base_seed_value = int(config.seed if config.seed is not None else 0)
@@ -605,6 +607,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
 
     S_mean_grid = np.full(grid_shape, np.nan, dtype=float)
     S_var_grid = np.full(grid_shape, np.nan, dtype=float)
+    giant_fraction_grid = np.full(grid_shape, np.nan, dtype=float)
 
     records: list[dict[str, object]] = []
     record_lookup: dict[tuple[int, int], dict[str, object]] = {}
@@ -645,6 +648,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
 
                 S_mean_grid[i, j] = summary.S_mean
                 S_var_grid[i, j] = summary.S_var
+                giant_fraction_grid[i, j] = summary.giant_fraction
 
                 record = {
                     "graph_kind": namespace.graph_kind,
@@ -684,6 +688,16 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
     )
     omega_abs_grid = np.abs(omega_grid)
 
+    grad_mean_axis0 = _finite_difference_axis(S_mean_grid, axis_values[0], 0)
+    grad_mean_axis1 = _finite_difference_axis(S_mean_grid, axis_values[1], 1)
+    magnitude_mean = np.hypot(grad_mean_axis0, grad_mean_axis1)
+
+    grad_giant_axis0 = _finite_difference_axis(giant_fraction_grid, axis_values[0], 0)
+    grad_giant_axis1 = _finite_difference_axis(giant_fraction_grid, axis_values[1], 1)
+    magnitude_giant = np.hypot(grad_giant_axis0, grad_giant_axis1)
+
+    omega_abs_proxy_grid = combine_proxy_magnitudes([magnitude_mean, magnitude_giant])
+
     other_axis = zeta_axis
     dS_other = _finite_difference_axis(
         S_mean_grid,
@@ -697,13 +711,15 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         j = int(record[f"{axis_names[1]}_index"])
         omega_value = omega_grid[i, j]
         omega_abs_value = omega_abs_grid[i, j]
+        proxy_value = omega_abs_proxy_grid[i, j]
         record["omega"] = float(omega_value) if np.isfinite(omega_value) else float("nan")
         record["omega_abs"] = float(omega_abs_value) if np.isfinite(omega_abs_value) else float("nan")
+        record["omega_abs_proxy"] = float(proxy_value) if np.isfinite(proxy_value) else float("nan")
         derivative_label = f"dS_d{axis_aliases[other_axis]}"
         record[derivative_label] = float(dS_other[i, j]) if np.isfinite(dS_other[i, j]) else float("nan")
         accumulator.add(record)
 
-    axis_map = load_axis_map(Path(config.axis_map))
+    axis_map = load_axis_map(Path(config.axis_map)) if config.map_to_cwt else {}
 
     seed_label = base_seed_value
     output_dir = ensure_outdir("percolation", namespace.output_dir, graph_id, seed_label)
@@ -715,6 +731,16 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         output_dir,
         axes=heatmap_axes,
         axis_map=axis_map,
+        value_column="omega_abs",
+    )
+    write_heatmap_png(
+        metrics_path,
+        output_dir,
+        axes=heatmap_axes,
+        axis_map=axis_map,
+        filename="omega_heatmap_proxy.png",
+        value_column="omega_abs_proxy",
+        colorbar_label=r"|Ω| proxy",
     )
     top_tiles_path = write_top_tiles(
         metrics_path,

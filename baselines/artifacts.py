@@ -72,6 +72,8 @@ def write_heatmap_png(
     axes: Sequence[str] | None = None,
     cmap: str = "magma",
     axis_map: Mapping[str, Mapping[str, str]] | None = None,
+    value_column: str = "omega_abs",
+    colorbar_label: str | None = None,
 ) -> Path:
     """Render a |Omega| heatmap from a metrics CSV file."""
 
@@ -81,10 +83,11 @@ def write_heatmap_png(
 
     axis_names = _resolve_axes(data, axes)
     specs = _axis_specs(data, axis_names)
-    grid = _build_grid(data, specs)
+    grid = _build_grid(data, specs, value_column=value_column)
 
-    mapping = axis_map or load_axis_map(DEFAULT_AXIS_MAP_PATH)
+    mapping = load_axis_map(DEFAULT_AXIS_MAP_PATH) if axis_map is None else axis_map
     axis_labels = _axis_labels(specs, mapping)
+    label = colorbar_label or r"|Ω|"
 
     # Configure matplotlib lazily to keep import overhead low for CLI tooling.
     import matplotlib
@@ -110,12 +113,12 @@ def write_heatmap_png(
             mask=mask,
             xticklabels=[_format_tick(value) for value in specs[1]["values"]],
             yticklabels=[_format_tick(value) for value in specs[0]["values"]],
-            cbar_kws={"label": r"|Ω|"},
+            cbar_kws={"label": label},
         )
         invert_y_axis = True
     else:
         im = ax.imshow(grid, cmap=cmap, aspect="auto", origin="lower")
-        fig.colorbar(im, ax=ax, label=r"|Ω|")
+        fig.colorbar(im, ax=ax, label=label)
         ax.set_xticks(range(specs[1]["size"]))
         ax.set_xticklabels(
             [_format_tick(value) for value in specs[1]["values"]],
@@ -127,7 +130,8 @@ def write_heatmap_png(
 
     ax.set_xlabel(axis_labels[specs[1]["name"]])
     ax.set_ylabel(axis_labels[specs[0]["name"]])
-    ax.set_title(r"|Ω| heatmap")
+    title_text = f"{label} heatmap" if label else r"|Ω| heatmap"
+    ax.set_title(title_text)
     if invert_y_axis:
         ax.invert_yaxis()
     fig.tight_layout()
@@ -146,6 +150,7 @@ def write_top_tiles(
     axes: Sequence[str] | None = None,
     axis_map: Mapping[str, Mapping[str, str]] | None = None,
     filename: str = "top_omega_tiles.json",
+    value_column: str = "omega_abs",
 ) -> Path:
     """Persist a JSON document describing the top-|Omega| tiles."""
 
@@ -156,10 +161,10 @@ def write_top_tiles(
     axis_names = _resolve_axes(data, axes)
     specs = _axis_specs(data, axis_names)
 
-    if "omega_abs" not in data.columns:
-        raise KeyError("Metrics CSV must include an 'omega_abs' column")
+    if value_column not in data.columns:
+        raise KeyError(f"Metrics CSV must include a '{value_column}' column")
 
-    omega_series = pd.to_numeric(data["omega_abs"], errors="coerce")
+    omega_series = pd.to_numeric(data[value_column], errors="coerce")
     omega_array = omega_series.to_numpy(dtype=float)
     valid_mask = np.isfinite(omega_array)
 
@@ -169,11 +174,11 @@ def write_top_tiles(
         index_array = index_series.to_numpy(dtype=float)
         valid_mask &= np.isfinite(index_array)
 
+    ordered = data.loc[valid_mask].copy()
     entries: list[dict[str, object]] = []
     if valid_mask.any():
-        ordered = data.loc[valid_mask].copy()
-        ordered["omega_abs"] = pd.to_numeric(ordered["omega_abs"], errors="coerce")
-        ordered = ordered.sort_values("omega_abs", ascending=False)
+        ordered[value_column] = pd.to_numeric(ordered[value_column], errors="coerce")
+        ordered = ordered.sort_values(value_column, ascending=False)
         limit = max(int(top_k), 0)
         if limit > 0:
             ordered = ordered.head(limit)
@@ -194,19 +199,31 @@ def write_top_tiles(
                 {
                     "indices": indices,
                     "coordinates": coordinates,
-                    "omega_abs": float(row["omega_abs"]),
+                    "omega_abs": float(row[value_column]),
                 }
             )
 
-    mapping = axis_map or load_axis_map(DEFAULT_AXIS_MAP_PATH)
+    mapping = load_axis_map(DEFAULT_AXIS_MAP_PATH) if axis_map is None else axis_map
     axis_metadata = _axis_metadata(specs, mapping)
 
     payload = {
-        "metric": "omega_abs",
+        "metric": value_column,
         "axes": axis_metadata,
         "grid_shape": [spec["size"] for spec in specs],
         "top_tiles": entries,
     }
+
+    if "omega_abs_proxy" in data.columns:
+        proxy_series = pd.to_numeric(data["omega_abs_proxy"], errors="coerce")
+        proxy_max = proxy_series.max()
+        payload["omega_abs_proxy_max"] = float(proxy_max) if np.isfinite(proxy_max) else None
+        for entry, (_, row) in zip(entries, ordered.iterrows()):
+            proxy_raw = row.get("omega_abs_proxy", float("nan"))
+            try:
+                proxy_numeric = float(proxy_raw)
+            except (TypeError, ValueError):
+                proxy_numeric = float("nan")
+            entry["omega_abs_proxy"] = proxy_numeric if np.isfinite(proxy_numeric) else None
 
     destination = out_path / filename
     with destination.open("w", encoding="utf-8") as handle:
@@ -279,16 +296,19 @@ def _axis_specs(frame: pd.DataFrame, axes: Sequence[str]) -> list[dict[str, obje
 
 
 def _build_grid(
-    frame: pd.DataFrame, specs: Sequence[Mapping[str, object]]
+    frame: pd.DataFrame,
+    specs: Sequence[Mapping[str, object]],
+    *,
+    value_column: str,
 ) -> np.ndarray:
     shape = tuple(int(spec["size"]) for spec in specs)
     grid = np.full(shape, np.nan, dtype=float)
 
-    if "omega_abs" not in frame.columns:
-        raise KeyError("Metrics CSV must include an 'omega_abs' column")
+    if value_column not in frame.columns:
+        raise KeyError(f"Metrics CSV must include a '{value_column}' column")
 
     for row in frame.itertuples(index=False):
-        omega_value_raw = getattr(row, "omega_abs", None)
+        omega_value_raw = getattr(row, value_column, None)
         try:
             omega_value = float(omega_value_raw)
         except (TypeError, ValueError):

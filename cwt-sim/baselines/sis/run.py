@@ -387,6 +387,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         steps=namespace.steps,
         seed=namespace.seed,
         time_budget=namespace.time_budget,
+        map_to_cwt=namespace.map_to_cwt,
     )
 
     if len(namespace.axes) != 2:
@@ -535,33 +536,38 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
     ratio = guard.ratio if guard.ratio is not None else float("nan")
 
     if records:
-        gradient_or_curvature = (
-            _laplacian(prevalence_grid, axis_values[0], axis_values[1])
-            if namespace.compute_curvature
-            else _gradient_magnitude(prevalence_grid, axis_values[0], axis_values[1])
-        )
-        omega_abs_grid = np.abs(gradient_or_curvature)
+        proxy_grid = _gradient_magnitude(prevalence_grid, axis_values[0], axis_values[1])
+        omega_abs_proxy_grid = np.abs(proxy_grid)
+        if namespace.compute_curvature:
+            curvature_grid = _laplacian(prevalence_grid, axis_values[0], axis_values[1])
+            omega_abs_grid = np.abs(curvature_grid)
+        else:
+            curvature_grid = proxy_grid
+            omega_abs_grid = omega_abs_proxy_grid
     else:
-        gradient_or_curvature = np.empty_like(prevalence_grid)
+        proxy_grid = np.empty_like(prevalence_grid)
+        omega_abs_proxy_grid = np.empty_like(prevalence_grid)
+        curvature_grid = np.empty_like(prevalence_grid)
         omega_abs_grid = np.empty_like(prevalence_grid)
 
     accumulator = Accumulator()
     for record in records:
         i = int(record[f"{axis_names[0]}_index"])
         j = int(record[f"{axis_names[1]}_index"])
-        omega_value = gradient_or_curvature[i, j]
+        omega_value = curvature_grid[i, j]
         omega_abs_value = omega_abs_grid[i, j]
-        record["omega"] = (
-            float(omega_value)
-            if namespace.compute_curvature and np.isfinite(omega_value)
-            else float(omega_abs_value)
-        )
+        proxy_value = omega_abs_proxy_grid[i, j]
+        if namespace.compute_curvature:
+            record["omega"] = float(omega_value) if np.isfinite(omega_value) else float("nan")
+        else:
+            record["omega"] = float(proxy_value) if np.isfinite(proxy_value) else float("nan")
         record["omega_abs"] = float(omega_abs_value) if np.isfinite(omega_abs_value) else float("nan")
+        record["omega_abs_proxy"] = float(proxy_value) if np.isfinite(proxy_value) else float("nan")
         record["runtime_seconds"] = float(elapsed)
         record["runtime_budget_ratio"] = float(ratio)
         accumulator.add(record)
 
-    axis_map = load_axis_map(Path(config.axis_map))
+    axis_map = load_axis_map(Path(config.axis_map)) if config.map_to_cwt else {}
 
     output_dir = ensure_outdir("sis", namespace.output_dir, graph_id, seed_value)
     metrics_path = accumulator.to_csv(output_dir / "metrics.csv")
@@ -572,6 +578,16 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         output_dir,
         axes=heatmap_axes,
         axis_map=axis_map,
+        value_column="omega_abs",
+    )
+    write_heatmap_png(
+        metrics_path,
+        output_dir,
+        axes=heatmap_axes,
+        axis_map=axis_map,
+        filename="omega_heatmap_proxy.png",
+        value_column="omega_abs_proxy",
+        colorbar_label=r"|Ω| proxy",
     )
     top_tiles_path = write_top_tiles(
         metrics_path,

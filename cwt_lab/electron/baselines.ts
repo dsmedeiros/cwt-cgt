@@ -21,6 +21,7 @@ export type BaselineCommandOptions = {
   steps?: number | string | null;
   seed?: number | string | null;
   args?: Array<string | number> | null;
+  mapToCwt?: boolean | null;
 };
 
 export type BaselineInvocationPlan = {
@@ -79,6 +80,9 @@ export const cmdBaseline = (
   const axisMap = normalisePath(options.axisMap);
   if (axisMap) {
     moduleArgs.push('--axis-map', axisMap);
+  }
+  if (options.mapToCwt === false) {
+    moduleArgs.push('--no-map-to-cwt');
   }
   const outputDir = normalisePath(options.outputDir);
   if (outputDir) {

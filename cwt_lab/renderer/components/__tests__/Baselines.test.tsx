@@ -124,6 +124,7 @@ describe('Baselines component', () => {
           indices: peakIndices,
           coordinates: peakCoordinates,
           omega_abs: Number.parseFloat(peak.omega_abs),
+          omega_abs_proxy: Number.parseFloat(peak.omega_abs_proxy ?? '0'),
         },
       ],
     };
@@ -182,6 +183,7 @@ describe('Baselines component', () => {
     const payload = runMock.mock.calls[0][0] as Record<string, unknown>;
     expect(payload.model).toBe('ising');
     expect(payload.axisMap).toBe(AXIS_MAP_PATH);
+    expect(payload.mapToCwt).toBe(true);
     expect(payload.steps).toBe('200');
     expect(payload.seed).toBe('42');
     expect(Array.isArray(payload.args)).toBe(true);
@@ -193,7 +195,8 @@ describe('Baselines component', () => {
 
     await waitFor(() => expect(readFileMock).toHaveBeenCalled());
 
-    expect(await screen.findByAltText('Baseline heatmap')).toBeInTheDocument();
+    expect(await screen.findByAltText('|Ω| heatmap')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /proxy/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 4, name: /top 1 tiles/i })).toBeInTheDocument();
     const topkTable = screen.getByRole('table');
     const expectedCoords = `T=${formatNumber(peakCoordinates.T)}, h=${formatNumber(

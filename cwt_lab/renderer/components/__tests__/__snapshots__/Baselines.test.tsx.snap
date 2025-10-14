@@ -414,12 +414,31 @@ exports[`Baselines component > submits the baseline payload and renders artifact
           aria-label="Omega heatmap"
           class="baselines__heatmap"
         >
+          <div
+            aria-label="Select heatmap mode"
+            class="baselines__heatmap-toggle"
+            role="group"
+          >
+            <button
+              class="baselines__heatmap-toggle-button baselines__heatmap-toggle-button--active"
+              type="button"
+            >
+              CWT
+            </button>
+            <button
+              class="baselines__heatmap-toggle-button"
+              type="button"
+            >
+              Proxy
+            </button>
+          </div>
           <img
-            alt="Baseline heatmap"
+            alt="|Ω| heatmap"
             src="file:///tmp/baselines/run-1/omega_abs_heatmap.png"
           />
           <figcaption>
-            |Ω| heatmap · saved under 
+            |Ω| heatmap
+             · saved under 
             <code>
               /tmp/baselines/run-1
             </code>
@@ -450,6 +469,11 @@ exports[`Baselines component > submits the baseline payload and renders artifact
                     scope="col"
                   >
                     |Ω|
+                  </th>
+                  <th
+                    scope="col"
+                  >
+                    |Ω| proxy
                   </th>
                   <th
                     scope="col"
@@ -485,6 +509,9 @@ exports[`Baselines component > submits the baseline payload and renders artifact
                   </td>
                   <td>
                     15.976
+                  </td>
+                  <td>
+                    12.4
                   </td>
                   <td>
                     —

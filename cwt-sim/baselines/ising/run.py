@@ -17,6 +17,7 @@ from baselines import BaselineRunConfig, build_shared_parser
 from baselines.artifacts import ensure_outdir, write_heatmap_png, write_top_tiles
 from baselines.common import (
     Accumulator,
+    combine_proxy_magnitudes,
     graph_factory,
     seed_everything,
     time_budget_guard,
@@ -562,6 +563,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         steps=namespace.steps,
         seed=namespace.seed,
         time_budget=namespace.time_budget,
+        map_to_cwt=namespace.map_to_cwt,
     )
 
     base_seed = int(config.seed if config.seed is not None else 0)
@@ -601,6 +603,8 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
     )
 
     magnetization_grid = np.full(grid_shape, np.nan, dtype=float)
+    magnetization_abs_grid = np.full(grid_shape, np.nan, dtype=float)
+    susceptibility_grid = np.full(grid_shape, np.nan, dtype=float)
     records: list[dict[str, object]] = []
     record_lookup: dict[tuple[int, int], dict[str, object]] = {}
 
@@ -637,6 +641,8 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
                     seed=seed_offset,
                 )
                 magnetization_grid[i, j] = result.magnetization_mean
+                magnetization_abs_grid[i, j] = result.magnetization_abs_mean
+                susceptibility_grid[i, j] = result.susceptibility
 
                 record = {
                     "graph_kind": namespace.graph_kind,
@@ -673,17 +679,46 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
     omega_grid = _finite_difference_axis(magnetization_grid, axis_values[temp_axis], temp_axis)
     omega_abs_grid = np.abs(omega_grid)
 
+    proxy_components: list[np.ndarray] = []
+    grad_abs_temp = _finite_difference_axis(
+        magnetization_abs_grid,
+        axis_values[temp_axis],
+        temp_axis,
+    )
+    grad_abs_field = _finite_difference_axis(
+        magnetization_abs_grid,
+        axis_values[field_axis],
+        field_axis,
+    )
+    proxy_components.append(np.hypot(grad_abs_temp, grad_abs_field))
+
+    grad_chi_temp = _finite_difference_axis(
+        susceptibility_grid,
+        axis_values[temp_axis],
+        temp_axis,
+    )
+    grad_chi_field = _finite_difference_axis(
+        susceptibility_grid,
+        axis_values[field_axis],
+        field_axis,
+    )
+    proxy_components.append(np.hypot(grad_chi_temp, grad_chi_field))
+
+    omega_abs_proxy_grid = combine_proxy_magnitudes(proxy_components)
+
     accumulator = Accumulator()
     for record in records:
         i = int(record[f"{axis_names[0]}_index"])
         j = int(record[f"{axis_names[1]}_index"])
         omega_value = omega_grid[i, j]
         omega_abs_value = omega_abs_grid[i, j]
+        proxy_value = omega_abs_proxy_grid[i, j]
         record["omega"] = float(omega_value) if np.isfinite(omega_value) else float("nan")
         record["omega_abs"] = float(omega_abs_value) if np.isfinite(omega_abs_value) else float("nan")
+        record["omega_abs_proxy"] = float(proxy_value) if np.isfinite(proxy_value) else float("nan")
         accumulator.add(record)
 
-    axis_map = load_axis_map(Path(config.axis_map))
+    axis_map = load_axis_map(Path(config.axis_map)) if config.map_to_cwt else {}
 
     seed_label = config.seed if config.seed is not None else "na"
     output_dir = ensure_outdir("ising", namespace.output_dir, graph_id, seed_label)
@@ -695,6 +730,16 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         output_dir,
         axes=heatmap_axes,
         axis_map=axis_map,
+        value_column="omega_abs",
+    )
+    write_heatmap_png(
+        metrics_path,
+        output_dir,
+        axes=heatmap_axes,
+        axis_map=axis_map,
+        filename="omega_heatmap_proxy.png",
+        value_column="omega_abs_proxy",
+        colorbar_label=r"|Ω| proxy",
     )
     top_tiles_path = write_top_tiles(
         metrics_path,

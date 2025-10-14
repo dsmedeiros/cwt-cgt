@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -110,11 +111,16 @@ def test_cli_produces_artifacts(tmp_path: Path) -> None:
     assert metrics.exists()
     content = metrics.read_text(encoding="utf-8")
     assert "omega_abs" in content
+    assert "omega_abs_proxy" in content
     assert "S_mean" in content
 
     heatmap = run_dir / "omega_abs_heatmap.png"
     assert heatmap.exists()
 
+    proxy_heatmap = run_dir / "omega_heatmap_proxy.png"
+    assert proxy_heatmap.exists()
+
     top_tiles = run_dir / "top_omega_tiles.json"
-    payload = top_tiles.read_text(encoding="utf-8")
-    assert "top_tiles" in payload
+    payload = json.loads(top_tiles.read_text(encoding="utf-8"))
+    assert payload["top_tiles"], "expected top tiles data"
+    assert any("omega_abs_proxy" in tile for tile in payload["top_tiles"])

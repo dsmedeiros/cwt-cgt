@@ -22,6 +22,7 @@ from baselines import BaselineRunConfig, build_shared_parser
 from baselines.artifacts import ensure_outdir, write_heatmap_png, write_top_tiles
 from baselines.common import (
     Accumulator,
+    combine_proxy_magnitudes,
     graph_factory,
     grid_points,
     seed_everything,
@@ -1011,6 +1012,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         steps=namespace.steps,
         seed=namespace.seed,
         time_budget=namespace.time_budget,
+        map_to_cwt=namespace.map_to_cwt,
     )
 
     base_seed = int(config.seed if config.seed is not None else 0)
@@ -1021,7 +1023,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
     adjacency = _build_adjacency(namespace.graph_kind, graph_params, graph_seed)
     base_radius, base_gap = _adjacency_spectrum(adjacency)
 
-    axis_map = load_axis_map(Path(config.axis_map))
+    axis_map = load_axis_map(Path(config.axis_map)) if config.map_to_cwt else {}
     kappa_values = np.linspace(
         float(namespace.coupling_range[0]),
         float(namespace.coupling_range[1]),
@@ -1064,6 +1066,13 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         curvature_grid = _finite_difference_curvature(r_mean_grid, kappa_values, sigma_values)
     curvature_abs = np.abs(curvature_grid)
 
+    order_magnitude_grid = np.abs(order_grid)
+    proxy_components = [
+        _finite_difference_curvature(r_mean_grid, kappa_values, sigma_values),
+        _finite_difference_curvature(order_magnitude_grid, kappa_values, sigma_values),
+    ]
+    omega_proxy_grid = combine_proxy_magnitudes(proxy_components)
+
     accumulator = Accumulator()
     record_lookup: dict[tuple[int, int], dict[str, object]] = {}
     for record in records:
@@ -1071,8 +1080,10 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         j = int(record["sigma_index"])
         omega = float(curvature_grid[i, j]) if np.isfinite(curvature_grid[i, j]) else float("nan")
         omega_abs = float(curvature_abs[i, j]) if np.isfinite(curvature_abs[i, j]) else float("nan")
+        proxy_value = float(omega_proxy_grid[i, j]) if np.isfinite(omega_proxy_grid[i, j]) else float("nan")
         record["omega"] = omega
         record["omega_abs"] = omega_abs
+        record["omega_abs_proxy"] = proxy_value
         accumulator.add(record)
         record_lookup[(i, j)] = record
 
@@ -1087,6 +1098,16 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         output_dir,
         axes=("kappa", "sigma"),
         axis_map=axis_map,
+        value_column="omega_abs",
+    )
+    write_heatmap_png(
+        metrics_path,
+        output_dir,
+        axes=("kappa", "sigma"),
+        axis_map=axis_map,
+        filename="omega_heatmap_proxy.png",
+        value_column="omega_abs_proxy",
+        colorbar_label=r"|Ω| proxy",
     )
     top_tiles_path = write_top_tiles(
         metrics_path,

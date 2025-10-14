@@ -93,16 +93,21 @@ def test_cli_produces_sis_artifacts(tmp_path: Path) -> None:
     assert metrics.exists()
     content = metrics.read_text(encoding="utf-8")
     assert "omega_abs" in content
+    assert "omega_abs_proxy" in content
     assert "R0_proxy" in content
     assert "prevalence_mean" in content
 
     heatmap = run_dir / "omega_abs_heatmap.png"
     assert heatmap.exists()
 
+    proxy_heatmap = run_dir / "omega_heatmap_proxy.png"
+    assert proxy_heatmap.exists()
+
     top_tiles = run_dir / "top_omega_tiles.json"
     payload = json.loads(top_tiles.read_text(encoding="utf-8"))
     tiles = payload.get("top_tiles", [])
     assert tiles, "expected at least one top tile"
+    assert any("omega_abs_proxy" in tile for tile in tiles)
 
     loops_dir = run_dir / "loops"
     assert loops_dir.exists()
