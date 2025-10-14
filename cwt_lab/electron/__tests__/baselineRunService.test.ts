@@ -1,10 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
+import { promises as fs } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { PassThrough } from 'node:stream';
 import type { ChildProcessWithoutNullStreams } from 'node:child_process';
 
 import { baselineRunPayloadSchema, executeBaselineRun } from '../baselines/runService';
+import { RunManager } from '../runner/runManager';
 
 const pythonEnv = {
   executable: 'python',
@@ -12,7 +15,10 @@ const pythonEnv = {
   version: '3.11.0',
 };
 
-const artifactsRoot = '/tmp/artifacts';
+const createArtifactsRoot = async () =>
+  fs.mkdtemp(path.join(os.tmpdir(), 'baseline-artifacts-'));
+
+const removeDir = async (dir: string) => fs.rm(dir, { recursive: true, force: true });
 
 const createChildProcess = (
   onReady: (child: EventEmitter & { stdout: PassThrough; stderr: PassThrough }) => void,
@@ -43,6 +49,7 @@ describe('executeBaselineRun', () => {
   });
 
   it('propagates process failures with non-zero exit codes', async () => {
+    const artifactsRoot = await createArtifactsRoot();
     const spawnMock = vi.fn(() =>
       createChildProcess((child) => {
         setImmediate(() => {
@@ -58,16 +65,20 @@ describe('executeBaselineRun', () => {
 
     const payload = baselineRunPayloadSchema.parse({ model: 'ising' });
 
-    await expect(
-      executeBaselineRun(payload, {
-        env: pythonEnv,
-        artifactsRoot,
-        spawnFn: spawnMock as unknown as typeof import('node:child_process').spawn,
-        readRunDirs: readDirs,
-        onExit: (event) => exits.push(event),
-        onError: (event) => errors.push({ runId: event.runId, message: event.error.message }),
-      }),
-    ).rejects.toMatchObject({ message: 'Baseline run exited with code 2' });
+    try {
+      await expect(
+        executeBaselineRun(payload, {
+          env: pythonEnv,
+          artifactsRoot,
+          spawnFn: spawnMock as unknown as typeof import('node:child_process').spawn,
+          readRunDirs: readDirs,
+          onExit: (event) => exits.push(event),
+          onError: (event) => errors.push({ runId: event.runId, message: event.error.message }),
+        }),
+      ).rejects.toMatchObject({ message: 'Baseline run exited with code 2' });
+    } finally {
+      await removeDir(artifactsRoot);
+    }
 
     expect(spawnMock).toHaveBeenCalledTimes(1);
     expect(readDirs).toHaveBeenCalledTimes(1);
@@ -79,6 +90,7 @@ describe('executeBaselineRun', () => {
   it('scopes baseline artifacts to the run identifier when no output directory is provided', async () => {
     const runFolder = '20240101T120000__graph=grid__seed=1';
     const uuidFn = vi.fn(() => 'run-1234');
+    const artifactsRoot = await createArtifactsRoot();
     const spawnMock = vi.fn(() =>
       createChildProcess((child) => {
         setImmediate(() => {
@@ -95,24 +107,36 @@ describe('executeBaselineRun', () => {
 
     const payload = baselineRunPayloadSchema.parse({ model: 'ising' });
 
-    const result = await executeBaselineRun(payload, {
-      env: pythonEnv,
-      artifactsRoot,
-      spawnFn: spawnMock as unknown as typeof import('node:child_process').spawn,
-      uuidFn,
-      readRunDirs: readDirs,
-    });
+    try {
+      const result = await executeBaselineRun(payload, {
+        env: pythonEnv,
+        artifactsRoot,
+        spawnFn: spawnMock as unknown as typeof import('node:child_process').spawn,
+        uuidFn,
+        readRunDirs: readDirs,
+      });
 
-    expect(uuidFn).toHaveBeenCalledTimes(1);
-    expect(result.runId).toBe('run-1234');
+      expect(uuidFn).toHaveBeenCalledTimes(1);
+      expect(result.runId).toBe('run-1234');
+      expect(result.status).toBe('complete');
+      expect(result.loopMetrics).toBeNull();
 
-    const modelRoot = path.join(artifactsRoot, '_baseline_runs', 'run-1234', 'baselines', 'ising');
-    expect(readDirs).toHaveBeenNthCalledWith(1, modelRoot);
-    expect(readDirs).toHaveBeenNthCalledWith(2, modelRoot);
-    expect(result.outputDir).toBe(path.join(modelRoot, runFolder));
+      const modelRoot = path.join(artifactsRoot, '_baseline_runs', 'run-1234', 'baselines', 'ising');
+      expect(readDirs).toHaveBeenNthCalledWith(1, modelRoot);
+      expect(readDirs).toHaveBeenNthCalledWith(2, modelRoot);
+      expect(result.outputDir).toBe(path.join(modelRoot, runFolder));
+      expect(result.artifactsDir).toBe(result.outputDir);
+
+      const logPath = path.join(result.artifactsDir, '_runs', result.runId, 'stdout.log');
+      const logContents = await fs.readFile(logPath, 'utf-8');
+      expect(logContents).toContain('ok');
+    } finally {
+      await removeDir(artifactsRoot);
+    }
   });
 
   it('merges custom environment variables into the spawned process', async () => {
+    const artifactsRoot = await createArtifactsRoot();
     const spawnMock = vi.fn(() =>
       createChildProcess((child) => {
         setImmediate(() => {
@@ -127,11 +151,15 @@ describe('executeBaselineRun', () => {
       env: { CWT_LOOP_FS_GUARD: '0.9', EXTRA_FLAG: 'enabled' },
     });
 
-    await executeBaselineRun(payload, {
-      env: pythonEnv,
-      artifactsRoot,
-      spawnFn: spawnMock as unknown as typeof import('node:child_process').spawn,
-    });
+    try {
+      await executeBaselineRun(payload, {
+        env: pythonEnv,
+        artifactsRoot,
+        spawnFn: spawnMock as unknown as typeof import('node:child_process').spawn,
+      });
+    } finally {
+      await removeDir(artifactsRoot);
+    }
 
     expect(spawnMock).toHaveBeenCalledTimes(1);
     const call = spawnMock.mock.calls[0];
@@ -139,5 +167,118 @@ describe('executeBaselineRun', () => {
     expect(options?.env?.CWT_LOOP_FS_GUARD).toBe('0.9');
     expect(options?.env?.EXTRA_FLAG).toBe('enabled');
     expect(options?.env?.CWT_OUTPUT_DIR).toBeDefined();
+  });
+
+  it('records registry entries with loop metrics for baseline runs', async () => {
+    const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'baseline-registry-'));
+    const artifactsRoot = path.join(tmpRoot, 'artifacts');
+    await fs.mkdir(artifactsRoot, { recursive: true });
+
+    const runFolder = '20240102T030405__graph=ring3__seed=7';
+    const spawnMock = vi.fn(
+      (_command, _args, options?: { env?: NodeJS.ProcessEnv }) =>
+        createChildProcess((child) => {
+          setImmediate(() => {
+            void (async () => {
+              const baseOutput = options?.env?.CWT_OUTPUT_DIR ?? artifactsRoot;
+              const modelRoot = path.join(baseOutput, 'baselines', 'ising');
+              const runDir = path.join(modelRoot, runFolder);
+              await fs.mkdir(runDir, { recursive: true });
+              await fs.writeFile(
+                path.join(runDir, 'summary.json'),
+                JSON.stringify({ fs_p95: 0.25, phi: 0.5 }),
+                'utf-8',
+              );
+              const loopsDir = path.join(runDir, 'loops');
+              await fs.mkdir(loopsDir, { recursive: true });
+              await fs.writeFile(
+                path.join(loopsDir, 'loop_tile.json'),
+                JSON.stringify({
+                  loop: { omega_abs: 0.8, fs_guard_triggered: false },
+                  center: { omega: 0.6 },
+                }),
+                'utf-8',
+              );
+              child.stdout.emit('data', Buffer.from('loop log\n', 'utf-8'));
+              child.emit('close', 0, null);
+            })();
+          });
+        }),
+    );
+
+    const payload = baselineRunPayloadSchema.parse({ model: 'ising' });
+    const result = await executeBaselineRun(payload, {
+      env: pythonEnv,
+      artifactsRoot,
+      spawnFn: spawnMock as unknown as typeof import('node:child_process').spawn,
+    });
+
+    expect(result.status).toBe('complete');
+    expect(result.loopMetrics?.loop_count).toBe(1);
+
+    const registryPath = path.join(tmpRoot, 'registry.sqlite');
+    let manager: RunManager | null = null;
+    try {
+      manager = new RunManager({
+        repoRoot: tmpRoot,
+        artifactsRoot,
+        registryPath,
+        pythonPathEntries: [],
+      });
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException | null)?.code;
+      if (code === 'ERR_DLOPEN_FAILED') {
+        console.warn('Skipping baseline registry test – better-sqlite3 native module unavailable.');
+        await removeDir(tmpRoot);
+        return;
+      }
+      throw error;
+    }
+
+    try {
+      const baseRecord = {
+        id: result.runId,
+        createdAt: result.startedAt,
+        updatedAt: result.completedAt,
+        status: result.status,
+        command: result.command,
+        args: result.args,
+        cwd: result.cwd,
+        phase: 'baseline',
+        experiment: result.model,
+        label: `${result.model} baseline`,
+        artifactsDir: result.artifactsDir,
+        metrics: result.loopMetrics,
+      } as const;
+
+      manager.recordExternalRun(baseRecord);
+      const summaryMetrics = await manager.collectRunMetrics(result.runId);
+      const combined = {
+        ...(summaryMetrics ?? {}),
+        ...(result.loopMetrics ?? {}),
+      } as Record<string, number | null>;
+
+      manager.recordExternalRun({
+        ...baseRecord,
+        updatedAt: Date.now(),
+        metrics: combined,
+      });
+
+      const [record] = await manager.fetchRegistry({ id: result.runId });
+      expect(record.phase).toBe('baseline');
+      expect(record.experiment).toBe('ising');
+      expect(record.metrics).toMatchObject({
+        loop_count: 1,
+        fs_p95: 0.25,
+      });
+
+      const tail = await manager.tail(result.runId, 0, 4_096);
+      expect(tail.output).toContain('loop log');
+    } finally {
+      if (manager) {
+        await manager.shutdown();
+      }
+      await removeDir(tmpRoot);
+    }
   });
 });

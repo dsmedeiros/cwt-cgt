@@ -20,9 +20,15 @@ export type BaselineRunResult = {
   runId: string;
   model: BaselineModel;
   outputDir: string | null;
+  artifactsDir: string;
   command: string;
   args: string[];
+  cwd: string;
   cli: string;
+  status: 'complete';
+  startedAt: number;
+  completedAt: number;
+  loopMetrics: Record<string, number | null> | null;
 };
 
 export type BaselineRunStreamEvent = {

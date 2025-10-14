@@ -769,6 +769,36 @@ export class RunManager {
     return enriched;
   }
 
+  recordExternalRun(run: {
+    id: string;
+    createdAt: number;
+    updatedAt: number;
+    status: RunStatus;
+    command: string;
+    args: string[];
+    cwd: string;
+    phase?: string | null;
+    experiment?: string | null;
+    label?: string | null;
+    artifactsDir: string;
+    metrics?: Record<string, number | null> | null;
+  }) {
+    upsertRun(this.registry, {
+      id: run.id,
+      createdAt: run.createdAt,
+      updatedAt: run.updatedAt,
+      status: run.status,
+      command: run.command,
+      args: run.args,
+      cwd: run.cwd,
+      phase: run.phase ?? null,
+      experiment: run.experiment ?? null,
+      label: run.label ?? null,
+      artifactsDir: run.artifactsDir,
+      metrics: run.metrics ?? null,
+    });
+  }
+
   async waitForCompletion(runId: string): Promise<RunCompletion> {
     const context = this.runs.get(runId);
     if (!context) {
