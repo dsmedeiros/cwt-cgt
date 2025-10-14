@@ -395,30 +395,6 @@ const AdiabaticBoundaryViewer = ({
       hotspotId: hotspot?.id ?? null,
       graphId,
     });
-
-    const tauSeed = sanitizeNumber(hotspot?.coordinates?.tau);
-    const zetaSeed = sanitizeNumber(hotspot?.coordinates?.zeta);
-    if (
-      tauSeed == null ||
-      zetaSeed == null ||
-      !extentSeeds ||
-      extentSeeds.length === 0 ||
-      !stepSeeds ||
-      stepSeeds.length === 0 ||
-      gridSizeSeed == null ||
-      gridSizeSeed <= 0
-    ) {
-      return;
-    }
-
-    void runAnalysis({
-      tau: tauSeed,
-      zeta: zetaSeed,
-      extents: extentSeeds,
-      steps: stepSeeds,
-      gridSize: gridSizeSeed,
-      auto: true,
-    });
   }, [
     hotspot?.id,
     hotspot?.coordinates?.tau,
