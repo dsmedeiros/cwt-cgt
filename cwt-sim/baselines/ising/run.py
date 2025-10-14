@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import time
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Mapping, Optional, Sequence
@@ -14,7 +14,12 @@ import numpy as np
 
 from baselines import BaselineRunConfig, build_shared_parser
 from baselines.artifacts import ensure_outdir, write_heatmap_png, write_top_tiles
-from baselines.common import Accumulator, graph_factory, seed_everything
+from baselines.common import (
+    Accumulator,
+    graph_factory,
+    seed_everything,
+    time_budget_guard,
+)
 from baselines.io import load_axis_map
 
 
@@ -49,8 +54,11 @@ def get_parser() -> argparse.ArgumentParser:
         type=int,
         nargs=2,
         metavar=("AXIS0_POINTS", "AXIS1_POINTS"),
-        default=(25, 25),
-        help="Number of samples along each axis (default: %(default)s).",
+        default=(16, 16),
+        help=(
+            "Number of samples along each axis (default: %(default)s). Defaults are tuned"
+            " to keep reference sweeps within the 60 s runtime budget."
+        ),
     )
     parser.add_argument(
         "--range",
@@ -86,10 +94,11 @@ def get_parser() -> argparse.ArgumentParser:
         type=int,
         nargs=2,
         metavar=("ROWS", "COLS"),
-        default=(16, 16),
+        default=(12, 12),
         help=(
             "Dimensions of the lattice_2d substrate when --graph-kind=lattice_2d "
-            "(default: %(default)s)."
+            "(default: %(default)s). The default size balances fidelity with the 60 s"
+            " runtime budget."
         ),
     )
     parser.add_argument(
@@ -101,8 +110,11 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--warmup-sweeps",
         type=int,
-        default=200,
-        help="Number of Metropolis sweeps discarded as warm-up (default: %(default)s).",
+        default=128,
+        help=(
+            "Number of Metropolis sweeps discarded as warm-up (default: %(default)s)."
+            " Defaults align with the ≤60 s runtime target."
+        ),
     )
     parser.add_argument(
         "--top-k",
@@ -571,10 +583,11 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         output_dir=namespace.output_dir,
         steps=namespace.steps,
         seed=namespace.seed,
+        time_budget=namespace.time_budget,
     )
 
-    if config.seed is not None:
-        seed_everything(config.seed)
+    base_seed = int(config.seed if config.seed is not None else 0)
+    seed_everything(base_seed)
 
     graph, adjacency, graph_id, graph_seed, graph_params = _build_graph(namespace, config)
     base_radius, base_gap = _adjacency_spectrum(adjacency)
@@ -616,56 +629,70 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
     node_count = graph.number_of_nodes()
     edge_count = graph.number_of_edges()
 
-    start = time.perf_counter()
-    index = 0
-    for i, value0 in enumerate(axis_values[0]):
-        for j, value1 in enumerate(axis_values[1]):
-            values = [float(value0), float(value1)]
-            temperature = values[temp_axis]
-            field = values[field_axis]
-            seed_offset = None if config.seed is None else config.seed + index
-            result = simulate_ising(
-                adjacency,
-                temperature=float(temperature),
-                field=float(field),
-                coupling=float(namespace.coupling),
-                warmup_sweeps=namespace.warmup_sweeps,
-                sample_sweeps=config.steps,
-                seed=seed_offset,
-            )
-            magnetization_grid[i, j] = result.magnetization_mean
+    time_budget = max(float(config.time_budget), 0.0)
+    budget_notes: list[str] = []
 
-            record = {
-                "graph_kind": namespace.graph_kind,
-                "graph_seed": graph_seed,
-                "graph_identifier": graph_id,
-                "node_count": node_count,
-                "edge_count": edge_count,
-                "coupling": float(namespace.coupling),
-                "temperature": float(temperature),
-                "field": float(field),
-                axis_names[0]: float(values[0]),
-                axis_names[1]: float(values[1]),
-                f"{axis_names[0]}_index": i,
-                f"{axis_names[1]}_index": j,
-                f"{axis_aliases[0]}_index": i,
-                f"{axis_aliases[1]}_index": j,
-                "M_mean": result.magnetization_mean,
-                "M_abs_mean": result.magnetization_abs_mean,
-                "M_std": result.magnetization_std,
-                "chi_est": result.susceptibility,
-                "energy_mean": result.energy_mean,
-                "energy_density": result.energy_density,
-                "energy_std": result.energy_std,
-                "C_est": result.heat_capacity,
-                "spectral_radius": float(namespace.coupling) * base_radius,
-                "spectral_gap": float(namespace.coupling) * base_gap,
-                "samples": result.samples,
-            }
-            records.append(record)
-            record_lookup[(i, j)] = record
-            index += 1
-    elapsed = time.perf_counter() - start
+    def _warn_overrun(elapsed: float) -> None:
+        message = (
+            f"Ising sweep runtime {elapsed:.3f}s exceeded the {time_budget:.3f}s budget."
+        )
+        warnings.warn(message, RuntimeWarning)
+        budget_notes.append(message)
+
+    index = 0
+    with time_budget_guard(
+        time_budget if time_budget > 0 else float("inf"),
+        raise_on_exceed=False,
+        on_exceed=_warn_overrun,
+    ) as guard:
+        for i, value0 in enumerate(axis_values[0]):
+            for j, value1 in enumerate(axis_values[1]):
+                values = [float(value0), float(value1)]
+                temperature = values[temp_axis]
+                field = values[field_axis]
+                seed_offset = base_seed + index
+                result = simulate_ising(
+                    adjacency,
+                    temperature=float(temperature),
+                    field=float(field),
+                    coupling=float(namespace.coupling),
+                    warmup_sweeps=namespace.warmup_sweeps,
+                    sample_sweeps=config.steps,
+                    seed=seed_offset,
+                )
+                magnetization_grid[i, j] = result.magnetization_mean
+
+                record = {
+                    "graph_kind": namespace.graph_kind,
+                    "graph_seed": graph_seed,
+                    "graph_identifier": graph_id,
+                    "node_count": node_count,
+                    "edge_count": edge_count,
+                    "coupling": float(namespace.coupling),
+                    "temperature": float(temperature),
+                    "field": float(field),
+                    axis_names[0]: float(values[0]),
+                    axis_names[1]: float(values[1]),
+                    f"{axis_names[0]}_index": i,
+                    f"{axis_names[1]}_index": j,
+                    f"{axis_aliases[0]}_index": i,
+                    f"{axis_aliases[1]}_index": j,
+                    "M_mean": result.magnetization_mean,
+                    "M_abs_mean": result.magnetization_abs_mean,
+                    "M_std": result.magnetization_std,
+                    "chi_est": result.susceptibility,
+                    "energy_mean": result.energy_mean,
+                    "energy_density": result.energy_density,
+                    "energy_std": result.energy_std,
+                    "C_est": result.heat_capacity,
+                    "spectral_radius": float(namespace.coupling) * base_radius,
+                    "spectral_gap": float(namespace.coupling) * base_gap,
+                    "samples": result.samples,
+                }
+                records.append(record)
+                record_lookup[(i, j)] = record
+                index += 1
+    elapsed = guard.elapsed if guard.elapsed is not None else 0.0
 
     omega_grid = _finite_difference_axis(
         magnetization_grid, axis_values[temp_axis], temp_axis
@@ -732,7 +759,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
                 coupling=float(namespace.coupling),
                 warmup_sweeps=namespace.warmup_sweeps,
                 sample_sweeps=config.steps,
-                base_seed=config.seed,
+                base_seed=base_seed,
                 delta_scale=float(max(namespace.loop_delta_scale, 1e-6)),
             )
             destination = loops_dir / f"loop_{axis_names[0]}{i_idx}_{axis_names[1]}{j_idx}.json"
@@ -746,6 +773,8 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
             f"on {namespace.graph_kind} in {elapsed:.3f}s; metrics written to {metrics_path}."
         )
         print(f"|Ω| heatmap stored at {heatmap_path} and top-tile summary at {top_tiles_path}.")
+        if budget_notes:
+            print(budget_notes[-1])
         if namespace.enable_loops and loop_reports:
             print(
                 f"Loop diagnostics written to {loop_reports[0].parent} "

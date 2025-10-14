@@ -9,7 +9,7 @@ import os
 import subprocess
 import sys
 import tempfile
-import time
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Mapping, Optional, Sequence
@@ -19,7 +19,13 @@ import numpy as np
 
 from baselines import BaselineRunConfig, build_shared_parser
 from baselines.artifacts import ensure_outdir, write_heatmap_png, write_top_tiles
-from baselines.common import Accumulator, graph_factory, grid_points, seed_everything
+from baselines.common import (
+    Accumulator,
+    graph_factory,
+    grid_points,
+    seed_everything,
+    time_budget_guard,
+)
 from baselines.io import load_axis_map
 
 
@@ -60,8 +66,11 @@ def get_parser() -> argparse.ArgumentParser:
         type=int,
         nargs=2,
         metavar=("KAPPA_POINTS", "SIGMA_POINTS"),
-        default=(25, 25),
-        help="Number of grid points along the coupling κ and disorder σ axes (default: %(default)s).",
+        default=(16, 16),
+        help=(
+            "Number of grid points along the coupling κ and disorder σ axes (default: %(default)s)."
+            " Defaults are tuned so the reference scan finishes within the 60 s budget."
+        ),
     )
     parser.add_argument(
         "--coupling-range",
@@ -88,8 +97,11 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--warmup-steps",
         type=int,
-        default=200,
-        help="Number of integration steps discarded as warm-up (default: %(default)s).",
+        default=128,
+        help=(
+            "Number of integration steps discarded as warm-up (default: %(default)s)."
+            " Defaults align with the ≤60 s runtime goal."
+        ),
     )
     parser.add_argument(
         "--integration",
@@ -720,11 +732,23 @@ def _run_cwt_loop_experiment(
             command.extend(["--seed", str(int(seed))])
 
         env = os.environ.copy()
-        env.setdefault("PYTHONHASHSEED", "0")
+        env["PYTHONHASHSEED"] = "0"
         if seed is not None:
-            env.setdefault("CWT_SEED", str(int(seed)))
+            env["CWT_SEED"] = str(int(seed))
 
-        subprocess.run(command, check=True, env=env, timeout=timeout)
+        experiment_warnings: list[str] = []
+
+        def _warn_overrun(elapsed: float) -> None:
+            message = (
+                f"Loop experiment runtime {elapsed:.3f}s exceeded the {timeout:.3f}s budget."
+            )
+            warnings.warn(message, RuntimeWarning)
+            experiment_warnings.append(message)
+
+        with time_budget_guard(timeout, raise_on_exceed=False, on_exceed=_warn_overrun) as guard:
+            subprocess.run(command, check=True, env=env, timeout=timeout)
+
+        duration = guard.elapsed if guard.elapsed is not None else 0.0
 
         if not summary_path.exists():
             raise RuntimeError("loop experiment completed without producing a summary")
@@ -776,14 +800,20 @@ def _run_cwt_loop_experiment(
         phi_abs = max((abs(value) for value in phi_candidates if math.isfinite(value)), default=float("nan"))
         guard_flag = any(bool(item.get("fs_guard_exceeded")) for item in orientations)
 
-        return {
+        payload_report = {
             "module": module_path,
             "orientations": orientations,
             "extent": {axis: _coerce_float(axis_map.get(axis)) for axis in center_axes},
             "phi_abs": phi_abs,
             "fs_guard_exceeded": guard_flag,
             "summary_path": str(summary_path),
+            "duration": float(duration),
+            "time_budget_seconds": float(timeout),
         }
+        if experiment_warnings:
+            payload_report["warnings"] = list(experiment_warnings)
+
+        return payload_report
 
 
 def run_cwt_loop(
@@ -870,6 +900,10 @@ def run_cwt_loop(
         )
         base_report = dict(base_report)
         base_report["experiment"] = experiment_report
+        if isinstance(experiment_report, Mapping) and experiment_report.get("warnings"):
+            experiment_warnings = experiment_report.get("warnings")
+            if isinstance(experiment_warnings, Sequence):
+                warnings.extend(str(item) for item in experiment_warnings)
     except subprocess.TimeoutExpired:
         warnings.append("loop_experiment_timeout")
     except FileNotFoundError as exc:
@@ -971,13 +1005,14 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         output_dir=namespace.output_dir,
         steps=namespace.steps,
         seed=namespace.seed,
+        time_budget=namespace.time_budget,
     )
 
-    if config.seed is not None:
-        seed_everything(config.seed)
+    base_seed = int(config.seed if config.seed is not None else 0)
+    seed_everything(base_seed)
 
     graph_params = _parse_graph_params(namespace.graph_param)
-    graph_seed = namespace.graph_seed if namespace.graph_seed is not None else config.seed
+    graph_seed = namespace.graph_seed if namespace.graph_seed is not None else base_seed
     adjacency = _build_adjacency(namespace.graph_kind, graph_params, graph_seed)
     base_radius, base_gap = _adjacency_spectrum(adjacency)
 
@@ -993,18 +1028,32 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         int(namespace.grid_size[1]),
     )
 
-    start = time.perf_counter()
-    records, order_grid, r_mean_grid = _collect_records(
-        adjacency,
-        namespace,
-        config,
-        axis_map,
-        kappa_values=kappa_values,
-        sigma_values=sigma_values,
-        base_radius=base_radius,
-        base_gap=base_gap,
-    )
-    elapsed = time.perf_counter() - start
+    time_budget = max(float(config.time_budget), 0.0)
+    budget_notes: list[str] = []
+
+    def _warn_overrun(elapsed: float) -> None:
+        message = (
+            f"Kuramoto sweep runtime {elapsed:.3f}s exceeded the {time_budget:.3f}s budget."
+        )
+        warnings.warn(message, RuntimeWarning)
+        budget_notes.append(message)
+
+    with time_budget_guard(
+        time_budget if time_budget > 0 else float("inf"),
+        raise_on_exceed=False,
+        on_exceed=_warn_overrun,
+    ) as guard:
+        records, order_grid, r_mean_grid = _collect_records(
+            adjacency,
+            namespace,
+            config,
+            axis_map,
+            kappa_values=kappa_values,
+            sigma_values=sigma_values,
+            base_radius=base_radius,
+            base_gap=base_gap,
+        )
+    elapsed = guard.elapsed if guard.elapsed is not None else 0.0
 
     if namespace.compute_curvature:
         curvature_grid = compute_cwt_curvature(order_grid, kappa_values, sigma_values)
@@ -1025,7 +1074,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         record_lookup[(i, j)] = record
 
     graph_id = _graph_identifier(namespace.graph_kind, graph_params)
-    seed_label = config.seed if config.seed is not None else "na"
+    seed_label = base_seed
     output_dir = ensure_outdir("kuramoto", namespace.output_dir, graph_id, seed_label)
     metrics_path = output_dir / "metrics.csv"
     accumulator.to_csv(metrics_path)
@@ -1071,7 +1120,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
                 sample_steps=config.steps,
                 integration=namespace.integration,
                 intrinsic_mean=namespace.intrinsic_mean,
-                base_seed=config.seed,
+                base_seed=base_seed,
                 delta_scale=float(max(namespace.loop_delta_scale, 1e-6)),
             )
             destination = loops_dir / f"loop_kappa{i}_sigma{j}.json"
@@ -1085,6 +1134,8 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
             f"in {elapsed:.3f}s; metrics written to {metrics_path}."
         )
         print(f"|Ω| heatmap stored at {heatmap_path} and top-tile summary at {top_tiles_path}.")
+        if budget_notes:
+            print(budget_notes[-1])
         if namespace.enable_loops and loop_reports:
             print(f"Loop diagnostics written to {loop_reports[0].parent} ({len(loop_reports)} tiles).")
 

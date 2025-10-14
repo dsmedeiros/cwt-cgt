@@ -35,6 +35,33 @@ def test_simulate_percolation_statistics() -> None:
     assert summary.S_var >= 0.0
 
 
+def test_simulate_percolation_deterministic() -> None:
+    """Percolation realizations are reproducible under a fixed seed."""
+
+    graph = nx.path_graph(5)
+    substrate = percolation_run._prepare_substrate(graph)  # type: ignore[attr-defined]
+    rng = np.random.default_rng(11)
+    first = percolation_run.simulate_percolation(
+        substrate,
+        p=0.7,
+        zeta=0.1,
+        realizations=8,
+        threshold=0.4,
+        rng=rng,
+    )
+    rng_repeat = np.random.default_rng(11)
+    second = percolation_run.simulate_percolation(
+        substrate,
+        p=0.7,
+        zeta=0.1,
+        realizations=8,
+        threshold=0.4,
+        rng=rng_repeat,
+    )
+
+    assert first == second
+
+
 def test_cli_produces_artifacts(tmp_path: Path) -> None:
     """Running the CLI with a tiny grid writes metrics and artifacts."""
 

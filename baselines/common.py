@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import contextlib
 import math
+import os
 import random
 import time
+from dataclasses import dataclass
 from itertools import product
 from pathlib import Path
 from typing import Callable, Iterator, Mapping, Sequence
@@ -13,21 +15,14 @@ from typing import Callable, Iterator, Mapping, Sequence
 import networkx as nx
 import numpy as np
 
-try:  # pragma: no cover - torch is optional
-    import torch
-except ModuleNotFoundError:  # pragma: no cover - torch is optional
-    torch = None  # type: ignore[assignment]
-
 
 def seed_everything(seed: int) -> None:
-    """Seed random number generators for reproducibility."""
+    """Seed random number generators for reproducibility without GPU deps."""
 
-    random.seed(seed)
-    np.random.seed(seed)
-    if torch is not None:
-        torch.manual_seed(seed)
-        if torch.cuda.is_available():  # pragma: no cover - optional CUDA availability
-            torch.cuda.manual_seed_all(seed)
+    seed_int = int(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed_int)
+    random.seed(seed_int)
+    np.random.seed(seed_int)
 
 
 def _build_ring3(n: int) -> nx.Graph:
@@ -209,21 +204,39 @@ class Accumulator:
         return output_path
 
 
+@dataclass(slots=True)
+class _BudgetRecord:
+    """Track elapsed runtime for :func:`time_budget_guard`."""
+
+    budget: float
+    elapsed: float | None = None
+
+    @property
+    def ratio(self) -> float | None:
+        """Return the fraction of the budget that has been consumed."""
+
+        if self.elapsed is None or self.budget <= 0:
+            return None
+        return self.elapsed / self.budget
+
+
 @contextlib.contextmanager
 def time_budget_guard(
     seconds: float,
     *,
     on_exceed: Callable[[float], None] | None = None,
     raise_on_exceed: bool = True,
-) -> Iterator[None]:
+) -> Iterator[_BudgetRecord]:
     """Context manager that checks a block does not exceed a time budget."""
 
     start = time.perf_counter()
+    record = _BudgetRecord(float(seconds))
     try:
-        yield
+        yield record
     finally:
         elapsed = time.perf_counter() - start
-        if elapsed > seconds:
+        record.elapsed = elapsed
+        if elapsed > record.budget:
             if on_exceed is not None:
                 on_exceed(elapsed)
             if raise_on_exceed:

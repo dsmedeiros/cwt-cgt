@@ -29,6 +29,32 @@ def test_simulate_ising_statistics() -> None:
     assert result.energy_std >= 0.0 or math.isnan(result.energy_std)
 
 
+def test_simulate_ising_deterministic() -> None:
+    """Ising simulations with the same seed reproduce identical observables."""
+
+    adjacency = np.array([[0.0, 1.0], [1.0, 0.0]], dtype=float)
+    first = ising_run.simulate_ising(
+        adjacency,
+        temperature=2.5,
+        field=0.0,
+        coupling=1.0,
+        warmup_sweeps=4,
+        sample_sweeps=6,
+        seed=123,
+    )
+    second = ising_run.simulate_ising(
+        adjacency,
+        temperature=2.5,
+        field=0.0,
+        coupling=1.0,
+        warmup_sweeps=4,
+        sample_sweeps=6,
+        seed=123,
+    )
+
+    assert first == second
+
+
 def test_cli_produces_artifacts(tmp_path: Path) -> None:
     """Running the CLI with a small grid writes metrics and artifacts."""
 
