@@ -3,7 +3,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { GuidedLoopArgs, LoopAtHotspotPayload, RegistryRunRecord } from '../types/ipc';
 import { runs } from '../ipc';
 import { useExperimentNavigation } from '../navigation/ExperimentNavigationContext';
-import AdiabaticBoundaryViewer from './AdiabaticBoundaryViewer';
+import AdiabaticBoundaryViewer, {
+  type AdiabaticBoundaryStatusUpdate,
+  type AdiabaticCalmUpdate,
+} from './AdiabaticBoundaryViewer';
 import { createDecisionGateEngine } from '../decisionGate';
 import {
   formatValidationMessage,
@@ -14,6 +17,7 @@ import {
   validateSteps,
 } from '../../shared/validators';
 import { findArtifactNodeByName, joinArtifactPath, sanitizeArtifactNodes } from '../utils/artifacts';
+import type { AdiabaticBoundaryResult } from '../../shared/adiabatic';
 
 type HotspotAxis = 'rho' | 'tau' | 'zeta' | 'zeta_phase' | 'kappa';
 
@@ -163,6 +167,12 @@ const graphCatalog: Record<
 const graphIds = Object.keys(graphCatalog);
 
 const defaultGraphId = graphIds[0] ?? 'ring3';
+
+const defaultAdiabaticExtentSeeds = [0.02, 0.04, 0.08];
+const defaultAdiabaticStepSeeds = [400, 200, 120, 80];
+const defaultAdiabaticGridSize = 6;
+const adiabaticGateBaseMessage =
+  'Run the adiabatic boundary sweep for this hotspot to unlock loop controls.';
 
 const matchesGraphAlias = (value: string, alias: string) => {
   const normalizedValue = value.toLowerCase();
@@ -911,6 +921,20 @@ const Phase3Loops = () => {
   const inferredGraphCacheRef = useRef(new Map<string, string>());
   const [activeTab, setActiveTab] = useState<'simple' | 'guided'>('guided');
   const [summaryAmplitudes, setSummaryAmplitudes] = useState<number[] | null>(null);
+  type AdiabaticSnapshotEntry = {
+    status: AdiabaticBoundaryStatusUpdate['status'];
+    requestId: number;
+    hotspotId: string | null;
+    graphId: string | null;
+    result: AdiabaticBoundaryResult | null;
+    error: string | null;
+    calm: boolean | null;
+  };
+  const [adiabaticSnapshots, setAdiabaticSnapshots] = useState<Record<string, AdiabaticSnapshotEntry>>({});
+
+  useEffect(() => {
+    setAdiabaticSnapshots({});
+  }, [selectedHotspotId]);
 
   const {
     experiments,
@@ -982,6 +1006,94 @@ const Phase3Loops = () => {
   const selectedHotspot = useMemo(
     () => hotspots.find((hotspot) => hotspot.id === selectedHotspotId) ?? hotspots[0],
     [hotspots, selectedHotspotId],
+  );
+
+  const adiabaticGraphKey = useMemo(() => graph ?? '__default__', [graph]);
+  const currentAdiabaticSnapshot = adiabaticSnapshots[adiabaticGraphKey] ?? null;
+
+  const adiabaticGateMessage = useMemo(() => {
+    if (!selectedHotspot) {
+      return 'Select a hotspot to unlock loop controls.';
+    }
+    if (!graph) {
+      return null;
+    }
+    if (!currentAdiabaticSnapshot || currentAdiabaticSnapshot.hotspotId !== selectedHotspot.id) {
+      return adiabaticGateBaseMessage;
+    }
+    if (currentAdiabaticSnapshot.status === 'running') {
+      return 'Adiabatic boundary sweep in progress…';
+    }
+    if (currentAdiabaticSnapshot.status === 'error') {
+      return (
+        currentAdiabaticSnapshot.error ??
+        'Adiabatic boundary sweep failed. Run it again to unlock loop controls.'
+      );
+    }
+    if (currentAdiabaticSnapshot.status !== 'success') {
+      return adiabaticGateBaseMessage;
+    }
+    return null;
+  }, [currentAdiabaticSnapshot, graph, selectedHotspot]);
+
+  const handleAdiabaticStatus = useCallback(
+    (update: AdiabaticBoundaryStatusUpdate) => {
+      const key = update.graphId ?? '__default__';
+      setAdiabaticSnapshots((prev) => {
+        const existing = prev[key];
+        if (existing && update.requestId < existing.requestId) {
+          return prev;
+        }
+        let nextResult = existing?.result ?? null;
+        if (update.status === 'success') {
+          nextResult = update.result;
+        } else if (update.status === 'idle') {
+          nextResult = null;
+        }
+        const nextEntry: AdiabaticSnapshotEntry = {
+          status: update.status,
+          requestId: update.requestId,
+          hotspotId: update.hotspotId,
+          graphId: update.graphId ?? null,
+          result: nextResult,
+          error: update.status === 'error' ? update.error : null,
+          calm: existing?.calm ?? null,
+        };
+        return { ...prev, [key]: nextEntry };
+      });
+    },
+    [],
+  );
+
+  const handleAdiabaticCalm = useCallback(
+    (update: AdiabaticCalmUpdate) => {
+      if (!update.hotspotId) {
+        return;
+      }
+      setHotspots((prev) =>
+        prev.map((hotspot) =>
+          hotspot.id === update.hotspotId ? { ...hotspot, calm: update.calm } : hotspot,
+        ),
+      );
+      setAdiabaticSnapshots((prev) => {
+        const key = update.graphId ?? '__default__';
+        const existing = prev[key];
+        if (!existing) {
+          return prev;
+        }
+        if (update.requestId != null && update.requestId < existing.requestId) {
+          return prev;
+        }
+        return {
+          ...prev,
+          [key]: {
+            ...existing,
+            calm: update.calm,
+          },
+        };
+      });
+    },
+    [],
   );
 
   useEffect(() => {
@@ -1618,6 +1730,29 @@ const Phase3Loops = () => {
     return { errors, steps };
   }, [guidedStepEntries]);
   const guidedSteps = guidedStepAnalysis.steps;
+  const adiabaticExtentSeeds = useMemo(() => {
+    const seeds = new Set<number>();
+    if (extentAValidation.ok) {
+      seeds.add(extentAValidation.value);
+    }
+    if (extentBValidation.ok) {
+      seeds.add(extentBValidation.value);
+    }
+    if (seeds.size === 0) {
+      return defaultAdiabaticExtentSeeds;
+    }
+    return Array.from(seeds).sort((a, b) => a - b);
+  }, [extentAValidation, extentBValidation]);
+
+  const adiabaticStepSeeds = useMemo(() => {
+    if (guidedSteps.length > 0) {
+      return guidedSteps;
+    }
+    if (simpleLimitValidation.ok) {
+      return [simpleLimitValidation.value];
+    }
+    return defaultAdiabaticStepSeeds;
+  }, [guidedSteps, simpleLimitValidation]);
   const guidedStepErrors = guidedStepEntries.map(
     (entry) => guidedStepAnalysis.errors.get(entry.id) ?? null,
   );
@@ -1629,6 +1764,9 @@ const Phase3Loops = () => {
   const adaptLevelsError = formatValidationMessage(adaptLevelsValidation);
 
   const simpleRunDisabledReason = useMemo(() => {
+    if (adiabaticGateMessage) {
+      return adiabaticGateMessage;
+    }
     if (selectedSubstratePath && !graph) {
       return missingSubstrateGraphMessage;
     }
@@ -1652,6 +1790,7 @@ const Phase3Loops = () => {
     }
     return undefined;
   }, [
+    adiabaticGateMessage,
     adaptLevelsValidation,
     extentAValidation,
     extentBValidation,
@@ -1663,6 +1802,9 @@ const Phase3Loops = () => {
   ]);
 
   const guidedRunDisabledReason = useMemo(() => {
+    if (adiabaticGateMessage) {
+      return adiabaticGateMessage;
+    }
     if (selectedSubstratePath && !graph) {
       return missingSubstrateGraphMessage;
     }
@@ -1674,6 +1816,7 @@ const Phase3Loops = () => {
     }
     return undefined;
   }, [
+    adiabaticGateMessage,
     fsGuardValidation,
     graph,
     guidedSteps.length,
@@ -2315,6 +2458,11 @@ const Phase3Loops = () => {
           {activeTab === 'simple' ? (
             <section className="phase3__card">
               <h3>Simple loop scan</h3>
+              {adiabaticGateMessage ? (
+                <p className="phase3__warning" role="status">
+                  {adiabaticGateMessage}
+                </p>
+              ) : null}
               <div className="phase3__grid">
                 <label>
                   <span>Extent {selectedAxisILabel}</span>
@@ -2479,6 +2627,11 @@ const Phase3Loops = () => {
           ) : (
             <section className="phase3__card">
               <h3>Guided loop</h3>
+              {adiabaticGateMessage ? (
+                <p className="phase3__warning" role="status">
+                  {adiabaticGateMessage}
+                </p>
+              ) : null}
               <div className="phase3__plane-indicator" aria-live="polite">
                 <span className="badge">{`Plane: ${discoveryAxisILabel}–${discoveryAxisJLabel} (from Phase 2)`}</span>
               </div>
@@ -2772,7 +2925,17 @@ const Phase3Loops = () => {
         </div>
       </div>
       <section className="phase3__card">
-        <AdiabaticBoundaryViewer />
+        <AdiabaticBoundaryViewer
+          hotspot={selectedHotspot ?? null}
+          graphId={graph}
+          experimentDir={selectedExperimentPath ?? null}
+          substrateDir={selectedSubstratePath ?? null}
+          extentSeeds={adiabaticExtentSeeds}
+          stepSeeds={adiabaticStepSeeds}
+          gridSizeSeed={defaultAdiabaticGridSize}
+          onResult={handleAdiabaticStatus}
+          onCalm={handleAdiabaticCalm}
+        />
       </section>
       {saveModalOpen ? (
         <div

@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 
@@ -11,9 +11,18 @@ vi.mock('../ipc', () => ({
   },
 }));
 
+let latestViewerProps: any = null;
+let viewerOnResult: ((update: any) => void) | null = null;
+let viewerOnCalm: ((update: any) => void) | null = null;
+
 vi.mock('../AdiabaticBoundaryViewer', () => ({
   __esModule: true,
-  default: () => null,
+  default: (props: any) => {
+    latestViewerProps = props;
+    viewerOnResult = props.onResult ?? null;
+    viewerOnCalm = props.onCalm ?? null;
+    return null;
+  },
 }));
 
 const originalWindow = (globalThis as { window?: Window }).window;
@@ -161,6 +170,10 @@ describe('Phase3Loops component amplitude controls', () => {
       .spyOn(NavigationModule, 'useExperimentNavigation')
       .mockImplementation(() => navigationState);
 
+    latestViewerProps = null;
+    viewerOnResult = null;
+    viewerOnCalm = null;
+
     const baseWindow = originalWindow ?? (globalThis as { window?: Window }).window;
     if (!baseWindow) {
       throw new Error('Phase3Loops component tests require a window environment.');
@@ -189,6 +202,9 @@ describe('Phase3Loops component amplitude controls', () => {
     if (currentWindow && 'CWT' in currentWindow) {
       delete (currentWindow as { CWT?: unknown }).CWT;
     }
+    latestViewerProps = null;
+    viewerOnResult = null;
+    viewerOnCalm = null;
   });
 
   it('extends the amplitude slider max using summary amplitudes', async () => {
@@ -213,6 +229,89 @@ describe('Phase3Loops component amplitude controls', () => {
     await waitFor(() => {
       const max = Number((rhoSlider as HTMLInputElement).max);
       expect(max).toBeGreaterThan(0.75);
+    });
+  });
+
+  it('gates loop controls until the adiabatic sweep succeeds for the hotspot', async () => {
+    readFileMock.mockResolvedValue({ ok: false });
+    navigationState.selectedSubstratePath = null as NavigationContextValue['selectedSubstratePath'];
+
+    render(<Phase3Loops />);
+
+    const user = userEvent.setup();
+    const simpleTab = await screen.findByRole('button', { name: /Simple loop/i });
+    await user.click(simpleTab);
+
+    const runButton = await screen.findByRole('button', { name: 'Run' });
+    expect(runButton).toBeDisabled();
+
+    const initialGates = await screen.findAllByText(/Run the adiabatic boundary sweep/i);
+    expect(initialGates).toHaveLength(1);
+
+    const boundaryResult = {
+      runId: 'adiabatic-1',
+      outputDir: '/tmp/adiabatic',
+      surface: [],
+      histograms: [],
+      boundary: [],
+      recommendation: null,
+      fsGuard: { recommended: null, maxObserved: null },
+      referenceKappa: null,
+    };
+
+    expect(viewerOnResult).toBeDefined();
+    const initialHotspotId = latestViewerProps?.hotspot?.id ?? null;
+    const initialGraphId = latestViewerProps?.graphId ?? null;
+
+    act(() => {
+      viewerOnResult?.({
+        status: 'running',
+        requestId: 1,
+        hotspotId: initialHotspotId,
+        graphId: initialGraphId,
+      });
+    });
+    act(() => {
+      viewerOnResult?.({
+        status: 'success',
+        requestId: 1,
+        hotspotId: initialHotspotId,
+        graphId: initialGraphId,
+        result: boundaryResult,
+      });
+    });
+
+    await waitFor(() => {
+      expect(runButton).not.toBeDisabled();
+    });
+    expect(screen.queryByText(/Run the adiabatic boundary sweep/i)).not.toBeInTheDocument();
+
+    const secondHotspot = await screen.findByRole('radio', { name: /Calm Basin B/i });
+    await user.click(secondHotspot);
+
+    await waitFor(() => {
+      expect(latestViewerProps?.hotspot?.id).not.toBe(initialHotspotId);
+    });
+
+    const refreshedGates = await screen.findAllByText(/Run the adiabatic boundary sweep/i);
+    expect(refreshedGates).toHaveLength(1);
+    expect(runButton).toBeDisabled();
+
+    const nextHotspotId = latestViewerProps?.hotspot?.id ?? null;
+    const nextGraphId = latestViewerProps?.graphId ?? null;
+
+    act(() => {
+      viewerOnResult?.({
+        status: 'success',
+        requestId: 2,
+        hotspotId: nextHotspotId,
+        graphId: nextGraphId,
+        result: boundaryResult,
+      });
+    });
+
+    await waitFor(() => {
+      expect(runButton).not.toBeDisabled();
     });
   });
 

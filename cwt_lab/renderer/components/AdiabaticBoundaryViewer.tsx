@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Plot from 'react-plotly.js';
 import type { Datum, Layout, PlotData } from 'plotly.js';
 
@@ -62,11 +62,6 @@ const buildHistogramTrace = (
   return { x, y: histogram.bins };
 };
 
-const DEFAULT_CENTER = { tau: 0.8, zeta: 0 };
-const DEFAULT_EXTENTS = [0.02, 0.04, 0.08];
-const DEFAULT_STEPS = [400, 200, 120, 80];
-const DEFAULT_GRID_SIZE = 6;
-
 const parseNumber = (value: string): number | null => {
   const trimmed = value.trim();
   if (!trimmed) {
@@ -118,59 +113,221 @@ const parseIntegerList = (value: string): number[] | null => {
 
 const toCliValue = (value: number) => Number(value.toFixed(6)).toString();
 
-const AdiabaticBoundaryViewer = () => {
-  const [centerTau, setCenterTau] = useState(() => DEFAULT_CENTER.tau.toString());
-  const [centerZeta, setCenterZeta] = useState(() => DEFAULT_CENTER.zeta.toString());
-  const [extentsInput, setExtentsInput] = useState(() => DEFAULT_EXTENTS.join(', '));
-  const [stepsInput, setStepsInput] = useState(() => DEFAULT_STEPS.join(', '));
-  const [gridSizeInput, setGridSizeInput] = useState(() => DEFAULT_GRID_SIZE.toString());
+export type AdiabaticBoundaryStatusUpdate =
+  | {
+      status: 'idle';
+      requestId: number;
+      hotspotId: string | null;
+      graphId: string | null;
+    }
+  | {
+      status: 'running';
+      requestId: number;
+      hotspotId: string | null;
+      graphId: string | null;
+    }
+  | {
+      status: 'success';
+      requestId: number;
+      hotspotId: string | null;
+      graphId: string | null;
+      result: AdiabaticBoundaryResult;
+    }
+  | {
+      status: 'error';
+      requestId: number;
+      hotspotId: string | null;
+      graphId: string | null;
+      error: string;
+    };
+
+export type AdiabaticCalmUpdate = {
+  hotspotId: string | null;
+  graphId: string | null;
+  calm: boolean;
+  requestId: number | null;
+};
+
+type ViewerHotspot = {
+  id: string;
+  name: string;
+  coordinates?: Partial<Record<'tau' | 'zeta', number>>;
+  calm?: boolean;
+};
+
+type AdiabaticBoundaryViewerProps = {
+  hotspot: ViewerHotspot | null;
+  graphId: string | null;
+  experimentDir: string | null;
+  substrateDir: string | null;
+  extentSeeds: number[] | null;
+  stepSeeds: number[] | null;
+  gridSizeSeed: number | null;
+  onResult?: (update: AdiabaticBoundaryStatusUpdate) => void;
+  onCalm?: (update: AdiabaticCalmUpdate) => void;
+};
+
+type RunOverrides = {
+  tau?: number | null;
+  zeta?: number | null;
+  extents?: number[] | null;
+  steps?: number[] | null;
+  gridSize?: number | null;
+  auto?: boolean;
+};
+
+const formatSeeds = (values: number[] | null | undefined) =>
+  values && values.length > 0
+    ? values
+        .filter((value) => Number.isFinite(value))
+        .map((value) => Number(value))
+        .join(', ')
+    : '';
+
+const sanitizeNumber = (value: number | null | undefined) =>
+  typeof value === 'number' && Number.isFinite(value) ? value : null;
+
+const AdiabaticBoundaryViewer = ({
+  hotspot,
+  graphId,
+  experimentDir,
+  substrateDir,
+  extentSeeds,
+  stepSeeds,
+  gridSizeSeed,
+  onResult,
+  onCalm,
+}: AdiabaticBoundaryViewerProps) => {
+  const [centerTau, setCenterTau] = useState('');
+  const [centerZeta, setCenterZeta] = useState('');
+  const [extentsInput, setExtentsInput] = useState('');
+  const [stepsInput, setStepsInput] = useState('');
+  const [gridSizeInput, setGridSizeInput] = useState('');
   const [result, setResult] = useState<AdiabaticBoundaryResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [calmFlag, setCalmFlag] = useState<boolean>(Boolean(hotspot?.calm));
+  const requestCounterRef = useRef(0);
 
-  const runAnalysis = async () => {
-    if (!window?.CWT?.phase3?.cmdAdiabaticBoundary) {
-      setError('Adiabatic boundary command is unavailable.');
+  const notifyStatus = (update: Omit<AdiabaticBoundaryStatusUpdate, 'requestId'> & {
+    requestId?: number;
+  }) => {
+    const requestId = update.requestId ?? requestCounterRef.current;
+    if (!onResult) {
       return;
     }
+    onResult({
+      ...update,
+      requestId,
+    } as AdiabaticBoundaryStatusUpdate);
+  };
 
-    const tau = parseNumber(centerTau);
-    const zeta = parseNumber(centerZeta);
+  const runAnalysis = async (overrides?: RunOverrides) => {
+    const tauOverride = overrides?.tau;
+    const zetaOverride = overrides?.zeta;
+    const extentOverride = overrides?.extents;
+    const stepsOverride = overrides?.steps;
+    const gridOverride = overrides?.gridSize;
+
+    const tau = tauOverride ?? parseNumber(centerTau);
+    const zeta = zetaOverride ?? parseNumber(centerZeta);
     if (tau == null || zeta == null) {
-      setError('Provide numeric values for the τ and ζ center.');
+      const message = 'Provide numeric values for the τ and ζ center.';
+      setError(message);
+      notifyStatus({
+        status: 'error',
+        hotspotId: hotspot?.id ?? null,
+        graphId,
+        error: message,
+        requestId: requestCounterRef.current,
+      });
       return;
     }
 
-    const extents = parseFloatList(extentsInput);
+    const extents = extentOverride ?? parseFloatList(extentsInput);
     if (!extents || extents.length === 0) {
-      setError('Provide at least one numeric extent (comma or space separated).');
+      const message = 'Provide at least one numeric extent (comma or space separated).';
+      setError(message);
+      notifyStatus({
+        status: 'error',
+        hotspotId: hotspot?.id ?? null,
+        graphId,
+        error: message,
+        requestId: requestCounterRef.current,
+      });
       return;
     }
 
-    const steps = parseIntegerList(stepsInput);
+    const steps = stepsOverride ?? parseIntegerList(stepsInput);
     if (!steps || steps.length === 0) {
-      setError('Provide at least one integer step count (comma or space separated).');
+      const message = 'Provide at least one integer step count (comma or space separated).';
+      setError(message);
+      notifyStatus({
+        status: 'error',
+        hotspotId: hotspot?.id ?? null,
+        graphId,
+        error: message,
+        requestId: requestCounterRef.current,
+      });
       return;
     }
 
-    const gridSizeNumber = parseIntegerList(gridSizeInput)?.[0];
+    const gridSizeNumber = gridOverride ?? parseIntegerList(gridSizeInput)?.[0];
     if (gridSizeNumber == null || gridSizeNumber <= 0) {
-      setError('Grid size must be a positive integer.');
+      const message = 'Grid size must be a positive integer.';
+      setError(message);
+      notifyStatus({
+        status: 'error',
+        hotspotId: hotspot?.id ?? null,
+        graphId,
+        error: message,
+        requestId: requestCounterRef.current,
+      });
       return;
     }
+
+    if (!window?.CWT?.phase3?.cmdAdiabaticBoundary) {
+      const message = 'Adiabatic boundary command is unavailable.';
+      setError(message);
+      notifyStatus({
+        status: 'error',
+        hotspotId: hotspot?.id ?? null,
+        graphId,
+        error: message,
+        requestId: requestCounterRef.current,
+      });
+      return;
+    }
+
+    requestCounterRef.current += 1;
+    const requestId = requestCounterRef.current;
+    const context = {
+      hotspotId: hotspot?.id ?? null,
+      graphId,
+      requestId,
+    } as const;
 
     setIsRunning(true);
     setError(null);
+    notifyStatus({ status: 'running', ...context });
+
     try {
       const response = await window.CWT.phase3.cmdAdiabaticBoundary({
         center: `tau=${toCliValue(tau)},zeta=${toCliValue(zeta)}`,
         extents: extents.map((value) => toCliValue(value)),
         steps,
         gridSize: gridSizeNumber,
+        experimentDir: experimentDir ?? undefined,
+        substrateDir: substrateDir ?? undefined,
+        hotspotId: hotspot?.id,
+        graphId: graphId ?? undefined,
       });
       if (!response.ok) {
         throw new Error(response.error ?? 'Failed to run adiabatic boundary sweep');
+      }
+      if (requestId !== requestCounterRef.current) {
+        return;
       }
       setResult(response.data);
       const preferred = response.data.recommendation;
@@ -182,10 +339,105 @@ const AdiabaticBoundaryViewer = () => {
       } else {
         setSelectedKey(null);
       }
+      notifyStatus({ status: 'success', ...context, result: response.data });
+      if (onCalm) {
+        onCalm({
+          hotspotId: hotspot?.id ?? null,
+          graphId,
+          calm: calmFlag,
+          requestId,
+        });
+      }
     } catch (analysisError) {
-      setError(analysisError instanceof Error ? analysisError.message : String(analysisError));
+      if (requestId !== requestCounterRef.current) {
+        return;
+      }
+      const message =
+        analysisError instanceof Error ? analysisError.message : String(analysisError);
+      setError(message);
+      notifyStatus({ status: 'error', ...context, error: message });
     } finally {
-      setIsRunning(false);
+      if (requestId === requestCounterRef.current) {
+        setIsRunning(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    const tauSeed = sanitizeNumber(hotspot?.coordinates?.tau) ?? 0;
+    const zetaSeed = sanitizeNumber(hotspot?.coordinates?.zeta) ?? 0;
+    setCenterTau(tauSeed.toString());
+    setCenterZeta(zetaSeed.toString());
+  }, [hotspot?.id, hotspot?.coordinates?.tau, hotspot?.coordinates?.zeta]);
+
+  useEffect(() => {
+    setExtentsInput(formatSeeds(extentSeeds));
+  }, [extentSeeds?.length, extentSeeds]);
+
+  useEffect(() => {
+    setStepsInput(formatSeeds(stepSeeds));
+  }, [stepSeeds?.length, stepSeeds]);
+
+  useEffect(() => {
+    setGridSizeInput(gridSizeSeed != null ? Math.round(gridSizeSeed).toString() : '');
+  }, [gridSizeSeed]);
+
+  useEffect(() => {
+    setCalmFlag(Boolean(hotspot?.calm));
+  }, [hotspot?.id, hotspot?.calm]);
+
+  useEffect(() => {
+    setResult(null);
+    setError(null);
+    setSelectedKey(null);
+    notifyStatus({
+      status: 'idle',
+      hotspotId: hotspot?.id ?? null,
+      graphId,
+    });
+
+    const tauSeed = sanitizeNumber(hotspot?.coordinates?.tau);
+    const zetaSeed = sanitizeNumber(hotspot?.coordinates?.zeta);
+    if (
+      tauSeed == null ||
+      zetaSeed == null ||
+      !extentSeeds ||
+      extentSeeds.length === 0 ||
+      !stepSeeds ||
+      stepSeeds.length === 0 ||
+      gridSizeSeed == null ||
+      gridSizeSeed <= 0
+    ) {
+      return;
+    }
+
+    void runAnalysis({
+      tau: tauSeed,
+      zeta: zetaSeed,
+      extents: extentSeeds,
+      steps: stepSeeds,
+      gridSize: gridSizeSeed,
+      auto: true,
+    });
+  }, [
+    hotspot?.id,
+    hotspot?.coordinates?.tau,
+    hotspot?.coordinates?.zeta,
+    graphId,
+    extentSeeds,
+    stepSeeds,
+    gridSizeSeed,
+  ]);
+
+  const handleCalmToggle = (checked: boolean) => {
+    setCalmFlag(checked);
+    if (onCalm) {
+      onCalm({
+        hotspotId: hotspot?.id ?? null,
+        graphId,
+        calm: checked,
+        requestId: requestCounterRef.current,
+      });
     }
   };
 
@@ -285,7 +537,10 @@ const AdiabaticBoundaryViewer = () => {
     <div className="adiabatic">
       <header className="adiabatic__header">
         <div>
-          <h3>Adiabatic boundary</h3>
+          <h3>
+            Adiabatic boundary
+            {hotspot ? <span className="adiabatic__hotspot"> — {hotspot.name}</span> : null}
+          </h3>
           <p>Map κ₁ across step counts and loop extents to highlight adiabatic safety margins.</p>
         </div>
         <div className="adiabatic__actions">
@@ -345,6 +600,14 @@ const AdiabaticBoundaryViewer = () => {
             step={1}
             value={gridSizeInput}
             onChange={(event) => setGridSizeInput(event.target.value)}
+          />
+        </label>
+        <label className="adiabatic__controls--toggle">
+          <span>Calm basin</span>
+          <input
+            type="checkbox"
+            checked={calmFlag}
+            onChange={(event) => handleCalmToggle(event.target.checked)}
           />
         </label>
       </div>
