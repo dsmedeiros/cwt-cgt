@@ -15,8 +15,6 @@ import type {
 type StreamHandler = (event: { runId: string; chunk: string; stream: 'stdout' | 'stderr' }) => void;
 type ExitHandler = (event: { runId: string; code: number | null; signal: NodeJS.Signals | null }) => void;
 type ErrorHandler = (event: { runId: string; message: string }) => void;
-type ArtifactNode = { type: string; name: string; path: string; children?: ArtifactNode[] };
-
 const globalWindow = window as typeof window & { CWT?: RendererIpc };
 
 const okEnvelope = <T,>(data: T): IpcEnvelope<T> => ({ ok: true, data });

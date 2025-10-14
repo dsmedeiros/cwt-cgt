@@ -727,16 +727,16 @@ export default function Baselines() {
   }, [lastResult]);
 
   useEffect(() => {
-    if (!artifacts?.proxyHeatmapPath) {
-      setHeatmapMode('cwt');
+    if (!artifacts) {
+      return;
     }
-  }, [artifacts?.proxyHeatmapPath]);
-
-  useEffect(() => {
-    if (artifacts) {
-      setHeatmapMode('cwt');
-    }
-  }, [artifacts?.outputDir]);
+    setHeatmapMode((mode) => {
+      if (!artifacts.proxyHeatmapPath || mode !== 'cwt') {
+        return 'cwt';
+      }
+      return mode;
+    });
+  }, [artifacts]);
 
   const handleModelChange = (event: FormEvent<HTMLSelectElement>) => {
     const next = event.currentTarget.value as BaselineModel;
