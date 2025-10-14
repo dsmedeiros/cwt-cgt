@@ -180,36 +180,36 @@ const MODEL_HELP_CONTENT: Record<BaselineModel, { title: string; analogy: string
     analogy:
       'Treat the spin lattice like a weather grid: warm colours indicate turbulence that often precedes avalanches.',
     bullets: [
-      'Low fields and moderate temperatures usually reveal the clearest ridge; broaden the range if the heatmap looks flat.',
-      'Coupling controls how rigidly spins follow their neighbours. Tighten it before increasing warm-up sweeps.',
-      'Loops catch sign flips in magnetisation – a triggered FS guard means the plaquette collapsed, so widen the delta scale.',
+      'Aim the T,h sweep at the critical band: the ridge should sharpen near |M| ≈ 0.5 with ω̂ spikes flanking it.',
+      'Top-tile tables confirm alignment when neighbouring tiles share the sign of M_mean; scattered signs mean widen the field span.',
+      'Trusted loop summaries will show FS < 0.2 and φ tracking the analytic tanh curve—if FS spikes, relax the delta scale and rerun.',
     ],
   },
   kuramoto: {
     title: 'Kuramoto baseline tips',
     analogy: 'Think of oscillators as a choir: κ conducts tempo while σ injects discordant notes.',
     bullets: [
-      'A sharp |φ| peak signals synchronisation; if it is muted, increase sample steps to average out jitter.',
-      'Use graph parameters to try denser coupling networks – random-regular graphs surface different locking bands.',
-      'Set an FS guard threshold before looping to detect when curvature spikes are numerical artefacts.',
+      'Expect the heatmap ridge to brighten where κ overcomes σ; r̄ should climb toward 1 while the spectral gap narrows.',
+      'If |ρ| hovers below 0.4, extend the step count to average away phase jitter or try a denser graph in the params field.',
+      'Loop cards marked “Theory aligned” indicate the synchrony band matches the analytic Kuramoto threshold—mismatches usually mean κ bounds are too low.',
     ],
   },
   percolation: {
     title: 'Percolation baseline tips',
     analogy: 'Percolation behaves like dye seeping through porous rock; once enough pores align the flood begins.',
     bullets: [
-      'Track S̄ and giant_fraction together – diverging values imply you are skimming the threshold ridge.',
-      'Derivative along ζ hints at anisotropy; if flat, expand the secondary axis to capture more drift.',
-      'Enable loops when the ridge is sharp to compare against theoretical pc predictions without running Phase 3.',
+      'The ridge traces the percolation threshold: look for giant_fraction jumping above 0.5 while S̄ peaks then collapses.',
+      'If the heatmap is mushy, widen the occupation probability sweep or add disorder samples via graph params to sharpen the transition.',
+      'Loop summaries should echo known pc values (≈0.59 on square lattices); outliers hint that the lattice dimensions need to increase.',
     ],
   },
   sis: {
     title: 'SIS baseline preview',
     analogy: 'The SIS controls are a sketch of the infection plane – once implementation lands this pane will drive it.',
     bullets: [
-      'The infection (β) and recovery (γ) sliders are placeholders until the simulation backend is wired up.',
-      'Seed and steps persist so you can reuse this layout when the engine is available.',
-      'For now the CLI simply echoes configuration – expect a notification here once dynamics are implemented.',
+      'β and γ knobs stage the infection-vs-recovery sweep; the current preview echoes them so you can script defaults.',
+      'Use seed + step fields to lock scenarios you plan to compare once the simulator lands.',
+      'The run output is a dry-run echo today—watch this drawer for an update when the contagion metrics go live.',
     ],
   },
 };
@@ -351,7 +351,7 @@ const formatCoordinates = (coordinates: Record<string, unknown>): string => {
   return entries.length > 0 ? entries.join(', ') : 'n/a';
 };
 
-const buildLoopSummary = (payload: unknown, filePath: string, model: BaselineModel): LoopSummary => {
+const buildLoopSummary = (payload: unknown, filePath: string): LoopSummary => {
   const base: LoopSummary = {
     id: filePath,
     title: 'Loop report',
@@ -554,7 +554,7 @@ const loadArtifactsForRun = async (
             files.map(async (file) => {
               const payload = await artifactsApi.readFile({ path: file.path });
               const data = payload?.contents ? JSON.parse(payload.contents) : null;
-              return buildLoopSummary(data, file.path, model);
+              return buildLoopSummary(data, file.path);
             }),
           );
           loopSummaries = reports;
