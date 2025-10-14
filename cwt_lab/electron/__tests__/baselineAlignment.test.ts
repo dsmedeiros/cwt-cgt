@@ -27,7 +27,7 @@ describe('runBaselineAlignment', () => {
   it('launches deterministic baseline runs and packages the alignment bundle', async () => {
     const { root, artifactsDir } = await createArtifactsRoot();
 
-    const runBaseline = vi.fn(async (payload: BaselineRunPayload, _options?: unknown) => {
+    const runBaseline = vi.fn(async (payload: BaselineRunPayload) => {
       const model = payload.model;
       const invocationIndex = runBaseline.mock.calls.length;
       const runId = `${model}-run-${invocationIndex + 1}`;
