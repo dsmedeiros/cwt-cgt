@@ -14,6 +14,7 @@ A multi-language research sandbox for studying **Causal Web Theory (CWT)** and t
    * [Node environment](#node-environment)
    * [Desktop shell commands](#desktop-shell-commands)
    * [Global UI controls & demo mode](#global-ui-controls--demo-mode)
+   * [Baselines & alignment sweeps](#baselines--alignment-sweeps)
    * [Run manager & IPC bridge](#run-manager--ipc-bridge)
    * [Artifact surfaces and selectors](#artifact-surfaces-and-selectors)
 5. [Run artifacts and registry](#run-artifacts-and-registry)
@@ -163,6 +164,16 @@ The application header in [`cwt_lab/renderer/App.tsx`](cwt_lab/renderer/App.tsx)
 - **Help drawer** – each tab registers guidance and mountain-route analogies that can be opened from the `?` control.
 - **Keyboard hints** – the header surfaces the active run (`⌥R`) and abort (`⌥A`) shortcuts so you always know which action will fire.
 
+### Baselines & alignment sweeps
+
+The Baselines panel in [`cwt_lab/renderer/components/Baselines.tsx`](cwt_lab/renderer/components/Baselines.tsx) packages curated parameter scans for canonical models (Ising, Kuramoto, bond percolation, and an upcoming SIS workflow). Operators can:
+
+- Launch repeatable sweeps without leaving the Electron shell, complete with CLI previews, seeded reproducibility, and optional file-system guards.
+- Inspect saved artifacts (heatmaps, `metrics.csv`, top-tile tables, loop summaries) directly in the UI to judge whether observed ridges match analytic expectations.
+- Open the **Model tips** drawer for per-model alignment cues distilled in [`cwt_lab/USER_GUIDE.md`](cwt_lab/USER_GUIDE.md).
+
+The panel retains the most recent configuration per model so you can iterate on axes, disorder ranges, and loop thresholds while comparing against the guidance in the user guide.
+
 ### Run manager & IPC bridge
 The preload script exposes a `window.CWT` API that fronts the underlying IPC bridge. Command builders defined in `cwt_lab/electron/runner/` and `electron/runner/` map UI interactions onto Python invocations (`experiments.*`, Typer CLIs, and registry helpers). Key capabilities:
 
@@ -198,6 +209,7 @@ Install `requirements.test.txt` and `npm install` dependencies beforehand so the
 ## Additional documentation
 - [`theory.md`](theory.md) – mathematical motivation and derivations for CWT/CGT constructs.
 - [`USER_GUIDE.md`](USER_GUIDE.md) – operator-facing walkthrough of the Electron laboratory.
+- [`cwt_lab/USER_GUIDE.md`](cwt_lab/USER_GUIDE.md) – Baselines alignment cues and artifact interpretation for the desktop workspace.
 - `cwt_lab/README.md` – engineering guide for extending the desktop shell and IPC catalog.
 - `cwt-sim/README.md` – package-level reference covering modules, metrics, and developer tips.
 
