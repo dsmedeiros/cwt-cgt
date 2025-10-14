@@ -18,6 +18,7 @@ class BaselineRunConfig:
     output_dir: Path | None
     steps: int
     seed: int | None
+    time_budget: float
 
 
 _AXIS_MAP_CACHE: Mapping[str, object] | None = None
@@ -80,14 +81,29 @@ def add_shared_cli_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--steps",
         type=int,
-        default=100,
-        help="Number of discrete simulation steps to evaluate (default: %(default)s).",
+        default=64,
+        help=(
+            "Number of discrete simulation steps to evaluate (default: %(default)s)."
+            " Defaults are tuned so the reference sweeps fit within a 60 s budget."
+        ),
     )
     parser.add_argument(
         "--seed",
         type=int,
-        default=None,
-        help="Seed for deterministic pseudo-random behavior when supported by the model.",
+        default=0,
+        help=(
+            "Seed for deterministic pseudo-random behavior when supported by the model"
+            " (default: %(default)s)."
+        ),
+    )
+    parser.add_argument(
+        "--time-budget",
+        type=float,
+        default=60.0,
+        help=(
+            "Maximum runtime in seconds before emitting a warning (default: %(default)s)."
+            " The budget is enforced via time_budget_guard without aborting the sweep."
+        ),
     )
 
 
@@ -113,4 +129,5 @@ def namespace_to_config(namespace: argparse.Namespace) -> BaselineRunConfig:
         output_dir=namespace.output_dir,
         steps=namespace.steps,
         seed=namespace.seed,
+        time_budget=namespace.time_budget,
     )

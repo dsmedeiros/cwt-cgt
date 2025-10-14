@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import time
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Mapping, Optional, Sequence
@@ -15,7 +15,12 @@ import numpy as np
 
 from baselines import BaselineRunConfig, build_shared_parser
 from baselines.artifacts import ensure_outdir, write_heatmap_png, write_top_tiles
-from baselines.common import Accumulator, graph_factory, seed_everything
+from baselines.common import (
+    Accumulator,
+    graph_factory,
+    seed_everything,
+    time_budget_guard,
+)
 from baselines.io import load_axis_map
 
 
@@ -56,8 +61,11 @@ def get_parser() -> argparse.ArgumentParser:
         type=int,
         nargs=2,
         metavar=("AXIS0_POINTS", "AXIS1_POINTS"),
-        default=(25, 25),
-        help="Number of samples along each axis (default: %(default)s).",
+        default=(16, 16),
+        help=(
+            "Number of samples along each axis (default: %(default)s). Defaults are tuned"
+            " so the reference scan finishes within the 60 s runtime budget."
+        ),
     )
     parser.add_argument(
         "--range",
@@ -71,8 +79,11 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--realizations",
         type=int,
-        default=64,
-        help="Number of Monte Carlo realizations per grid tile (default: %(default)s).",
+        default=48,
+        help=(
+            "Number of Monte Carlo realizations per grid tile (default: %(default)s)."
+            " The default balances accuracy with the ≤60 s runtime target."
+        ),
     )
     parser.add_argument(
         "--graph-kind",
@@ -97,9 +108,10 @@ def get_parser() -> argparse.ArgumentParser:
         type=int,
         nargs=2,
         metavar=("ROWS", "COLS"),
-        default=(16, 16),
+        default=(12, 12),
         help=(
-            "Dimensions of the lattice_2d substrate when --graph-kind=lattice_2d " "(default: %(default)s)."
+            "Dimensions of the lattice_2d substrate when --graph-kind=lattice_2d "
+            "(default: %(default)s). Defaults favour ≤60 s runtime budgets."
         ),
     )
     parser.add_argument(
@@ -545,13 +557,12 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         output_dir=namespace.output_dir,
         steps=namespace.steps,
         seed=namespace.seed,
+        time_budget=namespace.time_budget,
     )
 
-    if config.seed is not None:
-        seed_everything(config.seed)
-        base_seed = np.random.SeedSequence(config.seed)
-    else:
-        base_seed = np.random.SeedSequence()
+    base_seed_value = int(config.seed if config.seed is not None else 0)
+    seed_everything(base_seed_value)
+    base_seed = np.random.SeedSequence(base_seed_value)
 
     graph, adjacency, graph_id, graph_seed, graph_params = _build_graph(namespace, config)
     substrate = _prepare_substrate(graph)
@@ -601,57 +612,71 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
     rng_children = base_seed.spawn(grid_shape[0] * grid_shape[1])
     giant_threshold = float(namespace.giant_threshold)
 
-    start = time.perf_counter()
+    time_budget = max(float(config.time_budget), 0.0)
+    budget_notes: list[str] = []
+
+    def _warn_overrun(elapsed: float) -> None:
+        message = (
+            f"Percolation sweep runtime {elapsed:.3f}s exceeded the {time_budget:.3f}s budget."
+        )
+        warnings.warn(message, RuntimeWarning)
+        budget_notes.append(message)
+
     index = 0
-    for i, value0 in enumerate(axis_values[0]):
-        for j, value1 in enumerate(axis_values[1]):
-            child_seed = rng_children[index]
-            index += 1
-            rng = np.random.default_rng(child_seed)
-            values = (float(value0), float(value1))
-            p_value = values[probability_axis]
-            zeta_value = values[zeta_axis]
-            summary = simulate_percolation(
-                substrate,
-                p=p_value,
-                zeta=zeta_value,
-                realizations=namespace.realizations,
-                threshold=giant_threshold,
-                rng=rng,
-            )
+    with time_budget_guard(
+        time_budget if time_budget > 0 else float("inf"),
+        raise_on_exceed=False,
+        on_exceed=_warn_overrun,
+    ) as guard:
+        for i, value0 in enumerate(axis_values[0]):
+            for j, value1 in enumerate(axis_values[1]):
+                child_seed = rng_children[index]
+                index += 1
+                rng = np.random.default_rng(child_seed)
+                values = (float(value0), float(value1))
+                p_value = values[probability_axis]
+                zeta_value = values[zeta_axis]
+                summary = simulate_percolation(
+                    substrate,
+                    p=p_value,
+                    zeta=zeta_value,
+                    realizations=namespace.realizations,
+                    threshold=giant_threshold,
+                    rng=rng,
+                )
 
-            S_mean_grid[i, j] = summary.S_mean
-            S_var_grid[i, j] = summary.S_var
+                S_mean_grid[i, j] = summary.S_mean
+                S_var_grid[i, j] = summary.S_var
 
-            record = {
-                "graph_kind": namespace.graph_kind,
-                "graph_seed": graph_seed,
-                "graph_identifier": graph_id,
-                "realizations": int(summary.samples),
-                "giant_threshold": giant_threshold,
-                axis_names[0]: float(values[0]),
-                axis_names[1]: float(values[1]),
-                f"{axis_names[0]}_index": i,
-                f"{axis_names[1]}_index": j,
-                axis_aliases[0]: float(values[0]),
-                axis_aliases[1]: float(values[1]),
-                f"{axis_aliases[0]}_index": i,
-                f"{axis_aliases[1]}_index": j,
-                "S_mean": summary.S_mean,
-                "S_var": summary.S_var,
-                "S_std": summary.S_std,
-                "S_min": summary.S_min,
-                "S_max": summary.S_max,
-                "giant_fraction": summary.giant_fraction,
-            }
-            record.update(features)
-            record["threshold_estimate"] = threshold_estimate
-            for key, value in graph_params.items():
-                record[f"graph_param_{key}"] = value
-            records.append(record)
-            record_lookup[(i, j)] = record
+                record = {
+                    "graph_kind": namespace.graph_kind,
+                    "graph_seed": graph_seed,
+                    "graph_identifier": graph_id,
+                    "realizations": int(summary.samples),
+                    "giant_threshold": giant_threshold,
+                    axis_names[0]: float(values[0]),
+                    axis_names[1]: float(values[1]),
+                    f"{axis_names[0]}_index": i,
+                    f"{axis_names[1]}_index": j,
+                    axis_aliases[0]: float(values[0]),
+                    axis_aliases[1]: float(values[1]),
+                    f"{axis_aliases[0]}_index": i,
+                    f"{axis_aliases[1]}_index": j,
+                    "S_mean": summary.S_mean,
+                    "S_var": summary.S_var,
+                    "S_std": summary.S_std,
+                    "S_min": summary.S_min,
+                    "S_max": summary.S_max,
+                    "giant_fraction": summary.giant_fraction,
+                }
+                record.update(features)
+                record["threshold_estimate"] = threshold_estimate
+                for key, value in graph_params.items():
+                    record[f"graph_param_{key}"] = value
+                records.append(record)
+                record_lookup[(i, j)] = record
 
-    elapsed = time.perf_counter() - start
+    elapsed = guard.elapsed if guard.elapsed is not None else 0.0
 
     probability_values = axis_values[probability_axis]
     omega_grid = (
@@ -682,7 +707,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
 
     axis_map = load_axis_map(Path(config.axis_map))
 
-    seed_label = config.seed if config.seed is not None else "na"
+    seed_label = base_seed_value
     output_dir = ensure_outdir("percolation", namespace.output_dir, graph_id, seed_label)
     metrics_path = accumulator.to_csv(output_dir / "metrics.csv")
 
@@ -744,6 +769,8 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
             f"on {namespace.graph_kind} in {elapsed:.3f}s; metrics written to {metrics_path}."
         )
         print(f"|Ω| heatmap stored at {heatmap_path} and top-tile summary at {top_tiles_path}.")
+        if budget_notes:
+            print(budget_notes[-1])
         if namespace.enable_loops and loop_reports:
             print(f"Hotspot reports written to {loop_reports[0].parent} " f"({len(loop_reports)} tiles).")
         print(

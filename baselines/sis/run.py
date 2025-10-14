@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping, Sequence
@@ -12,7 +13,7 @@ import networkx as nx
 import numpy as np
 
 from baselines.artifacts import ensure_outdir, write_heatmap_png, write_top_tiles
-from baselines.common import Accumulator, grid_points, seed_everything
+from baselines.common import Accumulator, grid_points, seed_everything, time_budget_guard
 from baselines.io import DEFAULT_AXIS_MAP_PATH, load_axis_map
 
 DEFAULT_AXES = ("infection_rate", "recovery_rate")
@@ -20,7 +21,7 @@ DEFAULT_RANGES: Mapping[str, tuple[float, float]] = {
     "infection_rate": (0.0, 0.8),
     "recovery_rate": (0.05, 0.8),
 }
-DEFAULT_GRID_SIZE = (25, 25)
+DEFAULT_GRID_SIZE = (16, 16)
 
 
 @dataclass(slots=True)
@@ -60,13 +61,19 @@ def get_parser() -> argparse.ArgumentParser:
         nargs="+",
         type=int,
         default=list(DEFAULT_GRID_SIZE),
-        help="Number of grid points per axis (defaults to 25×25).",
+        help=(
+            "Number of grid points per axis. Defaults to 16×16, which is tuned to keep"
+            " the reference sweep under the 60 s time budget."
+        ),
     )
     parser.add_argument(
         "--population",
         type=int,
-        default=128,
-        help="Number of agents tracked by the mean-field SIS process (default: %(default)s).",
+        default=96,
+        help=(
+            "Number of agents tracked by the mean-field SIS process (default: %(default)s)."
+            " The default is calibrated for ≤60 s runs."
+        ),
     )
     parser.add_argument(
         "--initial-prevalence",
@@ -77,8 +84,11 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--steps",
         type=int,
-        default=256,
-        help="Number of discrete time steps to evaluate for each tile (default: %(default)s).",
+        default=160,
+        help=(
+            "Number of discrete time steps to evaluate for each tile (default: %(default)s)."
+            " Defaults are chosen so sweeps finish within 60 s on reference hardware."
+        ),
     )
     parser.add_argument(
         "--warmup",
@@ -92,8 +102,11 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--seed",
         type=int,
-        default=None,
-        help="Random seed used for repeatable sampling (defaults to system entropy).",
+        default=0,
+        help=(
+            "Random seed used for repeatable sampling (default: %(default)s)."
+            " A deterministic default enables reproducible regression tests."
+        ),
     )
     parser.add_argument(
         "--graph-kind",
@@ -149,6 +162,15 @@ def get_parser() -> argparse.ArgumentParser:
         help=(
             "Maximum allowable FS guard proxy (radians) when evaluating loops "
             "(default: %(default)s)."
+        ),
+    )
+    parser.add_argument(
+        "--time-budget",
+        type=float,
+        default=60.0,
+        help=(
+            "Time budget in seconds used to flag slow sweeps (default: %(default)s)."
+            " Runtime overruns trigger a warning instead of aborting."
         ),
     )
     return parser
@@ -376,41 +398,62 @@ def main(argv: Sequence[str] | None = None) -> int:
             "--graph-param n=... conflicts with --population; provide only one source."
         )
 
-    seed = args.seed
-    if seed is not None:
-        seed_everything(seed)
+    seed = int(args.seed)
+    seed_everything(seed)
     rng = np.random.default_rng(seed)
 
-    graph = _build_graph(args.graph_kind, graph_params, population, seed=args.graph_seed)
+    graph_seed = args.graph_seed if args.graph_seed is not None else seed
+    graph = _build_graph(args.graph_kind, graph_params, population, seed=graph_seed)
     adjacency = _adjacency_matrix(graph)
     spectral_radius_value = _spectral_radius(adjacency)
 
     accumulator = Accumulator()
 
-    grid = grid_points(ranges, grid_size, axes=axes)
-    for index, point in grid.items():
-        beta = float(point[axes[0]])
-        mu = float(point[axes[1]]) if len(axes) >= 2 else DEFAULT_RANGES["recovery_rate"][0]
+    time_budget = max(float(args.time_budget), 0.0)
+    budget_notes: list[str] = []
 
-        result = _simulate_sis(
-            adjacency,
-            beta,
-            mu,
-            steps=int(args.steps),
-            initial_prevalence=float(args.initial_prevalence),
-            rng=rng,
+    def _warn_overrun(elapsed: float) -> None:
+        message = (
+            f"SIS sweep runtime {elapsed:.3f}s exceeded the {time_budget:.3f}s budget."
         )
-        metrics = _tile_metrics(
-            beta,
-            mu,
-            result,
-            warmup=int(args.warmup),
-            spectral_radius_value=spectral_radius_value,
-        )
-        record: dict[str, object] = {"index": index}
-        record.update(point)
-        record.update(metrics)
-        accumulator.add(record)
+        warnings.warn(message, RuntimeWarning)
+        budget_notes.append(message)
+
+    grid = grid_points(ranges, grid_size, axes=axes)
+    with time_budget_guard(
+        time_budget if time_budget > 0 else float("inf"),
+        raise_on_exceed=False,
+        on_exceed=_warn_overrun,
+    ) as guard:
+        for index, point in grid.items():
+            beta = float(point[axes[0]])
+            mu = (
+                float(point[axes[1]])
+                if len(axes) >= 2
+                else DEFAULT_RANGES["recovery_rate"][0]
+            )
+
+            result = _simulate_sis(
+                adjacency,
+                beta,
+                mu,
+                steps=int(args.steps),
+                initial_prevalence=float(args.initial_prevalence),
+                rng=rng,
+            )
+            metrics = _tile_metrics(
+                beta,
+                mu,
+                result,
+                warmup=int(args.warmup),
+                spectral_radius_value=spectral_radius_value,
+            )
+            record: dict[str, object] = {"index": index}
+            record.update(point)
+            record.update(metrics)
+            accumulator.add(record)
+
+    elapsed = guard.elapsed if guard.elapsed is not None else 0.0
 
     dataframe = accumulator.to_dataframe()
 
@@ -418,7 +461,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "sis",
         args.output_dir,
         graph=f"{args.graph_kind}",
-        seed=seed if seed is not None else "entropy",
+        seed=seed,
     )
     metrics_path = _persist_metrics(accumulator, out_dir)
 
@@ -437,9 +480,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         axis_map=axis_map,
     )
 
-    print(f"Metrics written to: {metrics_path}")
+    print(f"SIS sweep completed in {elapsed:.3f}s; metrics written to: {metrics_path}")
     print(f"Heatmap written to: {heatmap_path}")
     print(f"Top-|Omega| tiles written to: {top_tiles_path}")
+
+    if budget_notes:
+        print(budget_notes[-1])
 
     if args.enable_loops and not dataframe.empty:
         loop_candidates = dataframe.sort_values("omega_abs", ascending=False)

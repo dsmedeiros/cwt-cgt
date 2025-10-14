@@ -36,6 +36,36 @@ def test_simulate_kuramoto_basic_statistics() -> None:
     assert result.freq_spread >= 0.0 or np.isnan(result.freq_spread)
 
 
+def test_simulate_kuramoto_deterministic() -> None:
+    """Kuramoto simulations with identical seeds reproduce the same statistics."""
+
+    adjacency = np.array([[0.0, 1.0], [1.0, 0.0]], dtype=float)
+    first = kuramoto_run.simulate_kuramoto(
+        adjacency,
+        coupling=1.0,
+        sigma=0.3,
+        dt=0.05,
+        warmup_steps=3,
+        sample_steps=6,
+        integration="rk2",
+        intrinsic_mean=0.0,
+        seed=321,
+    )
+    second = kuramoto_run.simulate_kuramoto(
+        adjacency,
+        coupling=1.0,
+        sigma=0.3,
+        dt=0.05,
+        warmup_steps=3,
+        sample_steps=6,
+        integration="rk2",
+        intrinsic_mean=0.0,
+        seed=321,
+    )
+
+    assert first == second
+
+
 def test_curvature_estimators_shape() -> None:
     """Curvature estimators return grids matching the input dimensions."""
 
