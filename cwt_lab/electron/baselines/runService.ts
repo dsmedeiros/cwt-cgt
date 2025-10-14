@@ -417,6 +417,7 @@ export const executeBaselineRun = async (
   }
 
   const logChunks: Buffer[] = [];
+  let artifactsDir = runScopedOutputDir;
 
   await new Promise<void>((resolve, reject) => {
     const child = toChildProcess(
@@ -453,33 +454,35 @@ export const executeBaselineRun = async (
     });
   });
 
-  const after = await readDirs(modelRoot);
-  const outputDir = pickLatestRunDir(modelRoot, before, after);
-  const completedAt = Date.now();
-  const artifactsDir = outputDir ?? runScopedOutputDir;
-
   try {
-    await writeRunLog(artifactsDir, runId, Buffer.concat(logChunks));
-  } catch (error) {
-    console.warn(`[baseline] Failed to persist stdout log for ${runId}:`, error);
+    const after = await readDirs(modelRoot);
+    const outputDir = pickLatestRunDir(modelRoot, before, after);
+    const completedAt = Date.now();
+    artifactsDir = outputDir ?? runScopedOutputDir;
+
+    const loopMetrics = await collectLoopMetrics(outputDir);
+
+    return {
+      runId,
+      model: payload.model,
+      outputDir,
+      artifactsDir,
+      command: plan.command,
+      args: [...plan.args],
+      cwd: plan.cwd,
+      cli: plan.cli,
+      status: 'complete',
+      startedAt,
+      completedAt,
+      loopMetrics,
+    } satisfies BaselineRunResult;
+  } finally {
+    try {
+      await writeRunLog(artifactsDir, runId, Buffer.concat(logChunks));
+    } catch (error) {
+      console.warn(`[baseline] Failed to persist stdout log for ${runId}:`, error);
+    }
   }
-
-  const loopMetrics = await collectLoopMetrics(outputDir);
-
-  return {
-    runId,
-    model: payload.model,
-    outputDir,
-    artifactsDir,
-    command: plan.command,
-    args: [...plan.args],
-    cwd: plan.cwd,
-    cli: plan.cli,
-    status: 'complete',
-    startedAt,
-    completedAt,
-    loopMetrics,
-  } satisfies BaselineRunResult;
 };
 
 export { readRunDirectories };
