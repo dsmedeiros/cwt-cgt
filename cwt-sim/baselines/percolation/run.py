@@ -616,9 +616,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
     budget_notes: list[str] = []
 
     def _warn_overrun(elapsed: float) -> None:
-        message = (
-            f"Percolation sweep runtime {elapsed:.3f}s exceeded the {time_budget:.3f}s budget."
-        )
+        message = f"Percolation sweep runtime {elapsed:.3f}s exceeded the {time_budget:.3f}s budget."
         warnings.warn(message, RuntimeWarning)
         budget_notes.append(message)
 

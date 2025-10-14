@@ -1,4 +1,5 @@
 """CLI for the Ising model baseline."""
+
 from __future__ import annotations
 
 import argparse
@@ -67,9 +68,7 @@ def get_parser() -> argparse.ArgumentParser:
         nargs=3,
         metavar=("AXIS", "MIN", "MAX"),
         default=None,
-        help=(
-            "Override the scan range for an axis (repeatable, e.g. --range T 1.0 4.0)."
-        ),
+        help=("Override the scan range for an axis (repeatable, e.g. --range T 1.0 4.0)."),
     )
     parser.add_argument(
         "--graph-kind",
@@ -151,9 +150,7 @@ def _parse_graph_params(pairs: Sequence[str]) -> dict[str, float | int | bool]:
     params: dict[str, float | int | bool] = {}
     for item in pairs:
         if "=" not in item:
-            raise argparse.ArgumentTypeError(
-                f"Graph parameter '{item}' must follow the KEY=VALUE format."
-            )
+            raise argparse.ArgumentTypeError(f"Graph parameter '{item}' must follow the KEY=VALUE format.")
         key, raw_value = item.split("=", 1)
         key = key.strip()
         if not key:
@@ -228,16 +225,12 @@ def _resolve_axis_ranges(
 ) -> dict[str, tuple[float, float]]:
     """Return a mapping from axis name to scan range."""
 
-    ranges: dict[str, tuple[float, float]] = {
-        axis: _default_axis_range(axis) for axis in axis_names
-    }
+    ranges: dict[str, tuple[float, float]] = {axis: _default_axis_range(axis) for axis in axis_names}
     if overrides is None:
         return ranges
     for triple in overrides:
         if len(triple) != 3:
-            raise argparse.ArgumentTypeError(
-                "Axis range overrides must supply AXIS MIN MAX entries."
-            )
+            raise argparse.ArgumentTypeError("Axis range overrides must supply AXIS MIN MAX entries.")
         axis_name, lower, upper = triple
         target = None
         for axis in axis_names:
@@ -263,9 +256,7 @@ def _axis_spacing(values: Sequence[float], index: int) -> float:
     return float(0.5 * (values[index + 1] - values[index - 1]))
 
 
-def _finite_difference_axis(
-    data: np.ndarray, coordinates: Sequence[float], axis: int
-) -> np.ndarray:
+def _finite_difference_axis(data: np.ndarray, coordinates: Sequence[float], axis: int) -> np.ndarray:
     """Compute a finite-difference derivative along a specified axis."""
 
     if axis not in (0, 1):
@@ -349,8 +340,7 @@ def simulate_ising(
     spins = rng.choice([-1, 1], size=n)
     neighbors = [np.flatnonzero(adjacency[i]) for i in range(n)]
     weights = [
-        adjacency[i, idx] if idx.size else np.array([], dtype=float)
-        for i, idx in enumerate(neighbors)
+        adjacency[i, idx] if idx.size else np.array([], dtype=float) for i, idx in enumerate(neighbors)
     ]
 
     warmup = max(int(warmup_sweeps), 0)
@@ -397,16 +387,8 @@ def simulate_ising(
         e_mean = float(np.mean(e_arr))
         e_std = float(np.std(e_arr))
         e_var = float(np.var(e_arr))
-        susceptibility = (
-            float((m_var * n) / temperature)
-            if temperature > 0.0
-            else float("nan")
-        )
-        heat_capacity = (
-            float(e_var / (temperature * temperature * n))
-            if temperature > 0.0
-            else float("nan")
-        )
+        susceptibility = float((m_var * n) / temperature) if temperature > 0.0 else float("nan")
+        heat_capacity = float(e_var / (temperature * temperature * n)) if temperature > 0.0 else float("nan")
         energy_density = float(e_mean / n)
     else:
         m_mean = float("nan")
@@ -449,11 +431,7 @@ def _adjacency_spectrum(adjacency: np.ndarray) -> tuple[float, float]:
 def _sign_flip(values: Sequence[float]) -> bool:
     """Return ``True`` if the sequence contains opposing magnetization signs."""
 
-    signs = {
-        math.copysign(1.0, value)
-        for value in values
-        if value != 0.0 and math.isfinite(value)
-    }
+    signs = {math.copysign(1.0, value) for value in values if value != 0.0 and math.isfinite(value)}
     return len(signs) > 1
 
 
@@ -633,9 +611,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
     budget_notes: list[str] = []
 
     def _warn_overrun(elapsed: float) -> None:
-        message = (
-            f"Ising sweep runtime {elapsed:.3f}s exceeded the {time_budget:.3f}s budget."
-        )
+        message = f"Ising sweep runtime {elapsed:.3f}s exceeded the {time_budget:.3f}s budget."
         warnings.warn(message, RuntimeWarning)
         budget_notes.append(message)
 
@@ -694,9 +670,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
                 index += 1
     elapsed = guard.elapsed if guard.elapsed is not None else 0.0
 
-    omega_grid = _finite_difference_axis(
-        magnetization_grid, axis_values[temp_axis], temp_axis
-    )
+    omega_grid = _finite_difference_axis(magnetization_grid, axis_values[temp_axis], temp_axis)
     omega_abs_grid = np.abs(omega_grid)
 
     accumulator = Accumulator()
@@ -706,9 +680,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         omega_value = omega_grid[i, j]
         omega_abs_value = omega_abs_grid[i, j]
         record["omega"] = float(omega_value) if np.isfinite(omega_value) else float("nan")
-        record["omega_abs"] = (
-            float(omega_abs_value) if np.isfinite(omega_abs_value) else float("nan")
-        )
+        record["omega_abs"] = float(omega_abs_value) if np.isfinite(omega_abs_value) else float("nan")
         accumulator.add(record)
 
     axis_map = load_axis_map(Path(config.axis_map))
@@ -776,10 +748,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         if budget_notes:
             print(budget_notes[-1])
         if namespace.enable_loops and loop_reports:
-            print(
-                f"Loop diagnostics written to {loop_reports[0].parent} "
-                f"({len(loop_reports)} tiles)."
-            )
+            print(f"Loop diagnostics written to {loop_reports[0].parent} " f"({len(loop_reports)} tiles).")
 
     return config
 

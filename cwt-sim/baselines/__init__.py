@@ -1,4 +1,5 @@
 """Baseline model entry points for the cwt-sim project."""
+
 from __future__ import annotations
 
 from importlib import import_module
