@@ -83,6 +83,20 @@ describe('cmdBaseline', () => {
     ).toThrowError('pythonExe is required');
   });
 
+  it('omits optional arguments when they are empty', () => {
+    const plan = cmdBaseline(pythonExe, {
+      strategy: 'module',
+      model: 'ising',
+      axisMap: null,
+      outputDir: '',
+      steps: undefined,
+      seed: '',
+      args: [null, '--flag', undefined, 'value'],
+    });
+
+    expect(plan.args).toEqual(['-m', 'baselines.ising.run', '--flag', 'value']);
+  });
+
   it('throws when steps or seed are not integers', () => {
     expect(() =>
       cmdBaseline('python', {

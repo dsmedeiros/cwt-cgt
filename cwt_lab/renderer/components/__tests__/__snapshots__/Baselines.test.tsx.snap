@@ -481,10 +481,10 @@ exports[`Baselines component > submits the baseline payload and renders artifact
               <tbody>
                 <tr>
                   <td>
-                    T=2, h=0.1
+                    T=2, h=0.025
                   </td>
                   <td>
-                    0.42
+                    15.976
                   </td>
                   <td>
                     —
@@ -524,7 +524,7 @@ exports[`Baselines component > submits the baseline payload and renders artifact
                 class="baselines__loop-header"
               >
                 <h5>
-                  Tile [0, 1]
+                  Tile [0, 3]
                 </h5>
                 <span
                   class="baselines__loop-flag"
@@ -540,7 +540,7 @@ exports[`Baselines component > submits the baseline payload and renders artifact
                     |Ω|
                   </dt>
                   <dd>
-                    0.36
+                    0.5
                   </dd>
                 </div>
                 <div>
@@ -556,7 +556,7 @@ exports[`Baselines component > submits the baseline payload and renders artifact
                     Center Ω
                   </dt>
                   <dd>
-                    0.5
+                    15.976
                   </dd>
                 </div>
                 <div>
@@ -564,7 +564,7 @@ exports[`Baselines component > submits the baseline payload and renders artifact
                     M̄
                   </dt>
                   <dd>
-                    0.2
+                    0.823
                   </dd>
                 </div>
                 <div>
@@ -572,15 +572,7 @@ exports[`Baselines component > submits the baseline payload and renders artifact
                     Center
                   </dt>
                   <dd>
-                    T=2, h=0.1
-                  </dd>
-                </div>
-                <div>
-                  <dt>
-                    |φ|
-                  </dt>
-                  <dd>
-                    0.35
+                    T=2, h=0.025
                   </dd>
                 </div>
               </dl>
