@@ -3,6 +3,7 @@ import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import ArtifactBrowser from './components/ArtifactBrowser';
 import HelpDrawer from './components/HelpDrawer';
 import EnvDoctor from './components/EnvDoctor';
+import Baselines from './components/Baselines';
 import Phase1Mapping from './components/Phase1Mapping';
 import Phase2Features from './components/Phase2Features';
 import Phase3Loops from './components/Phase3Loops';
@@ -21,6 +22,7 @@ const DEFAULT_LOG_CHUNK = 8_192;
 
 const TABS_WITHOUT_ARTIFACT_SELECTORS = new Set([
   'runs',
+  'baselines',
   'phase1',
   'comparison',
   'artifacts',
@@ -139,6 +141,7 @@ const AppContent = ({ mode, onToggleTheme, demoEnabled, onToggleDemo }: AppConte
   const tabs = useMemo(
     () => [
       { id: 'runs', label: 'Run Board', element: <RunBoard api={demoRunsApi} /> },
+      { id: 'baselines', label: 'Baselines', element: <Baselines /> },
       { id: 'phase1', label: 'Phase 1', element: <Phase1Mapping /> },
       { id: 'phase2', label: 'Phase 2', element: <Phase2Features /> },
       { id: 'phase3', label: 'Phase 3', element: <Phase3Loops /> },
@@ -168,6 +171,16 @@ const AppContent = ({ mode, onToggleTheme, demoEnabled, onToggleDemo }: AppConte
           'Statuses move from pending → running → complete; failed runs are flagged in red.',
           'Use the logbook to spot sequences that cluster – they often share parameter DNA.',
           'Hover over a row for more detail when available; the logbook keeps context handy.',
+        ],
+      },
+      baselines: {
+        title: 'Baselines explorer',
+        analogy: 'Baselines are your calibration climbs – they trace well-known ridges so you can sanity-check your ropes.',
+        bullets: [
+          'Start with defaults per model; tweak axes and ranges only after you confirm the ridge appears in the heatmap.',
+          'Enable loops once the ridge sharpens to compare ω and φ curvature against theoretical expectations.',
+          'If the FS guard triggers, widen the loop delta scale or relax the guard threshold before rerunning.',
+          'Toggle CWT axis mapping to align CLI output with the rest of the lab notebooks.',
         ],
       },
       phase1: {
