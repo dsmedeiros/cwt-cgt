@@ -482,6 +482,11 @@ export type GuidedLoopSummary = {
   center: Record<string, number>;
   centerVector?: [number, number, number];
   amplitudes?: [number, number, number];
+  settle?: number;
+  handleSteps?: number;
+  stepsList?: number[];
+  fsGuard?: number | null;
+  minPhi?: number | null;
   label: string;
   metadata?: Record<string, unknown>;
   omegaAbs?: number | null;

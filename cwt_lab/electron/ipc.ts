@@ -1059,6 +1059,7 @@ const writeGuidedSummary = async (
     graph: string;
     fsGuard: number | null;
     settle: number | null;
+    handleSteps: number | null;
     seed: number | null;
     runs: Array<{
       runId: string;
@@ -1069,6 +1070,7 @@ const writeGuidedSummary = async (
     stepsList: number[];
     satisfied: boolean;
     minPhi: number | null;
+    amplitudes: [number, number, number] | null;
   },
 ) => {
   const axisALabel = formatGuidedAxisLabel(request.axes[0]);
@@ -1166,6 +1168,13 @@ const writeGuidedSummary = async (
     failures,
     source: 'guided_loop',
   };
+
+  if (options.handleSteps !== null) {
+    payload.handle_steps = options.handleSteps;
+  }
+  if (options.amplitudes) {
+    payload.amplitudes = options.amplitudes;
+  }
 
   if (options.minPhi !== null) {
     payload.min_phi = options.minPhi;
@@ -1462,12 +1471,17 @@ ipcMain.handle('cwt:phase3:guided-loop', (_event, params) =>
       centerValues[2],
     ];
 
-    const amplitudes = Array.isArray(rawAmplitudes)
+    const amplitudesValues = Array.isArray(rawAmplitudes)
       ? rawAmplitudes.map((value) => Number(value))
       : [];
-    if (amplitudes.length !== 3 || amplitudes.some((value) => !Number.isFinite(value))) {
+    if (amplitudesValues.length !== 3 || amplitudesValues.some((value) => !Number.isFinite(value))) {
       throw new Error('amplitudes must contain three numeric values');
     }
+    const amplitudes: [number, number, number] = [
+      amplitudesValues[0] as number,
+      amplitudesValues[1] as number,
+      amplitudesValues[2] as number,
+    ];
 
     const summaryRequest = parseGuidedSummaryRequest(rawSummary, {
       axes: [axes3[1], axes3[2]],
@@ -1614,11 +1628,13 @@ ipcMain.handle('cwt:phase3:guided-loop', (_event, params) =>
         graph,
         fsGuard,
         settle,
+        handleSteps,
         seed,
         runs,
         stepsList,
         satisfied,
         minPhi,
+        amplitudes,
       });
     }
 
