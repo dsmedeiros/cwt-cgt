@@ -162,6 +162,11 @@ const summarizeFsGuard = (boundary: AdiabaticBoundaryPoint[], recommendationFs: 
   };
 };
 
+const NON_CLI_PARAM_KEYS = new Set([
+  'hotspotId',
+  'graphId',
+]);
+
 export const runAdiabaticBoundary = async (
   runManager: RunManager,
   cwtSimRoot: string,
@@ -181,7 +186,11 @@ export const runAdiabaticBoundary = async (
   const outputDir = path.join(root, ...segments);
   await fs.mkdir(outputDir, { recursive: true });
 
-  const args = buildArgsFromParams({ ...(params ?? {}), outputDir });
+  const cliParams = Object.fromEntries(
+    Object.entries(params ?? {}).filter(([key]) => !NON_CLI_PARAM_KEYS.has(key)),
+  );
+
+  const args = buildArgsFromParams({ ...cliParams, outputDir });
   const { runId } = await runManager.createRun(
     'experiments.adiabatic_boundary.run',
     args,
