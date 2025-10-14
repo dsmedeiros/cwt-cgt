@@ -75,7 +75,8 @@ describe('runAdiabaticBoundary', () => {
           error: null,
         };
       }),
-    } satisfies Pick<RunManager, 'createRun' | 'waitForCompletion'>;
+      tail: vi.fn(),
+    } satisfies Pick<RunManager, 'createRun' | 'waitForCompletion' | 'tail'>;
 
     const result = await runAdiabaticBoundary(
       runManager as RunManager,
@@ -106,5 +107,36 @@ describe('runAdiabaticBoundary', () => {
     expect(result.runId).toBe('mock-run');
     expect(result.surface).toHaveLength(1);
     expect(result.boundary).toHaveLength(1);
+  });
+
+  it('provides failure details and recent output when the run fails', async () => {
+    const runManager = {
+      createRun: vi.fn(async () => ({ runId: 'mock-run' })),
+      waitForCompletion: vi.fn(async () => ({
+        runId: 'mock-run',
+        status: 'failed',
+        exitCode: 2,
+        signal: null,
+        error: null,
+      })),
+      tail: vi.fn(async () => ({
+        output: 'first line\nsecond line\nerror: bad input',
+        nextFromByte: 0,
+        startFromByte: 0,
+        totalBytes: 0,
+        hasMoreBefore: false,
+        status: 'failed',
+        failureDetails: 'Process exited with code 2.',
+      })),
+    } satisfies Pick<RunManager, 'createRun' | 'waitForCompletion' | 'tail'>;
+
+    await expect(
+      runAdiabaticBoundary(runManager as RunManager, '/tmp/cwt-sim', artifactsRoot, {
+        center: 'tau=0.8,zeta=0.0',
+      }),
+    ).rejects.toThrow(
+      /adiabatic boundary sweep failed: Process exited with code 2\.[\s\S]*Recent output:[\s\S]*error: bad input/,
+    );
+    expect(runManager.tail).toHaveBeenCalledWith('mock-run', -8192, 8192);
   });
 });
