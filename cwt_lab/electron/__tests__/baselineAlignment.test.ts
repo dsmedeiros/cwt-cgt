@@ -6,7 +6,7 @@ import path from 'node:path';
 import JSZip from 'jszip';
 
 import { runBaselineAlignment } from '../baselines/alignment';
-import type { BaselineAlignmentProgressEvent, BaselineRunPayload } from '../../renderer/types/ipc';
+import type { BaselineAlignmentProgressEvent } from '../../renderer/types/ipc';
 
 const pythonEnv = {
   executable: 'python',
@@ -27,18 +27,21 @@ describe('runBaselineAlignment', () => {
   it('launches deterministic baseline runs and packages the alignment bundle', async () => {
     const { root, artifactsDir } = await createArtifactsRoot();
 
-    const runBaseline = vi.fn(async (payload: BaselineRunPayload) => {
+    type RunBaselineFn = NonNullable<Parameters<typeof runBaselineAlignment>[0]['runBaseline']>;
+    const runBaseline = vi.fn<Parameters<RunBaselineFn>, ReturnType<RunBaselineFn>>();
+    const runBaselineImpl: RunBaselineFn = async (payload, deps) => {
       const model = payload.model;
       const invocationIndex = runBaseline.mock.calls.length;
       const runId = `${model}-run-${invocationIndex + 1}`;
-      const modelRoot = path.join(artifactsDir, 'baselines', model);
-      const folderName = `2024010${invocationIndex + 1}T010203__seed=${payload.seed ?? '0'}`;
+      const seedLabel = payload.seed == null ? '0' : String(payload.seed);
+      const modelRoot = path.join(deps.artifactsRoot, 'baselines', model);
+      const folderName = `2024010${invocationIndex + 1}T010203__seed=${seedLabel}`;
       const runDir = path.join(modelRoot, folderName);
       await fs.mkdir(runDir, { recursive: true });
       await fs.writeFile(path.join(runDir, 'omega_abs_heatmap.png'), `heatmap-${model}`);
       await fs.writeFile(
         path.join(runDir, 'metrics.csv'),
-        `model,seed\n${model},${payload.seed ?? ''}\n`,
+        `model,seed\n${model},${seedLabel}\n`,
         'utf-8',
       );
       return {
@@ -50,12 +53,13 @@ describe('runBaselineAlignment', () => {
         args: ['-m', `baselines.${model}.run`],
         cwd: '/tmp',
         cli: `python -m baselines.${model}.run`,
-        status: 'complete' as const,
+        status: 'complete',
         startedAt: 1,
         completedAt: 2,
         loopMetrics: null,
-      };
-    });
+      } satisfies Awaited<ReturnType<RunBaselineFn>>;
+    };
+    runBaseline.mockImplementation(runBaselineImpl);
 
     const events: BaselineAlignmentProgressEvent[] = [];
 

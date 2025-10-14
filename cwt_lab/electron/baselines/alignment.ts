@@ -7,8 +7,6 @@ import type {
   BaselineAlignmentProgressEvent,
   BaselineAlignmentResult,
   BaselineModel,
-  BaselineRunPayload,
-  BaselineRunResult,
 } from '../../renderer/types/ipc';
 import type { PythonEnvironment } from '../runner/env';
 import { baselineRunPayloadSchema, executeBaselineRun } from './runService';
@@ -99,10 +97,14 @@ const collectFiles = async (
   }
 };
 
+type RunBaselinePayload = Parameters<typeof executeBaselineRun>[0];
+type RunBaselineOptions = Parameters<typeof executeBaselineRun>[1];
+type RunBaselineResult = Awaited<ReturnType<typeof executeBaselineRun>>;
+
 type RunBaselineFn = (
-  payload: BaselineRunPayload,
-  options: Parameters<typeof executeBaselineRun>[1],
-) => Promise<BaselineRunResult>;
+  payload: RunBaselinePayload,
+  options: RunBaselineOptions,
+) => Promise<RunBaselineResult>;
 
 type AlignmentOptions = {
   env: PythonEnvironment;
@@ -176,7 +178,7 @@ export const runBaselineAlignment = async (
       args: plan.args,
     });
 
-    let result: BaselineRunResult;
+    let result: RunBaselineResult;
     try {
       result = await runBaseline(payload, { env, artifactsRoot });
     } catch (error) {
