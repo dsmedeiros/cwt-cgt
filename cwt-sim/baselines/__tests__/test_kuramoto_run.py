@@ -291,10 +291,15 @@ def test_cli_produces_artifacts(tmp_path: Path) -> None:
     assert metrics.exists()
     content = metrics.read_text(encoding="utf-8")
     assert "omega_abs" in content
+    assert "omega_abs_proxy" in content
 
     heatmap = run_dir / "omega_abs_heatmap.png"
     assert heatmap.exists()
 
+    proxy_heatmap = run_dir / "omega_heatmap_proxy.png"
+    assert proxy_heatmap.exists()
+
     top_tiles = run_dir / "top_omega_tiles.json"
     payload = json.loads(top_tiles.read_text(encoding="utf-8"))
     assert payload["top_tiles"], "expected top tiles to be recorded"
+    assert any("omega_abs_proxy" in tile for tile in payload["top_tiles"])

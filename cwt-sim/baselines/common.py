@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
 
+import numpy as np
+
 from .io import DEFAULT_AXIS_MAP_PATH, load_axis_map
 
 
@@ -19,6 +21,7 @@ class BaselineRunConfig:
     steps: int
     seed: int | None
     time_budget: float
+    map_to_cwt: bool = True
 
 
 _AXIS_MAP_CACHE: Mapping[str, object] | None = None
@@ -105,6 +108,15 @@ def add_shared_cli_arguments(parser: argparse.ArgumentParser) -> None:
             " The budget is enforced via time_budget_guard without aborting the sweep."
         ),
     )
+    parser.add_argument(
+        "--map-to-cwt",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "When disabled, skip canonical axis remapping and emphasise proxy curvature "
+            "estimates alongside intrinsic |Ω| values (default: %(default)s)."
+        ),
+    )
 
 
 def build_shared_parser(
@@ -130,4 +142,19 @@ def namespace_to_config(namespace: argparse.Namespace) -> BaselineRunConfig:
         steps=namespace.steps,
         seed=namespace.seed,
         time_budget=namespace.time_budget,
+        map_to_cwt=namespace.map_to_cwt,
     )
+
+
+def combine_proxy_magnitudes(magnitudes: Sequence[np.ndarray]) -> np.ndarray:
+    """Combine multiple proxy gradient magnitudes into a single envelope."""
+
+    if not magnitudes:
+        raise ValueError("At least one magnitude array is required")
+
+    prepared = [np.asarray(entry, dtype=float) for entry in magnitudes]
+    stacked = np.stack([np.nan_to_num(entry, nan=-np.inf) for entry in prepared], axis=0)
+    envelope = np.max(stacked, axis=0)
+    envelope[np.isneginf(envelope)] = np.nan
+    envelope[~np.isfinite(envelope)] = np.nan
+    return envelope

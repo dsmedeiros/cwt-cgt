@@ -45,7 +45,8 @@ describe('executeBaselineRun', () => {
     expect(parsed.env).toEqual({ CWT_LOOP_FS_GUARD: '0.75', EMPTY: '  ' });
 
     expect(() => baselineRunPayloadSchema.parse({ model: 'unknown' } as unknown)).toThrow();
-    expect(() => baselineRunPayloadSchema.parse({ model: 'ising', args: [null] } as unknown)).toThrow();
+    const withNullArgs = baselineRunPayloadSchema.parse({ model: 'ising', args: [null] });
+    expect(withNullArgs.args).toBeNull();
   });
 
   it('propagates process failures with non-zero exit codes', async () => {
@@ -162,8 +163,10 @@ describe('executeBaselineRun', () => {
     }
 
     expect(spawnMock).toHaveBeenCalledTimes(1);
-    const call = spawnMock.mock.calls[0];
-    const options = call?.[2] as { env?: NodeJS.ProcessEnv } | undefined;
+    const call = spawnMock.mock.calls[0] as unknown as
+      | [string, ReadonlyArray<string>, { env?: NodeJS.ProcessEnv }]
+      | undefined;
+    const options = call?.[2];
     expect(options?.env?.CWT_LOOP_FS_GUARD).toBe('0.9');
     expect(options?.env?.EXTRA_FLAG).toBe('enabled');
     expect(options?.env?.CWT_OUTPUT_DIR).toBeDefined();

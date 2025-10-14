@@ -49,6 +49,7 @@ def test_write_outputs_from_metrics_csv(tmp_path: Path) -> None:
                 "nodes_index": 0,
                 "nodes": 5,
                 "omega_abs": 0.1,
+                "omega_abs_proxy": 0.05,
             },
             {
                 "time_index": 0,
@@ -56,6 +57,7 @@ def test_write_outputs_from_metrics_csv(tmp_path: Path) -> None:
                 "nodes_index": 1,
                 "nodes": 10,
                 "omega_abs": 0.9,
+                "omega_abs_proxy": 0.85,
             },
             {
                 "time_index": 1,
@@ -63,6 +65,7 @@ def test_write_outputs_from_metrics_csv(tmp_path: Path) -> None:
                 "nodes_index": 0,
                 "nodes": 5,
                 "omega_abs": float("nan"),
+                "omega_abs_proxy": float("nan"),
             },
             {
                 "time_index": 1,
@@ -70,6 +73,7 @@ def test_write_outputs_from_metrics_csv(tmp_path: Path) -> None:
                 "nodes_index": 1,
                 "nodes": 10,
                 "omega_abs": 0.5,
+                "omega_abs_proxy": 0.45,
             },
         ]
     )
@@ -87,6 +91,7 @@ def test_write_outputs_from_metrics_csv(tmp_path: Path) -> None:
 
     assert payload["metric"] == "omega_abs"
     assert payload["grid_shape"] == [2, 2]
+    assert payload.get("omega_abs_proxy_max") == pytest.approx(0.85)
 
     axis_lookup = {axis["name"]: axis for axis in payload["axes"]}
     assert axis_lookup["time"]["label"] == "steps"
@@ -99,5 +104,6 @@ def test_write_outputs_from_metrics_csv(tmp_path: Path) -> None:
     assert top_tiles[0]["indices"] == [0, 1]
     assert top_tiles[0]["coordinates"]["nodes"] == 10
     assert top_tiles[0]["omega_abs"] == pytest.approx(0.9)
+    assert top_tiles[0]["omega_abs_proxy"] == pytest.approx(0.85)
     assert top_tiles[1]["indices"] == [1, 1]
     assert top_tiles[1]["omega_abs"] == pytest.approx(0.5)

@@ -3844,6 +3844,46 @@ body {
   display: block;
 }
 
+.baselines__heatmap-toggle {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 0;
+}
+
+.baselines__heatmap-toggle-button {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-subtle);
+  color: inherit;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.baselines__heatmap-toggle-button:hover,
+.baselines__heatmap-toggle-button:focus-visible {
+  outline: none;
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  border-color: transparent;
+}
+
+.baselines__heatmap-toggle-button--active {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  border-color: var(--color-accent);
+}
+
+.baselines__heatmap-toggle-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.baselines__heatmap-toggle-button:disabled.baselines__heatmap-toggle-button--active {
+  opacity: 0.75;
+}
+
 .baselines__heatmap figcaption {
   font-size: 0.85rem;
   padding: 0.65rem 1rem;

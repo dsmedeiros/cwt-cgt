@@ -324,3 +324,17 @@ def _rankdata(values: np.ndarray) -> np.ndarray:
         start = end
 
     return ranks
+
+
+def combine_proxy_magnitudes(magnitudes: Sequence[np.ndarray]) -> np.ndarray:
+    """Combine multiple proxy gradient magnitudes into a single envelope."""
+
+    if not magnitudes:
+        raise ValueError("At least one magnitude array is required")
+
+    prepared = [np.asarray(entry, dtype=float) for entry in magnitudes]
+    stacked = np.stack([np.nan_to_num(entry, nan=-np.inf) for entry in prepared], axis=0)
+    envelope = np.max(stacked, axis=0)
+    envelope[np.isneginf(envelope)] = np.nan
+    envelope[~np.isfinite(envelope)] = np.nan
+    return envelope
