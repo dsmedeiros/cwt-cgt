@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import type { PythonStrategy } from './runner/env';
@@ -60,7 +61,21 @@ const normalisePath = (value: unknown): string | null => {
   if (!candidate) {
     return null;
   }
-  return path.resolve(candidate);
+  const resolved = path.resolve(candidate);
+  if (existsSync(resolved)) {
+    return resolved;
+  }
+  if (!path.isAbsolute(candidate)) {
+    const repoResolved = path.resolve(repoRoot, candidate);
+    if (existsSync(repoResolved)) {
+      return repoResolved;
+    }
+    const simResolved = path.resolve(cwtSimRoot, candidate);
+    if (existsSync(simResolved)) {
+      return simResolved;
+    }
+  }
+  return resolved;
 };
 
 export const cmdBaseline = (
