@@ -18,16 +18,19 @@ from __future__ import annotations
 
 import argparse
 import csv
+import inspect
 import json
 import math
+import numbers
 from collections import deque
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Mapping, Sequence
 
 import networkx as nx
 import numpy as np
 
+import cwt.graph.factories as graph_factories
 from cwt.geometry.curvature import curvature_tile
 from cwt.geometry.fs_distance import fs_distance
 from cwt.geometry.psi import build_psi
@@ -329,6 +332,160 @@ def _load_substrate_file(path: Path) -> GraphSubstrate:
     raise ValueError(f"Unrecognised substrate artifact format: {path}")
 
 
+def _coerce_summary_value(value: object) -> object:
+    """Attempt to cast JSON scalar values to numerics when reasonable."""
+
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, numbers.Integral):
+        return int(value)
+    if isinstance(value, numbers.Real):
+        return float(value)
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped:
+            return value
+        try:
+            return int(stripped)
+        except ValueError:
+            try:
+                numeric = float(stripped)
+            except ValueError:
+                return stripped
+            else:
+                if numeric.is_integer():
+                    return int(numeric)
+                return numeric
+    if isinstance(value, list):
+        return [_coerce_summary_value(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_coerce_summary_value(item) for item in value)
+    return value
+
+
+def _resolve_graph_factory(identifier: str):
+    """Return a graph factory callable for the identifier or raise ``ValueError``."""
+
+    key = identifier.strip().lower()
+    if not key:
+        raise ValueError("Graph identifier is empty")
+
+    if ":" in key:
+        key = key.split(":")[-1]
+
+    alias_map = {
+        "ring3-hetero": "ring3_hetero",
+        "ring3 hetero": "ring3_hetero",
+        "ring3hetero": "ring3_hetero",
+        "ring3": "ring3",
+        "random_regular": "random_regular_digraph",
+        "random-regular": "random_regular_digraph",
+        "random_regular_digraph": "random_regular_digraph",
+        "random-regular-digraph": "random_regular_digraph",
+        "dimer": "dimer",
+        "line3": "line3",
+    }
+    factory_name = alias_map.get(key, key)
+
+    try:
+        factory = getattr(graph_factories, factory_name)
+    except AttributeError as exc:  # pragma: no cover - defensive guard
+        raise ValueError(f"Unknown graph factory identifier: {identifier}") from exc
+
+    if not callable(factory):
+        raise ValueError(f"Graph factory {factory_name!r} is not callable")
+
+    return factory
+
+
+def _load_substrate_from_summary(summary_path: Path) -> GraphSubstrate:
+    """Construct a substrate from a Phase 3 loop summary artifact."""
+
+    with summary_path.open("r", encoding="utf-8") as handle:
+        payload = json.load(handle)
+
+    if not isinstance(payload, Mapping):
+        raise ValueError("Phase 3 summary must contain a JSON object")
+
+    graph_info = payload.get("graph")
+    identifier: str | None = None
+    graph_kwargs: dict[str, object] = {}
+
+    if isinstance(graph_info, str):
+        identifier = graph_info
+    elif isinstance(graph_info, Mapping):
+        raw_identifier = (
+            graph_info.get("identifier")
+            or graph_info.get("id")
+            or graph_info.get("name")
+            or graph_info.get("kind")
+            or graph_info.get("type")
+        )
+        if raw_identifier is None:
+            raise ValueError("Graph descriptor in summary lacks an identifier")
+        identifier = str(raw_identifier)
+
+        kwargs_block = graph_info.get("kwargs")
+        if isinstance(kwargs_block, Mapping):
+            for key, value in kwargs_block.items():
+                graph_kwargs.setdefault(str(key), value)
+
+        for key, value in graph_info.items():
+            if key in {"identifier", "id", "name", "kind", "type", "kwargs"}:
+                continue
+            graph_kwargs.setdefault(str(key), value)
+    else:
+        raise ValueError("Summary 'graph' entry must be a string or object")
+
+    if identifier is None:
+        raise ValueError("Phase 3 summary missing graph identifier")
+
+    seed_candidates: list[object] = []
+    for container in (payload, graph_info if isinstance(graph_info, Mapping) else {}):
+        if not isinstance(container, Mapping):
+            continue
+        for key in ("seed", "graph_seed", "graphSeed"):
+            if key in container:
+                seed_candidates.append(container[key])
+    seed_value: int | None = None
+    for candidate in seed_candidates:
+        if isinstance(candidate, numbers.Integral):
+            seed_value = int(candidate)
+            break
+        if isinstance(candidate, numbers.Real):
+            seed_value = int(candidate)
+            break
+        if isinstance(candidate, str):
+            stripped = candidate.strip()
+            if not stripped:
+                continue
+            try:
+                seed_value = int(stripped)
+                break
+            except ValueError:
+                try:
+                    numeric = float(stripped)
+                except ValueError:
+                    continue
+                else:
+                    seed_value = int(numeric)
+                    break
+
+    factory = _resolve_graph_factory(str(identifier))
+    signature = inspect.signature(factory)
+    filtered_kwargs: dict[str, object] = {}
+
+    for key, value in graph_kwargs.items():
+        if key not in signature.parameters:
+            continue
+        filtered_kwargs[key] = _coerce_summary_value(value)
+
+    if seed_value is not None and "seed" in signature.parameters and "seed" not in filtered_kwargs:
+        filtered_kwargs["seed"] = seed_value
+
+    return factory(**filtered_kwargs)
+
+
 def _load_substrate_artifact(path: Path) -> GraphSubstrate:
     """Load a substrate artifact from a file or directory."""
 
@@ -356,6 +513,7 @@ def _load_substrate_artifact(path: Path) -> GraphSubstrate:
     # root are discovered first, while still handling deeper layouts.
     queue: deque[Path] = deque([candidate])
     visited: set[Path] = set()
+    summary_candidates: list[Path] = []
 
     while queue:
         current = queue.popleft()
@@ -364,6 +522,9 @@ def _load_substrate_artifact(path: Path) -> GraphSubstrate:
         visited.add(current)
 
         if current.is_file():
+            if current.name == "phase3_loop_summary.json":
+                summary_candidates.append(current)
+                continue
             try:
                 return _load_substrate_file(current)
             except ValueError:
@@ -380,12 +541,21 @@ def _load_substrate_artifact(path: Path) -> GraphSubstrate:
 
         for child in sorted(current.iterdir()):
             if child.is_file():
+                if child.name == "phase3_loop_summary.json":
+                    summary_candidates.append(child)
+                    continue
                 try:
                     return _load_substrate_file(child)
                 except ValueError:
                     continue
             elif child.is_dir():
                 queue.append(child)
+
+    for summary_path in summary_candidates:
+        try:
+            return _load_substrate_from_summary(summary_path)
+        except ValueError:
+            continue
 
     raise FileNotFoundError(f"Could not locate a substrate artifact inside {candidate}")
 
