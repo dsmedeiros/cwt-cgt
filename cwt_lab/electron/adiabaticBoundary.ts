@@ -9,7 +9,7 @@ import { buildArgsFromParams } from './runner/args';
 
 const GENERIC_FAILURE_MESSAGE_PATTERN =
   /^(run failed for an unknown reason\.|process exited with code \d+(?: after signal .*?)?\.)$/i;
-const MISSING_GRAPH_PARAMETER_HINT_PATTERN = /missing required graph parameters/i;
+export const MISSING_GRAPH_PARAMETER_HINT_PATTERN = /missing required graph parameters/i;
 
 const isGenericFailureMessage = (message: string | null | undefined): boolean =>
   typeof message === 'string' && GENERIC_FAILURE_MESSAGE_PATTERN.test(message.trim());

@@ -4,7 +4,10 @@ import os from 'node:os';
 import path from 'node:path';
 
 import type { RunManager } from '../runner/runManager';
-import { runAdiabaticBoundary } from '../adiabaticBoundary';
+import {
+  runAdiabaticBoundary,
+  MISSING_GRAPH_PARAMETER_HINT_PATTERN,
+} from '../adiabaticBoundary';
 
 vi.mock('uuid', () => ({ v4: () => 'test-run-id' }));
 
@@ -174,7 +177,7 @@ describe('runAdiabaticBoundary', () => {
         capturedError = error;
         throw error;
       }),
-    ).rejects.toThrow(/missing required graph parameters/i);
+    ).rejects.toThrow(MISSING_GRAPH_PARAMETER_HINT_PATTERN);
 
     expect(capturedError).toBeInstanceOf(Error);
     expect((capturedError as Error).message).not.toMatch(/exit code/i);
