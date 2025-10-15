@@ -151,7 +151,7 @@ export type AdiabaticCalmUpdate = {
 type ViewerHotspot = {
   id: string;
   name: string;
-  coordinates?: Partial<Record<'tau' | 'zeta', number>>;
+  coordinates?: Partial<Record<string, number>>;
   calm?: boolean;
 };
 
@@ -163,13 +163,13 @@ type AdiabaticBoundaryViewerProps = {
   extentSeeds: number[] | null;
   stepSeeds: number[] | null;
   gridSizeSeed: number | null;
+  planeAxes: [string, string] | null;
   onResult?: (update: AdiabaticBoundaryStatusUpdate) => void;
   onCalm?: (update: AdiabaticCalmUpdate) => void;
 };
 
 type RunOverrides = {
-  tau?: number | null;
-  zeta?: number | null;
+  center?: Partial<Record<string, number>> | null;
   extents?: number[] | null;
   steps?: number[] | null;
   gridSize?: number | null;
@@ -187,6 +187,16 @@ const formatSeeds = (values: number[] | null | undefined) =>
 const sanitizeNumber = (value: number | null | undefined) =>
   typeof value === 'number' && Number.isFinite(value) ? value : null;
 
+const axisLabelMap: Record<string, string> = {
+  rho: 'ρ',
+  tau: 'τ',
+  zeta: 'ζ',
+  zeta_phase: 'ζ_phase',
+  kappa: 'κ',
+};
+
+const labelForAxis = (axis: string) => axisLabelMap[axis] ?? axis;
+
 const AdiabaticBoundaryViewer = ({
   hotspot,
   graphId,
@@ -195,11 +205,19 @@ const AdiabaticBoundaryViewer = ({
   extentSeeds,
   stepSeeds,
   gridSizeSeed,
+  planeAxes,
   onResult,
   onCalm,
 }: AdiabaticBoundaryViewerProps) => {
-  const [centerTau, setCenterTau] = useState('');
-  const [centerZeta, setCenterZeta] = useState('');
+  const axisA = planeAxes?.[0] ?? 'tau';
+  const axisB = planeAxes?.[1] ?? 'zeta';
+  const axisALabel = labelForAxis(axisA);
+  const axisBLabel = labelForAxis(axisB);
+  const hotspotCenterA = hotspot?.coordinates ? hotspot.coordinates[axisA] : undefined;
+  const hotspotCenterB = hotspot?.coordinates ? hotspot.coordinates[axisB] : undefined;
+
+  const [centerAxisA, setCenterAxisA] = useState('');
+  const [centerAxisB, setCenterAxisB] = useState('');
   const [extentsInput, setExtentsInput] = useState('');
   const [stepsInput, setStepsInput] = useState('');
   const [gridSizeInput, setGridSizeInput] = useState('');
@@ -224,16 +242,18 @@ const AdiabaticBoundaryViewer = ({
   };
 
   const runAnalysis = async (overrides?: RunOverrides) => {
-    const tauOverride = overrides?.tau;
-    const zetaOverride = overrides?.zeta;
+    const centerOverride = overrides?.center ?? null;
     const extentOverride = overrides?.extents;
     const stepsOverride = overrides?.steps;
     const gridOverride = overrides?.gridSize;
 
-    const tau = tauOverride ?? parseNumber(centerTau);
-    const zeta = zetaOverride ?? parseNumber(centerZeta);
-    if (tau == null || zeta == null) {
-      const message = 'Provide numeric values for the τ and ζ center.';
+    const axisAOverride = centerOverride?.[axisA] ?? null;
+    const axisBOverride = centerOverride?.[axisB] ?? null;
+
+    const axisACenter = axisAOverride ?? parseNumber(centerAxisA);
+    const axisBCenter = axisBOverride ?? parseNumber(centerAxisB);
+    if (axisACenter == null || axisBCenter == null) {
+      const message = `Provide numeric values for the ${axisALabel} and ${axisBLabel} center.`;
       setError(message);
       notifyStatus({
         status: 'error',
@@ -313,8 +333,13 @@ const AdiabaticBoundaryViewer = ({
     notifyStatus({ status: 'running', ...context });
 
     try {
+      const centerParts = [
+        `${axisA}=${toCliValue(axisACenter)}`,
+        `${axisB}=${toCliValue(axisBCenter)}`,
+      ];
       const response = await window.CWT.phase3.cmdAdiabaticBoundary({
-        center: `tau=${toCliValue(tau)},zeta=${toCliValue(zeta)}`,
+        center: centerParts.join(','),
+        axes: [axisA, axisB],
         extents: extents.map((value) => toCliValue(value)),
         steps,
         gridSize: gridSizeNumber,
@@ -364,11 +389,11 @@ const AdiabaticBoundaryViewer = ({
   };
 
   useEffect(() => {
-    const tauSeed = sanitizeNumber(hotspot?.coordinates?.tau) ?? 0;
-    const zetaSeed = sanitizeNumber(hotspot?.coordinates?.zeta) ?? 0;
-    setCenterTau(tauSeed.toString());
-    setCenterZeta(zetaSeed.toString());
-  }, [hotspot?.id, hotspot?.coordinates?.tau, hotspot?.coordinates?.zeta]);
+    const axisASeed = sanitizeNumber(hotspotCenterA) ?? 0;
+    const axisBSeed = sanitizeNumber(hotspotCenterB) ?? 0;
+    setCenterAxisA(axisASeed.toString());
+    setCenterAxisB(axisBSeed.toString());
+  }, [hotspot?.id, axisA, axisB, hotspotCenterA, hotspotCenterB]);
 
   useEffect(() => {
     setExtentsInput(formatSeeds(extentSeeds));
@@ -397,8 +422,10 @@ const AdiabaticBoundaryViewer = ({
     });
   }, [
     hotspot?.id,
-    hotspot?.coordinates?.tau,
-    hotspot?.coordinates?.zeta,
+    hotspotCenterA,
+    hotspotCenterB,
+    axisA,
+    axisB,
     graphId,
     extentSeeds,
     stepSeeds,
@@ -533,21 +560,21 @@ const AdiabaticBoundaryViewer = ({
 
       <div className="adiabatic__controls">
         <label>
-          <span>Center τ</span>
+          <span>{`Center ${axisALabel}`}</span>
           <input
             type="number"
             step="0.01"
-            value={centerTau}
-            onChange={(event) => setCenterTau(event.target.value)}
+            value={centerAxisA}
+            onChange={(event) => setCenterAxisA(event.target.value)}
           />
         </label>
         <label>
-          <span>Center ζ</span>
+          <span>{`Center ${axisBLabel}`}</span>
           <input
             type="number"
             step="0.01"
-            value={centerZeta}
-            onChange={(event) => setCenterZeta(event.target.value)}
+            value={centerAxisB}
+            onChange={(event) => setCenterAxisB(event.target.value)}
           />
         </label>
         <label className="adiabatic__controls--wide">

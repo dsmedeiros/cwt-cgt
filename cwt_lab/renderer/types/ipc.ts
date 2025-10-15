@@ -146,6 +146,7 @@ export type GraphFamilyCommandPayload = {
 export type AdiabaticBoundaryRunPayload = {
   outDir?: string;
   experimentDir?: string;
+  axes?: [string, string];
   [extra: string]: unknown;
 };
 

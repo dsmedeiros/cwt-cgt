@@ -1170,6 +1170,13 @@ const Phase3Loops = () => {
     [hotspots, selectedHotspotId],
   );
 
+  const selectedHotspotAxes = useMemo<[HotspotAxis, HotspotAxis]>(() => {
+    if (selectedHotspot) {
+      return getHotspotAxes(selectedHotspot);
+    }
+    return [defaultPlaneAxes[0], defaultPlaneAxes[1]];
+  }, [selectedHotspot]);
+
   const adiabaticGraphKey = useMemo(() => graph ?? '__default__', [graph]);
   const currentAdiabaticSnapshot =
     adiabaticSnapshots[adiabaticGraphKey] ?? adiabaticSnapshots['__default__'] ?? null;
@@ -3221,6 +3228,7 @@ const Phase3Loops = () => {
           extentSeeds={adiabaticExtentSeeds}
           stepSeeds={adiabaticStepSeeds}
           gridSizeSeed={defaultAdiabaticGridSize}
+          planeAxes={selectedHotspotAxes}
           onResult={handleAdiabaticStatus}
           onCalm={handleAdiabaticCalm}
         />
