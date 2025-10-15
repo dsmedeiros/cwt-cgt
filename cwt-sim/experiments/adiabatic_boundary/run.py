@@ -410,10 +410,27 @@ def _load_substrate_from_summary(summary_path: Path) -> GraphSubstrate:
 
     candidate_keys = ("graph", "graph_descriptor", "graphDescriptor", "graph_info", "graphInfo")
     graph_info: object | None = None
-    for key in candidate_keys:
-        if key in payload:
-            graph_info = payload[key]
-            break
+    def _select_graph_block(source: Mapping[str, object]) -> object | None:
+        for candidate_key in candidate_keys:
+            if candidate_key not in source:
+                continue
+            candidate = source[candidate_key]
+            if candidate is None:
+                continue
+            if isinstance(candidate, str) and not candidate.strip():
+                continue
+            if isinstance(candidate, Mapping) and not candidate:
+                continue
+            if (
+                isinstance(candidate, Sequence)
+                and not isinstance(candidate, (str, bytes, bytearray))
+                and not candidate
+            ):
+                continue
+            return candidate
+        return None
+
+    graph_info = _select_graph_block(payload)
 
     if graph_info is None:
         graphs_block = payload.get("graphs")
@@ -432,10 +449,7 @@ def _load_substrate_from_summary(summary_path: Path) -> GraphSubstrate:
     if graph_info is None and isinstance(payload, Mapping):
         meta_block = payload.get("meta")
         if isinstance(meta_block, Mapping):
-            for key in candidate_keys:
-                if key in meta_block:
-                    graph_info = meta_block[key]
-                    break
+            graph_info = _select_graph_block(meta_block)
 
     identifier: str | None = None
     graph_kwargs: dict[str, object] = {}
@@ -502,17 +516,22 @@ def _load_substrate_from_summary(summary_path: Path) -> GraphSubstrate:
                     identifier = candidate
                 continue
             if isinstance(entry, Mapping):
-                try:
-                    candidate_identifier, candidate_kwargs = _ingest_mapping(
-                        entry, require_identifier=False
-                    )
-                except ValueError as exc:
-                    last_error = exc
-                    continue
+                candidate_identifier, candidate_kwargs = _ingest_mapping(
+                    entry, require_identifier=False
+                )
                 if candidate_identifier and identifier is None:
                     identifier = candidate_identifier
                 for key, value in candidate_kwargs.items():
                     graph_kwargs.setdefault(str(key), value)
+                if "seed" not in graph_kwargs:
+                    for seed_key in ("seed", "graph_seed", "graphSeed"):
+                        if seed_key in entry:
+                            graph_kwargs.setdefault("seed", entry[seed_key])
+                            break
+                        kwargs_block = entry.get("kwargs")
+                        if isinstance(kwargs_block, Mapping) and seed_key in kwargs_block:
+                            graph_kwargs.setdefault("seed", kwargs_block[seed_key])
+                            break
                 continue
             last_error = ValueError(
                 f"Unsupported graph descriptor entry type: {type(entry).__name__}"
@@ -524,7 +543,8 @@ def _load_substrate_from_summary(summary_path: Path) -> GraphSubstrate:
             raise ValueError("Phase 3 summary missing graph identifier")
     else:
         raise ValueError(
-            "Phase 3 summary missing graph descriptor; expected a 'graph' string/object, a graph descriptor sequence, or a 'graphs' collection"
+            "Phase 3 summary missing graph descriptor; expected a 'graph' string/object, "
+            "a graph descriptor sequence, or a 'graphs' collection"
         )
 
     if identifier is None:
