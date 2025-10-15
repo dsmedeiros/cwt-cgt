@@ -89,6 +89,7 @@ describe('runAdiabaticBoundary', () => {
         gridSize: 6,
         hotspotId: 'hotspot-1',
         graphId: 'graph-1',
+        axes: ['rho', 'kappa'],
       },
     );
 
@@ -104,6 +105,10 @@ describe('runAdiabaticBoundary', () => {
     expect(runArgs).toContain('--center');
     expect(runArgs).toContain('--extents');
     expect(runArgs).toContain('--steps');
+    expect(runArgs).toContain('--axes');
+    const axesFlagIndex = runArgs.indexOf('--axes');
+    expect(runArgs[axesFlagIndex + 1]).toBe('rho');
+    expect(runArgs[axesFlagIndex + 2]).toBe('kappa');
     expect(result.runId).toBe('mock-run');
     expect(result.surface).toHaveLength(1);
     expect(result.boundary).toHaveLength(1);

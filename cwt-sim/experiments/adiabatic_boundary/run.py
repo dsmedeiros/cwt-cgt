@@ -1,6 +1,6 @@
 """Adiabatic boundary finder across loop step/extent combinations.
 
-This experiment sweeps a rectangular loop in the :math:`(\\tau, \\zeta)` plane
+This experiment sweeps a rectangular loop in a user-selected control plane
 with varying spatial extent and path discretisation.  For each configuration we
 estimate the curvature flux ``Φ`` and a synthetic readout ``R_γ`` that obeys the
 adiabatic scaling ``R ∝ Φ`` only while Fubini–Study steps remain small.  The
@@ -71,7 +71,7 @@ class BoundaryPoint:
 # ---------------------------------------------------------------------------
 
 
-def _synthetic_state(S: GraphSubstrate, tau: float, zeta: float) -> LayersState:
+def _synthetic_state(S: GraphSubstrate, knobs: Mapping[str, float]) -> LayersState:
     """Return a smooth, parameter-dependent state for the substrate."""
 
     N = S.N
@@ -80,11 +80,29 @@ def _synthetic_state(S: GraphSubstrate, tau: float, zeta: float) -> LayersState:
 
     idx = np.arange(N, dtype=float)
 
-    base = 1.0 + 0.18 * np.sin(0.7 * tau * (idx + 1)) + 0.12 * np.cos(0.9 * zeta * (idx + 0.5))
-    base = np.clip(base, 0.05, None)
+    tau = float(knobs.get("tau", 0.0))
+    zeta = float(knobs.get("zeta", 0.0))
+    rho = float(knobs.get("rho", 0.0))
+    zeta_phase = float(knobs.get("zeta_phase", 0.0))
+    kappa = float(knobs.get("kappa", 0.0))
+
+    base = (
+        1.0
+        + 0.18 * np.sin(0.7 * tau * (idx + 1))
+        + 0.12 * np.cos(0.9 * zeta * (idx + 0.5))
+        + 0.08 * np.sin(0.5 * rho * (idx + 1))
+        + 0.06 * np.cos(0.6 * zeta_phase * (idx + 0.5))
+    )
+    base = np.clip(base + 0.05 * np.tanh(0.4 * kappa), 0.05, None)
     pQ = base / float(base.sum())
 
-    theta = 0.32 * tau * (idx / max(N - 1, 1)) + 0.27 * zeta * np.sin(math.pi * idx / max(N - 1, 1))
+    theta = (
+        0.32 * tau * (idx / max(N - 1, 1))
+        + 0.27 * zeta * np.sin(math.pi * idx / max(N - 1, 1))
+        + 0.22 * rho * np.cos(math.pi * idx / max(N - 1, 1))
+        + 0.18 * kappa * (idx / max(N, 1))
+        + 0.15 * zeta_phase * np.sin(0.5 * math.pi * idx / max(N, 1))
+    )
     theta = wrap_angles(theta)
 
     return LayersState(pQ=pQ, theta=theta)
@@ -106,20 +124,21 @@ def _compute_flux(
     extent: Mapping[str, float],
     *,
     grid_size: int,
+    axes: tuple[str, str],
 ) -> float:
-    tau_edges = _grid_edges(center["tau"], extent["tau"], grid_size)
-    zeta_edges = _grid_edges(center["zeta"], extent["zeta"], grid_size)
+    axis_i, axis_j = axes
+    axis_i_edges = _grid_edges(center[axis_i], extent[axis_i], grid_size)
+    axis_j_edges = _grid_edges(center[axis_j], extent[axis_j], grid_size)
 
     psi_cache: dict[tuple[int, int], np.ndarray] = {}
 
     def psi_at(i: int, j: int) -> np.ndarray:
         key = (i, j)
         if key not in psi_cache:
-            state = _synthetic_state(
-                S,
-                tau=float(tau_edges[i]),
-                zeta=float(zeta_edges[j]),
-            )
+            knob_state = dict(center)
+            knob_state[axis_i] = float(axis_i_edges[i])
+            knob_state[axis_j] = float(axis_j_edges[j])
+            state = _synthetic_state(S, knob_state)
             psi_cache[key] = build_psi(state.pQ, state.theta)
         return psi_cache[key]
 
@@ -131,11 +150,11 @@ def _compute_flux(
             psi_ij = psi_at(i + 1, j + 1)
             psi_j = psi_at(i, j + 1)
 
-            delta_tau = float(tau_edges[i + 1] - tau_edges[i])
-            delta_zeta = float(zeta_edges[j + 1] - zeta_edges[j])
+            delta_i = float(axis_i_edges[i + 1] - axis_i_edges[i])
+            delta_j = float(axis_j_edges[j + 1] - axis_j_edges[j])
 
-            omega, _ = curvature_tile(psi0, psi_i, psi_ij, psi_j, delta_tau, delta_zeta)
-            flux += float(omega) * delta_tau * delta_zeta
+            omega, _ = curvature_tile(psi0, psi_i, psi_ij, psi_j, delta_i, delta_j)
+            flux += float(omega) * delta_i * delta_j
 
     return float(flux)
 
@@ -229,9 +248,7 @@ def _load_substrate_file(path: Path) -> GraphSubstrate:
         with path.open("r", encoding="utf-8", newline="") as handle:
             reader = csv.DictReader(handle)
             if not reader.fieldnames or {"source", "target"}.difference(reader.fieldnames):
-                raise ValueError(
-                    "CSV substrate artifact must include 'source' and 'target' columns"
-                )
+                raise ValueError("CSV substrate artifact must include 'source' and 'target' columns")
             for row in reader:
                 source = _maybe_cast_node(row["source"])
                 target = _maybe_cast_node(row["target"])
@@ -355,20 +372,24 @@ def _run_sample(
     steps: int,
     *,
     grid_size: int,
+    axes: tuple[str, str],
 ) -> SampleResult:
+    axis_i, axis_j = axes
+    loop_center = dict(center)
+    extent_map = {axis_i: extent, axis_j: extent}
     loop = ParameterPath(
         kind="rectangle",
-        center=center,
-        extents={"tau": extent, "zeta": extent},
+        center=loop_center,
+        extents=extent_map,
         steps=steps,
         orientation="CCW",
-        axes=("tau", "zeta"),
+        axes=axes,
     )
 
     psi_traj: list[np.ndarray] = []
     for idx in range(loop.steps):
         lambda_state, _, _ = loop.step(idx)
-        state = _synthetic_state(S, tau=lambda_state["tau"], zeta=lambda_state["zeta"])
+        state = _synthetic_state(S, lambda_state)
         psi_traj.append(build_psi(state.pQ, state.theta))
 
     fs_steps: list[float] = []
@@ -385,8 +406,8 @@ def _run_sample(
     fs_mean = float(fs_arr.mean()) if fs_arr.size else float("nan")
     fs_p95 = float(np.percentile(fs_arr, 95)) if fs_arr.size else float("nan")
 
-    flux = _compute_flux(S, center, {"tau": extent, "zeta": extent}, grid_size=grid_size)
-    area = 4.0 * abs(extent) * abs(extent)
+    flux = _compute_flux(S, loop_center, extent_map, grid_size=grid_size, axes=axes)
+    area = 4.0 * abs(extent_map[axis_i]) * abs(extent_map[axis_j])
 
     factor = _adiabatic_factor(fs_p95, steps, extent)
     readout = float(flux * factor)
@@ -457,8 +478,12 @@ def _determine_boundary(
 # ---------------------------------------------------------------------------
 
 
-def _parse_center(text: str) -> dict[str, float]:
-    center: dict[str, float] = {"tau": 0.0, "zeta": 0.0}
+SUPPORTED_AXES = ("rho", "tau", "zeta", "zeta_phase", "kappa")
+
+
+def _parse_center(text: str, allowed_axes: Sequence[str]) -> dict[str, float]:
+    normalized_axes = [axis.strip() for axis in allowed_axes if str(axis).strip()]
+    center: dict[str, float] = {axis: 0.0 for axis in SUPPORTED_AXES}
     if not text:
         return center
     parts = [item.strip() for item in text.split(",") if item.strip()]
@@ -466,12 +491,17 @@ def _parse_center(text: str) -> dict[str, float]:
         if "=" not in part:
             raise ValueError(f"malformed centre entry '{part}'")
         key, value = (token.strip() for token in part.split("=", 1))
-        if key not in {"tau", "zeta"}:
+        if key not in center:
             raise ValueError(f"unsupported centre knob '{key}'")
         try:
             center[key] = float(value)
         except ValueError as exc:  # pragma: no cover - defensive
             raise ValueError(f"non-numeric centre value '{value}'") from exc
+
+    for axis in normalized_axes:
+        if axis not in center:
+            raise ValueError(f"unsupported centre knob '{axis}'")
+
     return center
 
 
@@ -557,9 +587,17 @@ def _write_boundary(path: Path, boundary: Sequence[BoundaryPoint]) -> None:
 
 
 def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Map the adiabatic boundary in τ–ζ space")
+    parser = argparse.ArgumentParser(
+        description="Map the adiabatic boundary across a chosen control plane",
+    )
     parser.add_argument("--output-dir", type=Path, default=Path("runs/adiabatic_boundary"))
     parser.add_argument("--center", type=str, default="tau=0.8,zeta=0.0")
+    parser.add_argument(
+        "--axes",
+        nargs=2,
+        default=["tau", "zeta"],
+        help="Two control knobs defining the sweep plane (e.g. 'tau zeta').",
+    )
     parser.add_argument("--extents", nargs="+", default=["0.02", "0.04", "0.08"])
     parser.add_argument("--steps", nargs="+", default=["400", "200", "120", "80"])
     parser.add_argument("--grid-size", type=int, default=6)
@@ -581,7 +619,18 @@ def main(argv: Sequence[str] | None = None) -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    center = _parse_center(str(args.center))
+    axes_values = [str(axis).strip().lower() for axis in args.axes]
+    if len(axes_values) != 2:
+        raise ValueError("axes must specify exactly two control knobs")
+    if len({axes_values[0], axes_values[1]}) != 2:
+        raise ValueError("axes must refer to two distinct control knobs")
+    for axis in axes_values:
+        if axis not in SUPPORTED_AXES:
+            raise ValueError(f"unsupported control knob '{axis}'")
+
+    axes = (axes_values[0], axes_values[1])
+
+    center = _parse_center(str(args.center), axes)
     extent_values = _parse_float_list(args.extents)
     step_values = _parse_int_list(args.steps)
 
@@ -600,6 +649,7 @@ def main(argv: Sequence[str] | None = None) -> None:
                     extent=float(extent),
                     steps=int(steps),
                     grid_size=int(args.grid_size),
+                    axes=axes,
                 )
             )
 
