@@ -476,6 +476,11 @@ export type Phase3BrowseHotspotsResult = {
   contents: string | null;
 };
 
+export type GraphFactoryDescriptor = {
+  identifier: string;
+  kwargs?: Record<string, unknown>;
+};
+
 export type GuidedLoopSummary = {
   path: string;
   axes: [string, string];
@@ -491,6 +496,7 @@ export type GuidedLoopSummary = {
   label: string;
   metadata?: Record<string, unknown>;
   omegaAbs?: number | null;
+  graph?: string | GraphFactoryDescriptor;
 };
 
 export type GuidedLoopArgs = {
