@@ -174,8 +174,10 @@ const NON_CLI_PARAM_KEYS = new Set([
   'graphId',
 ]);
 
+type RunManagerClient = Pick<RunManager, 'createRun' | 'waitForCompletion' | 'tail'>;
+
 export const runAdiabaticBoundary = async (
-  runManager: RunManager,
+  runManager: RunManagerClient,
   cwtSimRoot: string,
   artifactsRoot: string,
   params: Record<string, unknown> | undefined,

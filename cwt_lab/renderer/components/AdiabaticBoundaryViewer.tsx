@@ -268,152 +268,177 @@ const AdiabaticBoundaryViewer = ({
     [onResult],
   );
 
-  const runAnalysis = async (overrides?: RunOverrides) => {
-    const centerOverride = overrides?.center ?? null;
-    const extentOverride = overrides?.extents;
-    const stepsOverride = overrides?.steps;
-    const gridOverride = overrides?.gridSize;
+  const runAnalysis = useCallback(
+    async (overrides?: RunOverrides) => {
+      const centerOverride = overrides?.center ?? null;
+      const extentOverride = overrides?.extents;
+      const stepsOverride = overrides?.steps;
+      const gridOverride = overrides?.gridSize;
 
-    const axisAOverride = centerOverride?.[axisA] ?? null;
-    const axisBOverride = centerOverride?.[axisB] ?? null;
+      const axisAOverride = centerOverride?.[axisA] ?? null;
+      const axisBOverride = centerOverride?.[axisB] ?? null;
 
-    const axisACenter = axisAOverride ?? parseNumber(centerAxisA);
-    const axisBCenter = axisBOverride ?? parseNumber(centerAxisB);
-    if (axisACenter == null || axisBCenter == null) {
-      const message = `Provide numeric values for the ${axisALabel} and ${axisBLabel} center.`;
-      setError(message);
-      notifyStatus({
-        status: 'error',
-        hotspotId: hotspot?.id ?? null,
-        graphId,
-        error: message,
-        requestId: requestCounterRef.current,
-      });
-      return;
-    }
-
-    const extents = extentOverride ?? parseFloatList(extentsInput);
-    if (!extents || extents.length === 0) {
-      const message = 'Provide at least one numeric extent (comma or space separated).';
-      setError(message);
-      notifyStatus({
-        status: 'error',
-        hotspotId: hotspot?.id ?? null,
-        graphId,
-        error: message,
-        requestId: requestCounterRef.current,
-      });
-      return;
-    }
-
-    const steps = stepsOverride ?? parseIntegerList(stepsInput);
-    if (!steps || steps.length === 0) {
-      const message = 'Provide at least one integer step count (comma or space separated).';
-      setError(message);
-      notifyStatus({
-        status: 'error',
-        hotspotId: hotspot?.id ?? null,
-        graphId,
-        error: message,
-        requestId: requestCounterRef.current,
-      });
-      return;
-    }
-
-    const gridSizeNumber = gridOverride ?? parseIntegerList(gridSizeInput)?.[0];
-    if (gridSizeNumber == null || gridSizeNumber <= 0) {
-      const message = 'Grid size must be a positive integer.';
-      setError(message);
-      notifyStatus({
-        status: 'error',
-        hotspotId: hotspot?.id ?? null,
-        graphId,
-        error: message,
-        requestId: requestCounterRef.current,
-      });
-      return;
-    }
-
-    if (!window?.CWT?.phase3?.cmdAdiabaticBoundary) {
-      const message = 'Adiabatic boundary command is unavailable.';
-      setError(message);
-      notifyStatus({
-        status: 'error',
-        hotspotId: hotspot?.id ?? null,
-        graphId,
-        error: message,
-        requestId: requestCounterRef.current,
-      });
-      return;
-    }
-
-    requestCounterRef.current += 1;
-    const requestId = requestCounterRef.current;
-    const context = {
-      hotspotId: hotspot?.id ?? null,
-      graphId,
-      requestId,
-    } as const;
-
-    setIsRunning(true);
-    setError(null);
-    notifyStatus({ status: 'running', ...context });
-
-    try {
-      const centerParts = [
-        `${axisA}=${toCliValue(axisACenter)}`,
-        `${axisB}=${toCliValue(axisBCenter)}`,
-      ];
-      const response = await window.CWT.phase3.cmdAdiabaticBoundary({
-        center: centerParts.join(','),
-        axes: [axisA, axisB],
-        extents: extents.map((value) => toCliValue(value)),
-        steps,
-        gridSize: gridSizeNumber,
-        experimentDir: experimentDir ?? undefined,
-        substrateDir: substrateDir ?? undefined,
-        hotspotId: hotspot?.id,
-        graphId: graphId ?? undefined,
-      });
-      if (!response.ok) {
-        throw new Error(response.error ?? 'Failed to run adiabatic boundary sweep');
-      }
-      if (requestId !== requestCounterRef.current) {
-        return;
-      }
-      setResult(response.data);
-      const preferred = response.data.recommendation;
-      if (preferred) {
-        setSelectedKey(`${preferred.extent}|${preferred.steps}`);
-      } else if (response.data.histograms.length > 0) {
-        const first = response.data.histograms[0];
-        setSelectedKey(`${first.extent}|${first.steps}`);
-      } else {
-        setSelectedKey(null);
-      }
-      notifyStatus({ status: 'success', ...context, result: response.data });
-      if (onCalm) {
-        onCalm({
+      const axisACenter = axisAOverride ?? parseNumber(centerAxisA);
+      const axisBCenter = axisBOverride ?? parseNumber(centerAxisB);
+      if (axisACenter == null || axisBCenter == null) {
+        const message = `Provide numeric values for the ${axisALabel} and ${axisBLabel} center.`;
+        setError(message);
+        notifyStatus({
+          status: 'error',
           hotspotId: hotspot?.id ?? null,
           graphId,
-          calm: calmFlag,
-          requestId,
+          error: message,
+          requestId: requestCounterRef.current,
         });
-      }
-    } catch (analysisError) {
-      if (requestId !== requestCounterRef.current) {
         return;
       }
-      const message =
-        analysisError instanceof Error ? analysisError.message : String(analysisError);
-      setError(message);
-      notifyStatus({ status: 'error', ...context, error: message });
-    } finally {
-      if (requestId === requestCounterRef.current) {
-        setIsRunning(false);
+
+      const extents = extentOverride ?? parseFloatList(extentsInput);
+      if (!extents || extents.length === 0) {
+        const message = 'Provide at least one numeric extent (comma or space separated).';
+        setError(message);
+        notifyStatus({
+          status: 'error',
+          hotspotId: hotspot?.id ?? null,
+          graphId,
+          error: message,
+          requestId: requestCounterRef.current,
+        });
+        return;
       }
-    }
-  };
+
+      const steps = stepsOverride ?? parseIntegerList(stepsInput);
+      if (!steps || steps.length === 0) {
+        const message = 'Provide at least one integer step count (comma or space separated).';
+        setError(message);
+        notifyStatus({
+          status: 'error',
+          hotspotId: hotspot?.id ?? null,
+          graphId,
+          error: message,
+          requestId: requestCounterRef.current,
+        });
+        return;
+      }
+
+      const gridSizeNumber = gridOverride ?? parseIntegerList(gridSizeInput)?.[0];
+      if (gridSizeNumber == null || gridSizeNumber <= 0) {
+        const message = 'Grid size must be a positive integer.';
+        setError(message);
+        notifyStatus({
+          status: 'error',
+          hotspotId: hotspot?.id ?? null,
+          graphId,
+          error: message,
+          requestId: requestCounterRef.current,
+        });
+        return;
+      }
+
+      if (!window?.CWT?.phase3?.cmdAdiabaticBoundary) {
+        const message = 'Adiabatic boundary command is unavailable.';
+        setError(message);
+        notifyStatus({
+          status: 'error',
+          hotspotId: hotspot?.id ?? null,
+          graphId,
+          error: message,
+          requestId: requestCounterRef.current,
+        });
+        return;
+      }
+
+      requestCounterRef.current += 1;
+      const requestId = requestCounterRef.current;
+      const context = {
+        hotspotId: hotspot?.id ?? null,
+        graphId,
+        requestId,
+      } as const;
+
+      setIsRunning(true);
+      setError(null);
+      notifyStatus({ status: 'running', ...context });
+
+      try {
+        const centerParts = [
+          `${axisA}=${toCliValue(axisACenter)}`,
+          `${axisB}=${toCliValue(axisBCenter)}`,
+        ];
+        const response = await window.CWT.phase3.cmdAdiabaticBoundary({
+          center: centerParts.join(','),
+          axes: [axisA, axisB],
+          extents: extents.map((value) => toCliValue(value)),
+          steps,
+          gridSize: gridSizeNumber,
+          experimentDir: experimentDir ?? undefined,
+          substrateDir: substrateDir ?? undefined,
+          hotspotId: hotspot?.id,
+          graphId: graphId ?? undefined,
+        });
+        if (!response.ok) {
+          throw new Error(response.error ?? 'Failed to run adiabatic boundary sweep');
+        }
+        if (requestId !== requestCounterRef.current) {
+          return;
+        }
+        setResult(response.data);
+        const preferred = response.data.recommendation;
+        if (preferred) {
+          setSelectedKey(`${preferred.extent}|${preferred.steps}`);
+        } else if (response.data.histograms.length > 0) {
+          const first = response.data.histograms[0];
+          setSelectedKey(`${first.extent}|${first.steps}`);
+        } else {
+          setSelectedKey(null);
+        }
+        notifyStatus({ status: 'success', ...context, result: response.data });
+        if (onCalm) {
+          onCalm({
+            hotspotId: hotspot?.id ?? null,
+            graphId,
+            calm: calmFlag,
+            requestId,
+          });
+        }
+      } catch (analysisError) {
+        if (requestId !== requestCounterRef.current) {
+          return;
+        }
+        const message =
+          analysisError instanceof Error ? analysisError.message : String(analysisError);
+        setError(message);
+        notifyStatus({ status: 'error', ...context, error: message });
+      } finally {
+        if (requestId === requestCounterRef.current) {
+          setIsRunning(false);
+        }
+      }
+    },
+    [
+      axisA,
+      axisALabel,
+      axisB,
+      axisBLabel,
+      centerAxisA,
+      centerAxisB,
+      notifyStatus,
+      hotspot?.id,
+      graphId,
+      extentsInput,
+      stepsInput,
+      gridSizeInput,
+      experimentDir,
+      substrateDir,
+      hotspot,
+      onCalm,
+      calmFlag,
+    ],
+  );
+
+  const handleRunAnalysis = useCallback(() => {
+    void runAnalysis();
+  }, [runAnalysis]);
 
   useEffect(() => {
     const axisASeed = sanitizeNumber(hotspotCenterA) ?? 0;
@@ -578,7 +603,7 @@ const AdiabaticBoundaryViewer = ({
           <button
             type="button"
             className="btn btn--primary"
-            onClick={runAnalysis}
+            onClick={handleRunAnalysis}
             disabled={isRunning}
           >
             {isRunning ? 'Mapping…' : 'Find boundary'}
