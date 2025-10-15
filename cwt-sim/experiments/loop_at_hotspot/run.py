@@ -6,7 +6,8 @@ import argparse
 import json
 import math
 import numbers
-from dataclasses import dataclass
+import time
+from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Mapping, Sequence
@@ -159,6 +160,44 @@ class OrientationRun:
     fs_edge_counts: dict[str, int]
     fs_edge_exceedances: dict[str, int]
     fs_edge_max: dict[str, float]
+    duration: float
+    budget_limited: bool = False
+
+
+@dataclass
+class TimeBudgetTracker:
+    """Track elapsed loop time against an optional wall-clock budget."""
+
+    total: float | None
+    consumed: float = 0.0
+
+    def __post_init__(self) -> None:
+        if self.total is None:
+            return
+        try:
+            numeric = float(self.total)
+        except (TypeError, ValueError):  # pragma: no cover - defensive guard
+            object.__setattr__(self, "total", None)
+            return
+        if not math.isfinite(numeric) or numeric <= 0.0:
+            object.__setattr__(self, "total", None)
+        else:
+            object.__setattr__(self, "total", numeric)
+
+    def remaining(self) -> float | None:
+        if self.total is None:
+            return None
+        return max(self.total - self.consumed, 0.0)
+
+    def consume(self, duration: float) -> None:
+        if self.total is None:
+            return
+        try:
+            numeric = float(duration)
+        except (TypeError, ValueError):  # pragma: no cover - defensive guard
+            return
+        if numeric > 0.0 and math.isfinite(numeric):
+            self.consumed = min(self.total, self.consumed + numeric)
 
 
 @dataclass
@@ -218,6 +257,85 @@ def _relative_change(base: float, follow_up: float) -> float:
         return float("nan")
     denom = max(abs(base), 1e-12)
     return abs(follow_up - base) / denom
+
+
+def _coerce_float(value: object) -> float | None:
+    try:
+        numeric = float(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return None
+    return numeric if math.isfinite(numeric) else None
+
+
+def _axis_bounds_from_metadata(
+    metadata: Mapping[str, Any] | None, axes: Sequence[str]
+) -> dict[str, tuple[float | None, float | None]]:
+    if metadata is None:
+        return {}
+
+    axis_payload = metadata.get("axis_bounds") if isinstance(metadata, Mapping) else None
+    if not isinstance(axis_payload, Mapping):
+        return {}
+
+    bounds: dict[str, tuple[float | None, float | None]] = {}
+    for axis in axes:
+        axis_key = str(axis)
+        entry = axis_payload.get(axis_key)
+        if not isinstance(entry, Mapping):
+            continue
+        lower = _coerce_float(entry.get("min"))
+        upper = _coerce_float(entry.get("max"))
+        bounds[axis_key] = (lower, upper)
+    return bounds
+
+
+def _clamp_loop_region(
+    center: Mapping[str, float],
+    extent: RectExtent,
+    axes: tuple[str, str],
+    axis_bounds: Mapping[str, tuple[float | None, float | None]] | None,
+) -> tuple[dict[str, float], RectExtent]:
+    if not axis_bounds:
+        return dict(center), extent
+
+    adjusted_center = {axis: float(center[axis]) for axis in axes}
+    adjusted_extent = extent
+
+    for axis in axes:
+        bounds = axis_bounds.get(axis)
+        if bounds is None:
+            continue
+        lower, upper = bounds
+        try:
+            amplitude = abs(adjusted_extent.axis_value(axis))
+        except KeyError:
+            continue
+
+        center_value = adjusted_center.get(axis, 0.0)
+        lower_edge = center_value - amplitude
+        upper_edge = center_value + amplitude
+
+        if lower is not None:
+            lower_edge = max(lower_edge, lower)
+            upper_edge = max(upper_edge, lower)
+        if upper is not None:
+            lower_edge = min(lower_edge, upper)
+            upper_edge = min(upper_edge, upper)
+
+        if upper_edge < lower_edge:
+            midpoint = lower_edge
+            amplitude_new = 0.0
+        else:
+            midpoint = 0.5 * (lower_edge + upper_edge)
+            amplitude_new = max(0.5 * (upper_edge - lower_edge), 0.0)
+
+        extent_value = adjusted_extent.axis_value(axis)
+        sign = 1.0 if extent_value >= 0.0 else -1.0
+        amplitude_new = min(amplitude_new, abs(extent_value))
+        adjusted_center[axis] = midpoint
+        adjusted_extent = adjusted_extent.replace(axis=axis, value=sign * amplitude_new)
+
+    return adjusted_center, adjusted_extent
 
 
 def _collect_entries(
@@ -630,9 +748,18 @@ def _run_loop_once(
     seed: int,
     *,
     steps: int,
+    axis_bounds: Mapping[str, tuple[float | None, float | None]] | None = None,
+    budget: TimeBudgetTracker | None = None,
 ) -> OrientationRun:
-    center_dict = {axis: float(center[axis]) for axis in axes}
-    extent_dict = extent.as_dict()
+    center_dict, adjusted_extent = _clamp_loop_region(center, extent, axes, axis_bounds)
+    extent_dict = adjusted_extent.as_dict()
+
+    delta_frac = dict(getattr(config, "delta_frac", {}))
+    for knob in extent_dict:
+        # Ensure the scheduler recognises loop axes even when we rely on
+        # delta_lambda fallbacks for their magnitudes.
+        delta_frac.setdefault(knob, 0.0)
+    config_local = replace(config, delta_frac=delta_frac)
 
     path = ParameterPath(
         kind="rectangle",
@@ -644,7 +771,11 @@ def _run_loop_once(
     )
 
     init_state = LayersState(pQ=base_prob.copy(), theta=base_theta.copy())
-    record = run_parameter_loop(substrate, init_state, path, config, seed=seed)
+    start_time = time.perf_counter()
+    record = run_parameter_loop(substrate, init_state, path, config_local, seed=seed)
+    duration = time.perf_counter() - start_time
+    if budget is not None:
+        budget.consume(duration)
 
     area = float(sum(float(delta) for delta in record.delta_area))
     phi_flux, memory, phi_missing = _extract_readout(path.steps, record.readouts)
@@ -673,7 +804,7 @@ def _run_loop_once(
 
     return OrientationRun(
         orientation=orientation,
-        extents=extent,
+        extents=adjusted_extent,
         steps=steps,
         area=area,
         phi_flux=phi_flux,
@@ -685,6 +816,7 @@ def _run_loop_once(
         fs_edge_counts=edge_counts,
         fs_edge_exceedances=edge_exceedances,
         fs_edge_max=edge_max,
+        duration=float(duration),
     )
 
 
@@ -702,10 +834,18 @@ def _run_loop(
     *,
     target_fs: float | None,
     pilot_frac: float | None,
+    axis_bounds: Mapping[str, tuple[float | None, float | None]] | None = None,
+    budget: TimeBudgetTracker | None = None,
 ) -> OrientationRun:
-    baseline_steps = _loop_steps_for_extent(extent, base_steps)
+    _, extent_effective = _clamp_loop_region(center, extent, axes, axis_bounds)
+    baseline_steps = _loop_steps_for_extent(extent_effective, base_steps)
     final_steps = baseline_steps
     pilot_result: OrientationRun | None = None
+    budget_limited = False
+
+    initial_remaining = budget.remaining() if budget is not None else None
+    if initial_remaining is not None and initial_remaining <= 0.0:
+        final_steps = max(16, min(final_steps, 16))
 
     if (
         pilot_frac is not None
@@ -713,6 +853,7 @@ def _run_loop(
         and target_fs is not None
         and target_fs > 0.0
         and baseline_steps > 16
+        and (initial_remaining is None or initial_remaining > 0.0)
     ):
         pilot_steps = int(pilot_frac * baseline_steps)
         pilot_steps = max(16, pilot_steps)
@@ -731,6 +872,8 @@ def _run_loop(
                 orientation,
                 seed,
                 steps=pilot_steps,
+                axis_bounds=axis_bounds,
+                budget=budget,
             )
             fs_p95_pilot = pilot_result.fs_p95
             if math.isfinite(fs_p95_pilot) and fs_p95_pilot > 0.0 and not pilot_result.fs_guard_exceeded:
@@ -742,10 +885,28 @@ def _run_loop(
             else:
                 final_steps = baseline_steps
 
+            if budget is not None:
+                remaining = budget.remaining()
+                per_step = (
+                    pilot_result.duration / float(max(pilot_result.steps, 1))
+                    if pilot_result.steps > 0
+                    else None
+                )
+                if remaining is not None and remaining > 0.0 and per_step and per_step > 0.0:
+                    allowed_steps = int(math.floor(remaining / per_step))
+                    if allowed_steps < final_steps:
+                        final_steps = max(16, allowed_steps)
+                        budget_limited = True
+
+            if final_steps <= pilot_result.steps:
+                if final_steps < baseline_steps or budget_limited:
+                    return replace(pilot_result, budget_limited=True)
+                return pilot_result
+
     if pilot_result is not None and pilot_result.steps == final_steps:
         return pilot_result
 
-    return _run_loop_once(
+    result = _run_loop_once(
         substrate,
         config,
         base_prob,
@@ -756,7 +917,14 @@ def _run_loop(
         orientation,
         seed,
         steps=final_steps,
+        axis_bounds=axis_bounds,
+        budget=budget,
     )
+
+    if final_steps < baseline_steps or budget_limited:
+        result = replace(result, budget_limited=True)
+
+    return result
 
 
 def _auto_calibrate_extent(
@@ -774,6 +942,8 @@ def _auto_calibrate_extent(
     fs_margin: float,
     max_iters: int,
     seed: int,
+    axis_bounds: Mapping[str, tuple[float | None, float | None]] | None = None,
+    budget: TimeBudgetTracker | None = None,
 ) -> AutoExtentResult:
     lower, upper = float(extent_bracket[0]), float(extent_bracket[1])
     if not math.isfinite(lower) or not math.isfinite(upper):
@@ -807,6 +977,23 @@ def _auto_calibrate_extent(
         pilot_steps = max(128, pilot_steps)
         pilot_steps = min(steps_full, pilot_steps)
 
+        if budget is not None:
+            remaining = budget.remaining()
+            if remaining is not None and remaining <= 0.0:
+                decisions.append(
+                    AutoExtentDecision(
+                        iteration=iteration,
+                        extents=extent,
+                        pilot_steps=pilot_steps,
+                        steps=steps_full,
+                        fs_p95=float("nan"),
+                        fs_guard_exceeded=False,
+                        fs_edge_exceedances={axis: 0 for axis in axes},
+                        decision="budget_exhausted",
+                    )
+                )
+                break
+
         pilot_run = _run_loop_once(
             substrate,
             config,
@@ -818,6 +1005,8 @@ def _auto_calibrate_extent(
             "CCW",
             seed,
             steps=pilot_steps,
+            axis_bounds=axis_bounds,
+            budget=budget,
         )
         fs95 = pilot_run.fs_p95
         guard_exceeded = pilot_run.fs_guard_exceeded
@@ -935,8 +1124,10 @@ def evaluate_hotspot(
     extent_bracket: tuple[float, float] | None,
     fs_margin: float,
     max_extent_iters: int,
+    budget: TimeBudgetTracker | None = None,
 ) -> HotspotSummary:
     center = dict(spec.center)
+    axis_bounds = _axis_bounds_from_metadata(spec.metadata, axes)
     if micro_scan:
         center, state_pair, scan_meta = _micro_scan_candidates(
             substrate,
@@ -972,6 +1163,8 @@ def evaluate_hotspot(
             fs_margin=float(fs_margin),
             max_iters=int(max_extent_iters),
             seed=seed,
+            axis_bounds=axis_bounds,
+            budget=budget,
         )
         if not extents_to_run:
             extents_to_run = [auto_result.extent]
@@ -1021,6 +1214,8 @@ def evaluate_hotspot(
             base_steps,
             target_fs=None if auto_extent else target_fs,
             pilot_frac=pilot_frac if not auto_extent else None,
+            axis_bounds=axis_bounds,
+            budget=budget,
         )
         cw = _run_loop(
             substrate,
@@ -1035,6 +1230,8 @@ def evaluate_hotspot(
             base_steps,
             target_fs=None if auto_extent else target_fs,
             pilot_frac=pilot_frac if not auto_extent else None,
+            axis_bounds=axis_bounds,
+            budget=budget,
         )
         area_flip = _relative_flip_error(ccw.area, cw.area)
         if ccw.phi_missing or cw.phi_missing:
@@ -1100,6 +1297,13 @@ def render_summary(results: Sequence[HotspotSummary]) -> None:
                 )
             )
             print(
+                "           steps={}, t={:.2f}s, budget_limited={}".format(
+                    int(ccw.steps),
+                    ccw.duration,
+                    ccw.budget_limited,
+                )
+            )
+            print(
                 "    CW : R={:+.6f}, Φ={:+.6f}{}, κ₁={:+.6f}, χ={}".format(
                     cw.area,
                     cw.phi_flux,
@@ -1112,6 +1316,13 @@ def render_summary(results: Sequence[HotspotSummary]) -> None:
                 "           FS p95={:.3f} rad, guard_exceeded={}".format(
                     cw.fs_p95 if math.isfinite(cw.fs_p95) else float("nan"),
                     cw.fs_guard_exceeded,
+                )
+            )
+            print(
+                "           steps={}, t={:.2f}s, budget_limited={}".format(
+                    int(cw.steps),
+                    cw.duration,
+                    cw.budget_limited,
                 )
             )
             flip_area_pct = (
@@ -1153,6 +1364,13 @@ def evaluate_acceptance(
                     (
                         f"Hotspot {summary.index + 1} extent ({_format_extent(extent_summary.extents)}): "
                         f"area flip error {extent_summary.area_flip_error:.3f}"
+                    )
+                )
+            if extent_summary.ccw.budget_limited or extent_summary.cw.budget_limited:
+                failures.append(
+                    (
+                        f"Hotspot {summary.index + 1} extent ({_format_extent(extent_summary.extents)}): "
+                        "loop truncated by time budget"
                     )
                 )
             if (
@@ -1216,6 +1434,8 @@ def _orientation_run_to_json(run: OrientationRun) -> dict[str, Any]:
         "fs_edge_counts": {axis: int(count) for axis, count in run.fs_edge_counts.items()},
         "fs_edge_exceedances": {axis: int(count) for axis, count in run.fs_edge_exceedances.items()},
         "fs_edge_max": {axis: _float_or_none(value) for axis, value in run.fs_edge_max.items()},
+        "duration": _float_or_none(run.duration),
+        "budget_limited": bool(run.budget_limited),
     }
 
 
@@ -1263,6 +1483,8 @@ def _build_summary_payload(
     results: Sequence[HotspotSummary],
     accepted: bool,
     failures: Sequence[str],
+    time_budget: float | None,
+    time_consumed: float | None,
 ) -> dict[str, Any]:
     timestamp = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
     extent_bracket_payload = (
@@ -1294,6 +1516,8 @@ def _build_summary_payload(
         "hotspots": [_hotspot_summary_to_json(summary) for summary in results],
         "accepted": bool(accepted),
         "failures": [str(message) for message in failures],
+        "time_budget_seconds": _float_or_none(time_budget),
+        "time_consumed_seconds": _float_or_none(time_consumed),
     }
 
 
@@ -1369,6 +1593,15 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         type=int,
         default=6,
         help="Maximum number of auto-extent iterations before falling back to the best safe loop.",
+    )
+    parser.add_argument(
+        "--time-budget",
+        type=float,
+        default=None,
+        help=(
+            "Optional wall-clock budget in seconds used to throttle loop resolution and "
+            "terminate auto-calibration when exhausted."
+        ),
     )
     parser.add_argument(
         "--micro-scan",
@@ -1471,6 +1704,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     fs_margin_value = float(args.fs_margin)
     max_iters_value = int(args.max_extent_iters)
 
+    budget_tracker = TimeBudgetTracker(args.time_budget)
+
     results: list[HotspotSummary] = []
     for index, spec in enumerate(hotspots):
         summary = evaluate_hotspot(
@@ -1489,6 +1724,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             extent_bracket=extent_bracket if auto_extent_enabled else None,
             fs_margin=fs_margin_value,
             max_extent_iters=max_iters_value,
+            budget=budget_tracker,
         )
         results.append(summary)
 
@@ -1517,6 +1753,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             results=results,
             accepted=accepted,
             failures=failure_messages,
+            time_budget=budget_tracker.total,
+            time_consumed=(
+                budget_tracker.consumed if budget_tracker.total is not None else None
+            ),
         )
         with summary_path.open("w", encoding="utf-8") as handle:
             json.dump(payload, handle, indent=2, ensure_ascii=False)
