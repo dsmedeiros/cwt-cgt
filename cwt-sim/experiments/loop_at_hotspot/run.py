@@ -846,6 +846,7 @@ def _run_loop(
     initial_remaining = budget.remaining() if budget is not None else None
     if initial_remaining is not None and initial_remaining <= 0.0:
         final_steps = max(16, min(final_steps, 16))
+        budget_limited = True
 
     if (
         pilot_frac is not None
@@ -899,7 +900,7 @@ def _run_loop(
                         budget_limited = True
 
             if final_steps <= pilot_result.steps:
-                if final_steps < baseline_steps or budget_limited:
+                if budget_limited:
                     return replace(pilot_result, budget_limited=True)
                 return pilot_result
 
@@ -921,7 +922,7 @@ def _run_loop(
         budget=budget,
     )
 
-    if final_steps < baseline_steps or budget_limited:
+    if budget_limited:
         result = replace(result, budget_limited=True)
 
     return result
