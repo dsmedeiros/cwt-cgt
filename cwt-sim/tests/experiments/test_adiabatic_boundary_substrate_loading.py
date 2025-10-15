@@ -68,6 +68,34 @@ def test_load_substrate_summary_accepts_alias_kwargs(tmp_path):
     assert substrate.N == 6
 
 
+def test_load_substrate_summary_accepts_graph_sequence(tmp_path):
+    summary_path = tmp_path / "summary.json"
+    _write_summary(
+        summary_path,
+        {"graph": ["random_regular", {"kwargs": {"n": 6, "k": 2}}]},
+    )
+
+    substrate = run._load_substrate_from_summary(summary_path)
+
+    assert substrate.N == 6
+
+
+def test_load_substrate_summary_accepts_graphs_collection(tmp_path):
+    summary_path = tmp_path / "summary.json"
+    _write_summary(
+        summary_path,
+        {
+            "graphs": {
+                "random_regular": {"kwargs": {"n": 6, "k": 2}},
+            }
+        },
+    )
+
+    substrate = run._load_substrate_from_summary(summary_path)
+
+    assert substrate.N == 6
+
+
 def test_load_substrate_summary_reports_missing_params(tmp_path):
     summary_path = tmp_path / "summary.json"
     _write_summary(summary_path, {"graph": {"identifier": "random_regular", "kwargs": {}}})
