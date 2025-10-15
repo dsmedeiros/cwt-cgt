@@ -478,15 +478,47 @@ def _load_substrate_from_summary(summary_path: Path) -> GraphSubstrate:
 
     factory = _resolve_graph_factory(str(identifier))
     signature = inspect.signature(factory)
-    filtered_kwargs: dict[str, object] = {}
+    alias_map = {
+        "n": "N",
+        "nodes": "N",
+        "num_nodes": "N",
+        "node_count": "N",
+        "k": "out_degree",
+        "outdegree": "out_degree",
+        "out_degree": "out_degree",
+    }
 
-    for key, value in graph_kwargs.items():
-        if key not in signature.parameters:
-            continue
-        filtered_kwargs[key] = _coerce_summary_value(value)
+    normalised_kwargs: dict[str, object] = {}
+    for raw_key, value in graph_kwargs.items():
+        key = str(raw_key)
+        canonical = alias_map.get(key.lower(), key)
+        normalised_kwargs.setdefault(canonical, _coerce_summary_value(value))
+
+    filtered_kwargs: dict[str, object] = {}
+    for param_name in signature.parameters:
+        if param_name in normalised_kwargs:
+            filtered_kwargs[param_name] = normalised_kwargs[param_name]
 
     if seed_value is not None and "seed" in signature.parameters and "seed" not in filtered_kwargs:
         filtered_kwargs["seed"] = seed_value
+
+    required_kinds = {
+        inspect.Parameter.POSITIONAL_ONLY,
+        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        inspect.Parameter.KEYWORD_ONLY,
+    }
+    required_params = [
+        name
+        for name, parameter in signature.parameters.items()
+        if parameter.kind in required_kinds and parameter.default is inspect._empty
+    ]
+
+    missing = [name for name in required_params if name not in filtered_kwargs]
+    if missing:
+        missing_list = ", ".join(sorted(missing))
+        raise ValueError(
+            f"Phase 3 summary for graph '{identifier}' is missing required parameters: {missing_list}"
+        )
 
     return factory(**filtered_kwargs)
 

@@ -50,3 +50,28 @@ def test_load_substrate_artifact_reports_last_summary_error(tmp_path):
 
     assert "last error" in str(excinfo.value)
     assert "identifier" in str(excinfo.value)
+
+
+def test_load_substrate_summary_accepts_alias_kwargs(tmp_path):
+    summary_path = tmp_path / "summary.json"
+    _write_summary(
+        summary_path,
+        {"graph": {"identifier": "random_regular", "kwargs": {"n": 6, "k": 2}}},
+    )
+
+    substrate = run._load_substrate_from_summary(summary_path)
+
+    assert substrate.N == 6
+
+
+def test_load_substrate_summary_reports_missing_params(tmp_path):
+    summary_path = tmp_path / "summary.json"
+    _write_summary(summary_path, {"graph": {"identifier": "random_regular", "kwargs": {}}})
+
+    with pytest.raises(ValueError) as excinfo:
+        run._load_substrate_from_summary(summary_path)
+
+    message = str(excinfo.value)
+    assert "missing required parameters" in message
+    assert "N" in message
+    assert "out_degree" in message
