@@ -22,6 +22,7 @@ import inspect
 import json
 import math
 import numbers
+import sys
 from collections import deque
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
@@ -924,4 +925,8 @@ def main(argv: Sequence[str] | None = None) -> None:
 
 
 if __name__ == "__main__":  # pragma: no cover - CLI entry point
-    main()
+    try:
+        main()
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        sys.exit(2)
