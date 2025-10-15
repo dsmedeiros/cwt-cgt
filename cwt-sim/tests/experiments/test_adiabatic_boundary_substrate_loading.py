@@ -1,4 +1,8 @@
 import json
+import os
+import subprocess
+import sys
+from pathlib import Path
 
 import pytest
 
@@ -75,3 +79,47 @@ def test_load_substrate_summary_reports_missing_params(tmp_path):
     assert "missing required parameters" in message
     assert "N" in message
     assert "out_degree" in message
+
+
+def test_cli_reports_friendly_error_for_missing_summary_params(tmp_path):
+    artifacts_dir = tmp_path / "artifacts"
+    artifacts_dir.mkdir()
+
+    summary_path = artifacts_dir / "summary.json"
+    _write_summary(
+        summary_path,
+        {"graph": {"identifier": "random_regular", "kwargs": {}}},
+    )
+
+    output_dir = tmp_path / "output"
+
+    project_root = Path(__file__).resolve().parents[2]
+    env = os.environ.copy()
+    pythonpath_entries = [str(project_root)]
+    if env.get("PYTHONPATH"):
+        pythonpath_entries.append(env["PYTHONPATH"])
+    env["PYTHONPATH"] = os.pathsep.join(pythonpath_entries)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "experiments.adiabatic_boundary.run",
+            "--substrate-dir",
+            str(artifacts_dir),
+            "--output-dir",
+            str(output_dir),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=project_root,
+        env=env,
+    )
+
+    assert result.returncode == 2
+    stderr_lower = result.stderr.lower()
+    assert stderr_lower.startswith("error:")
+    assert "missing required parameters" in stderr_lower
+    assert "traceback" not in stderr_lower
+    assert result.stdout == ""
