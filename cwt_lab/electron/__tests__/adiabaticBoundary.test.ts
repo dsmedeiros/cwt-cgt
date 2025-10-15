@@ -162,7 +162,7 @@ describe('runAdiabaticBoundary', () => {
         totalBytes: 0,
         hasMoreBefore: false,
         status: 'failed',
-        failureDetails: null,
+        failureDetails: 'Process exited with code 2.',
       })),
     } satisfies Pick<RunManager, 'createRun' | 'waitForCompletion' | 'tail'>;
 

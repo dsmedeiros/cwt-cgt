@@ -231,7 +231,13 @@ export const runAdiabaticBoundary = async (
       tailError = error instanceof Error ? error.message : String(error);
     }
 
-    if (!failureReason && friendlyTailHint) {
+    const failureReasonLooksGeneric =
+      typeof failureReason === 'string' &&
+      /^(run failed for an unknown reason\.|process exited with code \d+(?: after signal .*?)?\.)$/i.test(
+        failureReason.trim(),
+      );
+
+    if (friendlyTailHint && (!failureReason || failureReasonLooksGeneric)) {
       failureReason = friendlyTailHint;
     }
 
