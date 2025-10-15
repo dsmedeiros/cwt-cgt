@@ -4,7 +4,10 @@ import os from 'node:os';
 import path from 'node:path';
 
 import type { RunManager } from '../runner/runManager';
-import { runAdiabaticBoundary } from '../adiabaticBoundary';
+import {
+  runAdiabaticBoundary,
+  MISSING_GRAPH_PARAMETER_HINT_PATTERN,
+} from '../adiabaticBoundary';
 
 vi.mock('uuid', () => ({ v4: () => 'test-run-id' }));
 
@@ -37,6 +40,10 @@ const writeArtifacts = async (outputDir: string) => {
   );
 };
 
+type RunManagerMethods = Pick<RunManager, 'createRun' | 'waitForCompletion' | 'tail'>;
+type RunCompletion = Awaited<ReturnType<RunManagerMethods['waitForCompletion']>>;
+type RunTailChunk = Awaited<ReturnType<RunManagerMethods['tail']>>;
+
 describe('runAdiabaticBoundary', () => {
   let artifactsRoot: string;
   let runArgs: string[];
@@ -62,21 +69,28 @@ describe('runAdiabaticBoundary', () => {
         }
         return { runId: 'mock-run' };
       }),
-      waitForCompletion: vi.fn(async () => {
+      waitForCompletion: vi.fn<
+        Parameters<RunManagerMethods['waitForCompletion']>,
+        ReturnType<RunManagerMethods['waitForCompletion']>
+      >(async () => {
         if (!capturedOutputDir) {
           throw new Error('output dir not captured');
         }
         await writeArtifacts(capturedOutputDir);
-        return {
+        const completion: RunCompletion = {
           runId: 'mock-run',
           status: 'complete',
           exitCode: 0,
           signal: null,
           error: null,
         };
+        return completion;
       }),
-      tail: vi.fn(),
-    } satisfies Pick<RunManager, 'createRun' | 'waitForCompletion' | 'tail'>;
+      tail: vi.fn<
+        Parameters<RunManagerMethods['tail']>,
+        ReturnType<RunManagerMethods['tail']>
+      >(),
+    } satisfies RunManagerMethods;
 
     const result = await runAdiabaticBoundary(
       runManager as RunManager,
@@ -117,23 +131,35 @@ describe('runAdiabaticBoundary', () => {
   it('provides failure details and recent output when the run fails', async () => {
     const runManager = {
       createRun: vi.fn(async () => ({ runId: 'mock-run' })),
-      waitForCompletion: vi.fn(async () => ({
-        runId: 'mock-run',
-        status: 'failed',
-        exitCode: 2,
-        signal: null,
-        error: null,
-      })),
-      tail: vi.fn(async () => ({
-        output: 'first line\nsecond line\nerror: bad input',
-        nextFromByte: 0,
-        startFromByte: 0,
-        totalBytes: 0,
-        hasMoreBefore: false,
-        status: 'failed',
-        failureDetails: 'Process exited with code 2.',
-      })),
-    } satisfies Pick<RunManager, 'createRun' | 'waitForCompletion' | 'tail'>;
+      waitForCompletion: vi.fn<
+        Parameters<RunManagerMethods['waitForCompletion']>,
+        ReturnType<RunManagerMethods['waitForCompletion']>
+      >(async () => {
+        const completion: RunCompletion = {
+          runId: 'mock-run',
+          status: 'failed',
+          exitCode: 2,
+          signal: null,
+          error: null,
+        };
+        return completion;
+      }),
+      tail: vi.fn<
+        Parameters<RunManagerMethods['tail']>,
+        ReturnType<RunManagerMethods['tail']>
+      >(async () => {
+        const chunk: RunTailChunk = {
+          output: 'first line\nsecond line\nerror: bad input',
+          nextFromByte: 0,
+          startFromByte: 0,
+          totalBytes: 0,
+          hasMoreBefore: false,
+          status: 'failed',
+          failureDetails: 'Process exited with code 2.',
+        };
+        return chunk;
+      }),
+    } satisfies RunManagerMethods;
 
     await expect(
       runAdiabaticBoundary(runManager as RunManager, '/tmp/cwt-sim', artifactsRoot, {
@@ -143,5 +169,52 @@ describe('runAdiabaticBoundary', () => {
       /adiabatic boundary sweep failed: Process exited with code 2\.[\s\S]*Recent output:[\s\S]*error: bad input/,
     );
     expect(runManager.tail).toHaveBeenCalledWith('mock-run', -8192, 8192);
+  });
+
+  it('surfaces missing graph parameter hints from recent output', async () => {
+    const runManager = {
+      createRun: vi.fn(async () => ({ runId: 'mock-run' })),
+      waitForCompletion: vi.fn<
+        Parameters<RunManagerMethods['waitForCompletion']>,
+        ReturnType<RunManagerMethods['waitForCompletion']>
+      >(async () => {
+        const completion: RunCompletion = {
+          runId: 'mock-run',
+          status: 'failed',
+          exitCode: 2,
+          signal: null,
+          error: null,
+        };
+        return completion;
+      }),
+      tail: vi.fn<
+        Parameters<RunManagerMethods['tail']>,
+        ReturnType<RunManagerMethods['tail']>
+      >(async () => {
+        const chunk: RunTailChunk = {
+          output: 'info: starting run\nError: Missing required graph parameters for graph xyz',
+          nextFromByte: 0,
+          startFromByte: 0,
+          totalBytes: 0,
+          hasMoreBefore: false,
+          status: 'failed',
+          failureDetails: 'Process exited with code 2.',
+        };
+        return chunk;
+      }),
+    } satisfies RunManagerMethods;
+
+    let capturedError: unknown;
+    await expect(
+      runAdiabaticBoundary(runManager as RunManager, '/tmp/cwt-sim', artifactsRoot, {
+        center: 'tau=0.8,zeta=0.0',
+      }).catch((error) => {
+        capturedError = error;
+        throw error;
+      }),
+    ).rejects.toThrow(MISSING_GRAPH_PARAMETER_HINT_PATTERN);
+
+    expect(capturedError).toBeInstanceOf(Error);
+    expect((capturedError as Error).message).not.toMatch(/exit code/i);
   });
 });

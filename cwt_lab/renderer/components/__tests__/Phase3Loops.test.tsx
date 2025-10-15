@@ -13,14 +13,12 @@ vi.mock('../ipc', () => ({
 
 let latestViewerProps: any = null;
 let viewerOnResult: ((update: any) => void) | null = null;
-let viewerOnCalm: ((update: any) => void) | null = null;
 
 vi.mock('../AdiabaticBoundaryViewer', () => ({
   __esModule: true,
   default: (props: any) => {
     latestViewerProps = props;
     viewerOnResult = props.onResult ?? null;
-    viewerOnCalm = props.onCalm ?? null;
     return null;
   },
 }));
@@ -192,7 +190,6 @@ describe('Phase3Loops component amplitude controls', () => {
 
     latestViewerProps = null;
     viewerOnResult = null;
-    viewerOnCalm = null;
 
     const baseWindow = originalWindow ?? (globalThis as { window?: Window }).window;
     if (!baseWindow) {
@@ -234,7 +231,6 @@ describe('Phase3Loops component amplitude controls', () => {
     }
     latestViewerProps = null;
     viewerOnResult = null;
-    viewerOnCalm = null;
   });
 
   it('extends the amplitude slider max using summary amplitudes', async () => {
