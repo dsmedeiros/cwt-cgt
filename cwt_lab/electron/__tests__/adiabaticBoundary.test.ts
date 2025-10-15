@@ -144,4 +144,39 @@ describe('runAdiabaticBoundary', () => {
     );
     expect(runManager.tail).toHaveBeenCalledWith('mock-run', -8192, 8192);
   });
+
+  it('surfaces missing graph parameter hints from recent output', async () => {
+    const runManager = {
+      createRun: vi.fn(async () => ({ runId: 'mock-run' })),
+      waitForCompletion: vi.fn(async () => ({
+        runId: 'mock-run',
+        status: 'failed',
+        exitCode: 2,
+        signal: null,
+        error: null,
+      })),
+      tail: vi.fn(async () => ({
+        output: 'info: starting run\nError: Missing required graph parameters for graph xyz',
+        nextFromByte: 0,
+        startFromByte: 0,
+        totalBytes: 0,
+        hasMoreBefore: false,
+        status: 'failed',
+        failureDetails: null,
+      })),
+    } satisfies Pick<RunManager, 'createRun' | 'waitForCompletion' | 'tail'>;
+
+    let capturedError: unknown;
+    await expect(
+      runAdiabaticBoundary(runManager as RunManager, '/tmp/cwt-sim', artifactsRoot, {
+        center: 'tau=0.8,zeta=0.0',
+      }).catch((error) => {
+        capturedError = error;
+        throw error;
+      }),
+    ).rejects.toThrow(/missing required graph parameters/i);
+
+    expect(capturedError).toBeInstanceOf(Error);
+    expect((capturedError as Error).message).not.toMatch(/exit code/i);
+  });
 });

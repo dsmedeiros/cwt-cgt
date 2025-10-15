@@ -207,6 +207,7 @@ export const runAdiabaticBoundary = async (
   if (completion.status !== 'complete' || completion.exitCode !== 0) {
     let failureReason: string | null = completion.error ?? null;
     let tailSnippet: string | null = null;
+    let friendlyTailHint: string | null = null;
     let tailError: string | null = null;
 
     try {
@@ -219,9 +220,19 @@ export const runAdiabaticBoundary = async (
       if (trimmedOutput) {
         const recentLines = trimmedOutput.split(/\r?\n/).slice(-20);
         tailSnippet = recentLines.join('\n');
+        const hintLine = recentLines.find((line) =>
+          /missing required graph parameters/i.test(line),
+        );
+        if (hintLine) {
+          friendlyTailHint = hintLine.trim();
+        }
       }
     } catch (error) {
       tailError = error instanceof Error ? error.message : String(error);
+    }
+
+    if (!failureReason && friendlyTailHint) {
+      failureReason = friendlyTailHint;
     }
 
     if (!failureReason) {
