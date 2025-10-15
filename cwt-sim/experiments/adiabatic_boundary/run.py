@@ -506,6 +506,17 @@ def _load_substrate_from_summary(summary_path: Path) -> GraphSubstrate:
         if identifier is None:
             raise ValueError("Graph descriptor in summary lacks an identifier")
     elif isinstance(graph_info, Sequence) and not isinstance(graph_info, (str, bytes, bytearray)):
+        def _extract_seed_candidate(descriptor: Mapping[str, object]) -> object | None:
+            for seed_key in ("seed", "graph_seed", "graphSeed"):
+                if seed_key in descriptor:
+                    return descriptor[seed_key]
+            kwargs_block = descriptor.get("kwargs")
+            if isinstance(kwargs_block, Mapping):
+                for seed_key in ("seed", "graph_seed", "graphSeed"):
+                    if seed_key in kwargs_block:
+                        return kwargs_block[seed_key]
+            return None
+
         last_error: Exception | None = None
         for entry in graph_info:
             if entry is None:
@@ -524,14 +535,9 @@ def _load_substrate_from_summary(summary_path: Path) -> GraphSubstrate:
                 for key, value in candidate_kwargs.items():
                     graph_kwargs.setdefault(str(key), value)
                 if "seed" not in graph_kwargs:
-                    for seed_key in ("seed", "graph_seed", "graphSeed"):
-                        if seed_key in entry:
-                            graph_kwargs.setdefault("seed", entry[seed_key])
-                            break
-                        kwargs_block = entry.get("kwargs")
-                        if isinstance(kwargs_block, Mapping) and seed_key in kwargs_block:
-                            graph_kwargs.setdefault("seed", kwargs_block[seed_key])
-                            break
+                    seed_candidate = _extract_seed_candidate(entry)
+                    if seed_candidate is not None:
+                        graph_kwargs.setdefault("seed", seed_candidate)
                 continue
             last_error = ValueError(
                 f"Unsupported graph descriptor entry type: {type(entry).__name__}"
