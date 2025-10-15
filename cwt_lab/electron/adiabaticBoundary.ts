@@ -7,6 +7,13 @@ import type { AdiabaticBoundaryResult, AdiabaticBoundaryPoint, AdiabaticHistogra
 import type { RunManager } from './runner/runManager';
 import { buildArgsFromParams } from './runner/args';
 
+const GENERIC_FAILURE_MESSAGE_PATTERN =
+  /^(run failed for an unknown reason\.|process exited with code \d+(?: after signal .*?)?\.)$/i;
+const MISSING_GRAPH_PARAMETER_HINT_PATTERN = /missing required graph parameters/i;
+
+const isGenericFailureMessage = (message: string | null | undefined): boolean =>
+  typeof message === 'string' && GENERIC_FAILURE_MESSAGE_PATTERN.test(message.trim());
+
 const parseMaybeNumber = (value: string): number | null => {
   const trimmed = value.trim();
   if (!trimmed) {
@@ -205,7 +212,11 @@ export const runAdiabaticBoundary = async (
 
   const completion = await runManager.waitForCompletion(runId);
   if (completion.status !== 'complete' || completion.exitCode !== 0) {
-    let failureReason: string | null = completion.error ?? null;
+    let failureReason: string | null =
+      typeof completion.error === 'string' ? completion.error.trim() : null;
+    if (failureReason === '') {
+      failureReason = null;
+    }
     let tailSnippet: string | null = null;
     let friendlyTailHint: string | null = null;
     let tailError: string | null = null;
@@ -213,7 +224,8 @@ export const runAdiabaticBoundary = async (
     try {
       const tailChunk = await runManager.tail(runId, -8_192, 8_192);
       if (tailChunk.failureDetails) {
-        failureReason = tailChunk.failureDetails;
+        const trimmedFailureDetails = tailChunk.failureDetails.trim();
+        failureReason = trimmedFailureDetails.length > 0 ? trimmedFailureDetails : failureReason;
       }
 
       const trimmedOutput = tailChunk.output.trim();
@@ -221,7 +233,7 @@ export const runAdiabaticBoundary = async (
         const recentLines = trimmedOutput.split(/\r?\n/).slice(-20);
         tailSnippet = recentLines.join('\n');
         const hintLine = recentLines.find((line) =>
-          /missing required graph parameters/i.test(line),
+          MISSING_GRAPH_PARAMETER_HINT_PATTERN.test(line),
         );
         if (hintLine) {
           friendlyTailHint = hintLine.trim();
@@ -231,11 +243,7 @@ export const runAdiabaticBoundary = async (
       tailError = error instanceof Error ? error.message : String(error);
     }
 
-    const failureReasonLooksGeneric =
-      typeof failureReason === 'string' &&
-      /^(run failed for an unknown reason\.|process exited with code \d+(?: after signal .*?)?\.)$/i.test(
-        failureReason.trim(),
-      );
+    const failureReasonLooksGeneric = isGenericFailureMessage(failureReason);
 
     if (friendlyTailHint && (!failureReason || failureReasonLooksGeneric)) {
       failureReason = friendlyTailHint;
