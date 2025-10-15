@@ -11,6 +11,7 @@ import {
   validateSteps,
 } from '../../shared/validators';
 import { findArtifactNodeByName, joinArtifactPath } from '../utils/artifacts';
+import { canonicalGraphId } from '../utils/graphs';
 
 type WilsonMetrics = {
   fsP95: number;
@@ -94,7 +95,10 @@ const parsePhase3Summary = (raw: string, path: string): Phase3Summary => {
     .filter((axis) => axis.length > 0);
   const axes = axesCandidate.length >= 2 ? ([axesCandidate[0], axesCandidate[1]] as [string, string]) : null;
 
-  const graph = stringOrNull(record.graph);
+  const graphSource =
+    (record.graph as unknown) ??
+    ((record.metadata as { graph?: unknown } | undefined)?.graph ?? null);
+  const graph = canonicalGraphId(graphSource);
   const fsGuard = numberOrNull((record as Record<string, unknown>).fs_guard ?? (record as Record<string, unknown>).fsGuard);
   const settleRaw =
     record.neighbor_settle_steps ??
@@ -648,11 +652,8 @@ const Phase4Explorer3D = () => {
       setSettle(Math.max(1, Math.round(phase3Summary.settleSteps)));
     }
     const graphFromSummary = phase3Summary.graph;
-    if (graphFromSummary) {
-      const normalizedGraph = graphFromSummary === 'ring3_hetero' ? 'ring3' : graphFromSummary;
-      if (GRAPH_CHOICES.some((choice) => choice.id === normalizedGraph)) {
-        setGraph(normalizedGraph);
-      }
+    if (graphFromSummary && GRAPH_CHOICES.some((choice) => choice.id === graphFromSummary)) {
+      setGraph(graphFromSummary);
     }
   }, [phase3Summary, selectedExtentIndex, selectedHotspotIndex]);
 

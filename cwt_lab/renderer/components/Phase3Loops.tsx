@@ -18,6 +18,7 @@ import {
 } from '../../shared/validators';
 import { findArtifactNodeByName, joinArtifactPath, sanitizeArtifactNodes } from '../utils/artifacts';
 import type { AdiabaticBoundaryResult } from '../../shared/adiabatic';
+import { canonicalGraphId, GRAPH_ID_ALIASES } from '../utils/graphs';
 
 type HotspotAxis = 'rho' | 'tau' | 'zeta' | 'zeta_phase' | 'kappa';
 
@@ -155,12 +156,12 @@ const graphCatalog: Record<
   ring3: {
     label: 'Ring-3 triad',
     help: 'Deterministic three-node loop useful for verifying calibrations and guard thresholds.',
-    aliases: ['ring-3', 'ring_3'],
+    aliases: GRAPH_ID_ALIASES.ring3,
   },
   random_regular: {
     label: 'Random regular (20 nodes)',
     help: 'Generates a 20-node 3-regular digraph using the selected seed to stress-test the loop.',
-    aliases: ['random-regular', 'randomregular'],
+    aliases: GRAPH_ID_ALIASES.random_regular,
   },
 };
 
@@ -173,56 +174,6 @@ const defaultAdiabaticStepSeeds = [400, 200, 120, 80];
 const defaultAdiabaticGridSize = 6;
 const adiabaticGateBaseMessage =
   'Run the adiabatic boundary sweep for this hotspot to unlock loop controls.';
-
-const matchesGraphAlias = (value: string, alias: string) => {
-  const normalizedValue = value.toLowerCase();
-  const normalizedAlias = alias.toLowerCase();
-  if (!normalizedAlias) {
-    return false;
-  }
-  const sanitizedValue = normalizedValue.replace(/[^a-z0-9]/g, '');
-  const sanitizedAlias = normalizedAlias.replace(/[^a-z0-9]/g, '');
-  if (
-    sanitizedAlias &&
-    (sanitizedValue === sanitizedAlias ||
-      sanitizedValue.startsWith(sanitizedAlias) ||
-      sanitizedValue.endsWith(sanitizedAlias) ||
-      (sanitizedAlias.length >= 4 && sanitizedValue.includes(sanitizedAlias)))
-  ) {
-    return true;
-  }
-  const valueTokens = normalizedValue.split(/[^a-z0-9]+/).filter(Boolean);
-  const aliasTokens = normalizedAlias.split(/[^a-z0-9]+/).filter(Boolean);
-  if (aliasTokens.length === 0) {
-    return false;
-  }
-  let startIndex = 0;
-  for (const token of aliasTokens) {
-    const index = valueTokens.indexOf(token, startIndex);
-    if (index === -1) {
-      return false;
-    }
-    startIndex = index + 1;
-  }
-  return true;
-};
-
-const canonicalGraphId = (value: unknown): string | null => {
-  if (typeof value !== 'string') {
-    return null;
-  }
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return null;
-  }
-  for (const [graphId, metadata] of Object.entries(graphCatalog)) {
-    const aliases = [graphId, ...(metadata.aliases ?? [])];
-    if (aliases.some((alias) => matchesGraphAlias(trimmed, alias))) {
-      return graphId;
-    }
-  }
-  return null;
-};
 
 const graphLabel = (graph: string) => graphCatalog[graph]?.label ?? graph;
 
