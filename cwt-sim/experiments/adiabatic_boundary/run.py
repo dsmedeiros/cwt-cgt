@@ -20,6 +20,7 @@ import argparse
 import csv
 import json
 import math
+from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
@@ -350,17 +351,41 @@ def _load_substrate_artifact(path: Path) -> GraphSubstrate:
         "edges.npz",
     ]
 
-    for name in search_order:
-        target = candidate / name
-        if target.exists():
-            return _load_substrate_file(target)
+    # Some generated artifacts place the actual substrate inside nested directories.
+    # We perform a breadth-first search so that well-known filenames close to the
+    # root are discovered first, while still handling deeper layouts.
+    queue: deque[Path] = deque([candidate])
+    visited: set[Path] = set()
 
-    for child in sorted(candidate.iterdir()):
-        if child.is_file():
+    while queue:
+        current = queue.popleft()
+        if current in visited:
+            continue
+        visited.add(current)
+
+        if current.is_file():
             try:
-                return _load_substrate_file(child)
+                return _load_substrate_file(current)
             except ValueError:
+                # Ignore files that do not contain a supported substrate
                 continue
+
+        if not current.is_dir():
+            continue
+
+        for name in search_order:
+            target = current / name
+            if target.is_file():
+                return _load_substrate_file(target)
+
+        for child in sorted(current.iterdir()):
+            if child.is_file():
+                try:
+                    return _load_substrate_file(child)
+                except ValueError:
+                    continue
+            elif child.is_dir():
+                queue.append(child)
 
     raise FileNotFoundError(f"Could not locate a substrate artifact inside {candidate}")
 
