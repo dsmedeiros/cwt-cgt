@@ -516,6 +516,8 @@ def _load_substrate_artifact(path: Path) -> GraphSubstrate:
     # Some generated artifacts place the actual substrate inside nested directories.
     # We perform a breadth-first search so that well-known filenames close to the
     # root are discovered first, while still handling deeper layouts.
+    summary_filenames = {"phase3_loop_summary.json", "summary.json"}
+
     queue: deque[Path] = deque([candidate])
     visited: set[Path] = set()
     summary_candidates: list[Path] = []
@@ -527,7 +529,7 @@ def _load_substrate_artifact(path: Path) -> GraphSubstrate:
         visited.add(current)
 
         if current.is_file():
-            if current.name == "phase3_loop_summary.json":
+            if current.name in summary_filenames:
                 summary_candidates.append(current)
                 continue
             try:
@@ -546,7 +548,7 @@ def _load_substrate_artifact(path: Path) -> GraphSubstrate:
 
         for child in sorted(current.iterdir()):
             if child.is_file():
-                if child.name == "phase3_loop_summary.json":
+                if child.name in summary_filenames:
                     summary_candidates.append(child)
                     continue
                 try:
@@ -556,11 +558,24 @@ def _load_substrate_artifact(path: Path) -> GraphSubstrate:
             elif child.is_dir():
                 queue.append(child)
 
+    last_summary_error: Exception | None = None
+    last_summary_path: Path | None = None
+
     for summary_path in summary_candidates:
         try:
             return _load_substrate_from_summary(summary_path)
-        except ValueError:
+        except (ValueError, TypeError, KeyError) as exc:
+            last_summary_error = exc
+            last_summary_path = summary_path
             continue
+
+    if last_summary_error is not None:
+        summary_list = ", ".join(str(path) for path in summary_candidates)
+        error_message = str(last_summary_error) or last_summary_error.__class__.__name__
+        raise ValueError(
+            "Failed to construct a substrate from summary artifacts "
+            f"({summary_list}); last error from {last_summary_path}: {error_message}"
+        ) from last_summary_error
 
     raise FileNotFoundError(f"Could not locate a substrate artifact inside {candidate}")
 
