@@ -93,7 +93,7 @@ describe('runAdiabaticBoundary', () => {
     } satisfies RunManagerMethods;
 
     const result = await runAdiabaticBoundary(
-      runManager as RunManager,
+      runManager,
       '/tmp/cwt-sim',
       artifactsRoot,
       {
@@ -162,7 +162,7 @@ describe('runAdiabaticBoundary', () => {
     } satisfies RunManagerMethods;
 
     await expect(
-      runAdiabaticBoundary(runManager as RunManager, '/tmp/cwt-sim', artifactsRoot, {
+      runAdiabaticBoundary(runManager, '/tmp/cwt-sim', artifactsRoot, {
         center: 'tau=0.8,zeta=0.0',
       }),
     ).rejects.toThrow(
@@ -206,7 +206,7 @@ describe('runAdiabaticBoundary', () => {
 
     let capturedError: unknown;
     await expect(
-      runAdiabaticBoundary(runManager as RunManager, '/tmp/cwt-sim', artifactsRoot, {
+      runAdiabaticBoundary(runManager, '/tmp/cwt-sim', artifactsRoot, {
         center: 'tau=0.8,zeta=0.0',
       }).catch((error) => {
         capturedError = error;

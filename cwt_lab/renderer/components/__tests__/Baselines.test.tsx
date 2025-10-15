@@ -146,7 +146,7 @@ describe('Baselines component', () => {
       },
     } satisfies Partial<RendererIpc>;
 
-    globalWindow.CWT = cwtMock as RendererIpc;
+    globalWindow.CWT = cwtMock as unknown as RendererIpc;
 
     alignmentMock.mockResolvedValue({
       exportId: 'baselines_alignment_demo',

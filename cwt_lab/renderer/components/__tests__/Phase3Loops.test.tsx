@@ -29,8 +29,8 @@ type NavigationContextValue = ReturnType<typeof NavigationModule.useExperimentNa
 
 let navigationState: NavigationContextValue;
 let navigationSpy: MockInstance<[], NavigationContextValue> | null = null;
-let guidedLoopMock: MockInstance<[], any> | null = null;
-let runPreviewMock: MockInstance<[], any> | null = null;
+let guidedLoopMock: MockInstance<[any], Promise<any>> | null = null;
+let runPreviewMock: MockInstance<[any], Promise<any>> | null = null;
 
 describe('Phase3 guided helpers', () => {
   afterEach(() => {
@@ -197,8 +197,12 @@ describe('Phase3Loops component amplitude controls', () => {
     }
 
     (globalThis as any).window = baseWindow;
-    guidedLoopMock = vi.fn().mockResolvedValue({ ok: true, data: { runs: [], satisfied: false } });
-    runPreviewMock = vi.fn().mockResolvedValue({ ok: true, data: { cli: 'preview' } });
+    guidedLoopMock = vi
+      .fn<[any], Promise<any>>()
+      .mockResolvedValue({ ok: true, data: { runs: [], satisfied: false } });
+    runPreviewMock = vi
+      .fn<[any], Promise<any>>()
+      .mockResolvedValue({ ok: true, data: { cli: 'preview' } });
     Object.assign(baseWindow as unknown as Record<string, unknown>, {
       CWT: {
         artifacts: {
@@ -550,7 +554,9 @@ describe('Phase3Loops component amplitude controls', () => {
       expect(guidedLoopMock).toHaveBeenCalled();
     });
 
-    const callArgs = guidedLoopMock!.mock.calls[0][0];
+    const firstCall = guidedLoopMock?.mock.calls[0];
+    expect(firstCall).toBeDefined();
+    const [callArgs] = firstCall!;
     expect(callArgs.settle).toBe(56);
     expect(callArgs.handleSteps).toBe(140);
     expect(callArgs.stepsList).toEqual([220, 240, 280]);
