@@ -20,6 +20,7 @@ import { artifactsRoot, cwtSimRoot, repoRoot } from './paths';
 import type {
   BaselineAlignmentProgressEvent,
   BaselineAlignmentResult,
+  GraphFactoryDescriptor,
   GuidedLoopArgs,
   GuidedLoopSummary,
   LoopAtHotspotPayload,
@@ -1053,10 +1054,56 @@ const formatGuidedAxisLabel = (value: string): string => {
   return value;
 };
 
+const resolveRandomRegularSeed = (seed: number | null): number => {
+  if (seed === null || !Number.isFinite(seed)) {
+    return 13;
+  }
+  const truncated = Math.trunc(seed);
+  if (!Number.isFinite(truncated)) {
+    return 13;
+  }
+  return Math.abs(truncated);
+};
+
+const resolveGraphDescriptorForSummary = (
+  graphId: string,
+  seed: number | null,
+): GraphFactoryDescriptor => {
+  const trimmed = graphId.trim();
+  const normalized = trimmed.toLowerCase();
+
+  if (['ring3_hetero', 'ring3-h', 'ring3-hetero'].includes(normalized)) {
+    return { identifier: 'ring3_hetero' };
+  }
+  if (['ring3', 'ring-3', 'ring_3'].includes(normalized)) {
+    return { identifier: 'ring3' };
+  }
+  if (
+    [
+      'random_regular',
+      'random-regular',
+      'randomregular',
+      'random_regular_digraph',
+      'random-regular-digraph',
+    ].includes(normalized)
+  ) {
+    return {
+      identifier: 'random_regular_digraph',
+      kwargs: {
+        N: 20,
+        out_degree: 3,
+        seed: resolveRandomRegularSeed(seed),
+      },
+    };
+  }
+
+  return { identifier: trimmed };
+};
+
 const writeGuidedSummary = async (
   request: GuidedSummaryRequest,
   options: {
-    graph: string;
+    graph: GraphFactoryDescriptor;
     fsGuard: number | null;
     settle: number | null;
     handleSteps: number | null;
@@ -1625,7 +1672,7 @@ ipcMain.handle('cwt:phase3:guided-loop', (_event, params) =>
 
     if (summaryRequest && runs.length > 0) {
       await writeGuidedSummary(summaryRequest, {
-        graph,
+        graph: resolveGraphDescriptorForSummary(graph, seed),
         fsGuard,
         settle,
         handleSteps,

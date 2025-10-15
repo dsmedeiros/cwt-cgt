@@ -412,7 +412,7 @@ def _load_substrate_from_summary(summary_path: Path) -> GraphSubstrate:
     graph_kwargs: dict[str, object] = {}
 
     if isinstance(graph_info, str):
-        identifier = graph_info
+        identifier = graph_info.strip()
     elif isinstance(graph_info, Mapping):
         raw_identifier = (
             graph_info.get("identifier")
@@ -423,7 +423,9 @@ def _load_substrate_from_summary(summary_path: Path) -> GraphSubstrate:
         )
         if raw_identifier is None:
             raise ValueError("Graph descriptor in summary lacks an identifier")
-        identifier = str(raw_identifier)
+        identifier = str(raw_identifier).strip()
+        if not identifier:
+            raise ValueError("Graph descriptor in summary has an empty identifier")
 
         kwargs_block = graph_info.get("kwargs")
         if isinstance(kwargs_block, Mapping):
@@ -438,6 +440,9 @@ def _load_substrate_from_summary(summary_path: Path) -> GraphSubstrate:
         raise ValueError("Summary 'graph' entry must be a string or object")
 
     if identifier is None:
+        raise ValueError("Phase 3 summary missing graph identifier")
+    identifier = identifier.strip()
+    if not identifier:
         raise ValueError("Phase 3 summary missing graph identifier")
 
     seed_candidates: list[object] = []
