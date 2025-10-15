@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Plot from 'react-plotly.js';
 import type { Datum, Layout, PlotData } from 'plotly.js';
 
@@ -228,7 +228,7 @@ const AdiabaticBoundaryViewer = ({
   const [calmFlag, setCalmFlag] = useState<boolean>(Boolean(hotspot?.calm));
   const requestCounterRef = useRef(0);
 
-  const notifyStatus = (update: Omit<AdiabaticBoundaryStatusUpdate, 'requestId'> & {
+  const notifyStatus = useCallback((update: Omit<AdiabaticBoundaryStatusUpdate, 'requestId'> & {
     requestId?: number;
   }) => {
     const requestId = update.requestId ?? requestCounterRef.current;
@@ -239,7 +239,7 @@ const AdiabaticBoundaryViewer = ({
       ...update,
       requestId,
     } as AdiabaticBoundaryStatusUpdate);
-  };
+  }, [onResult]);
 
   const runAnalysis = async (overrides?: RunOverrides) => {
     const centerOverride = overrides?.center ?? null;
@@ -430,6 +430,7 @@ const AdiabaticBoundaryViewer = ({
     extentSeeds,
     stepSeeds,
     gridSizeSeed,
+    notifyStatus,
   ]);
 
   const handleCalmToggle = (checked: boolean) => {
