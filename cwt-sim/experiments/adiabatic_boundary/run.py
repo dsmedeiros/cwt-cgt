@@ -523,7 +523,9 @@ def _load_substrate_from_summary(summary_path: Path) -> GraphSubstrate:
                 raise ValueError("Phase 3 summary missing graph identifier") from last_error
             raise ValueError("Phase 3 summary missing graph identifier")
     else:
-        raise ValueError("Summary 'graph' entry must be a string or object")
+        raise ValueError(
+            "Phase 3 summary missing graph descriptor; expected a 'graph' string/object, a graph descriptor sequence, or a 'graphs' collection"
+        )
 
     if identifier is None:
         raise ValueError("Phase 3 summary missing graph identifier")
