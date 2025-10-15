@@ -113,6 +113,10 @@ const parseIntegerList = (value: string): number[] | null => {
 
 const toCliValue = (value: number) => Number(value.toFixed(6)).toString();
 
+type WithOptionalRequestId<T extends { requestId: number }> = T extends any
+  ? Omit<T, 'requestId'> & { requestId?: number }
+  : never;
+
 export type AdiabaticBoundaryStatusUpdate =
   | {
       status: 'idle';
@@ -140,6 +144,8 @@ export type AdiabaticBoundaryStatusUpdate =
       graphId: string | null;
       error: string;
     };
+
+type AdiabaticBoundaryStatusUpdateInput = WithOptionalRequestId<AdiabaticBoundaryStatusUpdate>;
 
 export type AdiabaticCalmUpdate = {
   hotspotId: string | null;
@@ -228,18 +234,39 @@ const AdiabaticBoundaryViewer = ({
   const [calmFlag, setCalmFlag] = useState<boolean>(Boolean(hotspot?.calm));
   const requestCounterRef = useRef(0);
 
-  const notifyStatus = useCallback((update: Omit<AdiabaticBoundaryStatusUpdate, 'requestId'> & {
-    requestId?: number;
-  }) => {
-    const requestId = update.requestId ?? requestCounterRef.current;
-    if (!onResult) {
-      return;
-    }
-    onResult({
-      ...update,
-      requestId,
-    } as AdiabaticBoundaryStatusUpdate);
-  }, [onResult]);
+  const notifyStatus = useCallback(
+    (update: AdiabaticBoundaryStatusUpdateInput) => {
+      const requestId = update.requestId ?? requestCounterRef.current;
+      if (!onResult) {
+        return;
+      }
+
+      switch (update.status) {
+        case 'idle':
+        case 'running':
+          onResult({
+            ...update,
+            requestId,
+          });
+          return;
+        case 'success':
+          onResult({
+            ...update,
+            requestId,
+            result: update.result,
+          });
+          return;
+        case 'error':
+          onResult({
+            ...update,
+            requestId,
+            error: update.error,
+          });
+          return;
+      }
+    },
+    [onResult],
+  );
 
   const runAnalysis = async (overrides?: RunOverrides) => {
     const centerOverride = overrides?.center ?? null;
