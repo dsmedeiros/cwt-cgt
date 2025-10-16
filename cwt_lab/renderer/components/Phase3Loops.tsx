@@ -20,6 +20,76 @@ import { findArtifactNodeByName, joinArtifactPath, sanitizeArtifactNodes } from 
 import type { AdiabaticBoundaryResult } from '../../shared/adiabatic';
 import { canonicalGraphId, GRAPH_ID_ALIASES } from '../utils/graphs';
 
+const summaryGraphCandidateKeys = [
+  'graph',
+  'graph_descriptor',
+  'graphDescriptor',
+  'graph_info',
+  'graphInfo',
+] as const;
+
+type GraphDescriptorCandidate = Parameters<typeof canonicalGraphId>[0];
+
+const collectGraphDescriptorCandidates = (summary: unknown): GraphDescriptorCandidate[] => {
+  const descriptors: GraphDescriptorCandidate[] = [];
+
+  const register = (value: unknown) => {
+    if (value == null) {
+      return;
+    }
+    if (Array.isArray(value)) {
+      for (const entry of value) {
+        register(entry);
+      }
+      return;
+    }
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed) {
+        descriptors.push(trimmed);
+      }
+      return;
+    }
+    if (typeof value === 'object') {
+      descriptors.push(value as GraphDescriptorCandidate);
+    }
+  };
+
+  const inspectSource = (source: unknown) => {
+    if (!source || typeof source !== 'object') {
+      return;
+    }
+    const mapping = source as Record<string, unknown>;
+    for (const key of summaryGraphCandidateKeys) {
+      if (key in mapping) {
+        register(mapping[key]);
+      }
+    }
+  };
+
+  if (!summary || typeof summary !== 'object') {
+    return descriptors;
+  }
+
+  const summaryObject = summary as Record<string, unknown>;
+  inspectSource(summaryObject);
+
+  const graphsBlock = summaryObject.graphs;
+  if (Array.isArray(graphsBlock)) {
+    register(graphsBlock);
+  } else if (graphsBlock && typeof graphsBlock === 'object') {
+    for (const [name, descriptor] of Object.entries(graphsBlock)) {
+      register(name);
+      register(descriptor);
+    }
+  }
+
+  inspectSource(summaryObject.metadata);
+  inspectSource(summaryObject.meta);
+
+  return descriptors;
+};
+
 type HotspotAxis = 'rho' | 'tau' | 'zeta' | 'zeta_phase' | 'kappa';
 
 type HotspotCoordinates = Partial<Record<HotspotAxis, number>>;
@@ -1382,10 +1452,12 @@ const Phase3Loops = () => {
         if (cancelled) {
           return;
         }
-        const summaryGraph =
-          canonicalGraphId((parsed as { graph?: unknown }).graph ?? null) ||
-          canonicalGraphId((parsed as { metadata?: { graph?: unknown } }).metadata?.graph ?? null);
-        if (summaryGraph) {
+        const descriptorCandidates = collectGraphDescriptorCandidates(parsed);
+        for (const candidate of descriptorCandidates) {
+          const summaryGraph = canonicalGraphId(candidate);
+          if (!summaryGraph) {
+            continue;
+          }
           inferredGraphCacheRef.current.set(selectedSubstratePath, summaryGraph);
           setGraph((prev) => (prev === summaryGraph ? prev : summaryGraph));
           setGraphInferenceError(null);
