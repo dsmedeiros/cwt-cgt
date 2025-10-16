@@ -82,6 +82,18 @@ def test_load_substrate_summary_accepts_alias_kwargs(tmp_path):
     assert substrate.N == 6
 
 
+def test_load_substrate_summary_accepts_degree_alias(tmp_path):
+    summary_path = tmp_path / "summary.json"
+    _write_summary(
+        summary_path,
+        {"graph": {"identifier": "random_regular", "kwargs": {"n": 6, "degree": 2}}},
+    )
+
+    substrate = run._load_substrate_from_summary(summary_path)
+
+    assert substrate.N == 6
+
+
 def test_load_substrate_summary_accepts_graph_sequence(tmp_path):
     summary_path = tmp_path / "summary.json"
     _write_summary(
