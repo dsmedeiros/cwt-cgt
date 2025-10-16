@@ -172,7 +172,102 @@ const summarizeFsGuard = (boundary: AdiabaticBoundaryPoint[], recommendationFs: 
 const NON_CLI_PARAM_KEYS = new Set([
   'hotspotId',
   'graphId',
+  'graphParams',
+  'graphOverride',
 ]);
+
+const deriveGraphOverrideCliParams = (
+  params: Record<string, unknown> | undefined,
+): Record<string, unknown> => {
+  if (!params) {
+    return {};
+  }
+
+  const cliParams: Record<string, unknown> = {};
+
+  const setGraphId = (value: unknown) => {
+    if (cliParams['graphId'] !== undefined) {
+      return;
+    }
+    if (typeof value !== 'string') {
+      return;
+    }
+
+    const trimmed = value.trim();
+    if (trimmed.length === 0) {
+      return;
+    }
+
+    cliParams['graphId'] = trimmed;
+  };
+
+  const setGraphParams = (value: unknown) => {
+    if (cliParams['graphParams'] !== undefined) {
+      return;
+    }
+
+    if (value == null) {
+      return;
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed.length > 0) {
+        cliParams['graphParams'] = trimmed;
+      }
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      cliParams['graphParams'] = value.map((entry) => entry);
+      return;
+    }
+
+    if (typeof value === 'object') {
+      cliParams['graphParams'] = { ...(value as Record<string, unknown>) };
+    }
+  };
+
+  if ('graphId' in params) {
+    setGraphId(params['graphId']);
+  }
+
+  if ('graphParams' in params) {
+    setGraphParams(params['graphParams']);
+  }
+
+  const rawOverride = params['graphOverride'];
+  if (rawOverride && typeof rawOverride === 'object') {
+    const overrideRecord = rawOverride as Record<string, unknown>;
+
+    const identifierCandidates = [
+      overrideRecord['identifier'],
+      overrideRecord['graphId'],
+      overrideRecord['id'],
+    ];
+    for (const candidate of identifierCandidates) {
+      if (candidate !== undefined) {
+        setGraphId(candidate);
+      }
+    }
+
+    const paramsCandidates = [
+      overrideRecord['params'],
+      overrideRecord['kwargs'],
+      overrideRecord['arguments'],
+      overrideRecord['graphParams'],
+      overrideRecord['values'],
+      overrideRecord['options'],
+    ];
+    for (const candidate of paramsCandidates) {
+      if (candidate !== undefined) {
+        setGraphParams(candidate);
+      }
+    }
+  }
+
+  return cliParams;
+};
 
 type RunManagerClient = Pick<RunManager, 'createRun' | 'waitForCompletion' | 'tail'>;
 
@@ -199,7 +294,7 @@ export const runAdiabaticBoundary = async (
     Object.entries(params ?? {}).filter(([key]) => !NON_CLI_PARAM_KEYS.has(key)),
   );
 
-  const args = buildArgsFromParams({ ...cliParams, outputDir });
+  const args = buildArgsFromParams({ ...cliParams, ...deriveGraphOverrideCliParams(params), outputDir });
   const { runId } = await runManager.createRun(
     'experiments.adiabatic_boundary.run',
     args,

@@ -59,7 +59,7 @@ describe('runAdiabaticBoundary', () => {
     await fs.rm(artifactsRoot, { recursive: true, force: true });
   });
 
-  it('filters metadata parameters before building CLI arguments', async () => {
+  it('translates metadata parameters into CLI arguments', async () => {
     const runManager = {
       createRun: vi.fn(async (_command: string, args: string[]) => {
         runArgs = args;
@@ -103,6 +103,7 @@ describe('runAdiabaticBoundary', () => {
         gridSize: 6,
         hotspotId: 'hotspot-1',
         graphId: 'graph-1',
+        graphParams: { degree: 6 },
         axes: ['rho', 'kappa'],
       },
     );
@@ -115,7 +116,12 @@ describe('runAdiabaticBoundary', () => {
       expect.any(Object),
     );
     expect(runArgs).not.toContain('--hotspot-id');
-    expect(runArgs).not.toContain('--graph-id');
+    expect(runArgs).toContain('--graph-id');
+    const graphIdIndex = runArgs.indexOf('--graph-id');
+    expect(runArgs[graphIdIndex + 1]).toBe('graph-1');
+    expect(runArgs).toContain('--graph-params');
+    const graphParamsIndex = runArgs.indexOf('--graph-params');
+    expect(runArgs[graphParamsIndex + 1]).toBe('{"degree":6}');
     expect(runArgs).toContain('--center');
     expect(runArgs).toContain('--extents');
     expect(runArgs).toContain('--steps');
@@ -126,6 +132,8 @@ describe('runAdiabaticBoundary', () => {
     expect(result.runId).toBe('mock-run');
     expect(result.surface).toHaveLength(1);
     expect(result.boundary).toHaveLength(1);
+    expect(result).not.toHaveProperty('graphId');
+    expect(result).not.toHaveProperty('hotspotId');
   });
 
   it('provides failure details and recent output when the run fails', async () => {
