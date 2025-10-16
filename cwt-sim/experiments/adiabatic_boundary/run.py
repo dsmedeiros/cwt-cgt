@@ -429,6 +429,7 @@ def _instantiate_graph_from_metadata(
         "num_nodes": "N",
         "node_count": "N",
         "k": "out_degree",
+        "degree": "out_degree",
         "outdegree": "out_degree",
         "out_degree": "out_degree",
     }
