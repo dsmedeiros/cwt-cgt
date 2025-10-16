@@ -262,6 +262,40 @@ describe('Phase3Loops component amplitude controls', () => {
     });
   });
 
+  it('infers graph identifiers from CLI-compatible summary descriptors', async () => {
+    navigationState.substrates = [
+      {
+        name: 'mystery substrate',
+        path: 'substrate-42',
+        relativePath: 'enigmatic',
+        type: 'directory',
+      },
+    ] as any;
+    navigationState.selectedSubstratePath = 'substrate-42';
+
+    readFileMock.mockResolvedValue({
+      ok: true,
+      data: {
+        contents: JSON.stringify({
+          graph_descriptor: {
+            identifier: 'random_regular',
+            label: 'Random regular graph',
+          },
+        }),
+      },
+    });
+
+    render(<Phase3Loops />);
+
+    await waitFor(() => {
+      expect(readFileMock).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(latestViewerProps?.graphId).toBe('random_regular');
+    });
+  });
+
   it('gates loop controls until the adiabatic sweep succeeds for the hotspot', async () => {
     readFileMock.mockResolvedValue({ ok: false });
     render(<Phase3Loops />);
