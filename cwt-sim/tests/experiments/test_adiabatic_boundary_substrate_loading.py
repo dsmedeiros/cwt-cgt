@@ -42,6 +42,20 @@ def test_load_substrate_artifact_falls_back_when_summary_invalid(tmp_path):
     assert substrate.N == 2
 
 
+def test_load_substrate_artifact_uses_override_when_descriptor_missing(tmp_path):
+    artifacts_dir = tmp_path / "artifacts"
+    artifacts_dir.mkdir()
+
+    stats_path = artifacts_dir / "phase3_loop_stats.json"
+    stats_path.write_text(json.dumps({"fs_mean": 0.1}), encoding="utf-8")
+
+    override = run.GraphFactoryOverride(identifier="ring3_hetero", kwargs={})
+
+    substrate = run._load_substrate_artifact(artifacts_dir, graph_override=override)
+
+    assert substrate.N == run.ring3_hetero().N
+
+
 def test_load_substrate_artifact_reports_last_summary_error(tmp_path):
     artifacts_dir = tmp_path / "artifacts"
     artifacts_dir.mkdir()

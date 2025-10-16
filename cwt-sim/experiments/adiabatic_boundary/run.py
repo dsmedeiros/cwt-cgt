@@ -71,6 +71,21 @@ class BoundaryPoint:
     boundary_fs_p95: float | None
 
 
+@dataclass(frozen=True)
+class GraphFactoryOverride:
+    """User-specified metadata for constructing a graph substrate."""
+
+    identifier: str
+    kwargs: Mapping[str, object] | None = None
+
+    def as_kwargs(self) -> dict[str, object]:
+        if self.kwargs is None:
+            return {}
+        if not isinstance(self.kwargs, Mapping):
+            raise TypeError("GraphFactoryOverride.kwargs must be a mapping")
+        return {str(key): value for key, value in self.kwargs.items()}
+
+
 # ---------------------------------------------------------------------------
 # Synthetic state helpers
 # ---------------------------------------------------------------------------
@@ -399,197 +414,13 @@ def _resolve_graph_factory(identifier: str):
     return factory
 
 
-def _load_substrate_from_summary(summary_path: Path) -> GraphSubstrate:
-    """Construct a substrate from a Phase 3 loop summary artifact."""
-
-    with summary_path.open("r", encoding="utf-8") as handle:
-        payload = json.load(handle)
-
-    if not isinstance(payload, Mapping):
-        raise ValueError("Phase 3 summary must contain a JSON object")
-
-    candidate_keys = ("graph", "graph_descriptor", "graphDescriptor", "graph_info", "graphInfo")
-    graph_info: object | None = None
-    def _select_graph_block(source: Mapping[str, object]) -> object | None:
-        for candidate_key in candidate_keys:
-            if candidate_key not in source:
-                continue
-            candidate = source[candidate_key]
-            if candidate is None:
-                continue
-            if isinstance(candidate, str) and not candidate.strip():
-                continue
-            if isinstance(candidate, Mapping) and not candidate:
-                continue
-            if (
-                isinstance(candidate, Sequence)
-                and not isinstance(candidate, (str, bytes, bytearray))
-                and not candidate
-            ):
-                continue
-            return candidate
-        return None
-
-    graph_info = _select_graph_block(payload)
-
-    if graph_info is None:
-        graphs_block = payload.get("graphs")
-        if isinstance(graphs_block, Mapping):
-            graph_info = []
-            for name, descriptor in graphs_block.items():
-                if isinstance(descriptor, Mapping):
-                    merged: dict[str, object] = {str(k): v for k, v in descriptor.items()}
-                    merged.setdefault("identifier", name)
-                    graph_info.append(merged)
-                else:
-                    graph_info.append(descriptor)
-        elif isinstance(graphs_block, Sequence) and not isinstance(graphs_block, (str, bytes, bytearray)):
-            graph_info = list(graphs_block)
-
-    if graph_info is None and isinstance(payload, Mapping):
-        meta_block = payload.get("meta")
-        if isinstance(meta_block, Mapping):
-            graph_info = _select_graph_block(meta_block)
-
-    identifier: str | None = None
-    graph_kwargs: dict[str, object] = {}
-
-    def _ingest_mapping(
-        descriptor: Mapping[str, object],
-        *,
-        require_identifier: bool,
-    ) -> tuple[str | None, dict[str, object]]:
-        raw_identifier = (
-            descriptor.get("identifier")
-            or descriptor.get("id")
-            or descriptor.get("name")
-            or descriptor.get("kind")
-            or descriptor.get("type")
-        )
-        if raw_identifier is None:
-            alt_identifier = descriptor.get("graph")
-            if isinstance(alt_identifier, str) and alt_identifier.strip():
-                raw_identifier = alt_identifier
-            else:
-                alt_identifier = descriptor.get("factory") or descriptor.get("graph_factory")
-                if isinstance(alt_identifier, str) and alt_identifier.strip():
-                    raw_identifier = alt_identifier
-
-        identifier_value: str | None = None
-        if raw_identifier is not None:
-            identifier_value = str(raw_identifier).strip()
-            if not identifier_value:
-                identifier_value = None
-
-        kwargs: dict[str, object] = {}
-        kwargs_block = descriptor.get("kwargs")
-        if isinstance(kwargs_block, Mapping):
-            for key, value in kwargs_block.items():
-                kwargs.setdefault(str(key), value)
-
-        for key, value in descriptor.items():
-            if key in {"identifier", "id", "name", "kind", "type", "kwargs"}:
-                continue
-            kwargs.setdefault(str(key), value)
-
-        if require_identifier and not identifier_value:
-            raise ValueError("Graph descriptor in summary lacks an identifier")
-
-        return identifier_value, kwargs
-
-    if isinstance(graph_info, str):
-        identifier = graph_info.strip()
-        if not identifier:
-            raise ValueError("Graph descriptor in summary has an empty identifier")
-    elif isinstance(graph_info, Mapping):
-        identifier, graph_kwargs = _ingest_mapping(graph_info, require_identifier=True)
-        if identifier is None:
-            raise ValueError("Graph descriptor in summary lacks an identifier")
-    elif isinstance(graph_info, Sequence) and not isinstance(graph_info, (str, bytes, bytearray)):
-        def _extract_seed_candidate(descriptor: Mapping[str, object]) -> object | None:
-            for seed_key in ("seed", "graph_seed", "graphSeed"):
-                if seed_key in descriptor:
-                    return descriptor[seed_key]
-            kwargs_block = descriptor.get("kwargs")
-            if isinstance(kwargs_block, Mapping):
-                for seed_key in ("seed", "graph_seed", "graphSeed"):
-                    if seed_key in kwargs_block:
-                        return kwargs_block[seed_key]
-            return None
-
-        last_error: Exception | None = None
-        for entry in graph_info:
-            if entry is None:
-                continue
-            if isinstance(entry, str):
-                candidate = entry.strip()
-                if candidate and identifier is None:
-                    identifier = candidate
-                continue
-            if isinstance(entry, Mapping):
-                candidate_identifier, candidate_kwargs = _ingest_mapping(
-                    entry, require_identifier=False
-                )
-                if candidate_identifier and identifier is None:
-                    identifier = candidate_identifier
-                for key, value in candidate_kwargs.items():
-                    graph_kwargs.setdefault(str(key), value)
-                if "seed" not in graph_kwargs:
-                    seed_candidate = _extract_seed_candidate(entry)
-                    if seed_candidate is not None:
-                        graph_kwargs.setdefault("seed", seed_candidate)
-                continue
-            last_error = ValueError(
-                f"Unsupported graph descriptor entry type: {type(entry).__name__}"
-            )
-
-        if identifier is None:
-            if last_error is not None:
-                raise ValueError("Phase 3 summary missing graph identifier") from last_error
-            raise ValueError("Phase 3 summary missing graph identifier")
-    else:
-        raise ValueError(
-            "Phase 3 summary missing graph descriptor; expected a 'graph' string/object, "
-            "a graph descriptor sequence, or a 'graphs' collection"
-        )
-
-    if identifier is None:
-        raise ValueError("Phase 3 summary missing graph identifier")
-    identifier = identifier.strip()
-    if not identifier:
-        raise ValueError("Phase 3 summary missing graph identifier")
-
-    seed_candidates: list[object] = []
-    for container in (payload, graph_info if isinstance(graph_info, Mapping) else {}):
-        if not isinstance(container, Mapping):
-            continue
-        for key in ("seed", "graph_seed", "graphSeed"):
-            if key in container:
-                seed_candidates.append(container[key])
-    seed_value: int | None = None
-    for candidate in seed_candidates:
-        if isinstance(candidate, numbers.Integral):
-            seed_value = int(candidate)
-            break
-        if isinstance(candidate, numbers.Real):
-            seed_value = int(candidate)
-            break
-        if isinstance(candidate, str):
-            stripped = candidate.strip()
-            if not stripped:
-                continue
-            try:
-                seed_value = int(stripped)
-                break
-            except ValueError:
-                try:
-                    numeric = float(stripped)
-                except ValueError:
-                    continue
-                else:
-                    seed_value = int(numeric)
-                    break
-
+def _instantiate_graph_from_metadata(
+    identifier: str,
+    graph_kwargs: Mapping[str, object] | None,
+    *,
+    seed_value: int | None,
+    source_description: str,
+) -> GraphSubstrate:
     factory = _resolve_graph_factory(str(identifier))
     signature = inspect.signature(factory)
     alias_map = {
@@ -603,17 +434,22 @@ def _load_substrate_from_summary(summary_path: Path) -> GraphSubstrate:
     }
 
     normalised_kwargs: dict[str, object] = {}
-    for raw_key, value in graph_kwargs.items():
-        key = str(raw_key)
-        canonical = alias_map.get(key.lower(), key)
-        normalised_kwargs.setdefault(canonical, _coerce_summary_value(value))
+    if graph_kwargs:
+        for raw_key, value in graph_kwargs.items():
+            key = str(raw_key)
+            canonical = alias_map.get(key.lower(), key)
+            normalised_kwargs.setdefault(canonical, _coerce_summary_value(value))
 
     filtered_kwargs: dict[str, object] = {}
     for param_name in signature.parameters:
         if param_name in normalised_kwargs:
             filtered_kwargs[param_name] = normalised_kwargs[param_name]
 
-    if seed_value is not None and "seed" in signature.parameters and "seed" not in filtered_kwargs:
+    if (
+        seed_value is not None
+        and "seed" in signature.parameters
+        and "seed" not in filtered_kwargs
+    ):
         filtered_kwargs["seed"] = seed_value
 
     required_kinds = {
@@ -631,13 +467,254 @@ def _load_substrate_from_summary(summary_path: Path) -> GraphSubstrate:
     if missing:
         missing_list = ", ".join(sorted(missing))
         raise ValueError(
-            f"Phase 3 summary for graph '{identifier}' is missing required parameters: {missing_list}"
+            f"{source_description} for graph '{identifier}' is missing required parameters: {missing_list}"
         )
 
     return factory(**filtered_kwargs)
 
 
-def _load_substrate_artifact(path: Path) -> GraphSubstrate:
+def _load_substrate_from_summary(
+    summary_path: Path,
+    *,
+    graph_override: GraphFactoryOverride | None = None,
+) -> GraphSubstrate:
+    """Construct a substrate from a Phase 3 loop summary artifact."""
+
+    with summary_path.open("r", encoding="utf-8") as handle:
+        payload = json.load(handle)
+
+    if not isinstance(payload, Mapping):
+        raise ValueError("Phase 3 summary must contain a JSON object")
+
+    def _maybe_use_override_from_error(exc: Exception) -> GraphSubstrate | None:
+        if graph_override is None:
+            return None
+        message = str(exc).lower()
+        triggers = (
+            "missing graph descriptor",
+            "missing graph identifier",
+            "graph descriptor in summary lacks an identifier",
+            "graph descriptor in summary has an empty identifier",
+        )
+        if any(trigger in message for trigger in triggers):
+            return _instantiate_graph_from_metadata(
+                graph_override.identifier,
+                graph_override.as_kwargs(),
+                seed_value=None,
+                source_description="Graph override",
+            )
+        return None
+
+    try:
+        candidate_keys = (
+            "graph",
+            "graph_descriptor",
+            "graphDescriptor",
+            "graph_info",
+            "graphInfo",
+        )
+        graph_info: object | None = None
+
+        def _select_graph_block(source: Mapping[str, object]) -> object | None:
+            for candidate_key in candidate_keys:
+                if candidate_key not in source:
+                    continue
+                candidate = source[candidate_key]
+                if candidate is None:
+                    continue
+                if isinstance(candidate, str) and not candidate.strip():
+                    continue
+                if isinstance(candidate, Mapping) and not candidate:
+                    continue
+                if (
+                    isinstance(candidate, Sequence)
+                    and not isinstance(candidate, (str, bytes, bytearray))
+                    and not candidate
+                ):
+                    continue
+                return candidate
+            return None
+
+        graph_info = _select_graph_block(payload)
+
+        if graph_info is None:
+            graphs_block = payload.get("graphs")
+            if isinstance(graphs_block, Mapping):
+                graph_info = []
+                for name, descriptor in graphs_block.items():
+                    if isinstance(descriptor, Mapping):
+                        merged: dict[str, object] = {str(k): v for k, v in descriptor.items()}
+                        merged.setdefault("identifier", name)
+                        graph_info.append(merged)
+                    else:
+                        graph_info.append(descriptor)
+            elif isinstance(graphs_block, Sequence) and not isinstance(
+                graphs_block, (str, bytes, bytearray)
+            ):
+                graph_info = list(graphs_block)
+
+        if graph_info is None and isinstance(payload, Mapping):
+            meta_block = payload.get("meta")
+            if isinstance(meta_block, Mapping):
+                graph_info = _select_graph_block(meta_block)
+
+        identifier: str | None = None
+        graph_kwargs: dict[str, object] = {}
+
+        def _ingest_mapping(
+            descriptor: Mapping[str, object],
+            *,
+            require_identifier: bool,
+        ) -> tuple[str | None, dict[str, object]]:
+            raw_identifier = (
+                descriptor.get("identifier")
+                or descriptor.get("id")
+                or descriptor.get("name")
+                or descriptor.get("kind")
+                or descriptor.get("type")
+            )
+            if raw_identifier is None:
+                alt_identifier = descriptor.get("graph")
+                if isinstance(alt_identifier, str) and alt_identifier.strip():
+                    raw_identifier = alt_identifier
+                else:
+                    alt_identifier = descriptor.get("factory") or descriptor.get("graph_factory")
+                    if isinstance(alt_identifier, str) and alt_identifier.strip():
+                        raw_identifier = alt_identifier
+
+            identifier_value: str | None = None
+            if raw_identifier is not None:
+                identifier_value = str(raw_identifier).strip()
+                if not identifier_value:
+                    identifier_value = None
+
+            kwargs: dict[str, object] = {}
+            kwargs_block = descriptor.get("kwargs")
+            if isinstance(kwargs_block, Mapping):
+                for key, value in kwargs_block.items():
+                    kwargs.setdefault(str(key), value)
+
+            for key, value in descriptor.items():
+                if key in {"identifier", "id", "name", "kind", "type", "kwargs"}:
+                    continue
+                kwargs.setdefault(str(key), value)
+
+            if require_identifier and not identifier_value:
+                raise ValueError("Graph descriptor in summary lacks an identifier")
+
+            return identifier_value, kwargs
+
+        if isinstance(graph_info, str):
+            identifier = graph_info.strip()
+            if not identifier:
+                raise ValueError("Graph descriptor in summary has an empty identifier")
+        elif isinstance(graph_info, Mapping):
+            identifier, graph_kwargs = _ingest_mapping(graph_info, require_identifier=True)
+            if identifier is None:
+                raise ValueError("Graph descriptor in summary lacks an identifier")
+        elif isinstance(graph_info, Sequence) and not isinstance(graph_info, (str, bytes, bytearray)):
+            def _extract_seed_candidate(descriptor: Mapping[str, object]) -> object | None:
+                for seed_key in ("seed", "graph_seed", "graphSeed"):
+                    if seed_key in descriptor:
+                        return descriptor[seed_key]
+                kwargs_block = descriptor.get("kwargs")
+                if isinstance(kwargs_block, Mapping):
+                    for seed_key in ("seed", "graph_seed", "graphSeed"):
+                        if seed_key in kwargs_block:
+                            return kwargs_block[seed_key]
+                return None
+
+            last_error: Exception | None = None
+            for entry in graph_info:
+                if entry is None:
+                    continue
+                if isinstance(entry, str):
+                    candidate = entry.strip()
+                    if candidate and identifier is None:
+                        identifier = candidate
+                    continue
+                if isinstance(entry, Mapping):
+                    candidate_identifier, candidate_kwargs = _ingest_mapping(
+                        entry, require_identifier=False
+                    )
+                    if candidate_identifier and identifier is None:
+                        identifier = candidate_identifier
+                    for key, value in candidate_kwargs.items():
+                        graph_kwargs.setdefault(str(key), value)
+                    if "seed" not in graph_kwargs:
+                        seed_candidate = _extract_seed_candidate(entry)
+                        if seed_candidate is not None:
+                            graph_kwargs.setdefault("seed", seed_candidate)
+                    continue
+                last_error = ValueError(
+                    f"Unsupported graph descriptor entry type: {type(entry).__name__}"
+                )
+
+            if identifier is None:
+                if last_error is not None:
+                    raise ValueError("Phase 3 summary missing graph identifier") from last_error
+                raise ValueError("Phase 3 summary missing graph identifier")
+        else:
+            raise ValueError(
+                "Phase 3 summary missing graph descriptor; expected a 'graph' string/object, "
+                "a graph descriptor sequence, or a 'graphs' collection"
+            )
+
+        if identifier is None:
+            raise ValueError("Phase 3 summary missing graph identifier")
+        identifier = identifier.strip()
+        if not identifier:
+            raise ValueError("Phase 3 summary missing graph identifier")
+
+        seed_candidates: list[object] = []
+        for container in (payload, graph_info if isinstance(graph_info, Mapping) else {}):
+            if not isinstance(container, Mapping):
+                continue
+            for key in ("seed", "graph_seed", "graphSeed"):
+                if key in container:
+                    seed_candidates.append(container[key])
+        seed_value: int | None = None
+        for candidate in seed_candidates:
+            if isinstance(candidate, numbers.Integral):
+                seed_value = int(candidate)
+                break
+            if isinstance(candidate, numbers.Real):
+                seed_value = int(candidate)
+                break
+            if isinstance(candidate, str):
+                stripped = candidate.strip()
+                if not stripped:
+                    continue
+                try:
+                    seed_value = int(stripped)
+                    break
+                except ValueError:
+                    try:
+                        numeric = float(stripped)
+                    except ValueError:
+                        continue
+                    else:
+                        seed_value = int(numeric)
+                        break
+
+        return _instantiate_graph_from_metadata(
+            identifier,
+            graph_kwargs,
+            seed_value=seed_value,
+            source_description="Phase 3 summary",
+        )
+    except ValueError as exc:
+        override_substrate = _maybe_use_override_from_error(exc)
+        if override_substrate is not None:
+            return override_substrate
+        raise
+
+
+def _load_substrate_artifact(
+    path: Path,
+    *,
+    graph_override: GraphFactoryOverride | None = None,
+) -> GraphSubstrate:
     """Load a substrate artifact from a file or directory."""
 
     candidate = path.expanduser()
@@ -645,7 +722,17 @@ def _load_substrate_artifact(path: Path) -> GraphSubstrate:
         raise FileNotFoundError(f"substrate artifact {candidate} does not exist")
 
     if candidate.is_file():
-        return _load_substrate_file(candidate)
+        try:
+            return _load_substrate_file(candidate)
+        except ValueError:
+            if graph_override is not None:
+                return _instantiate_graph_from_metadata(
+                    graph_override.identifier,
+                    graph_override.as_kwargs(),
+                    seed_value=None,
+                    source_description="Graph override",
+                )
+            raise
 
     search_order = [
         "substrate.json",
@@ -709,7 +796,10 @@ def _load_substrate_artifact(path: Path) -> GraphSubstrate:
 
     for summary_path in summary_candidates:
         try:
-            return _load_substrate_from_summary(summary_path)
+            return _load_substrate_from_summary(
+                summary_path,
+                graph_override=graph_override,
+            )
         except (ValueError, TypeError, KeyError) as exc:
             last_summary_error = exc
             last_summary_path = summary_path
@@ -718,10 +808,25 @@ def _load_substrate_artifact(path: Path) -> GraphSubstrate:
     if last_summary_error is not None:
         summary_list = ", ".join(str(path) for path in summary_candidates)
         error_message = str(last_summary_error) or last_summary_error.__class__.__name__
+        if graph_override is not None:
+            return _instantiate_graph_from_metadata(
+                graph_override.identifier,
+                graph_override.as_kwargs(),
+                seed_value=None,
+                source_description="Graph override",
+            )
         raise ValueError(
             "Failed to construct a substrate from summary artifacts "
             f"({summary_list}); last error from {last_summary_path}: {error_message}"
         ) from last_summary_error
+
+    if graph_override is not None:
+        return _instantiate_graph_from_metadata(
+            graph_override.identifier,
+            graph_override.as_kwargs(),
+            seed_value=None,
+            source_description="Graph override",
+        )
 
     raise FileNotFoundError(f"Could not locate a substrate artifact inside {candidate}")
 
@@ -972,13 +1077,58 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
             "default ring3_hetero substrate."
         ),
     )
-    return parser.parse_args(argv)
+    parser.add_argument(
+        "--graph-id",
+        type=str,
+        default=None,
+        help=(
+            "Override the graph factory identifier when substrate metadata is missing."
+        ),
+    )
+    parser.add_argument(
+        "--graph-params",
+        type=str,
+        default=None,
+        help=(
+            "JSON object providing keyword arguments for the overridden graph factory."
+        ),
+    )
+
+    args = parser.parse_args(argv)
+
+    if args.graph_params and not args.graph_id:
+        parser.error("--graph-params requires --graph-id to be specified")
+
+    if args.graph_id is not None:
+        args.graph_id = str(args.graph_id).strip()
+        if not args.graph_id:
+            parser.error("--graph-id must not be empty")
+
+    if args.graph_params is not None:
+        try:
+            parsed_params = json.loads(args.graph_params)
+        except json.JSONDecodeError as exc:
+            parser.error(f"--graph-params must contain valid JSON: {exc.msg}")
+        if not isinstance(parsed_params, Mapping):
+            parser.error("--graph-params must describe a JSON object mapping parameter names to values")
+        args.graph_params = dict(parsed_params)
+    else:
+        args.graph_params = None
+
+    return args
 
 
 def main(argv: Sequence[str] | None = None) -> None:
     args = _parse_args(argv)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    graph_override: GraphFactoryOverride | None = None
+    if args.graph_id:
+        graph_override = GraphFactoryOverride(
+            identifier=args.graph_id,
+            kwargs=args.graph_params,
+        )
 
     axes_values = [str(axis).strip().lower() for axis in args.axes]
     if len(axes_values) != 2:
@@ -996,7 +1146,10 @@ def main(argv: Sequence[str] | None = None) -> None:
     step_values = _parse_int_list(args.steps)
 
     if args.substrate_dir is not None:
-        substrate = _load_substrate_artifact(Path(args.substrate_dir))
+        substrate = _load_substrate_artifact(
+            Path(args.substrate_dir),
+            graph_override=graph_override,
+        )
     else:
         substrate = ring3_hetero()
 
