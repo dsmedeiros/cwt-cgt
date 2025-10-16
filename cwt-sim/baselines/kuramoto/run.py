@@ -623,6 +623,11 @@ def _run_cwt_loop_local(
     area = max(extent_kappa, 1e-12) * max(extent_sigma, 1e-12)
     omega = float(np.angle(plaquette) / area)
 
+    axis_bounds = {
+        "kappa": {"min": float(kappa_min), "max": float(kappa_max)},
+        "sigma": {"min": float(sigma_min), "max": float(sigma_max)},
+    }
+
     loop_report = {
         "indices": [i, j],
         "center": {
@@ -640,6 +645,7 @@ def _run_cwt_loop_local(
             "omega": omega,
             "omega_abs": abs(omega),
         },
+        "axis_bounds": axis_bounds,
         "corners": [
             {
                 "label": label,
@@ -668,7 +674,7 @@ def _run_cwt_loop_experiment(
     module_path: str,
     descriptor: Mapping[str, object],
     center_axes: tuple[str, str],
-    extent_scale: float,
+    extent_amplitude: float,
     sample_steps: int,
     warmup_steps: int,
     seed: int | None,
@@ -680,7 +686,7 @@ def _run_cwt_loop_experiment(
         summary_path = tmp_root / "summary.json"
         hotspot_path.write_text(json.dumps(descriptor, indent=2, ensure_ascii=False), encoding="utf-8")
 
-        extent_value = max(float(extent_scale), 1e-4)
+        extent_value = max(float(extent_amplitude), 1e-4)
         axis_i, axis_j = center_axes
         command = [
             sys.executable,
@@ -701,6 +707,8 @@ def _run_cwt_loop_experiment(
             str(max(int(sample_steps), 1)),
             "--neighbor-settle-steps",
             str(max(int(warmup_steps), 1)),
+            "--time-budget",
+            f"{float(timeout):.12g}",
         ]
 
         graph_kind = None
@@ -866,18 +874,48 @@ def run_cwt_loop(
     if center_sigma is None:
         center_sigma = _coerce_float(record.get("sigma"))
 
+    loop_meta = base_report.get("loop") if isinstance(base_report.get("loop"), Mapping) else {}
+    span_candidates = []
+    for key in ("span_kappa", "span_sigma"):
+        if isinstance(loop_meta, Mapping) and key in loop_meta:
+            candidate = _coerce_float(loop_meta.get(key))
+            if candidate is not None and candidate > 0.0:
+                span_candidates.append(candidate)
+
+    extent_amplitude = 0.0
+    if span_candidates:
+        extent_amplitude = 0.5 * max(span_candidates)
+    else:
+        extent_amplitude = max(float(delta_scale), 1e-4)
+
+    axis_bounds_meta = base_report.get("axis_bounds") if isinstance(base_report, Mapping) else None
+    axis_bounds: Mapping[str, object] | None = None
+    if isinstance(axis_bounds_meta, Mapping):
+        axis_bounds = {
+            axis: {
+                "min": _coerce_float(bounds.get("min")) if isinstance(bounds, Mapping) else None,
+                "max": _coerce_float(bounds.get("max")) if isinstance(bounds, Mapping) else None,
+            }
+            for axis, bounds in axis_bounds_meta.items()
+            if isinstance(bounds, Mapping)
+        }
+
+    tile_entry = {
+        "indices": [int(record.get("kappa_index", 0)), int(record.get("sigma_index", 0))],
+        "coordinates": {"kappa": center_kappa or 0.0, "sigma": center_sigma or 0.0},
+        "omega": _coerce_float(record.get("omega")),
+        "omega_abs": _coerce_float(record.get("omega_abs")),
+        "graph_kind": record.get("graph_kind"),
+    }
+    if axis_bounds:
+        tile_entry["axis_bounds"] = axis_bounds
+
     descriptor = {
         "axes": ["kappa", "sigma"],
-        "top_tiles": [
-            {
-                "indices": [int(record.get("kappa_index", 0)), int(record.get("sigma_index", 0))],
-                "coordinates": {"kappa": center_kappa or 0.0, "sigma": center_sigma or 0.0},
-                "omega": _coerce_float(record.get("omega")),
-                "omega_abs": _coerce_float(record.get("omega_abs")),
-                "graph_kind": record.get("graph_kind"),
-            }
-        ],
+        "top_tiles": [tile_entry],
     }
+    if axis_bounds:
+        descriptor["axis_bounds"] = axis_bounds
 
     warnings: list[str] = []
     try:
@@ -886,19 +924,7 @@ def run_cwt_loop(
             module_path=module_path,
             descriptor=descriptor,
             center_axes=("kappa", "sigma"),
-            extent_scale=max(
-                (
-                    float(base_report.get("loop", {}).get("span_kappa", 0.0))
-                    if isinstance(base_report.get("loop"), Mapping)
-                    else 0.0
-                ),
-                (
-                    float(base_report.get("loop", {}).get("span_sigma", 0.0))
-                    if isinstance(base_report.get("loop"), Mapping)
-                    else 0.0
-                ),
-                float(delta_scale),
-            ),
+            extent_amplitude=extent_amplitude,
             sample_steps=sample_steps,
             warmup_steps=warmup_steps,
             seed=base_seed,
