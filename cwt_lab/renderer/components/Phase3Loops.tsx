@@ -6,6 +6,7 @@ import { useExperimentNavigation } from '../navigation/ExperimentNavigationConte
 import AdiabaticBoundaryViewer, {
   type AdiabaticBoundaryStatusUpdate,
   type AdiabaticCalmUpdate,
+  type AdiabaticConfigurationSnapshot,
 } from './AdiabaticBoundaryViewer';
 import { createDecisionGateEngine } from '../decisionGate';
 import {
@@ -264,6 +265,21 @@ const planeAxesEqual = (
   a: [HotspotAxis, HotspotAxis],
   b: [HotspotAxis, HotspotAxis],
 ) => a[0] === b[0] && a[1] === b[1];
+
+const configurationSnapshotsEqual = (
+  left: AdiabaticConfigurationSnapshot | null | undefined,
+  right: AdiabaticConfigurationSnapshot | null | undefined,
+) => {
+  if (!left || !right) {
+    return false;
+  }
+  return (
+    left.axisA === right.axisA &&
+    left.axisB === right.axisB &&
+    left.centerAxisA === right.centerAxisA &&
+    left.centerAxisB === right.centerAxisB
+  );
+};
 
 const manualPlaneMismatchWarning =
   'Manual plane selection diverges from the Phase 2 discovery plane. Guided heuristics assume the discovered axes pair; realign them before continuing.';
@@ -1119,6 +1135,7 @@ const Phase3Loops = () => {
         requestId: number;
         hotspotId: string | null;
         graphId: string | null;
+        configuration: AdiabaticConfigurationSnapshot | null;
       }
     >
   >({});
@@ -1277,7 +1294,8 @@ const Phase3Loops = () => {
         recentSuccess &&
         recentSuccess.requestId === update.requestId &&
         recentSuccess.hotspotId === update.hotspotId &&
-        recentSuccess.graphId === normalizedGraphId
+        recentSuccess.graphId === normalizedGraphId &&
+        configurationSnapshotsEqual(recentSuccess.configuration, update.configuration)
       ) {
         return;
       }
@@ -1287,6 +1305,7 @@ const Phase3Loops = () => {
           requestId: update.requestId,
           hotspotId: update.hotspotId ?? null,
           graphId: normalizedGraphId,
+          configuration: update.configuration ?? null,
         };
       } else if (update.status === 'idle') {
         if (

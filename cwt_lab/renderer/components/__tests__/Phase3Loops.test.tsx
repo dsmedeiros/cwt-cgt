@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } fr
 
 import * as NavigationModule from '../../navigation/ExperimentNavigationContext';
 import Phase3Loops, { buildGuidedPayload, previewGuidedCli } from '../Phase3Loops';
+import type { AdiabaticConfigurationSnapshot } from '../AdiabaticBoundaryViewer';
 
 vi.mock('../ipc', () => ({
   runs: {
@@ -31,6 +32,31 @@ let navigationState: NavigationContextValue;
 let navigationSpy: MockInstance<[], NavigationContextValue> | null = null;
 let guidedLoopMock: MockInstance<[any], Promise<any>> | null = null;
 let runPreviewMock: MockInstance<[any], Promise<any>> | null = null;
+
+const formatCoordinateValue = (value: unknown) => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value.toString();
+  }
+  if (typeof value === 'string' && value.trim().length > 0) {
+    return value;
+  }
+  return '0';
+};
+
+const buildViewerConfigurationSnapshot = (
+  overrides: Partial<AdiabaticConfigurationSnapshot> = {},
+): AdiabaticConfigurationSnapshot => {
+  const axisA = (latestViewerProps?.planeAxes?.[0] as string | undefined) ?? null;
+  const axisB = (latestViewerProps?.planeAxes?.[1] as string | undefined) ?? null;
+  const coordinates = (latestViewerProps?.hotspot?.coordinates ?? {}) as Record<string, unknown>;
+  const base: AdiabaticConfigurationSnapshot = {
+    axisA,
+    axisB,
+    centerAxisA: axisA != null ? formatCoordinateValue(coordinates?.[axisA]) : '0',
+    centerAxisB: axisB != null ? formatCoordinateValue(coordinates?.[axisB]) : '0',
+  };
+  return { ...base, ...overrides };
+};
 
 describe('Phase3 guided helpers', () => {
   afterEach(() => {
@@ -303,7 +329,6 @@ describe('Phase3Loops component amplitude controls', () => {
     const user = userEvent.setup();
     const simpleTab = await screen.findByRole('button', { name: /Simple loop/i });
     await user.click(simpleTab);
-
     const runButton = await screen.findByRole('button', { name: 'Run' });
     expect(runButton).toBeDisabled();
 
@@ -324,6 +349,7 @@ describe('Phase3Loops component amplitude controls', () => {
     expect(viewerOnResult).toBeDefined();
     const initialHotspotId = latestViewerProps?.hotspot?.id ?? null;
     const initialGraphId = latestViewerProps?.graphId ?? null;
+    const initialConfiguration = buildViewerConfigurationSnapshot();
 
     act(() => {
       viewerOnResult?.({
@@ -331,6 +357,7 @@ describe('Phase3Loops component amplitude controls', () => {
         requestId: 1,
         hotspotId: initialHotspotId,
         graphId: initialGraphId,
+        configuration: initialConfiguration,
       });
     });
     act(() => {
@@ -340,6 +367,7 @@ describe('Phase3Loops component amplitude controls', () => {
         hotspotId: initialHotspotId,
         graphId: initialGraphId,
         result: boundaryResult,
+        configuration: initialConfiguration,
       });
     });
 
@@ -361,6 +389,7 @@ describe('Phase3Loops component amplitude controls', () => {
 
     const nextHotspotId = latestViewerProps?.hotspot?.id ?? null;
     const nextGraphId = latestViewerProps?.graphId ?? null;
+    const nextConfiguration = buildViewerConfigurationSnapshot();
 
     act(() => {
       viewerOnResult?.({
@@ -369,6 +398,7 @@ describe('Phase3Loops component amplitude controls', () => {
         hotspotId: nextHotspotId,
         graphId: nextGraphId,
         result: boundaryResult,
+        configuration: nextConfiguration,
       });
     });
 
@@ -404,6 +434,7 @@ describe('Phase3Loops component amplitude controls', () => {
 
     const hotspotId = latestViewerProps?.hotspot?.id ?? null;
     const graphId = latestViewerProps?.graphId ?? null;
+    const configuration = buildViewerConfigurationSnapshot();
 
     act(() => {
       viewerOnResult?.({
@@ -411,6 +442,7 @@ describe('Phase3Loops component amplitude controls', () => {
         requestId: 7,
         hotspotId,
         graphId,
+        configuration,
       });
     });
 
@@ -421,6 +453,7 @@ describe('Phase3Loops component amplitude controls', () => {
         hotspotId,
         graphId,
         result: boundaryResult,
+        configuration,
       });
     });
 
@@ -434,6 +467,7 @@ describe('Phase3Loops component amplitude controls', () => {
         requestId: 7,
         hotspotId,
         graphId,
+        configuration,
       });
     });
 
@@ -441,6 +475,82 @@ describe('Phase3Loops component amplitude controls', () => {
       expect(runButton).not.toBeDisabled();
     });
     expect(screen.queryByText(/Run the adiabatic boundary sweep/i)).not.toBeInTheDocument();
+  });
+
+  it('relocks the adiabatic gate when configuration changes without rerunning', async () => {
+    readFileMock.mockResolvedValue({ ok: false });
+    render(<Phase3Loops />);
+
+    const user = userEvent.setup();
+    const simpleTab = await screen.findByRole('button', { name: /Simple loop/i });
+    await user.click(simpleTab);
+    const runButton = await screen.findByRole('button', { name: 'Run' });
+
+    const boundaryResult = {
+      runId: 'adiabatic-configuration-shift',
+      outputDir: '/tmp/adiabatic',
+      surface: [],
+      histograms: [],
+      boundary: [],
+      recommendation: null,
+      fsGuard: { recommended: null, maxObserved: null },
+      referenceKappa: null,
+    };
+
+    await waitFor(() => {
+      expect(viewerOnResult).toBeInstanceOf(Function);
+    });
+
+    const hotspotId = latestViewerProps?.hotspot?.id ?? null;
+    const graphId = latestViewerProps?.graphId ?? null;
+    const configuration = buildViewerConfigurationSnapshot();
+
+    act(() => {
+      viewerOnResult?.({
+        status: 'running',
+        requestId: 9,
+        hotspotId,
+        graphId,
+        configuration,
+      });
+    });
+
+    act(() => {
+      viewerOnResult?.({
+        status: 'success',
+        requestId: 9,
+        hotspotId,
+        graphId,
+        result: boundaryResult,
+        configuration,
+      });
+    });
+
+    await waitFor(() => {
+      expect(runButton).not.toBeDisabled();
+    });
+
+    const changedConfiguration = buildViewerConfigurationSnapshot({
+      axisA: configuration.axisA === 'rho' ? 'tau' : 'rho',
+      axisB: configuration.axisB === 'tau' ? 'zeta' : 'tau',
+      centerAxisA: configuration.centerAxisA === '0.1' ? '0.2' : '0.1',
+      centerAxisB: configuration.centerAxisB === '-0.1' ? '-0.2' : '-0.1',
+    });
+
+    act(() => {
+      viewerOnResult?.({
+        status: 'idle',
+        requestId: 9,
+        hotspotId,
+        graphId,
+        configuration: changedConfiguration,
+      });
+    });
+
+    await waitFor(() => {
+      expect(runButton).toBeDisabled();
+    });
+    expect(await screen.findByText(/Run the adiabatic boundary sweep/i)).toBeInTheDocument();
   });
 
   it('applies adiabatic recommendations to guided controls', async () => {
@@ -455,6 +565,7 @@ describe('Phase3Loops component amplitude controls', () => {
 
     const hotspotId = latestViewerProps!.hotspot!.id;
     const graphId = (latestViewerProps?.graphId as string | null) ?? 'ring3';
+    const configuration = buildViewerConfigurationSnapshot();
     const boundaryResult = {
       runId: 'adiabatic-2',
       outputDir: '/tmp/adiabatic',
@@ -484,6 +595,7 @@ describe('Phase3Loops component amplitude controls', () => {
         requestId: 1,
         hotspotId,
         graphId,
+        configuration,
       });
     });
 
@@ -494,6 +606,7 @@ describe('Phase3Loops component amplitude controls', () => {
         hotspotId,
         graphId,
         result: boundaryResult,
+        configuration,
       });
     });
 
@@ -571,6 +684,7 @@ describe('Phase3Loops component amplitude controls', () => {
 
     const calmHotspotId = latestViewerProps!.hotspot!.id;
     const calmGraphId = (latestViewerProps?.graphId as string | null) ?? 'ring3';
+    const calmConfiguration = buildViewerConfigurationSnapshot();
 
     act(() => {
       viewerOnResult?.({
@@ -579,6 +693,7 @@ describe('Phase3Loops component amplitude controls', () => {
         hotspotId: calmHotspotId,
         graphId: calmGraphId,
         result: calmBoundary,
+        configuration: calmConfiguration,
       });
     });
 
@@ -603,6 +718,7 @@ describe('Phase3Loops component amplitude controls', () => {
 
     const hotspotId = latestViewerProps!.hotspot!.id;
     const graphId = (latestViewerProps?.graphId as string | null) ?? 'ring3';
+    const configuration = buildViewerConfigurationSnapshot();
     const boundaryResult = {
       runId: 'adiabatic-run',
       outputDir: '/tmp/adiabatic',
@@ -632,6 +748,7 @@ describe('Phase3Loops component amplitude controls', () => {
         hotspotId,
         graphId,
         result: boundaryResult,
+        configuration,
       });
     });
 
