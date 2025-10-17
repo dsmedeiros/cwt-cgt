@@ -8,7 +8,11 @@ from pathlib import Path
 import pytest
 
 from cwt.graph.factories import random_regular_digraph, ring3_hetero
-from experiments.adiabatic_boundary.run import _load_substrate_artifact
+from experiments.adiabatic_boundary.run import (
+    _instantiate_graph_from_metadata,
+    _load_substrate_artifact,
+)
+from experiments.loop_at_hotspot.run import _build_summary_payload, _default_run_config
 
 
 def _write_summary(directory: Path, payload: dict) -> Path:
@@ -111,3 +115,52 @@ def test_load_substrate_from_phase3_summary_random_regular(tmp_path: Path) -> No
     expected = random_regular_digraph(N=20, out_degree=3, seed=23)
 
     _assert_equivalent_substrates(loaded, expected)
+
+
+def test_cli_summary_random_regular_descriptor(tmp_path: Path) -> None:
+    """CLI-generated summaries include graph metadata usable for reconstruction."""
+
+    config = _default_run_config(0)
+    summary_payload = _build_summary_payload(
+        axes=("tau", "zeta"),
+        graph="random_regular",
+        fs_guard=None,
+        config=config,
+        base_steps=2048,
+        seed=23,
+        limit=None,
+        micro_scan=False,
+        auto_extent=False,
+        target_fs=None,
+        pilot_frac=None,
+        extent_bracket=None,
+        fs_margin=0.05,
+        max_extent_iters=6,
+        extents_input=[],
+        hotspots_path=tmp_path / "hotspots.json",
+        results=[],
+        accepted=True,
+        failures=[],
+        time_budget=None,
+        time_consumed=None,
+    )
+
+    path = _write_summary(tmp_path, summary_payload)
+    saved_payload = json.loads(path.read_text(encoding="utf-8"))
+    descriptor = saved_payload.get("graph")
+
+    assert descriptor["identifier"] == "random_regular_digraph"
+    kwargs = descriptor.get("kwargs") or {}
+    assert kwargs["N"] == 20
+    assert kwargs["out_degree"] == 3
+    assert kwargs["seed"] == 23
+
+    rebuilt = _instantiate_graph_from_metadata(
+        descriptor["identifier"],
+        kwargs,
+        seed_value=saved_payload.get("seed"),
+        source_description="CLI summary",
+    )
+    expected = random_regular_digraph(N=20, out_degree=3, seed=23)
+
+    _assert_equivalent_substrates(rebuilt, expected)
