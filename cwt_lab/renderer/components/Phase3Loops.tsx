@@ -1112,6 +1112,16 @@ const Phase3Loops = () => {
     calmBasin: boolean;
   };
   const [adiabaticSnapshots, setAdiabaticSnapshots] = useState<Record<string, AdiabaticSnapshotEntry>>({});
+  const latestAdiabaticSuccessRef = useRef<
+    Record<
+      string,
+      {
+        requestId: number;
+        hotspotId: string | null;
+        graphId: string | null;
+      }
+    >
+  >({});
 
   useEffect(() => {
     setAdiabaticSnapshots({});
@@ -1259,6 +1269,39 @@ const Phase3Loops = () => {
   const handleAdiabaticStatus = useCallback(
     (update: AdiabaticBoundaryStatusUpdate) => {
       const key = update.graphId ?? '__default__';
+      const normalizedGraphId = update.graphId ?? null;
+      const recentSuccess = latestAdiabaticSuccessRef.current[key];
+
+      if (
+        update.status === 'idle' &&
+        recentSuccess &&
+        recentSuccess.requestId === update.requestId &&
+        recentSuccess.hotspotId === update.hotspotId &&
+        recentSuccess.graphId === normalizedGraphId
+      ) {
+        return;
+      }
+
+      if (update.status === 'success') {
+        latestAdiabaticSuccessRef.current[key] = {
+          requestId: update.requestId,
+          hotspotId: update.hotspotId ?? null,
+          graphId: normalizedGraphId,
+        };
+      } else if (update.status === 'idle') {
+        if (
+          recentSuccess &&
+          update.requestId >= recentSuccess.requestId
+        ) {
+          delete latestAdiabaticSuccessRef.current[key];
+        }
+      } else if (
+        recentSuccess &&
+        update.requestId >= recentSuccess.requestId
+      ) {
+        delete latestAdiabaticSuccessRef.current[key];
+      }
+
       let guidance: AdiabaticGuidance | null = null;
       if (update.status === 'success' && update.result) {
         guidance = analyzeAdiabaticGuidance(update.result);

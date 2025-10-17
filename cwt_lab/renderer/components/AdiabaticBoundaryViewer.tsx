@@ -233,6 +233,18 @@ const AdiabaticBoundaryViewer = ({
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [calmFlag, setCalmFlag] = useState<boolean>(Boolean(hotspot?.calm));
   const requestCounterRef = useRef(0);
+  const lastSuccessfulContextRef = useRef<
+    | {
+        requestId: number;
+        hotspotId: string | null;
+        graphId: string | null;
+        axisA: string;
+        axisB: string;
+        centerAxisA: string;
+        centerAxisB: string;
+      }
+    | null
+  >(null);
 
   const notifyStatus = useCallback(
     (update: AdiabaticBoundaryStatusUpdateInput) => {
@@ -393,6 +405,15 @@ const AdiabaticBoundaryViewer = ({
           setSelectedKey(null);
         }
         notifyStatus({ status: 'success', ...context, result: response.data });
+        lastSuccessfulContextRef.current = {
+          requestId,
+          hotspotId: hotspot?.id ?? null,
+          graphId,
+          axisA,
+          axisB,
+          centerAxisA,
+          centerAxisB,
+        };
         if (onCalm) {
           onCalm({
             hotspotId: hotspot?.id ?? null,
@@ -464,6 +485,23 @@ const AdiabaticBoundaryViewer = ({
   }, [hotspot?.id, hotspot?.calm]);
 
   useEffect(() => {
+    const lastSuccess = lastSuccessfulContextRef.current;
+    const matchesLastSuccess = Boolean(
+      lastSuccess &&
+        lastSuccess.requestId === requestCounterRef.current &&
+        lastSuccess.hotspotId === (hotspot?.id ?? null) &&
+        lastSuccess.graphId === (graphId ?? null) &&
+        lastSuccess.axisA === axisA &&
+        lastSuccess.axisB === axisB &&
+        lastSuccess.centerAxisA === centerAxisA &&
+        lastSuccess.centerAxisB === centerAxisB,
+    );
+
+    if (matchesLastSuccess) {
+      return;
+    }
+
+    lastSuccessfulContextRef.current = null;
     setResult(null);
     setError(null);
     setSelectedKey(null);
@@ -483,6 +521,10 @@ const AdiabaticBoundaryViewer = ({
     stepSeeds,
     gridSizeSeed,
     notifyStatus,
+    centerAxisA,
+    centerAxisB,
+    lastSuccessfulContextRef,
+    requestCounterRef,
   ]);
 
   const handleCalmToggle = (checked: boolean) => {

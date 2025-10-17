@@ -377,6 +377,72 @@ describe('Phase3Loops component amplitude controls', () => {
     });
   });
 
+  it('keeps the adiabatic gate unlocked after guidance updates for the same request', async () => {
+    readFileMock.mockResolvedValue({ ok: false });
+    render(<Phase3Loops />);
+
+    const user = userEvent.setup();
+    const simpleTab = await screen.findByRole('button', { name: /Simple loop/i });
+    await user.click(simpleTab);
+
+    const runButton = await screen.findByRole('button', { name: 'Run' });
+
+    const boundaryResult = {
+      runId: 'adiabatic-guidance',
+      outputDir: '/tmp/adiabatic',
+      surface: [],
+      histograms: [],
+      boundary: [],
+      recommendation: null,
+      fsGuard: { recommended: null, maxObserved: null },
+      referenceKappa: null,
+    };
+
+    await waitFor(() => {
+      expect(viewerOnResult).toBeInstanceOf(Function);
+    });
+
+    const hotspotId = latestViewerProps?.hotspot?.id ?? null;
+    const graphId = latestViewerProps?.graphId ?? null;
+
+    act(() => {
+      viewerOnResult?.({
+        status: 'running',
+        requestId: 7,
+        hotspotId,
+        graphId,
+      });
+    });
+
+    act(() => {
+      viewerOnResult?.({
+        status: 'success',
+        requestId: 7,
+        hotspotId,
+        graphId,
+        result: boundaryResult,
+      });
+    });
+
+    await waitFor(() => {
+      expect(runButton).not.toBeDisabled();
+    });
+
+    act(() => {
+      viewerOnResult?.({
+        status: 'idle',
+        requestId: 7,
+        hotspotId,
+        graphId,
+      });
+    });
+
+    await waitFor(() => {
+      expect(runButton).not.toBeDisabled();
+    });
+    expect(screen.queryByText(/Run the adiabatic boundary sweep/i)).not.toBeInTheDocument();
+  });
+
   it('applies adiabatic recommendations to guided controls', async () => {
     readFileMock.mockResolvedValue({ ok: false });
 
