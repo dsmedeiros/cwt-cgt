@@ -6,6 +6,7 @@ import { useExperimentNavigation } from '../navigation/ExperimentNavigationConte
 import AdiabaticBoundaryViewer, {
   type AdiabaticBoundaryStatusUpdate,
   type AdiabaticCalmUpdate,
+  type AdiabaticConfigurationSnapshot,
 } from './AdiabaticBoundaryViewer';
 import { createDecisionGateEngine } from '../decisionGate';
 import {
@@ -264,6 +265,21 @@ const planeAxesEqual = (
   a: [HotspotAxis, HotspotAxis],
   b: [HotspotAxis, HotspotAxis],
 ) => a[0] === b[0] && a[1] === b[1];
+
+const configurationSnapshotsEqual = (
+  left: AdiabaticConfigurationSnapshot | null | undefined,
+  right: AdiabaticConfigurationSnapshot | null | undefined,
+) => {
+  if (!left || !right) {
+    return false;
+  }
+  return (
+    left.axisA === right.axisA &&
+    left.axisB === right.axisB &&
+    left.centerAxisA === right.centerAxisA &&
+    left.centerAxisB === right.centerAxisB
+  );
+};
 
 const manualPlaneMismatchWarning =
   'Manual plane selection diverges from the Phase 2 discovery plane. Guided heuristics assume the discovered axes pair; realign them before continuing.';
@@ -1112,6 +1128,17 @@ const Phase3Loops = () => {
     calmBasin: boolean;
   };
   const [adiabaticSnapshots, setAdiabaticSnapshots] = useState<Record<string, AdiabaticSnapshotEntry>>({});
+  const latestAdiabaticSuccessRef = useRef<
+    Record<
+      string,
+      {
+        requestId: number;
+        hotspotId: string | null;
+        graphId: string | null;
+        configuration: AdiabaticConfigurationSnapshot | null;
+      }
+    >
+  >({});
 
   useEffect(() => {
     setAdiabaticSnapshots({});
@@ -1259,6 +1286,41 @@ const Phase3Loops = () => {
   const handleAdiabaticStatus = useCallback(
     (update: AdiabaticBoundaryStatusUpdate) => {
       const key = update.graphId ?? '__default__';
+      const normalizedGraphId = update.graphId ?? null;
+      const recentSuccess = latestAdiabaticSuccessRef.current[key];
+
+      if (
+        update.status === 'idle' &&
+        recentSuccess &&
+        recentSuccess.requestId === update.requestId &&
+        recentSuccess.hotspotId === update.hotspotId &&
+        recentSuccess.graphId === normalizedGraphId &&
+        configurationSnapshotsEqual(recentSuccess.configuration, update.configuration)
+      ) {
+        return;
+      }
+
+      if (update.status === 'success') {
+        latestAdiabaticSuccessRef.current[key] = {
+          requestId: update.requestId,
+          hotspotId: update.hotspotId ?? null,
+          graphId: normalizedGraphId,
+          configuration: update.configuration ?? null,
+        };
+      } else if (update.status === 'idle') {
+        if (
+          recentSuccess &&
+          update.requestId >= recentSuccess.requestId
+        ) {
+          delete latestAdiabaticSuccessRef.current[key];
+        }
+      } else if (
+        recentSuccess &&
+        update.requestId >= recentSuccess.requestId
+      ) {
+        delete latestAdiabaticSuccessRef.current[key];
+      }
+
       let guidance: AdiabaticGuidance | null = null;
       if (update.status === 'success' && update.result) {
         guidance = analyzeAdiabaticGuidance(update.result);

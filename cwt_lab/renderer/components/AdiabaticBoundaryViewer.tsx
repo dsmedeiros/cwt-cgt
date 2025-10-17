@@ -113,6 +113,13 @@ const parseIntegerList = (value: string): number[] | null => {
 
 const toCliValue = (value: number) => Number(value.toFixed(6)).toString();
 
+export type AdiabaticConfigurationSnapshot = {
+  axisA: string | null;
+  axisB: string | null;
+  centerAxisA: string | null;
+  centerAxisB: string | null;
+};
+
 type WithOptionalRequestId<T extends { requestId: number }> = T extends any
   ? Omit<T, 'requestId'> & { requestId?: number }
   : never;
@@ -123,12 +130,14 @@ export type AdiabaticBoundaryStatusUpdate =
       requestId: number;
       hotspotId: string | null;
       graphId: string | null;
+      configuration?: AdiabaticConfigurationSnapshot;
     }
   | {
       status: 'running';
       requestId: number;
       hotspotId: string | null;
       graphId: string | null;
+      configuration?: AdiabaticConfigurationSnapshot;
     }
   | {
       status: 'success';
@@ -136,6 +145,7 @@ export type AdiabaticBoundaryStatusUpdate =
       hotspotId: string | null;
       graphId: string | null;
       result: AdiabaticBoundaryResult;
+      configuration?: AdiabaticConfigurationSnapshot;
     }
   | {
       status: 'error';
@@ -143,6 +153,7 @@ export type AdiabaticBoundaryStatusUpdate =
       hotspotId: string | null;
       graphId: string | null;
       error: string;
+      configuration?: AdiabaticConfigurationSnapshot;
     };
 
 type AdiabaticBoundaryStatusUpdateInput = WithOptionalRequestId<AdiabaticBoundaryStatusUpdate>;
@@ -233,6 +244,27 @@ const AdiabaticBoundaryViewer = ({
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [calmFlag, setCalmFlag] = useState<boolean>(Boolean(hotspot?.calm));
   const requestCounterRef = useRef(0);
+  const lastSuccessfulContextRef = useRef<
+    | {
+        requestId: number;
+        hotspotId: string | null;
+        graphId: string | null;
+        axisA: string;
+        axisB: string;
+        centerAxisA: string;
+        centerAxisB: string;
+      }
+    | null
+  >(null);
+
+  const buildConfigurationSnapshot = useCallback((): AdiabaticConfigurationSnapshot => {
+    return {
+      axisA,
+      axisB,
+      centerAxisA,
+      centerAxisB,
+    };
+  }, [axisA, axisB, centerAxisA, centerAxisB]);
 
   const notifyStatus = useCallback(
     (update: AdiabaticBoundaryStatusUpdateInput) => {
@@ -270,6 +302,7 @@ const AdiabaticBoundaryViewer = ({
 
   const runAnalysis = useCallback(
     async (overrides?: RunOverrides) => {
+      const configuration = buildConfigurationSnapshot();
       const centerOverride = overrides?.center ?? null;
       const extentOverride = overrides?.extents;
       const stepsOverride = overrides?.steps;
@@ -289,6 +322,7 @@ const AdiabaticBoundaryViewer = ({
           graphId,
           error: message,
           requestId: requestCounterRef.current,
+          configuration,
         });
         return;
       }
@@ -303,6 +337,7 @@ const AdiabaticBoundaryViewer = ({
           graphId,
           error: message,
           requestId: requestCounterRef.current,
+          configuration,
         });
         return;
       }
@@ -317,6 +352,7 @@ const AdiabaticBoundaryViewer = ({
           graphId,
           error: message,
           requestId: requestCounterRef.current,
+          configuration,
         });
         return;
       }
@@ -331,6 +367,7 @@ const AdiabaticBoundaryViewer = ({
           graphId,
           error: message,
           requestId: requestCounterRef.current,
+          configuration,
         });
         return;
       }
@@ -344,6 +381,7 @@ const AdiabaticBoundaryViewer = ({
           graphId,
           error: message,
           requestId: requestCounterRef.current,
+          configuration,
         });
         return;
       }
@@ -358,7 +396,7 @@ const AdiabaticBoundaryViewer = ({
 
       setIsRunning(true);
       setError(null);
-      notifyStatus({ status: 'running', ...context });
+      notifyStatus({ status: 'running', ...context, configuration });
 
       try {
         const centerParts = [
@@ -392,7 +430,21 @@ const AdiabaticBoundaryViewer = ({
         } else {
           setSelectedKey(null);
         }
-        notifyStatus({ status: 'success', ...context, result: response.data });
+        notifyStatus({
+          status: 'success',
+          ...context,
+          result: response.data,
+          configuration,
+        });
+        lastSuccessfulContextRef.current = {
+          requestId,
+          hotspotId: hotspot?.id ?? null,
+          graphId,
+          axisA: configuration.axisA ?? axisA,
+          axisB: configuration.axisB ?? axisB,
+          centerAxisA: configuration.centerAxisA ?? centerAxisA,
+          centerAxisB: configuration.centerAxisB ?? centerAxisB,
+        };
         if (onCalm) {
           onCalm({
             hotspotId: hotspot?.id ?? null,
@@ -408,7 +460,7 @@ const AdiabaticBoundaryViewer = ({
         const message =
           analysisError instanceof Error ? analysisError.message : String(analysisError);
         setError(message);
-        notifyStatus({ status: 'error', ...context, error: message });
+        notifyStatus({ status: 'error', ...context, error: message, configuration });
       } finally {
         if (requestId === requestCounterRef.current) {
           setIsRunning(false);
@@ -464,6 +516,24 @@ const AdiabaticBoundaryViewer = ({
   }, [hotspot?.id, hotspot?.calm]);
 
   useEffect(() => {
+    const configuration = buildConfigurationSnapshot();
+    const lastSuccess = lastSuccessfulContextRef.current;
+    const matchesLastSuccess = Boolean(
+      lastSuccess &&
+        lastSuccess.requestId === requestCounterRef.current &&
+        lastSuccess.hotspotId === (hotspot?.id ?? null) &&
+        lastSuccess.graphId === (graphId ?? null) &&
+        lastSuccess.axisA === axisA &&
+        lastSuccess.axisB === axisB &&
+        lastSuccess.centerAxisA === centerAxisA &&
+        lastSuccess.centerAxisB === centerAxisB,
+    );
+
+    if (matchesLastSuccess) {
+      return;
+    }
+
+    lastSuccessfulContextRef.current = null;
     setResult(null);
     setError(null);
     setSelectedKey(null);
@@ -471,6 +541,7 @@ const AdiabaticBoundaryViewer = ({
       status: 'idle',
       hotspotId: hotspot?.id ?? null,
       graphId,
+      configuration,
     });
   }, [
     hotspot?.id,
@@ -483,6 +554,11 @@ const AdiabaticBoundaryViewer = ({
     stepSeeds,
     gridSizeSeed,
     notifyStatus,
+    centerAxisA,
+    centerAxisB,
+    lastSuccessfulContextRef,
+    requestCounterRef,
+    buildConfigurationSnapshot,
   ]);
 
   const handleCalmToggle = (checked: boolean) => {
