@@ -458,6 +458,35 @@ def _default_run_config(target_index: int) -> RunConfig:
     )
 
 
+def _graph_descriptor_for_summary(name: str, *, seed: int | None = None) -> dict[str, Any]:
+    identifier = str(name).strip()
+    key = identifier.lower()
+
+    if key in {"ring3_hetero", "ring3-h", "ring3-hetero"}:
+        return {"identifier": "ring3_hetero"}
+    if key in {"ring3", "ring-3", "ring_3"}:
+        return {"identifier": "ring3"}
+    if key in {
+        "random_regular",
+        "random-regular",
+        "randomregular",
+        "random_regular_digraph",
+        "random-regular-digraph",
+    }:
+        graph_seed = 13 if seed is None else abs(int(seed))
+        return {
+            "identifier": "random_regular_digraph",
+            "kwargs": {
+                "N": 20,
+                "out_degree": 3,
+                "seed": graph_seed,
+            },
+        }
+    if not identifier:
+        return {"identifier": ""}
+    return {"identifier": identifier}
+
+
 def _build_substrate(name: str, *, seed: int | None = None) -> GraphSubstrate:
     key = name.lower()
     if key in {"ring3_hetero", "ring3-h", "ring3-hetero"}:
@@ -1497,7 +1526,7 @@ def _build_summary_payload(
         "schema_version": 1,
         "created_at": timestamp,
         "axes": [axes[0], axes[1]],
-        "graph": graph,
+        "graph": _graph_descriptor_for_summary(graph, seed=seed),
         "fs_guard": _float_or_none(fs_guard),
         "neighbor_settle_steps": int(getattr(config, "neighbor_settle_steps", 0)),
         "base_steps": int(base_steps),
@@ -1755,9 +1784,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             accepted=accepted,
             failures=failure_messages,
             time_budget=budget_tracker.total,
-            time_consumed=(
-                budget_tracker.consumed if budget_tracker.total is not None else None
-            ),
+            time_consumed=(budget_tracker.consumed if budget_tracker.total is not None else None),
         )
         with summary_path.open("w", encoding="utf-8") as handle:
             json.dump(payload, handle, indent=2, ensure_ascii=False)
