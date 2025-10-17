@@ -49,6 +49,35 @@ describe('runAdiabaticBoundary', () => {
   let runArgs: string[];
   let capturedOutputDir: string | null;
 
+  const createSuccessfulRunManager = (): RunManagerMethods => ({
+    createRun: vi.fn(async (_command: string, args: string[]) => {
+      runArgs = args;
+      const outputDirFlag = args.indexOf('--output-dir');
+      if (outputDirFlag >= 0 && outputDirFlag + 1 < args.length) {
+        capturedOutputDir = args[outputDirFlag + 1];
+      }
+      return { runId: 'mock-run' };
+    }),
+    waitForCompletion: vi.fn<
+      Parameters<RunManagerMethods['waitForCompletion']>,
+      ReturnType<RunManagerMethods['waitForCompletion']>
+    >(async () => {
+      if (!capturedOutputDir) {
+        throw new Error('output dir not captured');
+      }
+      await writeArtifacts(capturedOutputDir);
+      const completion: RunCompletion = {
+        runId: 'mock-run',
+        status: 'complete',
+        exitCode: 0,
+        signal: null,
+        error: null,
+      };
+      return completion;
+    }),
+    tail: vi.fn<Parameters<RunManagerMethods['tail']>, ReturnType<RunManagerMethods['tail']>>(),
+  });
+
   beforeEach(async () => {
     artifactsRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'adiabatic-boundary-'));
     runArgs = [];
@@ -60,37 +89,7 @@ describe('runAdiabaticBoundary', () => {
   });
 
   it('translates metadata parameters into CLI arguments', async () => {
-    const runManager = {
-      createRun: vi.fn(async (_command: string, args: string[]) => {
-        runArgs = args;
-        const outputDirFlag = args.indexOf('--output-dir');
-        if (outputDirFlag >= 0 && outputDirFlag + 1 < args.length) {
-          capturedOutputDir = args[outputDirFlag + 1];
-        }
-        return { runId: 'mock-run' };
-      }),
-      waitForCompletion: vi.fn<
-        Parameters<RunManagerMethods['waitForCompletion']>,
-        ReturnType<RunManagerMethods['waitForCompletion']>
-      >(async () => {
-        if (!capturedOutputDir) {
-          throw new Error('output dir not captured');
-        }
-        await writeArtifacts(capturedOutputDir);
-        const completion: RunCompletion = {
-          runId: 'mock-run',
-          status: 'complete',
-          exitCode: 0,
-          signal: null,
-          error: null,
-        };
-        return completion;
-      }),
-      tail: vi.fn<
-        Parameters<RunManagerMethods['tail']>,
-        ReturnType<RunManagerMethods['tail']>
-      >(),
-    } satisfies RunManagerMethods;
+    const runManager = createSuccessfulRunManager();
 
     const result = await runAdiabaticBoundary(
       runManager,
@@ -134,6 +133,51 @@ describe('runAdiabaticBoundary', () => {
     expect(result.boundary).toHaveLength(1);
     expect(result).not.toHaveProperty('graphId');
     expect(result).not.toHaveProperty('hotspotId');
+  });
+
+  it('injects defaults for random regular graph when params are missing', async () => {
+    const runManager = createSuccessfulRunManager();
+
+    await runAdiabaticBoundary(
+      runManager,
+      '/tmp/cwt-sim',
+      artifactsRoot,
+      {
+        center: 'tau=0.8,zeta=0.0',
+        extents: [0.02, 0.04],
+        steps: [120],
+        gridSize: 6,
+        axes: ['rho', 'kappa'],
+        graphId: 'random_regular',
+      },
+    );
+
+    const graphParamsIndex = runArgs.indexOf('--graph-params');
+    expect(graphParamsIndex).toBeGreaterThanOrEqual(0);
+    expect(runArgs[graphParamsIndex + 1]).toBe('{"N":20,"out_degree":3,"seed":13}');
+  });
+
+  it('threads sweep seeds into random regular defaults', async () => {
+    const runManager = createSuccessfulRunManager();
+
+    await runAdiabaticBoundary(
+      runManager,
+      '/tmp/cwt-sim',
+      artifactsRoot,
+      {
+        center: 'tau=0.8,zeta=0.0',
+        extents: [0.02, 0.04],
+        steps: [120],
+        gridSize: 6,
+        axes: ['rho', 'kappa'],
+        graphId: 'random_regular',
+        sweepSeed: '29',
+      },
+    );
+
+    const graphParamsIndex = runArgs.indexOf('--graph-params');
+    expect(graphParamsIndex).toBeGreaterThanOrEqual(0);
+    expect(runArgs[graphParamsIndex + 1]).toBe('{"N":20,"out_degree":3,"seed":29}');
   });
 
   it('provides failure details and recent output when the run fails', async () => {
