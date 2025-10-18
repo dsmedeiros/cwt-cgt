@@ -176,6 +176,59 @@ const NON_CLI_PARAM_KEYS = new Set([
   'graphOverride',
 ]);
 
+const RANDOM_REGULAR_GRAPH_IDS = new Set([
+  'random_regular',
+  'random-regular',
+  'randomregular',
+  'random_regular_digraph',
+  'random-regular-digraph',
+]);
+
+const coerceSeedCandidate = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+    const parsed = Number(trimmed);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return null;
+};
+
+const extractSweepSeed = (params: Record<string, unknown> | undefined): number | null => {
+  if (!params) {
+    return null;
+  }
+
+  for (const key of ['sweepSeed', 'seed', 'graphSeed', 'graph_seed']) {
+    if (key in params) {
+      const resolved = coerceSeedCandidate(params[key]);
+      if (resolved != null) {
+        return resolved;
+      }
+    }
+  }
+
+  return null;
+};
+
+const resolveRandomRegularSeed = (seed: number | null): number => {
+  if (seed === null || !Number.isFinite(seed)) {
+    return 13;
+  }
+  const truncated = Math.trunc(seed);
+  if (!Number.isFinite(truncated)) {
+    return 13;
+  }
+  return Math.abs(truncated);
+};
+
 const deriveGraphOverrideCliParams = (
   params: Record<string, unknown> | undefined,
 ): Record<string, unknown> => {
@@ -184,6 +237,8 @@ const deriveGraphOverrideCliParams = (
   }
 
   const cliParams: Record<string, unknown> = {};
+
+  let resolvedGraphId: string | null = null;
 
   const setGraphId = (value: unknown) => {
     if (cliParams['graphId'] !== undefined) {
@@ -199,6 +254,7 @@ const deriveGraphOverrideCliParams = (
     }
 
     cliParams['graphId'] = trimmed;
+    resolvedGraphId = trimmed;
   };
 
   const setGraphParams = (value: unknown) => {
@@ -263,6 +319,38 @@ const deriveGraphOverrideCliParams = (
       if (candidate !== undefined) {
         setGraphParams(candidate);
       }
+    }
+  }
+
+  if (resolvedGraphId == null && typeof cliParams['graphId'] === 'string') {
+    resolvedGraphId = cliParams['graphId'];
+  }
+
+  const normalizedGraphId = resolvedGraphId?.trim().toLowerCase() ?? null;
+  if (normalizedGraphId && RANDOM_REGULAR_GRAPH_IDS.has(normalizedGraphId)) {
+    const graphParamsValue = cliParams['graphParams'];
+    const canInjectDefaults =
+      graphParamsValue === undefined ||
+      (graphParamsValue && typeof graphParamsValue === 'object' && !Array.isArray(graphParamsValue));
+
+    if (canInjectDefaults) {
+      const baseParams =
+        graphParamsValue && typeof graphParamsValue === 'object' && !Array.isArray(graphParamsValue)
+          ? { ...(graphParamsValue as Record<string, unknown>) }
+          : {};
+      const seed = resolveRandomRegularSeed(extractSweepSeed(params));
+
+      if (!('N' in baseParams)) {
+        baseParams.N = 20;
+      }
+      if (!('out_degree' in baseParams)) {
+        baseParams.out_degree = 3;
+      }
+      if (!('seed' in baseParams)) {
+        baseParams.seed = seed;
+      }
+
+      cliParams['graphParams'] = baseParams;
     }
   }
 
