@@ -2029,37 +2029,40 @@ const Phase3Loops = () => {
   );
 
   const lastAutoLoadedSubstrateRef = useRef<string | null>(null);
+  const lastAutoLoadAttemptRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!selectedSubstratePath) {
+    const targetPath = selectedSubstratePath;
+    if (!targetPath) {
       lastAutoLoadedSubstrateRef.current = null;
+      lastAutoLoadAttemptRef.current = null;
       return;
     }
 
-    if (lastAutoLoadedSubstrateRef.current === selectedSubstratePath) {
+    if (lastAutoLoadedSubstrateRef.current === targetPath) {
       return;
     }
 
-    let cancelled = false;
+    if (lastAutoLoadAttemptRef.current === targetPath) {
+      return;
+    }
+
+    if (isImportingHotspots) {
+      return;
+    }
+
+    lastAutoLoadAttemptRef.current = targetPath;
 
     const autoLoad = async () => {
-      const success = await loadHotspotsFromSubstrate();
-      if (cancelled) {
+      const success = await loadHotspotsFromSubstrate(targetPath);
+      if (selectedSubstratePath !== targetPath) {
         return;
       }
-      if (success) {
-        lastAutoLoadedSubstrateRef.current = selectedSubstratePath;
-      } else {
-        lastAutoLoadedSubstrateRef.current = null;
-      }
+      lastAutoLoadedSubstrateRef.current = success ? targetPath : null;
     };
 
     void autoLoad();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedSubstratePath, loadHotspotsFromSubstrate]);
+  }, [selectedSubstratePath, isImportingHotspots, loadHotspotsFromSubstrate]);
 
   const extentAValidation = useMemo(() => validateExtent(extentA), [extentA]);
   const extentBValidation = useMemo(() => validateExtent(extentB), [extentB]);
