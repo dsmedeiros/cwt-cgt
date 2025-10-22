@@ -5,7 +5,9 @@ import {
   findPhase1HeatmapGroups,
   formatPhase1GraphLabel,
   formatPhase1SubstrateLabel,
+  extractPhase1TopologyFromMetrics,
   phase1HeatmapKinds,
+  sanitizePhase1TopologySummary,
 } from '../artifacts';
 
 describe('artifacts helpers', () => {
@@ -91,5 +93,49 @@ describe('artifacts helpers', () => {
 
   it('exposes the known heatmap kinds', () => {
     expect(Array.from(phase1HeatmapKinds)).toEqual(['heatmaps', 'omega_heatmap']);
+  });
+
+  it('extracts topology descriptors from flattened metrics', () => {
+    const summaries = extractPhase1TopologyFromMetrics({
+      'graphs.ring.topology_clustering': 0.42,
+      'graphs.ring.topology_path_length': 2.5,
+      'ring.topology_assortativity': -0.11,
+      'graphs.square.topology_degree_variance': 1.2,
+      'graphs.square.topology_clustering': null,
+      unrelated: 9.9,
+    });
+
+    expect(Object.keys(summaries)).toEqual(['ring', 'square']);
+    expect(summaries.ring).toEqual({
+      clustering: 0.42,
+      pathLength: 2.5,
+      degreeVariance: null,
+      assortativity: -0.11,
+    });
+    expect(summaries.square).toEqual({
+      clustering: null,
+      pathLength: null,
+      degreeVariance: 1.2,
+      assortativity: null,
+    });
+  });
+
+  it('sanitizes topology summaries loaded from artifacts', () => {
+    expect(
+      sanitizePhase1TopologySummary({
+        clustering: '0.314',
+        path_length: 1.8,
+        degree_variance: 'not-a-number',
+        assortativity: Infinity,
+      }),
+    ).toEqual({
+      clustering: 0.314,
+      pathLength: 1.8,
+      degreeVariance: null,
+      assortativity: null,
+    });
+
+    expect(sanitizePhase1TopologySummary({})).toBeNull();
+    expect(sanitizePhase1TopologySummary(null)).toBeNull();
   });
 });

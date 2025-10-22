@@ -104,6 +104,109 @@ export type Phase1HeatmapGroup = {
   files: Partial<Record<Phase1HeatmapKind, Phase1HeatmapFile>>;
 };
 
+export type Phase1TopologySummary = {
+  clustering: number | null;
+  pathLength: number | null;
+  degreeVariance: number | null;
+  assortativity: number | null;
+};
+
+const createEmptyTopologySummary = (): Phase1TopologySummary => ({
+  clustering: null,
+  pathLength: null,
+  degreeVariance: null,
+  assortativity: null,
+});
+
+const TOPOLOGY_METRIC_PROPERTIES = {
+  clustering: 'clustering',
+  path_length: 'pathLength',
+  degree_variance: 'degreeVariance',
+  assortativity: 'assortativity',
+} as const satisfies Record<string, keyof Phase1TopologySummary>;
+
+export const PHASE1_TOPOLOGY_FIELDS: ReadonlyArray<{
+  key: keyof Phase1TopologySummary;
+  label: string;
+}> = [
+  { key: 'clustering', label: 'Clustering' },
+  { key: 'pathLength', label: 'Mean path length' },
+  { key: 'degreeVariance', label: 'Degree variance' },
+  { key: 'assortativity', label: 'Assortativity' },
+];
+
+const coerceFiniteNumber = (value: unknown): number | null => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
+export const sanitizePhase1TopologySummary = (
+  value: unknown,
+): Phase1TopologySummary | null => {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const summary = createEmptyTopologySummary();
+  let sawMetric = false;
+
+  for (const [key, property] of Object.entries(TOPOLOGY_METRIC_PROPERTIES)) {
+    if (Object.prototype.hasOwnProperty.call(value, key)) {
+      sawMetric = true;
+    }
+    const numeric = coerceFiniteNumber((value as Record<string, unknown>)[key]);
+    summary[property] = numeric;
+  }
+
+  return sawMetric ? summary : null;
+};
+
+export const extractPhase1TopologyFromMetrics = (
+  metrics: Record<string, number | null> | null | undefined,
+): Record<string, Phase1TopologySummary> => {
+  if (!metrics) {
+    return {};
+  }
+
+  const summaries: Record<string, Phase1TopologySummary> = {};
+
+  for (const [rawKey, rawValue] of Object.entries(metrics)) {
+    if (!rawKey.includes('topology_')) {
+      continue;
+    }
+
+    const segments = rawKey.split('.');
+    const topologyIndex = segments.findIndex((segment) => segment.startsWith('topology_'));
+    if (topologyIndex <= 0) {
+      continue;
+    }
+
+    const metricToken = segments[topologyIndex];
+    const metricKey = metricToken.replace(/^topology_/, '');
+    const property = TOPOLOGY_METRIC_PROPERTIES[metricKey as keyof typeof TOPOLOGY_METRIC_PROPERTIES];
+    if (!property) {
+      continue;
+    }
+
+    const graphSegments = segments.slice(0, topologyIndex);
+    const graph = graphSegments[graphSegments.length - 1];
+    if (!graph) {
+      continue;
+    }
+
+    const summary = summaries[graph] ?? (summaries[graph] = createEmptyTopologySummary());
+    summary[property] = coerceFiniteNumber(rawValue);
+  }
+
+  return summaries;
+};
+
 const normalizeRelativePath = (value: string) => value.replace(/\\/g, '/');
 
 const HEATMAP_PATTERN = /\/(heatmaps\.png|omega_heatmap\.png)$/;

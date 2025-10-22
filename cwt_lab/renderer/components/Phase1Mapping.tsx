@@ -4,13 +4,17 @@ import { formatValidationMessage, validateAxis, validateExtent, validateSeed } f
 import { useCommandRegistration } from '../commandCenter';
 import { phase1, runs } from '../ipc';
 import { useExperimentNavigation } from '../navigation/ExperimentNavigationContext';
-import type { ArtifactFile } from '../types/ipc';
+import type { ArtifactFile, RegistryRunRecord } from '../types/ipc';
 import {
   findPhase1HeatmapGroups,
   formatPhase1GraphLabel,
   formatPhase1SubstrateLabel,
+  PHASE1_TOPOLOGY_FIELDS,
+  extractPhase1TopologyFromMetrics,
   phase1HeatmapKinds,
+  sanitizePhase1TopologySummary,
   type Phase1HeatmapKind,
+  type Phase1TopologySummary,
 } from '../utils/artifacts';
 import Phase1HeatmapViewer, { type HeatmapImage } from './Phase1HeatmapViewer';
 
@@ -31,6 +35,7 @@ type HeatmapState = {
   runId: string | null;
   items: HeatmapImage[];
   message: string | null;
+  topologies: Record<string, Phase1TopologySummary>;
 };
 
 const HEATMAP_POLL_INTERVAL_MS = 3_000;
@@ -81,6 +86,30 @@ const formatHeatmapLabel = (substrate: string, graph: string, kind: Phase1Heatma
     return `${substrateLabel} – ${kindLabel}`;
   }
   return `${substrateLabel} • ${graphLabel} – ${kindLabel}`;
+};
+
+const buildEmptyTopologySummary = (): Phase1TopologySummary => ({
+  clustering: null,
+  pathLength: null,
+  degreeVariance: null,
+  assortativity: null,
+});
+
+const formatTopologyValue = (value: number | null) =>
+  value == null ? '–' : Number.isInteger(value) ? value.toFixed(0) : value.toFixed(3);
+
+const assignTopologySummary = (
+  target: Record<string, Phase1TopologySummary>,
+  graph: string,
+  update: Phase1TopologySummary,
+) => {
+  const entry = target[graph] ?? (target[graph] = buildEmptyTopologySummary());
+  for (const { key } of PHASE1_TOPOLOGY_FIELDS) {
+    const value = update[key];
+    if (value != null) {
+      entry[key] = value;
+    }
+  }
 };
 
 const deriveMaxOmegaValue = (input: unknown): number | null => {
@@ -156,6 +185,7 @@ const Phase1Mapping = () => {
     runId: null,
     items: [],
     message: null,
+    topologies: {},
   });
   const [activeHeatmap, setActiveHeatmap] = useState<HeatmapImage | null>(null);
 
@@ -235,16 +265,42 @@ const Phase1Mapping = () => {
   );
 
   const loadHeatmaps = useCallback(
-    async (runId: string, isCancelled: () => boolean) => {
+    async (runId: string, record: RegistryRunRecord | null, isCancelled: () => boolean) => {
       try {
         const artifacts = await runs.openArtifacts(runId);
         if (isCancelled()) {
           return;
         }
 
+        const topologyFromMetrics = extractPhase1TopologyFromMetrics(record?.metrics ?? null);
+        const topologies: Record<string, Phase1TopologySummary> = {};
+        for (const [graph, summary] of Object.entries(topologyFromMetrics)) {
+          assignTopologySummary(topologies, graph, summary);
+        }
+
+        const topologyArtifacts = new Map<string, ArtifactFile>();
+        for (const artifact of artifacts) {
+          if (artifact.type !== 'file') {
+            continue;
+          }
+          const normalized = artifact.relativePath.replace(/\\/g, '/');
+          if (!normalized.endsWith('/topology.json')) {
+            continue;
+          }
+          const segments = normalized.split('/').filter(Boolean);
+          if (segments.length < 2) {
+            continue;
+          }
+          const graphSegment = segments[segments.length - 2];
+          if (graphSegment) {
+            topologyArtifacts.set(graphSegment, artifact);
+          }
+        }
+
         const groups = findPhase1HeatmapGroups(artifacts);
         const gallery: HeatmapImage[] = [];
         const failures: string[] = [];
+        const pendingTopologyReads = new Set<string>();
 
         for (const group of groups) {
           for (const kind of phase1HeatmapKinds) {
@@ -265,6 +321,7 @@ const Phase1Mapping = () => {
                 failures.push(fileEntry.normalizedPath);
                 continue;
               }
+              const topology = topologies[group.graph] ?? null;
               gallery.push({
                 substrate: group.substrate,
                 graph: group.graph,
@@ -272,7 +329,15 @@ const Phase1Mapping = () => {
                 relativePath: fileEntry.normalizedPath,
                 dataUrl: `data:image/png;base64,${artifact.contents}`,
                 label: formatHeatmapLabel(group.substrate, group.graph, kind),
+                topology,
               });
+              const needsTopology =
+                topology == null
+                  ? true
+                  : PHASE1_TOPOLOGY_FIELDS.some(({ key }) => topology[key] == null);
+              if (needsTopology && topologyArtifacts.has(group.graph)) {
+                pendingTopologyReads.add(group.graph);
+              }
             } catch (error) {
               if (!isCancelled()) {
                 console.warn(
@@ -289,13 +354,52 @@ const Phase1Mapping = () => {
           return;
         }
 
+        for (const graph of pendingTopologyReads) {
+          const artifact = topologyArtifacts.get(graph);
+          if (!artifact) {
+            continue;
+          }
+          try {
+            const response = await runs.readArtifact({ runId, relativePath: artifact.relativePath });
+            if (isCancelled()) {
+              return;
+            }
+            const parsed = JSON.parse(response.contents) as unknown;
+            if (isCancelled()) {
+              return;
+            }
+            const summary = sanitizePhase1TopologySummary(parsed);
+            if (summary) {
+              assignTopologySummary(topologies, graph, summary);
+            }
+          } catch (error) {
+            if (!isCancelled()) {
+              console.warn(
+                `Failed to read topology summary ${artifact.relativePath} for run ${runId}:`,
+                error,
+              );
+            }
+          }
+        }
+
+        const enrichedGallery = gallery.map((item) => ({
+          ...item,
+          topology: topologies[item.graph] ?? item.topology ?? null,
+        }));
+
         const message = failures.length
           ? `Some heatmaps could not be loaded (${failures.length}).`
-          : gallery.length === 0
+          : enrichedGallery.length === 0
           ? 'No heatmap images were produced for this run.'
           : null;
 
-        setHeatmapState({ status: 'ready', runId, items: gallery, message });
+        setHeatmapState({
+          status: 'ready',
+          runId,
+          items: enrichedGallery,
+          message,
+          topologies,
+        });
         await updateMaxOmegaFromArtifacts(runId, artifacts, isCancelled);
       } catch (error) {
         if (isCancelled()) {
@@ -306,6 +410,7 @@ const Phase1Mapping = () => {
           runId,
           items: [],
           message: error instanceof Error ? error.message : String(error),
+          topologies: {},
         });
       }
     },
@@ -354,6 +459,7 @@ const Phase1Mapping = () => {
         runId: nextRunId,
         items: [],
         message: 'Waiting for the latest run to finish…',
+        topologies: {},
       });
       setLastRanges({
         primary: { axis: primaryAxis, range: primaryRange },
@@ -400,7 +506,7 @@ const Phase1Mapping = () => {
       setHeatmapState((current) =>
         current.status === 'idle'
           ? current
-          : { status: 'idle', runId: null, items: [], message: null },
+          : { status: 'idle', runId: null, items: [], message: null, topologies: {} },
       );
       return;
     }
@@ -427,7 +533,7 @@ const Phase1Mapping = () => {
           throw new Error(`Run ${lastRunId} not found in the registry.`);
         }
         if (record.status === 'complete') {
-          await loadHeatmaps(lastRunId, isCancelled);
+          await loadHeatmaps(lastRunId, record, isCancelled);
           return;
         }
         if (record.status === 'failed' || record.status === 'aborted') {
@@ -439,6 +545,7 @@ const Phase1Mapping = () => {
               record.status === 'failed'
                 ? 'Run failed before producing heatmaps.'
                 : 'Run was aborted before producing heatmaps.',
+            topologies: {},
           });
           return;
         }
@@ -452,6 +559,7 @@ const Phase1Mapping = () => {
             runId: lastRunId,
             items: [],
             message: 'Waiting for the latest run to finish…',
+            topologies: {},
           };
         });
 
@@ -465,6 +573,7 @@ const Phase1Mapping = () => {
           runId: lastRunId,
           items: [],
           message: error instanceof Error ? error.message : String(error),
+          topologies: {},
         });
       }
     };
@@ -474,6 +583,7 @@ const Phase1Mapping = () => {
       runId: lastRunId,
       items: [],
       message: 'Waiting for the latest run to finish…',
+      topologies: {},
     });
 
     void poll();
@@ -656,6 +766,46 @@ const Phase1Mapping = () => {
                 </figure>
               ))}
             </div>
+            {(() => {
+              if (heatmapState.status !== 'ready') {
+                return null;
+              }
+              const knownGraphs = new Set(heatmapState.items.map((item) => item.graph));
+              const entries = Object.entries(heatmapState.topologies)
+                .filter(([graph, summary]) => {
+                  if (!knownGraphs.has(graph)) {
+                    return false;
+                  }
+                  return PHASE1_TOPOLOGY_FIELDS.some(({ key }) => summary[key] != null);
+                })
+                .sort(([a], [b]) => a.localeCompare(b));
+              if (entries.length === 0) {
+                return null;
+              }
+              return (
+                <section
+                  className="phase1__topology"
+                  aria-label="Topology descriptors for mapped graphs"
+                >
+                  <h4>Topology descriptors</h4>
+                  <div className="phase1__topology-grid">
+                    {entries.map(([graph, summary]) => (
+                      <article key={graph} className="phase1__topology-card">
+                        <h5>{formatPhase1GraphLabel(graph)}</h5>
+                        <dl>
+                          {PHASE1_TOPOLOGY_FIELDS.map(({ key, label }) => (
+                            <div key={key} className="phase1__topology-row">
+                              <dt>{label}</dt>
+                              <dd>{formatTopologyValue(summary[key])}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              );
+            })()}
             {heatmapState.message ? (
               <p className="phase1__heatmaps-note">{heatmapState.message}</p>
             ) : null}
