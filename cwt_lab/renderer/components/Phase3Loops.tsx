@@ -1936,23 +1936,23 @@ const Phase3Loops = () => {
     void importFromPhase1Run();
   }, [selectedPhase1RunId, importFromPhase1Run]);
 
-  const loadHotspotsFromSubstrate = useCallback(async () => {
+  const loadHotspotsFromSubstrate = useCallback(async (): Promise<boolean> => {
     if (!selectedSubstratePath) {
       setImportError('Select a substrate to load hotspots.');
       setImportMessage(null);
-      return;
+      return false;
     }
 
     const api = typeof window !== 'undefined' ? window?.CWT?.artifacts : undefined;
     if (!api?.list) {
       setImportError('Artifact listing is unavailable in this build.');
       setImportMessage(null);
-      return;
+      return false;
     }
     if (!window?.CWT?.artifacts?.readFile) {
       setImportError('Artifact file reading is unavailable in this build.');
       setImportMessage(null);
-      return;
+      return false;
     }
 
     setImportError(null);
@@ -1985,10 +1985,12 @@ const Phase3Loops = () => {
       const substrateLabel = substrate?.name ?? 'substrate';
       applyImportedHotspots(entries, fileNode.path, `${experimentLabel}/${substrateLabel}`);
       setImportMessage(`Loaded ${entries.length} hotspots from ${experimentLabel}/${substrateLabel}.`);
+      return true;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setImportError(message);
       setImportMessage(null);
+      return false;
     } finally {
       setIsImportingHotspots(false);
     }
@@ -1999,6 +2001,39 @@ const Phase3Loops = () => {
     substrates,
     applyImportedHotspots,
   ]);
+
+  const lastAutoLoadedSubstrateRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedSubstratePath) {
+      lastAutoLoadedSubstrateRef.current = null;
+      return;
+    }
+
+    if (lastAutoLoadedSubstrateRef.current === selectedSubstratePath) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const autoLoad = async () => {
+      const success = await loadHotspotsFromSubstrate();
+      if (cancelled) {
+        return;
+      }
+      if (success) {
+        lastAutoLoadedSubstrateRef.current = selectedSubstratePath;
+      } else {
+        lastAutoLoadedSubstrateRef.current = null;
+      }
+    };
+
+    void autoLoad();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedSubstratePath, loadHotspotsFromSubstrate]);
 
   const extentAValidation = useMemo(() => validateExtent(extentA), [extentA]);
   const extentBValidation = useMemo(() => validateExtent(extentB), [extentB]);
@@ -2613,6 +2648,20 @@ const Phase3Loops = () => {
 
   return (
     <div className="panel phase3">
+      <section className="phase3__card">
+        <AdiabaticBoundaryViewer
+          hotspot={selectedHotspot ?? null}
+          graphId={graph}
+          experimentDir={selectedExperimentPath ?? null}
+          substrateDir={selectedSubstratePath ?? null}
+          extentSeeds={adiabaticExtentSeeds}
+          stepSeeds={adiabaticStepSeeds}
+          gridSizeSeed={defaultAdiabaticGridSize}
+          planeAxes={selectedHotspotAxes}
+          onResult={handleAdiabaticStatus}
+          onCalm={handleAdiabaticCalm}
+        />
+      </section>
       <div className="phase3__layout">
         <aside className="phase3__sidebar">
           <h2>Phase 3 – Loops</h2>
@@ -2621,19 +2670,13 @@ const Phase3Loops = () => {
           <section className="phase3__section">
             <h3>Phase 1 ridge map</h3>
             <div className="phase3__import-run">
-              <button
-                type="button"
-                className="btn"
-                onClick={() => void loadHotspotsFromSubstrate()}
-                disabled={
-                  isImportingHotspots ||
-                  !selectedSubstratePath ||
-                  substratesLoading ||
-                  experimentsLoading
-                }
-              >
-                {isImportingHotspots ? 'Loading…' : 'Load hotspots'}
-              </button>
+              {isImportingHotspots ? (
+                <p className="phase3__hint" role="status">
+                  Loading hotspots from the selected substrate…
+                </p>
+              ) : !importMessage && !importError ? (
+                <p className="phase3__hint">Hotspots load automatically after you pick a substrate.</p>
+              ) : null}
             </div>
             {experimentsError ? (
               <p className="phase3__error" role="alert">{experimentsError}</p>
@@ -2654,7 +2697,7 @@ const Phase3Loops = () => {
               !substratesLoading &&
               !substratesError &&
               !selectedSubstratePath ? (
-                <p className="phase3__hint">Choose a substrate from the header dropdown to load hotspots.</p>
+                <p className="phase3__hint">Choose a substrate from the header dropdown to load hotspots automatically.</p>
               ) : null}
             {phase1RunError ? (
               <p className="phase3__error" role="alert">{phase1RunError}</p>
@@ -3304,20 +3347,6 @@ const Phase3Loops = () => {
           )}
         </div>
       </div>
-      <section className="phase3__card">
-        <AdiabaticBoundaryViewer
-          hotspot={selectedHotspot ?? null}
-          graphId={graph}
-          experimentDir={selectedExperimentPath ?? null}
-          substrateDir={selectedSubstratePath ?? null}
-          extentSeeds={adiabaticExtentSeeds}
-          stepSeeds={adiabaticStepSeeds}
-          gridSizeSeed={defaultAdiabaticGridSize}
-          planeAxes={selectedHotspotAxes}
-          onResult={handleAdiabaticStatus}
-          onCalm={handleAdiabaticCalm}
-        />
-      </section>
       {saveModalOpen ? (
         <div
           className="modal-overlay"
