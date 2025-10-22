@@ -1936,69 +1936,133 @@ const Phase3Loops = () => {
     void importFromPhase1Run();
   }, [selectedPhase1RunId, importFromPhase1Run]);
 
-  const loadHotspotsFromSubstrate = useCallback(async () => {
-    if (!selectedSubstratePath) {
-      setImportError('Select a substrate to load hotspots.');
+  const hotspotLoadRequestIdRef = useRef(0);
+
+  const loadHotspotsFromSubstrate = useCallback(
+    async (targetPathParam?: string | null): Promise<boolean> => {
+      const targetPath = targetPathParam ?? selectedSubstratePath;
+      if (!targetPath) {
+        setImportError('Select a substrate to load hotspots.');
+        setImportMessage(null);
+        return false;
+      }
+
+      const api = typeof window !== 'undefined' ? window?.CWT?.artifacts : undefined;
+      if (!api?.list) {
+        setImportError('Artifact listing is unavailable in this build.');
+        setImportMessage(null);
+        return false;
+      }
+      if (!window?.CWT?.artifacts?.readFile) {
+        setImportError('Artifact file reading is unavailable in this build.');
+        setImportMessage(null);
+        return false;
+      }
+
+      const requestId = hotspotLoadRequestIdRef.current + 1;
+      hotspotLoadRequestIdRef.current = requestId;
+
+      setImportError(null);
       setImportMessage(null);
+      setIsImportingHotspots(true);
+      try {
+        const listResponse = await api.list({ under: targetPath });
+        if (hotspotLoadRequestIdRef.current !== requestId) {
+          return false;
+        }
+        if (!listResponse.ok) {
+          throw new Error(listResponse.error ?? 'Failed to inspect substrate directory.');
+        }
+        const nodes = sanitizeArtifactNodes(listResponse.data);
+        const fileNode = findArtifactNodeByName(nodes, 'top_omega_tiles.json');
+        if (!fileNode) {
+          throw new Error('top_omega_tiles.json not found in the selected substrate.');
+        }
+        const fileResponse = await window.CWT.artifacts.readFile({ path: fileNode.path });
+        if (hotspotLoadRequestIdRef.current !== requestId) {
+          return false;
+        }
+        if (!fileResponse.ok) {
+          throw new Error(fileResponse.error ?? 'Failed to load Phase 1 hotspot file.');
+        }
+        const payload = fileResponse.data as { contents?: unknown } | null;
+        const contents = typeof payload?.contents === 'string' ? payload.contents : '';
+        if (!contents) {
+          throw new Error('Phase 1 hotspot file was empty.');
+        }
+
+        if (hotspotLoadRequestIdRef.current !== requestId) {
+          return false;
+        }
+
+        const entries = parsePhase1Hotspots(contents);
+        const experiment = experiments.find((node) => node.path === selectedExperimentPath);
+        const substrate = substrates.find((node) => node.path === targetPath);
+        const experimentLabel = experiment?.relativePath ?? 'experiment';
+        const substrateLabel = substrate?.name ?? 'substrate';
+        applyImportedHotspots(entries, fileNode.path, `${experimentLabel}/${substrateLabel}`);
+        if (hotspotLoadRequestIdRef.current !== requestId) {
+          return false;
+        }
+        setImportMessage(`Loaded ${entries.length} hotspots from ${experimentLabel}/${substrateLabel}.`);
+        return true;
+      } catch (error) {
+        if (hotspotLoadRequestIdRef.current !== requestId) {
+          return false;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        setImportError(message);
+        setImportMessage(null);
+        return false;
+      } finally {
+        if (hotspotLoadRequestIdRef.current === requestId) {
+          setIsImportingHotspots(false);
+        }
+      }
+    }, [
+      selectedSubstratePath,
+      experiments,
+      selectedExperimentPath,
+      substrates,
+      applyImportedHotspots,
+    ],
+  );
+
+  const lastAutoLoadedSubstrateRef = useRef<string | null>(null);
+  const lastAutoLoadAttemptRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const targetPath = selectedSubstratePath;
+    if (!targetPath) {
+      lastAutoLoadedSubstrateRef.current = null;
+      lastAutoLoadAttemptRef.current = null;
       return;
     }
 
-    const api = typeof window !== 'undefined' ? window?.CWT?.artifacts : undefined;
-    if (!api?.list) {
-      setImportError('Artifact listing is unavailable in this build.');
-      setImportMessage(null);
-      return;
-    }
-    if (!window?.CWT?.artifacts?.readFile) {
-      setImportError('Artifact file reading is unavailable in this build.');
-      setImportMessage(null);
+    if (lastAutoLoadedSubstrateRef.current === targetPath) {
       return;
     }
 
-    setImportError(null);
-    setImportMessage(null);
-    setIsImportingHotspots(true);
-    try {
-      const listResponse = await api.list({ under: selectedSubstratePath });
-      if (!listResponse.ok) {
-        throw new Error(listResponse.error ?? 'Failed to inspect substrate directory.');
-      }
-      const nodes = sanitizeArtifactNodes(listResponse.data);
-      const fileNode = findArtifactNodeByName(nodes, 'top_omega_tiles.json');
-      if (!fileNode) {
-        throw new Error('top_omega_tiles.json not found in the selected substrate.');
-      }
-      const fileResponse = await window.CWT.artifacts.readFile({ path: fileNode.path });
-      if (!fileResponse.ok) {
-        throw new Error(fileResponse.error ?? 'Failed to load Phase 1 hotspot file.');
-      }
-      const payload = fileResponse.data as { contents?: unknown } | null;
-      const contents = typeof payload?.contents === 'string' ? payload.contents : '';
-      if (!contents) {
-        throw new Error('Phase 1 hotspot file was empty.');
-      }
-
-      const entries = parsePhase1Hotspots(contents);
-      const experiment = experiments.find((node) => node.path === selectedExperimentPath);
-      const substrate = substrates.find((node) => node.path === selectedSubstratePath);
-      const experimentLabel = experiment?.relativePath ?? 'experiment';
-      const substrateLabel = substrate?.name ?? 'substrate';
-      applyImportedHotspots(entries, fileNode.path, `${experimentLabel}/${substrateLabel}`);
-      setImportMessage(`Loaded ${entries.length} hotspots from ${experimentLabel}/${substrateLabel}.`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      setImportError(message);
-      setImportMessage(null);
-    } finally {
-      setIsImportingHotspots(false);
+    if (lastAutoLoadAttemptRef.current === targetPath) {
+      return;
     }
-  }, [
-    selectedSubstratePath,
-    experiments,
-    selectedExperimentPath,
-    substrates,
-    applyImportedHotspots,
-  ]);
+
+    if (isImportingHotspots) {
+      return;
+    }
+
+    lastAutoLoadAttemptRef.current = targetPath;
+
+    const autoLoad = async () => {
+      const success = await loadHotspotsFromSubstrate(targetPath);
+      if (selectedSubstratePath !== targetPath) {
+        return;
+      }
+      lastAutoLoadedSubstrateRef.current = success ? targetPath : null;
+    };
+
+    void autoLoad();
+  }, [selectedSubstratePath, isImportingHotspots, loadHotspotsFromSubstrate]);
 
   const extentAValidation = useMemo(() => validateExtent(extentA), [extentA]);
   const extentBValidation = useMemo(() => validateExtent(extentB), [extentB]);
@@ -2613,6 +2677,20 @@ const Phase3Loops = () => {
 
   return (
     <div className="panel phase3">
+      <section className="phase3__card">
+        <AdiabaticBoundaryViewer
+          hotspot={selectedHotspot ?? null}
+          graphId={graph}
+          experimentDir={selectedExperimentPath ?? null}
+          substrateDir={selectedSubstratePath ?? null}
+          extentSeeds={adiabaticExtentSeeds}
+          stepSeeds={adiabaticStepSeeds}
+          gridSizeSeed={defaultAdiabaticGridSize}
+          planeAxes={selectedHotspotAxes}
+          onResult={handleAdiabaticStatus}
+          onCalm={handleAdiabaticCalm}
+        />
+      </section>
       <div className="phase3__layout">
         <aside className="phase3__sidebar">
           <h2>Phase 3 – Loops</h2>
@@ -2621,19 +2699,13 @@ const Phase3Loops = () => {
           <section className="phase3__section">
             <h3>Phase 1 ridge map</h3>
             <div className="phase3__import-run">
-              <button
-                type="button"
-                className="btn"
-                onClick={() => void loadHotspotsFromSubstrate()}
-                disabled={
-                  isImportingHotspots ||
-                  !selectedSubstratePath ||
-                  substratesLoading ||
-                  experimentsLoading
-                }
-              >
-                {isImportingHotspots ? 'Loading…' : 'Load hotspots'}
-              </button>
+              {isImportingHotspots ? (
+                <p className="phase3__hint" role="status">
+                  Loading hotspots from the selected substrate…
+                </p>
+              ) : !importMessage && !importError ? (
+                <p className="phase3__hint">Hotspots load automatically after you pick a substrate.</p>
+              ) : null}
             </div>
             {experimentsError ? (
               <p className="phase3__error" role="alert">{experimentsError}</p>
@@ -2654,7 +2726,7 @@ const Phase3Loops = () => {
               !substratesLoading &&
               !substratesError &&
               !selectedSubstratePath ? (
-                <p className="phase3__hint">Choose a substrate from the header dropdown to load hotspots.</p>
+                <p className="phase3__hint">Choose a substrate from the header dropdown to load hotspots automatically.</p>
               ) : null}
             {phase1RunError ? (
               <p className="phase3__error" role="alert">{phase1RunError}</p>
@@ -3304,20 +3376,6 @@ const Phase3Loops = () => {
           )}
         </div>
       </div>
-      <section className="phase3__card">
-        <AdiabaticBoundaryViewer
-          hotspot={selectedHotspot ?? null}
-          graphId={graph}
-          experimentDir={selectedExperimentPath ?? null}
-          substrateDir={selectedSubstratePath ?? null}
-          extentSeeds={adiabaticExtentSeeds}
-          stepSeeds={adiabaticStepSeeds}
-          gridSizeSeed={defaultAdiabaticGridSize}
-          planeAxes={selectedHotspotAxes}
-          onResult={handleAdiabaticStatus}
-          onCalm={handleAdiabaticCalm}
-        />
-      </section>
       {saveModalOpen ? (
         <div
           className="modal-overlay"
