@@ -35,6 +35,7 @@ import { correlate as correlatePhase2 } from '../../electron/runner/phase2';
 import { scanArtifacts, watchArtifacts, type ArtifactChangeEvent } from './runner/files';
 import { baselineRunPayloadSchema, executeBaselineRun } from './baselines/runService';
 import { runBaselineAlignment } from './baselines/alignment';
+import { flattenSummaryMetrics } from './runner/summaryMetrics';
 
 type Envelope<T> = { ok: true; data: T } | { ok: false; error: string; data?: T };
 
@@ -282,14 +283,7 @@ const loadSummaryMetrics = async (
     if (!parsed || typeof parsed !== 'object') {
       return null;
     }
-    const metrics: Record<string, number | null> = {};
-    for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
-      if (typeof value === 'number') {
-        metrics[key] = Number.isFinite(value) ? value : null;
-      } else if (typeof value === 'boolean') {
-        metrics[key] = value ? 1 : 0;
-      }
-    }
+    const metrics = flattenSummaryMetrics(parsed as Record<string, unknown>);
     return Object.keys(metrics).length > 0 ? metrics : null;
   } catch {
     return null;

@@ -42,7 +42,12 @@ describe('RunManager integration', () => {
         'sys.stdout.flush()',
         'output_dir = os.environ.get("CWT_OUTPUT_DIR", ".")',
         'os.makedirs(output_dir, exist_ok=True)',
-        'summary = {"fs_p95": 0.125, "phi": 0.456, "R": 0.789}',
+        'summary = {',
+        '    "fs_p95": 0.125,',
+        '    "phi": 0.456,',
+        '    "R": 0.789,',
+        '    "graphs": {"triangle": {"diameter": 2, "bipartite": False}}',
+        '}',
         'with open(os.path.join(output_dir, "summary.json"), "w", encoding="utf-8") as handle:',
         '    json.dump(summary, handle)',
         'heatmap_bytes = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=")',
@@ -119,7 +124,13 @@ describe('RunManager integration', () => {
     const runs = await manager.fetchRegistry({ id: runId });
     expect(runs).toHaveLength(1);
     const [run] = runs;
-    expect(run.metrics).toEqual({ fs_p95: 0.125, phi: 0.456, R: 0.789 });
+    expect(run.metrics).toEqual({
+      fs_p95: 0.125,
+      phi: 0.456,
+      R: 0.789,
+      'graphs.triangle.diameter': 2,
+      'graphs.triangle.bipartite': 0,
+    });
 
     const workspaceDir = path.join(run.artifactsDir, '_runs', runId);
     const diagnosticsPath = path.join(workspaceDir, 'diagnostics.json');

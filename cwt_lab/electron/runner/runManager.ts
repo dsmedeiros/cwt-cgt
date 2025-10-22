@@ -21,6 +21,7 @@ import {
   type RunRecord,
   type RunQuery,
 } from './registry';
+import { flattenSummaryMetrics } from './summaryMetrics';
 
 export type RunStatus = 'pending' | 'running' | 'complete' | 'failed' | 'aborted';
 
@@ -1116,7 +1117,7 @@ export class RunManager {
     try {
       raw = await fs.readFile(toFsPath(summaryPath), 'utf-8');
       const parsed = JSON.parse(raw) as Record<string, unknown>;
-      const metrics = this.extractNumericMetrics(parsed);
+      const metrics = flattenSummaryMetrics(parsed);
       return Object.keys(metrics).length > 0 ? metrics : null;
     } catch (error) {
       if (raw) {
@@ -1249,18 +1250,6 @@ export class RunManager {
         aggregates.set(key, entry);
       });
     }
-  }
-
-  private extractNumericMetrics(payload: Record<string, unknown>): Record<string, number | null> {
-    const metrics: Record<string, number | null> = {};
-    for (const [key, value] of Object.entries(payload)) {
-      if (typeof value === 'number') {
-        metrics[key] = Number.isFinite(value) ? value : null;
-      } else if (typeof value === 'boolean') {
-        metrics[key] = value ? 1 : 0;
-      }
-    }
-    return metrics;
   }
 
   private resolveRunRecord(runId: string): RunRecord {
