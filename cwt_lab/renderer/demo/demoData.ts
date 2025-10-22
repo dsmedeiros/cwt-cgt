@@ -136,7 +136,7 @@ export const demoRuns: DemoRun[] = [
       updatedAt: now - 47.5 * 60 * 60 * 1000,
       metrics: { phi_flux: 1.92, fs_guard: 0.58, persistence: 0.82 },
     },
-    `Running topology sweep (ring, small-world)\nBest Φ observed: 1.92 at τ=0.24, ζ=0.03\nSaved recipe demo-recipe-001`,
+    `Running topology sweep (ring3, watts_strogatz_p001, periodic_lattice)\nBest Φ observed: 1.92 at τ=0.24, ζ=0.03\nSaved recipe demo-recipe-001`,
     '/opt/cwt/artifacts/demo/demo-run-004.zip',
   ),
   makeRun(

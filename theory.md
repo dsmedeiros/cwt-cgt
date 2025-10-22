@@ -16,6 +16,13 @@ We “bake in” a geometry on the **space of control parameters** that govern t
 
 Let $G=(V,E)$ be a directed/weighted graph with $|V|=N$. Each edge $(m\to n)$ has weight $w_{nm}\ge 0$ and local **delay** $\tau_{nm}>0$. Nodes carry a **density** variable $\rho_n\ge 0$. Global or regional aggregates are denoted $\rho,\tau$.
 
+Phase 1 of the laboratory toggles between canonical ensembles to stress-test curvature behaviour: the deterministic
+`ring3` reference, random regular graphs with fixed mean degree, small-world and scale-free families, Erdős–Rényi
+and Barabási–Albert draws, a toroidal lattice (`periodic_lattice`) that enforces periodic boundaries, and a
+Watts–Strogatz sweep with rewiring probability $p\in\{0,0.01,0.10\}$. Comparing their curvature tiles and topology
+descriptors (clustering, path length, degree variance, assortativity) reveals how shortcuts, heavy-tailed degree
+distributions, or toroidal boundary conditions influence ridge sharpness.
+
 ### 2.2 Layer Fields
 
 At discrete simulation step $s$:

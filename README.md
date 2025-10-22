@@ -174,6 +174,11 @@ The Baselines panel in [`cwt_lab/renderer/components/Baselines.tsx`](cwt_lab/ren
 
 The panel retains the most recent configuration per model so you can iterate on axes, disorder ranges, and loop thresholds while comparing against the guidance in the user guide.
 
+Phase 1 mapping now ships with an expanded substrate set—**ring3**, **random regular**, **small-world**, **scale-free**,
+**Erdős–Rényi**, **Barabási–Albert**, the **toroidal lattice** (`periodic_lattice`), plus the
+three-step **Watts–Strogatz** sweep (`p=0`, `0.01`, `0.10`). Selecting multiple options exposes how ridge
+structure evolves as shortcuts appear and highlights when toroidal boundary conditions stabilise gradients.
+
 ### Run manager & IPC bridge
 The preload script exposes a `window.CWT` API that fronts the underlying IPC bridge. Command builders defined in `cwt_lab/electron/runner/` and `electron/runner/` map UI interactions onto Python invocations (`experiments.*`, Typer CLIs, and registry helpers). Key capabilities:
 
@@ -187,10 +192,10 @@ Consult `USER_GUIDE.md` for screenshots and a phase-by-phase walkthrough of the 
 
 ### Artifact surfaces and selectors
 
-Global experiment and substrate selectors sourced from [`ExperimentNavigationContext`](cwt_lab/renderer/navigation/ExperimentNavigationContext.tsx) keep the renderer in sync with the on-disk registry. Tabs such as Phase 2, Phase 3, Phase 4, the Torus Plateau viewer, and the Artifact Browser listen for file-system changes via the artifacts watcher to refresh automatically when new runs land. The Artifact Browser and Recipe Comparison panels render Plotly summaries backed by registry queries or the demo catalogue, so analysts can explore metrics even before a live backend is connected.
+Global experiment and substrate selectors sourced from [`ExperimentNavigationContext`](cwt_lab/renderer/navigation/ExperimentNavigationContext.tsx) keep the renderer in sync with the on-disk registry. Tabs such as Phase 2, Phase 3, Phase 4, the Torus Plateau viewer, and the Artifact Browser listen for file-system changes via the artifacts watcher to refresh automatically when new runs land. Phase 1 additionally loads `topology.json` summaries so clustering, path length, degree variance, and assortativity appear next to each heatmap. The Artifact Browser and Recipe Comparison panels render Plotly summaries backed by registry queries or the demo catalogue, so analysts can explore metrics even before a live backend is connected.
 
 ## Run artifacts and registry
-Every workflow ultimately persists a [`RunRecord`](cwt-sim/cwt/orchestrator/scheduler.py) containing trajectories (`pQ_traj`, `theta_traj`, `psi_traj`), geometric tiles, curvature-derived bias, and readout snapshots. `save_run` writes `meta.json` plus referenced NumPy arrays, enabling downstream consumers (CLI reporters, experiments, and the Electron registry) to reload runs without recomputing dynamics. The `scripts.eval_report` CLI and the desktop Run Board both reuse this schema to display orientation, Φ flux, Fubini–Study statistics, and sign-flip checks.
+Every workflow ultimately persists a [`RunRecord`](cwt-sim/cwt/orchestrator/scheduler.py) containing trajectories (`pQ_traj`, `theta_traj`, `psi_traj`), geometric tiles, curvature-derived bias, and readout snapshots. `save_run` writes `meta.json` plus referenced NumPy arrays, enabling downstream consumers (CLI reporters, experiments, and the Electron registry) to reload runs without recomputing dynamics. Phase 1 graph sweeps now emit a `topology.json` alongside the existing metrics so consumers inherit the clustering coefficient, characteristic path length, degree variance, and assortativity reported in the UI. The `scripts.eval_report` CLI and the desktop Run Board both reuse this schema to display orientation, Φ flux, Fubini–Study statistics, and sign-flip checks.
 
 ## Testing and quality
 - **Python**
