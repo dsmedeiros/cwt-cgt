@@ -1936,71 +1936,97 @@ const Phase3Loops = () => {
     void importFromPhase1Run();
   }, [selectedPhase1RunId, importFromPhase1Run]);
 
-  const loadHotspotsFromSubstrate = useCallback(async (): Promise<boolean> => {
-    if (!selectedSubstratePath) {
-      setImportError('Select a substrate to load hotspots.');
-      setImportMessage(null);
-      return false;
-    }
+  const hotspotLoadRequestIdRef = useRef(0);
 
-    const api = typeof window !== 'undefined' ? window?.CWT?.artifacts : undefined;
-    if (!api?.list) {
-      setImportError('Artifact listing is unavailable in this build.');
-      setImportMessage(null);
-      return false;
-    }
-    if (!window?.CWT?.artifacts?.readFile) {
-      setImportError('Artifact file reading is unavailable in this build.');
-      setImportMessage(null);
-      return false;
-    }
-
-    setImportError(null);
-    setImportMessage(null);
-    setIsImportingHotspots(true);
-    try {
-      const listResponse = await api.list({ under: selectedSubstratePath });
-      if (!listResponse.ok) {
-        throw new Error(listResponse.error ?? 'Failed to inspect substrate directory.');
-      }
-      const nodes = sanitizeArtifactNodes(listResponse.data);
-      const fileNode = findArtifactNodeByName(nodes, 'top_omega_tiles.json');
-      if (!fileNode) {
-        throw new Error('top_omega_tiles.json not found in the selected substrate.');
-      }
-      const fileResponse = await window.CWT.artifacts.readFile({ path: fileNode.path });
-      if (!fileResponse.ok) {
-        throw new Error(fileResponse.error ?? 'Failed to load Phase 1 hotspot file.');
-      }
-      const payload = fileResponse.data as { contents?: unknown } | null;
-      const contents = typeof payload?.contents === 'string' ? payload.contents : '';
-      if (!contents) {
-        throw new Error('Phase 1 hotspot file was empty.');
+  const loadHotspotsFromSubstrate = useCallback(
+    async (targetPathParam?: string | null): Promise<boolean> => {
+      const targetPath = targetPathParam ?? selectedSubstratePath;
+      if (!targetPath) {
+        setImportError('Select a substrate to load hotspots.');
+        setImportMessage(null);
+        return false;
       }
 
-      const entries = parsePhase1Hotspots(contents);
-      const experiment = experiments.find((node) => node.path === selectedExperimentPath);
-      const substrate = substrates.find((node) => node.path === selectedSubstratePath);
-      const experimentLabel = experiment?.relativePath ?? 'experiment';
-      const substrateLabel = substrate?.name ?? 'substrate';
-      applyImportedHotspots(entries, fileNode.path, `${experimentLabel}/${substrateLabel}`);
-      setImportMessage(`Loaded ${entries.length} hotspots from ${experimentLabel}/${substrateLabel}.`);
-      return true;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      setImportError(message);
+      const api = typeof window !== 'undefined' ? window?.CWT?.artifacts : undefined;
+      if (!api?.list) {
+        setImportError('Artifact listing is unavailable in this build.');
+        setImportMessage(null);
+        return false;
+      }
+      if (!window?.CWT?.artifacts?.readFile) {
+        setImportError('Artifact file reading is unavailable in this build.');
+        setImportMessage(null);
+        return false;
+      }
+
+      const requestId = hotspotLoadRequestIdRef.current + 1;
+      hotspotLoadRequestIdRef.current = requestId;
+
+      setImportError(null);
       setImportMessage(null);
-      return false;
-    } finally {
-      setIsImportingHotspots(false);
-    }
-  }, [
-    selectedSubstratePath,
-    experiments,
-    selectedExperimentPath,
-    substrates,
-    applyImportedHotspots,
-  ]);
+      setIsImportingHotspots(true);
+      try {
+        const listResponse = await api.list({ under: targetPath });
+        if (hotspotLoadRequestIdRef.current !== requestId) {
+          return false;
+        }
+        if (!listResponse.ok) {
+          throw new Error(listResponse.error ?? 'Failed to inspect substrate directory.');
+        }
+        const nodes = sanitizeArtifactNodes(listResponse.data);
+        const fileNode = findArtifactNodeByName(nodes, 'top_omega_tiles.json');
+        if (!fileNode) {
+          throw new Error('top_omega_tiles.json not found in the selected substrate.');
+        }
+        const fileResponse = await window.CWT.artifacts.readFile({ path: fileNode.path });
+        if (hotspotLoadRequestIdRef.current !== requestId) {
+          return false;
+        }
+        if (!fileResponse.ok) {
+          throw new Error(fileResponse.error ?? 'Failed to load Phase 1 hotspot file.');
+        }
+        const payload = fileResponse.data as { contents?: unknown } | null;
+        const contents = typeof payload?.contents === 'string' ? payload.contents : '';
+        if (!contents) {
+          throw new Error('Phase 1 hotspot file was empty.');
+        }
+
+        if (hotspotLoadRequestIdRef.current !== requestId) {
+          return false;
+        }
+
+        const entries = parsePhase1Hotspots(contents);
+        const experiment = experiments.find((node) => node.path === selectedExperimentPath);
+        const substrate = substrates.find((node) => node.path === targetPath);
+        const experimentLabel = experiment?.relativePath ?? 'experiment';
+        const substrateLabel = substrate?.name ?? 'substrate';
+        applyImportedHotspots(entries, fileNode.path, `${experimentLabel}/${substrateLabel}`);
+        if (hotspotLoadRequestIdRef.current !== requestId) {
+          return false;
+        }
+        setImportMessage(`Loaded ${entries.length} hotspots from ${experimentLabel}/${substrateLabel}.`);
+        return true;
+      } catch (error) {
+        if (hotspotLoadRequestIdRef.current !== requestId) {
+          return false;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        setImportError(message);
+        setImportMessage(null);
+        return false;
+      } finally {
+        if (hotspotLoadRequestIdRef.current === requestId) {
+          setIsImportingHotspots(false);
+        }
+      }
+    }, [
+      selectedSubstratePath,
+      experiments,
+      selectedExperimentPath,
+      substrates,
+      applyImportedHotspots,
+    ],
+  );
 
   const lastAutoLoadedSubstrateRef = useRef<string | null>(null);
 
