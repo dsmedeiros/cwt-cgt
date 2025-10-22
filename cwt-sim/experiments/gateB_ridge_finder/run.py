@@ -8,7 +8,7 @@ import json
 import math
 import os
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Mapping, Sequence
 
@@ -23,7 +23,6 @@ try:
     from cwt.geometry.curvature import curvature_tile
     from cwt.geometry.metric import metric_tile
     from cwt.geometry.psi import build_psi
-    from cwt.graph.factories import random_regular_digraph
     from cwt.graph.kernels import build_transport_kernel
     from cwt.graph.substrate import GraphSubstrate, build_substrate
     from cwt.layers.q_update import q_step
@@ -39,7 +38,6 @@ except ModuleNotFoundError as exc:  # pragma: no cover - fallback when package i
     from cwt.geometry.curvature import curvature_tile
     from cwt.geometry.metric import metric_tile
     from cwt.geometry.psi import build_psi
-    from cwt.graph.factories import random_regular_digraph
     from cwt.graph.kernels import build_transport_kernel
     from cwt.graph.substrate import GraphSubstrate, build_substrate
     from cwt.layers.q_update import q_step
@@ -53,8 +51,22 @@ except ImportError:  # pragma: no cover - fallback when run as a script
     from experiments.report_helpers import ReportHeaderMetrics, render_report_header
 
 VALID_AXES = ("rho", "tau", "zeta", "zeta_phase", "kappa")
-AVAILABLE_GRAPHS = ("ring3", "random_regular", "small_world", "scale_free")
+AVAILABLE_GRAPHS = (
+    "ring3",
+    "random_regular",
+    "small_world",
+    "scale_free",
+    "watts_strogatz_p0",
+    "watts_strogatz_p001",
+    "watts_strogatz_p010",
+    "periodic_lattice",
+    "erdos_renyi",
+    "barabasi_albert",
+)
 DEFAULT_ARTIFACTS_DIR = Path(__file__).resolve().parent / "artifacts"
+
+BASELINE_NODE_COUNT = 20
+TARGET_MEAN_DEGREE = 4.0
 
 
 @dataclass(frozen=True)
@@ -144,6 +156,7 @@ class GraphScanResult:
     kuramoto_r: np.ndarray
     r_gradient: np.ndarray
     detection: DetectionMetrics
+    topology_metrics: dict[str, float] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         axis0_name, axis1_name = self.axes
@@ -160,6 +173,7 @@ class GraphScanResult:
             "kuramoto_r": self.kuramoto_r.tolist(),
             "r_gradient": self.r_gradient.tolist(),
             "detection": self.detection.to_json(),
+            "topology": {key: _json_safe_float(value) for key, value in self.topology_metrics.items()},
         }
 
 
@@ -487,6 +501,64 @@ def gradient_magnitude(
     return np.asarray(magnitude, dtype=float)
 
 
+def summarize_topology(substrate: GraphSubstrate) -> dict[str, float]:
+    """Return structural descriptors for ``substrate``'s undirected view."""
+
+    graph = substrate.G
+    undirected = nx.Graph()
+    undirected.add_nodes_from(graph.nodes())
+    for source, target, data in graph.edges(data=True):
+        undirected.add_edge(source, target, weight=float(data.get("weight", 1.0)))
+
+    clustering = float("nan")
+    path_length = float("nan")
+    assortativity = float("nan")
+
+    if undirected.number_of_nodes():
+        try:
+            clustering = float(nx.average_clustering(undirected))
+        except (ZeroDivisionError, nx.NetworkXError):  # pragma: no cover - defensive
+            clustering = float("nan")
+
+        if undirected.number_of_nodes() > 1 and undirected.number_of_edges():
+            try:
+                if nx.is_connected(undirected):
+                    path_length = float(nx.average_shortest_path_length(undirected))
+                else:
+                    component_lengths: list[float] = []
+                    component_sizes: list[int] = []
+                    for component in nx.connected_components(undirected):
+                        subgraph = undirected.subgraph(component).copy()
+                        if subgraph.number_of_nodes() <= 1 or subgraph.number_of_edges() == 0:
+                            continue
+                        try:
+                            component_lengths.append(float(nx.average_shortest_path_length(subgraph)))
+                            component_sizes.append(subgraph.number_of_nodes())
+                        except (ZeroDivisionError, nx.NetworkXError):  # pragma: no cover
+                            continue
+                    if component_lengths and component_sizes:
+                        path_length = float(np.average(component_lengths, weights=component_sizes))
+            except nx.NetworkXError:  # pragma: no cover - defensive
+                path_length = float("nan")
+
+        try:
+            assortativity_val = nx.degree_assortativity_coefficient(undirected)
+        except nx.NetworkXError:  # pragma: no cover - defensive
+            assortativity_val = float("nan")
+        if math.isfinite(assortativity_val):
+            assortativity = float(assortativity_val)
+
+    degrees = np.array([deg for _, deg in undirected.degree()], dtype=float)
+    degree_variance = float(np.var(degrees)) if degrees.size else float("nan")
+
+    return {
+        "clustering": clustering,
+        "path_length": path_length,
+        "degree_variance": degree_variance,
+        "assortativity": assortativity,
+    }
+
+
 def finite_correlation(a: np.ndarray, b: np.ndarray) -> float:
     """Return the Pearson correlation coefficient for finite entries only."""
 
@@ -769,6 +841,13 @@ def save_numpy_bundle(result: GraphScanResult, out_dir: Path) -> None:
         )
 
 
+def save_topology_metrics(result: GraphScanResult, out_dir: Path) -> None:
+    ensure_dir(out_dir)
+    payload = {key: _json_safe_float(value) for key, value in result.topology_metrics.items()}
+    with (out_dir / "topology.json").open("w", encoding="utf-8") as handle:
+        json.dump(payload, handle, indent=2, ensure_ascii=False, allow_nan=False)
+
+
 def save_metrics_csv(result: GraphScanResult, out_dir: Path, sim_config: SimulationConfig) -> None:
     ensure_dir(out_dir)
     axis0_name, axis1_name = result.axes
@@ -959,6 +1038,7 @@ def scan_graph(
         kuramoto_r=kuramoto_r,
         r_gradient=r_gradient,
         detection=detection,
+        topology_metrics=summarize_topology(substrate),
     )
 
 
@@ -968,6 +1048,21 @@ def _jitter_edge_params(graph: nx.DiGraph, rng: np.random.Generator) -> None:
         base_delay = float(data.get("delay", 1.0))
         data["weight"] = base_weight * (0.9 + 0.2 * rng.random())
         data["delay"] = base_delay * (0.5 + rng.random())
+
+
+def _digraph_from_undirected(undirected: nx.Graph) -> nx.DiGraph:
+    graph = nx.DiGraph()
+    graph.add_nodes_from(undirected.nodes())
+    for source, target in undirected.edges():
+        graph.add_edge(source, target, weight=1.0, delay=1.0)
+        graph.add_edge(target, source, weight=1.0, delay=1.0)
+    return graph
+
+
+def _build_from_undirected(undirected: nx.Graph, rng: np.random.Generator) -> GraphSubstrate:
+    graph = _digraph_from_undirected(undirected)
+    _jitter_edge_params(graph, rng)
+    return build_substrate(graph)
 
 
 def _build_ring3(_: int, __: np.random.Generator) -> GraphSubstrate:
@@ -983,31 +1078,121 @@ def _build_ring3(_: int, __: np.random.Generator) -> GraphSubstrate:
 
 
 def _build_random_regular(seed: int, rng: np.random.Generator) -> GraphSubstrate:
-    base_random = random_regular_digraph(N=20, out_degree=3, seed=seed)
-    graph = nx.DiGraph()
-    for u, v, data in base_random.G.edges(data=True):
-        graph.add_edge(
-            u,
-            v,
-            weight=float(data.get("weight", 1.0)),
-            delay=float(data.get("delay", 1.0)),
-        )
-    _jitter_edge_params(graph, rng)
-    return build_substrate(graph)
+    degree = max(2, int(round(TARGET_MEAN_DEGREE)))
+    undirected = nx.random_regular_graph(degree, BASELINE_NODE_COUNT, seed=seed)
+    return _build_from_undirected(undirected, rng)
+
+
+def _watts_strogatz_degree() -> int:
+    degree = max(2, int(round(TARGET_MEAN_DEGREE)))
+    if degree % 2 != 0:
+        degree += 1
+    degree = min(degree, BASELINE_NODE_COUNT - 1)
+    if degree % 2 != 0:
+        degree -= 1
+    return max(degree, 2)
+
+
+def _build_watts_strogatz(seed: int, rng: np.random.Generator, probability: float) -> GraphSubstrate:
+    degree = _watts_strogatz_degree()
+    undirected = nx.watts_strogatz_graph(
+        BASELINE_NODE_COUNT,
+        degree,
+        float(probability),
+        seed=seed,
+    )
+    return _build_from_undirected(undirected, rng)
 
 
 def _build_small_world(seed: int, rng: np.random.Generator) -> GraphSubstrate:
-    undirected = nx.watts_strogatz_graph(20, 4, 0.2, seed=seed)
-    graph = nx.DiGraph()
-    for u, v in undirected.edges():
-        graph.add_edge(u, v, weight=1.0, delay=1.0)
-        graph.add_edge(v, u, weight=1.0, delay=1.0)
-    _jitter_edge_params(graph, rng)
-    return build_substrate(graph)
+    return _build_watts_strogatz(seed, rng, probability=0.2)
+
+
+def _build_watts_strogatz_p0(seed: int, rng: np.random.Generator) -> GraphSubstrate:
+    return _build_watts_strogatz(seed, rng, probability=0.0)
+
+
+def _build_watts_strogatz_p001(seed: int, rng: np.random.Generator) -> GraphSubstrate:
+    return _build_watts_strogatz(seed, rng, probability=0.01)
+
+
+def _build_watts_strogatz_p010(seed: int, rng: np.random.Generator) -> GraphSubstrate:
+    return _build_watts_strogatz(seed, rng, probability=0.10)
+
+
+def _choose_lattice_dimensions(n: int) -> tuple[int, int]:
+    best = (1, n)
+    best_diff = n
+    limit = int(math.sqrt(n))
+    for rows in range(1, limit + 1):
+        if n % rows == 0:
+            cols = n // rows
+            diff = abs(cols - rows)
+            if diff < best_diff:
+                best = (rows, cols)
+                best_diff = diff
+    return best
+
+
+def _build_periodic_lattice(seed: int, rng: np.random.Generator) -> GraphSubstrate:
+    del seed  # seed handled by deterministic lattice construction
+    rows, cols = _choose_lattice_dimensions(BASELINE_NODE_COUNT)
+    base = nx.grid_2d_graph(rows, cols, periodic=True)
+
+    if TARGET_MEAN_DEGREE >= 6.0:
+        for x in range(rows):
+            for y in range(cols):
+                current = (x, y)
+                for dx, dy in ((-1, -1), (-1, 1), (1, -1), (1, 1)):
+                    neighbor = ((x + dx) % rows, (y + dy) % cols)
+                    base.add_edge(current, neighbor)
+
+    mapping = {node: idx for idx, node in enumerate(sorted(base.nodes()))}
+    undirected = nx.Graph()
+    undirected.add_nodes_from(mapping.values())
+    for u, v in base.edges():
+        undirected.add_edge(mapping[u], mapping[v])
+
+    current_degree = 0.0
+    if undirected.number_of_nodes():
+        current_degree = 2.0 * undirected.number_of_edges() / undirected.number_of_nodes()
+
+    if current_degree + 1e-9 < TARGET_MEAN_DEGREE:
+        required_edges = int(
+            round((TARGET_MEAN_DEGREE - current_degree) * undirected.number_of_nodes() / 2.0)
+        )
+        if required_edges > 0:
+            nodes = list(sorted(undirected.nodes()))
+            offset = max(1, len(nodes) // 2)
+            added = 0
+            idx = 0
+            while added < required_edges and idx < len(nodes) * 3:
+                u = nodes[idx % len(nodes)]
+                v = nodes[(idx + offset) % len(nodes)]
+                if u != v and not undirected.has_edge(u, v):
+                    undirected.add_edge(u, v)
+                    added += 1
+                idx += 1
+
+    return _build_from_undirected(undirected, rng)
+
+
+def _build_erdos_renyi(seed: int, rng: np.random.Generator) -> GraphSubstrate:
+    probability = 0.0
+    if BASELINE_NODE_COUNT > 1:
+        probability = min(max(TARGET_MEAN_DEGREE / (BASELINE_NODE_COUNT - 1), 0.0), 1.0)
+    undirected = nx.erdos_renyi_graph(BASELINE_NODE_COUNT, probability, seed=seed)
+    return _build_from_undirected(undirected, rng)
+
+
+def _build_barabasi_albert(seed: int, rng: np.random.Generator) -> GraphSubstrate:
+    m = max(1, int(round(TARGET_MEAN_DEGREE / 2.0)))
+    undirected = nx.barabasi_albert_graph(BASELINE_NODE_COUNT, m, seed=seed)
+    return _build_from_undirected(undirected, rng)
 
 
 def _build_scale_free(seed: int, rng: np.random.Generator) -> GraphSubstrate:
-    base = nx.scale_free_graph(20, seed=seed)
+    base = nx.scale_free_graph(BASELINE_NODE_COUNT, seed=seed)
     graph = nx.DiGraph()
     for node in base.nodes():
         graph.add_node(int(node))
@@ -1026,6 +1211,12 @@ _SUBSTRATE_FACTORIES: dict[str, Callable[[int, np.random.Generator], GraphSubstr
     "random_regular": _build_random_regular,
     "small_world": _build_small_world,
     "scale_free": _build_scale_free,
+    "watts_strogatz_p0": _build_watts_strogatz_p0,
+    "watts_strogatz_p001": _build_watts_strogatz_p001,
+    "watts_strogatz_p010": _build_watts_strogatz_p010,
+    "periodic_lattice": _build_periodic_lattice,
+    "erdos_renyi": _build_erdos_renyi,
+    "barabasi_albert": _build_barabasi_albert,
 }
 
 
@@ -1086,6 +1277,7 @@ def run_experiment(
         save_heatmaps(result, graph_dir)
         save_roc_curve(result, graph_dir)
         save_numpy_bundle(result, graph_dir)
+        save_topology_metrics(result, graph_dir)
         save_metrics_csv(result, graph_dir, sim_config)
         save_top_omega_tiles(result, graph_dir, top_k=top_k, config=sim_config)
         results.append(result)
@@ -1212,7 +1404,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--graphs",
         type=str,
-        default="ring3,random_regular",
+        default="ring3,random_regular,watts_strogatz_p0,watts_strogatz_p001,watts_strogatz_p010,periodic_lattice,erdos_renyi,barabasi_albert",
         help=(
             "Comma-separated list of graph substrates to scan " f"(options: {', '.join(AVAILABLE_GRAPHS)})"
         ),
@@ -1329,8 +1521,15 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     summary_path = output_dir / "summary.json"
     with summary_path.open("w", encoding="utf-8") as fh:
+        summary_payload: dict[str, dict[str, float | None | list[float | None]]] = {}
+        for result in results:
+            entry = dict(result.detection.to_json())
+            for key, value in result.topology_metrics.items():
+                entry[f"topology_{key}"] = _json_safe_float(value)
+            summary_payload[result.name] = entry
+
         json.dump(
-            {result.name: result.detection.to_json() for result in results},
+            summary_payload,
             fh,
             indent=2,
             ensure_ascii=False,
