@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'react';
 
 import type React from 'react';
-import type { Phase1HeatmapKind } from '../utils/artifacts';
+import type { Phase1HeatmapKind, Phase1TopologySummary } from '../utils/artifacts';
+import { PHASE1_TOPOLOGY_FIELDS } from '../utils/artifacts';
 
 type Point = { x: number; y: number };
 
@@ -26,6 +27,9 @@ const normalizeWheelDelta = (delta: number, mode: number) => {
 const focusableSelector =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+const formatTopologyValue = (value: number | null) =>
+  value == null ? '–' : Number.isInteger(value) ? value.toFixed(0) : value.toFixed(3);
+
 export type HeatmapImage = {
   substrate: string;
   graph: string;
@@ -33,6 +37,7 @@ export type HeatmapImage = {
   relativePath: string;
   dataUrl: string;
   label: string;
+  topology: Phase1TopologySummary | null;
 };
 
 type Phase1HeatmapViewerProps = {
@@ -58,6 +63,7 @@ const Phase1HeatmapViewer = ({ heatmap, onClose }: Phase1HeatmapViewerProps) => 
     lastPosition: { x: 0, y: 0 },
   });
   const headingId = useId();
+  const statsHeadingId = useId();
 
   useEffect(() => {
     setZoom(1);
@@ -300,6 +306,19 @@ const Phase1HeatmapViewer = ({ heatmap, onClose }: Phase1HeatmapViewerProps) => 
             ×
           </button>
         </div>
+        {heatmap.topology ? (
+          <section className="phase1__heatmap-viewer-stats" aria-labelledby={statsHeadingId}>
+            <h5 id={statsHeadingId}>Topology descriptors</h5>
+            <dl>
+              {PHASE1_TOPOLOGY_FIELDS.map(({ key, label }) => (
+                <div key={key} className="phase1__heatmap-viewer-row">
+                  <dt>{label}</dt>
+                  <dd>{formatTopologyValue(heatmap.topology?.[key] ?? null)}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ) : null}
         <div className="phase1__heatmap-viewer-controls">
           <button type="button" onClick={handleZoomOut} aria-label="Zoom out" disabled={zoom <= MIN_ZOOM}>
             −

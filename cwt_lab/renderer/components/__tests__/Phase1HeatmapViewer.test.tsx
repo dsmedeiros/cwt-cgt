@@ -11,6 +11,7 @@ const sampleHeatmap: HeatmapImage = {
   relativePath: 'runs/run-1/heatmap.png',
   dataUrl: 'data:image/png;base64,xyz',
   label: 'Substrate A – Heatmap',
+  topology: null,
 };
 
 if (typeof PointerEvent === 'undefined') {
@@ -37,6 +38,7 @@ describe('Phase1HeatmapViewer', () => {
     render(<Phase1HeatmapViewer heatmap={sampleHeatmap} onClose={onClose} />);
 
     expect(screen.getByRole('heading', { name: sampleHeatmap.label })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /topology descriptors/i })).not.toBeInTheDocument();
 
     const closeButton = screen.getByRole('button', { name: /close heatmap viewer/i });
     await user.click(closeButton);
@@ -80,6 +82,27 @@ describe('Phase1HeatmapViewer', () => {
 
     await user.tab({ shift: true });
     expect(reset).toHaveFocus();
+  });
+
+  it('displays topology descriptors when provided', () => {
+    const onClose = vi.fn();
+    const heatmapWithTopology: HeatmapImage = {
+      ...sampleHeatmap,
+      topology: {
+        clustering: 0.123,
+        pathLength: 2.5,
+        degreeVariance: 0.75,
+        assortativity: -0.12,
+      },
+    };
+
+    render(<Phase1HeatmapViewer heatmap={heatmapWithTopology} onClose={onClose} />);
+
+    expect(screen.getByRole('heading', { name: /topology descriptors/i })).toBeInTheDocument();
+    expect(screen.getByText('0.123')).toBeInTheDocument();
+    expect(screen.getByText('2.500')).toBeInTheDocument();
+    expect(screen.getByText('0.750')).toBeInTheDocument();
+    expect(screen.getByText('-0.120')).toBeInTheDocument();
   });
 
   it('zooms the heatmap around the cursor when the user scrolls', () => {

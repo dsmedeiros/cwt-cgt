@@ -1640,6 +1640,65 @@ body {
   padding-right: 0.25rem;
 }
 
+.phase1__topology {
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.phase1__topology h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.phase1__topology-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.phase1__topology-card {
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.phase1__topology-card h5 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.phase1__topology-card dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.3rem 0.75rem;
+  align-items: baseline;
+}
+
+.phase1__topology-row {
+  display: contents;
+}
+
+.phase1__topology-card dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+}
+
+.phase1__topology-card dd {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
 .phase1--viewer-open .phase1__heatmaps-grid,
 .phase1__heatmaps-grid--expanded {
   max-height: none;
@@ -1712,6 +1771,47 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.phase1__heatmap-viewer-stats {
+  margin: 0.5rem 0 1rem;
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.phase1__heatmap-viewer-stats h5 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.phase1__heatmap-viewer-stats dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 1rem;
+  align-items: baseline;
+}
+
+.phase1__heatmap-viewer-row {
+  display: contents;
+}
+
+.phase1__heatmap-viewer-row dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+}
+
+.phase1__heatmap-viewer-row dd {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-text);
 }
 
 .phase1__heatmap-viewer-header h4 {
