@@ -54,8 +54,18 @@ then use the action buttons to tail logs, collect diagnostics, or remove stale r
 
 ![Phase 1 mapping](docs/screenshots/phase1.svg)
 
-Phase 1 sweeps the Ω landscape to highlight promising regions. Adjust the extent and percentile guards on the
-right. Warm tiles indicate steep gradients worth sampling in later phases.
+Phase 1 sweeps the Ω landscape to highlight promising regions, now across a broadened substrate catalogue.
+Select from **ring3**, **random regular**, **small-world**, **scale-free**, **Erdős–Rényi**, **Barabási–Albert**,
+and the **toroidal lattice** (exposed in configs as `periodic_lattice`) alongside the new
+**Watts–Strogatz** trio. The Watts–Strogatz options (`watts_strogatz_p0`, `watts_strogatz_p001`,
+`watts_strogatz_p010`) share the same base lattice but step the rewiring probability through
+0, 0.01, and 0.10 so you can watch the ridge sharpen as shortcut density increases. Adjust the extent and
+percentile guards on the right. Warm tiles indicate steep gradients worth sampling in later phases.
+
+Below the heatmaps the viewer surfaces **topology descriptors** for every scanned graph. The panel lists the
+average clustering coefficient, characteristic path length, degree variance, and assortativity captured in the
+latest run. These values come from the `topology.json` artifacts emitted next to each graph directory, so the
+numbers you see in the UI align with what scripts or notebooks load later.
 
 ### Phase 2 – Feature scans
 

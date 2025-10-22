@@ -1404,9 +1404,13 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--graphs",
         type=str,
-        default="ring3,random_regular,watts_strogatz_p0,watts_strogatz_p001,watts_strogatz_p010,periodic_lattice,erdos_renyi,barabasi_albert",
+        metavar="LIST",
+        default=",".join(AVAILABLE_GRAPHS),
         help=(
-            "Comma-separated list of graph substrates to scan " f"(options: {', '.join(AVAILABLE_GRAPHS)})"
+            "Comma-separated list of graph substrates to scan. Available shorthands: "
+            "ring3, random_regular, small_world, scale_free, erdos_renyi, barabasi_albert, periodic_lattice, "
+            "and the Watts–Strogatz sweep encoded as watts_strogatz_pXX where XX is the rewiring probability in "
+            "percent (e.g. watts_strogatz_p0, watts_strogatz_p001, watts_strogatz_p010)."
         ),
     )
     parser.add_argument("--bootstrap", type=int, default=256, help="Bootstrap replicates for the AUC CI")
