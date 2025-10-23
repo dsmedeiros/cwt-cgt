@@ -24,7 +24,7 @@ import math
 import numbers
 import sys
 from collections import deque
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -39,6 +39,8 @@ from cwt.graph.factories import from_edgelist, ring3_hetero
 from cwt.graph.substrate import GraphSubstrate, build_substrate
 from cwt.layers.state import LayersState, wrap_angles
 from cwt.orchestrator.param_path import ParameterPath
+
+PHASE1_DEFAULT_SEED = 7
 
 # ---------------------------------------------------------------------------
 # Data containers
@@ -379,6 +381,78 @@ def _coerce_summary_value(value: object) -> object:
     return value
 
 
+def _normalise_phase1_seed(seed: object | None) -> int:
+    """Return an integer seed for Phase 1 substrate factories."""
+
+    if seed is None:
+        return PHASE1_DEFAULT_SEED
+    if isinstance(seed, numbers.Integral):
+        return int(seed)
+    if isinstance(seed, numbers.Real):
+        numeric = float(seed)
+        if not math.isfinite(numeric):
+            raise ValueError("Phase 1 substrate seed must be finite")
+        return int(numeric)
+    if isinstance(seed, str):
+        stripped = seed.strip()
+        if not stripped:
+            return PHASE1_DEFAULT_SEED
+        try:
+            numeric = float(stripped)
+        except ValueError as exc:  # pragma: no cover - defensive guard
+            raise ValueError(f"Invalid Phase 1 substrate seed: {seed!r}") from exc
+        if not math.isfinite(numeric):
+            raise ValueError("Phase 1 substrate seed must be finite")
+        return int(numeric)
+    raise ValueError(f"Unsupported seed type for Phase 1 substrate: {type(seed)!r}")
+
+
+def _make_phase1_factory(identifier: str) -> Callable[[int | None], GraphSubstrate]:
+    """Create a factory that rebuilds Phase 1 substrates on demand."""
+
+    def factory(seed: int | None = None) -> GraphSubstrate:
+        try:
+            from experiments.gateB_ridge_finder import run as phase1_run
+        except ImportError as exc:  # pragma: no cover - defensive guard
+            raise ValueError(
+                f"Phase 1 substrate factory '{identifier}' is unavailable"
+            ) from exc
+
+        base_seed = _normalise_phase1_seed(seed)
+        try:
+            built = phase1_run.build_substrates([identifier], seed=base_seed)
+        except Exception as exc:  # pragma: no cover - defensive guard
+            raise ValueError(
+                f"Failed to rebuild Phase 1 substrate '{identifier}' with seed {base_seed}"
+            ) from exc
+
+        if not built:
+            raise ValueError(
+                f"Phase 1 substrate factory '{identifier}' produced no substrate"
+            )
+
+        _, substrate = built[0]
+        return substrate
+
+    factory.__name__ = f"phase1_{identifier}_factory"
+    return factory
+
+
+_PHASE1_SUBSTRATE_FACTORIES: dict[str, Callable[[int | None], GraphSubstrate]] = {
+    name: _make_phase1_factory(name)
+    for name in (
+        "small_world",
+        "scale_free",
+        "watts_strogatz_p0",
+        "watts_strogatz_p001",
+        "watts_strogatz_p010",
+        "periodic_lattice",
+        "erdos_renyi",
+        "barabasi_albert",
+    )
+}
+
+
 def _resolve_graph_factory(identifier: str):
     """Return a graph factory callable for the identifier or raise ``ValueError``."""
 
@@ -400,8 +474,35 @@ def _resolve_graph_factory(identifier: str):
         "random-regular-digraph": "random_regular_digraph",
         "dimer": "dimer",
         "line3": "line3",
+        "small_world": "small_world",
+        "small-world": "small_world",
+        "smallworld": "small_world",
+        "scale_free": "scale_free",
+        "scale-free": "scale_free",
+        "scalefree": "scale_free",
+        "watts_strogatz_p0": "watts_strogatz_p0",
+        "watts-strogatz-p0": "watts_strogatz_p0",
+        "wattsstrogatzp0": "watts_strogatz_p0",
+        "watts_strogatz_p001": "watts_strogatz_p001",
+        "watts-strogatz-p001": "watts_strogatz_p001",
+        "wattsstrogatzp001": "watts_strogatz_p001",
+        "watts_strogatz_p010": "watts_strogatz_p010",
+        "watts-strogatz-p010": "watts_strogatz_p010",
+        "wattsstrogatzp010": "watts_strogatz_p010",
+        "periodic_lattice": "periodic_lattice",
+        "periodic-lattice": "periodic_lattice",
+        "periodiclattice": "periodic_lattice",
+        "erdos_renyi": "erdos_renyi",
+        "erdos-renyi": "erdos_renyi",
+        "erdosrenyi": "erdos_renyi",
+        "barabasi_albert": "barabasi_albert",
+        "barabasi-albert": "barabasi_albert",
+        "barabasialbert": "barabasi_albert",
     }
     factory_name = alias_map.get(key, key)
+
+    if factory_name in _PHASE1_SUBSTRATE_FACTORIES:
+        return _PHASE1_SUBSTRATE_FACTORIES[factory_name]
 
     try:
         factory = getattr(graph_factories, factory_name)
@@ -432,6 +533,8 @@ def _instantiate_graph_from_metadata(
         "degree": "out_degree",
         "outdegree": "out_degree",
         "out_degree": "out_degree",
+        "graph_seed": "seed",
+        "graphseed": "seed",
     }
 
     normalised_kwargs: dict[str, object] = {}
@@ -1197,3 +1300,4 @@ if __name__ == "__main__":  # pragma: no cover - CLI entry point
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         sys.exit(2)
+
