@@ -338,6 +338,15 @@ def _clamp_loop_region(
     return adjusted_center, adjusted_extent
 
 
+_INHERITED_METADATA_KEYS = (
+    "graph",
+    "graph_descriptor",
+    "graphDescriptor",
+    "graph_info",
+    "graphInfo",
+)
+
+
 def _collect_entries(
     node: Any, *, meta: Mapping[str, Any] | None = None
 ) -> list[tuple[Mapping[str, Any], dict[str, Any]]]:
@@ -350,6 +359,15 @@ def _collect_entries(
         name = node.get("name")
         if isinstance(name, str) and name:
             meta_dict.setdefault("graph", name)
+
+        for key in _INHERITED_METADATA_KEYS:
+            if key in meta_dict:
+                continue
+            value = node.get(key)
+            if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+                continue
+            if value is not None:
+                meta_dict[key] = value
 
         if "graphs" in node:
             graph_seq = node["graphs"]
@@ -458,45 +476,331 @@ def _default_run_config(target_index: int) -> RunConfig:
     )
 
 
-def _graph_descriptor_for_summary(name: str, *, seed: int | None = None) -> dict[str, Any]:
-    identifier = str(name).strip()
-    key = identifier.lower()
+_GRAPH_ALIAS_MAP = {
+    "ring3-hetero": "ring3_hetero",
+    "ring3 hetero": "ring3_hetero",
+    "ring3hetero": "ring3_hetero",
+    "ring-3": "ring3",
+    "ring_3": "ring3",
+    "random_regular": "random_regular_digraph",
+    "random-regular": "random_regular_digraph",
+    "randomregular": "random_regular_digraph",
+    "random_regular_digraph": "random_regular_digraph",
+    "random-regular-digraph": "random_regular_digraph",
+    "small_world": "small_world",
+    "small-world": "small_world",
+    "smallworld": "small_world",
+    "scale_free": "scale_free",
+    "scale-free": "scale_free",
+    "scalefree": "scale_free",
+    "watts_strogatz_p0": "watts_strogatz_p0",
+    "watts-strogatz-p0": "watts_strogatz_p0",
+    "wattsstrogatzp0": "watts_strogatz_p0",
+    "watts_strogatz_p001": "watts_strogatz_p001",
+    "watts-strogatz-p001": "watts_strogatz_p001",
+    "wattsstrogatzp001": "watts_strogatz_p001",
+    "watts_strogatz_p010": "watts_strogatz_p010",
+    "watts-strogatz-p010": "watts_strogatz_p010",
+    "wattsstrogatzp010": "watts_strogatz_p010",
+    "periodic_lattice": "periodic_lattice",
+    "periodic-lattice": "periodic_lattice",
+    "periodiclattice": "periodic_lattice",
+    "erdos_renyi": "erdos_renyi",
+    "erdos-renyi": "erdos_renyi",
+    "erdosrenyi": "erdos_renyi",
+    "barabasi_albert": "barabasi_albert",
+    "barabasi-albert": "barabasi_albert",
+    "barabasialbert": "barabasi_albert",
+}
 
-    if key in {"ring3_hetero", "ring3-h", "ring3-hetero"}:
-        return {"identifier": "ring3_hetero"}
-    if key in {"ring3", "ring-3", "ring_3"}:
-        return {"identifier": "ring3"}
-    if key in {
-        "random_regular",
-        "random-regular",
-        "randomregular",
-        "random_regular_digraph",
-        "random-regular-digraph",
-    }:
-        graph_seed = 13 if seed is None else abs(int(seed))
-        return {
-            "identifier": "random_regular_digraph",
-            "kwargs": {
-                "N": 20,
-                "out_degree": 3,
-                "seed": graph_seed,
-            },
-        }
+_KWARG_ALIAS_MAP = {
+    "n": "N",
+    "nodes": "N",
+    "num_nodes": "N",
+    "node_count": "N",
+    "k": "out_degree",
+    "degree": "out_degree",
+    "outdegree": "out_degree",
+    "out_degree": "out_degree",
+    "graph_seed": "seed",
+    "graphseed": "seed",
+}
+
+_PHASE1_IDENTIFIERS = {
+    "small_world",
+    "scale_free",
+    "watts_strogatz_p0",
+    "watts_strogatz_p001",
+    "watts_strogatz_p010",
+    "periodic_lattice",
+    "erdos_renyi",
+    "barabasi_albert",
+}
+
+
+def _canonical_graph_identifier(name: str) -> str:
+    key = str(name).strip().lower()
+    if ":" in key:
+        key = key.split(":")[-1]
+    return _GRAPH_ALIAS_MAP.get(key, key)
+
+
+def _coerce_seed(*values: object | None) -> int | None:
+    for candidate in values:
+        if candidate is None:
+            continue
+        if isinstance(candidate, numbers.Integral):
+            return int(candidate)
+        if isinstance(candidate, numbers.Real):
+            numeric = float(candidate)
+            if math.isfinite(numeric):
+                return int(numeric)
+            continue
+        if isinstance(candidate, str):
+            stripped = candidate.strip()
+            if not stripped:
+                continue
+            try:
+                numeric = float(stripped)
+            except ValueError:
+                continue
+            if math.isfinite(numeric):
+                return int(numeric)
+    return None
+
+
+def _extract_raw_descriptor(source: object | None) -> Mapping[str, Any] | None:
+    if source is None:
+        return None
+    if isinstance(source, Mapping):
+        if "identifier" in source or "name" in source:
+            return source
+        for key in _INHERITED_METADATA_KEYS:
+            if key in source:
+                nested = _extract_raw_descriptor(source[key])
+                if nested is not None:
+                    return nested
+        return None
+    if isinstance(source, str):
+        stripped = source.strip()
+        if not stripped:
+            return None
+        return {"identifier": stripped}
+    return None
+
+
+def _apply_descriptor_defaults(descriptor: dict[str, Any], fallback_seed: int | None) -> dict[str, Any]:
+    identifier = str(descriptor.get("identifier", ""))
     if not identifier:
-        return {"identifier": ""}
-    return {"identifier": identifier}
+        return descriptor
+
+    kwargs_raw = descriptor.get("kwargs")
+    kwargs: dict[str, Any] = {}
+    if isinstance(kwargs_raw, Mapping):
+        for raw_key, value in kwargs_raw.items():
+            key = str(raw_key)
+            canonical_key = _KWARG_ALIAS_MAP.get(key.lower(), key)
+            kwargs[canonical_key] = value
+
+    canonical = _canonical_graph_identifier(identifier)
+    descriptor["identifier"] = canonical
+    if kwargs:
+        descriptor["kwargs"] = kwargs
+    else:
+        descriptor.pop("kwargs", None)
+
+    if canonical in {"ring3", "ring3_hetero"}:
+        descriptor.pop("seed", None)
+        return descriptor
+
+    if canonical == "random_regular_digraph":
+        N_value = kwargs.get("N", 20)
+        try:
+            N_numeric = int(float(N_value))
+        except (TypeError, ValueError):
+            N_numeric = 20
+        out_value = kwargs.get("out_degree", kwargs.get("degree", 3))
+        try:
+            out_numeric = int(float(out_value))
+        except (TypeError, ValueError):
+            out_numeric = 3
+        seed_value = _coerce_seed(
+            descriptor.get("seed"),
+            kwargs.get("seed"),
+            kwargs.get("graph_seed"),
+            fallback_seed,
+            13,
+        )
+        if seed_value is None:
+            seed_value = 13
+        descriptor["seed"] = int(seed_value)
+        descriptor["kwargs"] = {
+            "N": int(N_numeric),
+            "out_degree": int(out_numeric),
+            "seed": int(seed_value),
+        }
+        return descriptor
+
+    if canonical in _PHASE1_IDENTIFIERS:
+        seed_value = _coerce_seed(
+            descriptor.get("seed"),
+            kwargs.get("seed") if kwargs else None,
+            kwargs.get("graph_seed") if kwargs else None,
+            fallback_seed,
+            7,
+        )
+        if seed_value is not None:
+            descriptor["seed"] = int(seed_value)
+            if kwargs is None:
+                kwargs = {}
+            kwargs["seed"] = int(seed_value)
+            descriptor["kwargs"] = kwargs
+        elif "kwargs" in descriptor and not descriptor["kwargs"]:
+            descriptor.pop("kwargs", None)
+        return descriptor
+
+    if "seed" in descriptor and descriptor["seed"] is None:
+        descriptor.pop("seed", None)
+    if "kwargs" in descriptor and not descriptor["kwargs"]:
+        descriptor.pop("kwargs", None)
+    return descriptor
 
 
-def _build_substrate(name: str, *, seed: int | None = None) -> GraphSubstrate:
-    key = name.lower()
-    if key in {"ring3_hetero", "ring3-h", "ring3-hetero"}:
-        return factories.ring3_hetero()
-    if key == "ring3":
-        return factories.ring3()
-    if key in {"random_regular", "random-regular", "randomregular"}:
-        graph_seed = 13 if seed is None else abs(int(seed))
-        return factories.random_regular_digraph(N=20, out_degree=3, seed=graph_seed)
+def _normalise_graph_descriptor(
+    descriptor: Mapping[str, Any] | str | None,
+    *,
+    fallback_name: str,
+    fallback_seed: int | None,
+) -> dict[str, Any] | None:
+    raw = _extract_raw_descriptor(descriptor)
+    if raw is None:
+        return None
+
+    identifier_value = raw.get("identifier") or raw.get("name") or raw.get("graph")
+    if isinstance(identifier_value, Mapping):
+        return _normalise_graph_descriptor(
+            identifier_value,
+            fallback_name=fallback_name,
+            fallback_seed=fallback_seed,
+        )
+
+    identifier = str(identifier_value).strip() if identifier_value is not None else ""
+    if not identifier:
+        identifier = str(fallback_name)
+
+    result: dict[str, Any] = {"identifier": identifier}
+
+    raw_kwargs = raw.get("kwargs")
+    if isinstance(raw_kwargs, Mapping):
+        kwargs: dict[str, Any] = {}
+        for raw_key, value in raw_kwargs.items():
+            key = str(raw_key)
+            canonical_key = _KWARG_ALIAS_MAP.get(key.lower(), key)
+            kwargs[canonical_key] = value
+        if kwargs:
+            result["kwargs"] = kwargs
+
+    if "seed" in raw:
+        result["seed"] = raw["seed"]
+
+    return _apply_descriptor_defaults(result, fallback_seed)
+
+
+def _graph_descriptor_for_summary(name: str, *, seed: int | None = None) -> dict[str, Any]:
+    canonical = _canonical_graph_identifier(name)
+    base: dict[str, Any] = {"identifier": canonical}
+    if seed is not None:
+        base["seed"] = seed
+    descriptor = _normalise_graph_descriptor(base, fallback_name=name, fallback_seed=seed)
+    if descriptor is None:
+        return {"identifier": canonical}
+    return descriptor
+
+
+def _select_metadata_descriptor(
+    hotspots: Sequence[HotspotSpec],
+) -> Mapping[str, Any] | str | None:
+    for spec in hotspots:
+        descriptor = _extract_raw_descriptor(spec.metadata)
+        if descriptor is not None:
+            return descriptor
+    return None
+
+
+def _prepare_graph_descriptor(
+    name: str,
+    *,
+    seed: int | None,
+    descriptor: Mapping[str, Any] | str | None = None,
+) -> dict[str, Any]:
+    prepared = _normalise_graph_descriptor(
+        descriptor,
+        fallback_name=name,
+        fallback_seed=seed,
+    )
+    if prepared is not None:
+        return prepared
+
+    fallback = _graph_descriptor_for_summary(name, seed=seed)
+    prepared = _normalise_graph_descriptor(
+        fallback,
+        fallback_name=name,
+        fallback_seed=seed,
+    )
+    if prepared is not None:
+        return prepared
     raise ValueError(f"unsupported substrate '{name}'")
+
+
+def _build_substrate_from_descriptor(descriptor: Mapping[str, Any]) -> GraphSubstrate:
+    identifier = descriptor.get("identifier")
+    if identifier is None:
+        raise ValueError("graph descriptor is missing an identifier")
+
+    kwargs_raw = descriptor.get("kwargs")
+    kwargs = dict(kwargs_raw) if isinstance(kwargs_raw, Mapping) else {}
+    seed_value = descriptor.get("seed")
+
+    try:
+        from experiments.adiabatic_boundary import run as adiabatic_run  # type: ignore
+    except ImportError:  # pragma: no cover - defensive guard
+        adiabatic_run = None
+
+    if adiabatic_run is not None:
+        return adiabatic_run._instantiate_graph_from_metadata(
+            identifier,
+            kwargs,
+            seed_value=seed_value,
+            source_description="Loop hotspot metadata",
+        )
+
+    canonical = _canonical_graph_identifier(identifier)
+    if canonical == "ring3_hetero":
+        return factories.ring3_hetero()
+    if canonical == "ring3":
+        return factories.ring3()
+    if canonical == "random_regular_digraph":
+        N_value = kwargs.get("N", 20)
+        out_value = kwargs.get("out_degree", 3)
+        seed_numeric = _coerce_seed(seed_value, kwargs.get("seed"), 13)
+        if seed_numeric is None:
+            seed_numeric = 13
+        return factories.random_regular_digraph(
+            N=int(N_value),
+            out_degree=int(out_value),
+            seed=int(seed_numeric),
+        )
+    raise ValueError(f"unsupported substrate '{identifier}'")
+
+
+def _build_substrate(
+    name: str,
+    *,
+    seed: int | None = None,
+    descriptor: Mapping[str, Any] | str | None = None,
+) -> GraphSubstrate:
+    prepared = _prepare_graph_descriptor(name, seed=seed, descriptor=descriptor)
+    return _build_substrate_from_descriptor(prepared)
 
 
 def _initial_state(
@@ -1495,7 +1799,8 @@ def _hotspot_summary_to_json(summary: HotspotSummary) -> dict[str, Any]:
 def _build_summary_payload(
     *,
     axes: tuple[str, str],
-    graph: str,
+    graph: Mapping[str, Any] | str,
+    graph_descriptor: Mapping[str, Any] | str | None = None,
     fs_guard: float | None,
     config: RunConfig,
     base_steps: int,
@@ -1526,7 +1831,19 @@ def _build_summary_payload(
         "schema_version": 1,
         "created_at": timestamp,
         "axes": [axes[0], axes[1]],
-        "graph": _graph_descriptor_for_summary(graph, seed=seed),
+        "graph": _normalise_graph_descriptor(
+            graph_descriptor if graph_descriptor is not None else graph,
+            fallback_name=(
+                str(graph)
+                if isinstance(graph, str)
+                else str(getattr(graph, "get", lambda *_: "")("identifier", ""))
+            ),
+            fallback_seed=seed,
+        )
+        or _graph_descriptor_for_summary(
+            str(graph) if isinstance(graph, str) else "",
+            seed=seed,
+        ),
         "fs_guard": _float_or_none(fs_guard),
         "neighbor_settle_steps": int(getattr(config, "neighbor_settle_steps", 0)),
         "base_steps": int(base_steps),
@@ -1711,7 +2028,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not hotspots:
         raise ValueError("no hotspots available for evaluation")
 
-    substrate = _build_substrate(str(args.graph), seed=int(args.seed))
+    seed_value = int(args.seed)
+    metadata_descriptor = _select_metadata_descriptor(hotspots)
+    graph_descriptor = _prepare_graph_descriptor(
+        str(args.graph),
+        seed=seed_value,
+        descriptor=metadata_descriptor,
+    )
+    substrate = _build_substrate_from_descriptor(graph_descriptor)
     config = _default_run_config(int(args.readout_target))
     if args.fs_guard is not None:
         config.fs_step_guard = {
@@ -1745,7 +2069,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             config=config,
             axes=axes,
             extents=extents_input,
-            seed=int(args.seed),
+            seed=seed_value,
             micro_scan=micro_scan_enabled,
             base_steps=int(args.base_steps),
             target_fs=target_fs_value,
@@ -1766,10 +2090,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         payload = _build_summary_payload(
             axes=axes,
             graph=str(args.graph),
+            graph_descriptor=graph_descriptor,
             fs_guard=float(args.fs_guard) if args.fs_guard is not None else None,
             config=config,
             base_steps=int(args.base_steps),
-            seed=int(args.seed),
+            seed=seed_value,
             limit=int(args.limit) if args.limit is not None else None,
             micro_scan=micro_scan_enabled,
             auto_extent=auto_extent_enabled,
