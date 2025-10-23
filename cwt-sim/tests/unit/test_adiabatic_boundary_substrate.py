@@ -12,6 +12,7 @@ from experiments.adiabatic_boundary.run import (
     _instantiate_graph_from_metadata,
     _load_substrate_artifact,
 )
+from experiments.gateB_ridge_finder import run as phase1_run
 from experiments.loop_at_hotspot.run import _build_summary_payload, _default_run_config
 
 
@@ -43,6 +44,14 @@ def _assert_equivalent_substrates(actual, expected) -> None:
         exp_weight, exp_delay = expected_edges[edge]
         assert weight == pytest.approx(exp_weight)
         assert delay == pytest.approx(exp_delay)
+
+
+def _build_phase1_substrate(name: str, seed: int | None = None):
+    base_seed = 7 if seed is None else int(seed)
+    built = phase1_run.build_substrates([name], seed=base_seed)
+    if not built:
+        raise AssertionError(f"Phase 1 factory '{name}' returned no substrate")
+    return built[0][1]
 
 
 def test_load_substrate_from_phase3_summary_ring3(tmp_path: Path) -> None:
@@ -162,5 +171,69 @@ def test_cli_summary_random_regular_descriptor(tmp_path: Path) -> None:
         source_description="CLI summary",
     )
     expected = random_regular_digraph(N=20, out_degree=3, seed=23)
+
+    _assert_equivalent_substrates(rebuilt, expected)
+
+
+@pytest.mark.parametrize(
+    ("identifier", "seed"),
+    [
+        ("small_world", 11),
+        ("scale_free", 13),
+        ("watts_strogatz_p0", 17),
+        ("watts_strogatz_p001", 19),
+        ("watts_strogatz_p010", 23),
+        ("periodic_lattice", 29),
+        ("erdos_renyi", 31),
+        ("barabasi_albert", 37),
+    ],
+)
+def test_instantiate_phase1_substrates(identifier: str, seed: int) -> None:
+    rebuilt = _instantiate_graph_from_metadata(
+        identifier,
+        {"seed": seed},
+        seed_value=None,
+        source_description="Phase 1 summary",
+    )
+    expected = _build_phase1_substrate(identifier, seed=seed)
+
+    _assert_equivalent_substrates(rebuilt, expected)
+
+
+def test_instantiate_phase1_substrate_accepts_graph_seed_alias() -> None:
+    identifier = "small_world"
+    rebuilt = _instantiate_graph_from_metadata(
+        identifier,
+        {"graph_seed": 41},
+        seed_value=None,
+        source_description="Phase 1 summary",
+    )
+    expected = _build_phase1_substrate(identifier, seed=41)
+
+    _assert_equivalent_substrates(rebuilt, expected)
+
+
+def test_instantiate_phase1_substrate_uses_summary_seed() -> None:
+    identifier = "scale_free"
+    rebuilt = _instantiate_graph_from_metadata(
+        identifier,
+        {},
+        seed_value=43,
+        source_description="Phase 1 summary",
+    )
+    expected = _build_phase1_substrate(identifier, seed=43)
+
+    _assert_equivalent_substrates(rebuilt, expected)
+
+
+def test_instantiate_phase1_substrate_defaults_to_cli_seed() -> None:
+    identifier = "periodic_lattice"
+    rebuilt = _instantiate_graph_from_metadata(
+        identifier,
+        {},
+        seed_value=None,
+        source_description="Phase 1 summary",
+    )
+    expected = _build_phase1_substrate(identifier, seed=7)
 
     _assert_equivalent_substrates(rebuilt, expected)
