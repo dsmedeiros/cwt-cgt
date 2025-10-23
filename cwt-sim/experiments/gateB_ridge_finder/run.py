@@ -988,6 +988,37 @@ def save_top_omega_tiles(
         "top_tiles": entries,
     }
 
+    descriptor = result.graph_descriptor
+    seed_value = result.factory_seed
+
+    graph_block: dict[str, object] | None = None
+    if isinstance(descriptor, Mapping):
+        identifier = descriptor.get("identifier", result.name)
+        raw_kwargs = descriptor.get("kwargs")
+        kwargs: dict[str, object] = {}
+        if isinstance(raw_kwargs, Mapping):
+            kwargs = {str(key): value for key, value in raw_kwargs.items()}
+        graph_block = {
+            "identifier": str(identifier) if identifier is not None else str(result.name),
+            "kwargs": kwargs,
+        }
+    elif descriptor is not None:
+        graph_block = {
+            "identifier": str(descriptor),
+            "kwargs": {},
+        }
+    else:
+        graph_block = {
+            "identifier": str(result.name),
+            "kwargs": {},
+        }
+
+    if graph_block is not None and seed_value is not None:
+        graph_block["seed"] = int(seed_value)
+
+    if graph_block is not None:
+        data["graph"] = graph_block
+
     with (out_dir / "top_omega_tiles.json").open("w", encoding="utf-8") as handle:
         json.dump(
             data,
