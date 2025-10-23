@@ -51,7 +51,7 @@ def _build_phase1_substrate(name: str, seed: int | None = None):
     built = phase1_run.build_substrates([name], seed=base_seed)
     if not built:
         raise AssertionError(f"Phase 1 factory '{name}' returned no substrate")
-    return built[0][1]
+    return built[0].substrate
 
 
 def test_load_substrate_from_phase3_summary_ring3(tmp_path: Path) -> None:
