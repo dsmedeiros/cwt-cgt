@@ -127,6 +127,16 @@ def test_gateB_main_writes_topology_artifacts(tmp_path, monkeypatch):
     assert graph_summary["graph"]["identifier"] == "watts_strogatz_p0"
     assert graph_summary["seed"] == 11
 
+    top_tiles_path = graph_dir / "top_omega_tiles.json"
+    assert top_tiles_path.exists()
+    top_tiles = json.loads(top_tiles_path.read_text(encoding="utf-8"))
+    graph_block = top_tiles.get("graph")
+    assert isinstance(graph_block, dict)
+    assert graph_block.get("identifier") == "watts_strogatz_p0"
+    kwargs = graph_block.get("kwargs") or {}
+    assert kwargs.get("seed") == 11
+    assert graph_block.get("seed") == 11
+
 
 def test_phase1_artifact_loader_rebuilds_barabasi(tmp_path, monkeypatch):
     monkeypatch.setenv("MPLBACKEND", "Agg")
