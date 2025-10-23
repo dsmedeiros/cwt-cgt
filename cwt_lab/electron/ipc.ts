@@ -533,8 +533,21 @@ const exportRecipeBundle = async (recipe: StoredRecipe) => {
   };
 };
 
+const isIgnorableFsError = (error: unknown) => {
+  const code = typeof error === 'object' && error && 'code' in error ? (error as NodeJS.ErrnoException).code : undefined;
+  return code === 'ENOENT' || code === 'ENOTDIR' || code === 'EPERM';
+};
+
 const listDirectoryTree = async (root: string, base: string) => {
-  const entries = await fs.readdir(root, { withFileTypes: true });
+  let entries: fs.Dirent[];
+  try {
+    entries = await fs.readdir(root, { withFileTypes: true });
+  } catch (error) {
+    if (isIgnorableFsError(error)) {
+      return [];
+    }
+    throw error;
+  }
   const result: Array<{
     name: string;
     path: string;
@@ -547,12 +560,20 @@ const listDirectoryTree = async (root: string, base: string) => {
     const entryPath = path.join(root, entry.name);
     const relativePath = path.relative(base, entryPath);
     if (entry.isDirectory()) {
+      let children: unknown[] = [];
+      try {
+        children = await listDirectoryTree(entryPath, base);
+      } catch (error) {
+        if (!isIgnorableFsError(error)) {
+          throw error;
+        }
+      }
       result.push({
         name: entry.name,
         path: entryPath,
         type: 'directory',
         relativePath,
-        children: await listDirectoryTree(entryPath, base),
+        children,
       });
     } else {
       result.push({
