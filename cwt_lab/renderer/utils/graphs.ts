@@ -8,6 +8,26 @@ export const GRAPH_ID_ALIASES: Record<string, readonly string[]> = {
     'random_regular_digraph',
     'random-regular-digraph',
   ],
+  small_world: ['small-world', 'smallworld', 'small world'],
+  scale_free: ['scale-free', 'scalefree', 'scale free'],
+  watts_strogatz_p001: [
+    'watts-strogatz-p001',
+    'watts strogatz p001',
+    'wattsstrogatzp001',
+  ],
+  watts_strogatz_p010: [
+    'watts-strogatz-p010',
+    'watts strogatz p010',
+    'wattsstrogatzp010',
+  ],
+  watts_strogatz_p0: [
+    'watts-strogatz-p0',
+    'watts strogatz p0',
+    'wattsstrogatzp0',
+  ],
+  periodic_lattice: ['periodic-lattice', 'periodiclattice', 'periodic lattice'],
+  erdos_renyi: ['erdos-renyi', 'erdosrenyi', 'erdos renyi'],
+  barabasi_albert: ['barabasi-albert', 'barabasialbert', 'barabasi albert'],
 };
 
 type GraphDescriptorLike =

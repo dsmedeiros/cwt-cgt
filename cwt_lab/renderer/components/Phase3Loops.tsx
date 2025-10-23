@@ -234,6 +234,46 @@ const graphCatalog: Record<
     help: 'Generates a 20-node 3-regular digraph using the selected seed to stress-test the loop.',
     aliases: GRAPH_ID_ALIASES.random_regular,
   },
+  small_world: {
+    label: 'Small-world (Watts–Strogatz)',
+    help: 'Creates the Watts–Strogatz small-world substrate used in Phase 1 discovery runs.',
+    aliases: GRAPH_ID_ALIASES.small_world,
+  },
+  scale_free: {
+    label: 'Scale-free network',
+    help: 'Generates the preferential attachment topology leveraged for Phase 1 baselines.',
+    aliases: GRAPH_ID_ALIASES.scale_free,
+  },
+  watts_strogatz_p0: {
+    label: 'Watts–Strogatz (p=0)',
+    help: 'Builds the deterministic Watts–Strogatz ring lattice baseline (rewiring probability 0).',
+    aliases: GRAPH_ID_ALIASES.watts_strogatz_p0,
+  },
+  watts_strogatz_p001: {
+    label: 'Watts–Strogatz (p=0.01)',
+    help: 'Constructs the Watts–Strogatz small-world variant with 1% rewiring probability.',
+    aliases: GRAPH_ID_ALIASES.watts_strogatz_p001,
+  },
+  watts_strogatz_p010: {
+    label: 'Watts–Strogatz (p=0.10)',
+    help: 'Constructs the Watts–Strogatz small-world variant with 10% rewiring probability.',
+    aliases: GRAPH_ID_ALIASES.watts_strogatz_p010,
+  },
+  periodic_lattice: {
+    label: 'Periodic lattice',
+    help: 'Provides the toroidal lattice used to evaluate translation symmetry during Phase 1.',
+    aliases: GRAPH_ID_ALIASES.periodic_lattice,
+  },
+  erdos_renyi: {
+    label: 'Erdős–Rényi random graph',
+    help: 'Samples the G(n, p) substrate distribution employed in early stochastic sweeps.',
+    aliases: GRAPH_ID_ALIASES.erdos_renyi,
+  },
+  barabasi_albert: {
+    label: 'Barabási–Albert graph',
+    help: 'Generates the classic preferential attachment graph used in the baseline library.',
+    aliases: GRAPH_ID_ALIASES.barabasi_albert,
+  },
 };
 
 const graphIds = Object.keys(graphCatalog);
