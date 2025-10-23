@@ -32,6 +32,7 @@ let navigationState: NavigationContextValue;
 let navigationSpy: MockInstance<[], NavigationContextValue> | null = null;
 let guidedLoopMock: MockInstance<[any], Promise<any>> | null = null;
 let runPreviewMock: MockInstance<[any], Promise<any>> | null = null;
+let artifactsListMock: MockInstance<[any], Promise<any>> | null = null;
 
 const formatCoordinateValue = (value: unknown) => {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -229,10 +230,14 @@ describe('Phase3Loops component amplitude controls', () => {
     runPreviewMock = vi
       .fn<[any], Promise<any>>()
       .mockResolvedValue({ ok: true, data: { cli: 'preview' } });
+    artifactsListMock = vi
+      .fn<[any], Promise<any>>()
+      .mockResolvedValue({ ok: false, error: 'listing disabled' });
     Object.assign(baseWindow as unknown as Record<string, unknown>, {
       CWT: {
         artifacts: {
           readFile: readFileMock,
+          list: artifactsListMock,
         },
         registry: {
           query: vi.fn(),
@@ -253,6 +258,7 @@ describe('Phase3Loops component amplitude controls', () => {
     navigationSpy = null;
     guidedLoopMock = null;
     runPreviewMock = null;
+    artifactsListMock = null;
     cleanup();
     vi.clearAllMocks();
     const currentWindow = (globalThis as { window?: Window }).window;
@@ -315,6 +321,70 @@ describe('Phase3Loops component amplitude controls', () => {
 
     await waitFor(() => {
       expect(readFileMock).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(latestViewerProps?.graphId).toBe('random_regular');
+    });
+  });
+
+  it('selects the graph from imported ridge metadata when available', async () => {
+    const listMock = vi.fn().mockResolvedValue({
+      ok: true,
+      data: [
+        {
+          name: 'top_omega_tiles.json',
+          path: 'substrate-1/top_omega_tiles.json',
+          relativePath: 'top_omega_tiles.json',
+          type: 'file',
+        },
+      ],
+    });
+    (window as any).CWT.artifacts.list = listMock;
+
+    const topTiles = {
+      axes: ['rho', 'tau'],
+      top_tiles: [
+        {
+          coordinates: {
+            rho: 0.9,
+            tau: 1.1,
+            kappa: 1.0,
+          },
+          omega_abs: 3.14,
+        },
+      ],
+      graph: {
+        identifier: 'random_regular',
+        kwargs: { degree: 4 },
+        seed: 17,
+      },
+    };
+
+    readFileMock.mockImplementation(async (request: { path?: string }) => {
+      if (request?.path === 'substrate-1/top_omega_tiles.json') {
+        return { ok: true, data: { contents: JSON.stringify(topTiles) } };
+      }
+      return { ok: true, data: { contents: JSON.stringify({}) } };
+    });
+
+    navigationState = {
+      ...navigationState,
+      experiments: [
+        {
+          name: 'phase1',
+          path: 'exp-1',
+          relativePath: 'exp-1',
+          type: 'directory',
+        },
+      ] as any,
+      selectedSubstratePath: 'substrate-1',
+    } as NavigationContextValue;
+
+    render(<Phase3Loops />);
+
+    await waitFor(() => {
+      expect(listMock).toHaveBeenCalled();
     });
 
     await waitFor(() => {

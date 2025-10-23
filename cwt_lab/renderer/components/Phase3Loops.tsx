@@ -568,6 +568,8 @@ type Phase1HotspotEntry = {
   axes: [HotspotAxis, HotspotAxis];
   coordinates: HotspotCoordinates;
   omegaAbs: number | null;
+  graph: GraphDescriptorCandidate | null;
+  graphSeed: number | null;
 };
 
 const parsePhase1Hotspots = (raw: string): Phase1HotspotEntry[] => {
@@ -593,6 +595,89 @@ const parsePhase1Hotspots = (raw: string): Phase1HotspotEntry[] => {
       normalized: axis.toLowerCase(),
       canonical: axisAliasToHotspotAxis(axis),
     }));
+
+  const parseGraphPayload = (
+    value: unknown,
+  ): { descriptor: GraphDescriptorCandidate | null; seed: number | null } => {
+    if (value == null) {
+      return { descriptor: null, seed: null };
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return { descriptor: null, seed: null };
+      }
+      return { descriptor: trimmed, seed: null };
+    }
+
+    if (typeof value !== 'object') {
+      return { descriptor: null, seed: null };
+    }
+
+    const record = value as Record<string, unknown>;
+
+    let identifier: string | null = null;
+    const registerCandidate = (candidate: unknown) => {
+      if (identifier) {
+        return;
+      }
+      if (typeof candidate === 'string') {
+        const trimmed = candidate.trim();
+        if (trimmed) {
+          identifier = trimmed;
+        }
+      }
+    };
+
+    registerCandidate(record.identifier);
+    registerCandidate(record.id);
+    registerCandidate(record.graph);
+    registerCandidate(record.name);
+    registerCandidate(record.label);
+
+    let descriptor: GraphDescriptorCandidate | null = null;
+    if (identifier) {
+      const rawKwargs = record.kwargs;
+      let kwargs: Record<string, unknown> | undefined;
+      if (rawKwargs && typeof rawKwargs === 'object' && !Array.isArray(rawKwargs)) {
+        const normalized: Record<string, unknown> = {};
+        for (const [key, entry] of Object.entries(rawKwargs as Record<string, unknown>)) {
+          normalized[String(key)] = entry;
+        }
+        kwargs = normalized;
+      }
+      descriptor = kwargs ? { identifier, kwargs } : { identifier };
+    }
+
+    let seed: number | null = null;
+    const seedCandidate = record.seed;
+    if (typeof seedCandidate === 'number' && Number.isFinite(seedCandidate)) {
+      seed = Math.trunc(seedCandidate);
+    } else if (typeof seedCandidate === 'string' && seedCandidate.trim()) {
+      const parsedSeed = Number(seedCandidate);
+      if (Number.isFinite(parsedSeed)) {
+        seed = Math.trunc(parsedSeed);
+      }
+    }
+
+    if (!descriptor) {
+      const nestedGraph = record.graph;
+      if (nestedGraph && nestedGraph !== record) {
+        const nested = parseGraphPayload(nestedGraph);
+        descriptor = nested.descriptor;
+        if (seed == null) {
+          seed = nested.seed;
+        }
+      }
+    }
+
+    return { descriptor, seed };
+  };
+
+  const { descriptor: fileGraphDescriptor, seed: fileGraphSeed } = parseGraphPayload(
+    (parsed as { graph?: unknown }).graph,
+  );
 
   const tilesRaw = (parsed as { top_tiles?: unknown; topTiles?: unknown }).top_tiles ?? (
     parsed as { topTiles?: unknown }
@@ -683,10 +768,16 @@ const parsePhase1Hotspots = (raw: string): Phase1HotspotEntry[] => {
       (tile as Record<string, unknown>).omegaAbs;
     const omegaAbs = Number(omegaRaw);
 
+    const { descriptor: tileGraphDescriptor, seed: tileGraphSeed } = parseGraphPayload(
+      (tile as { graph?: unknown }).graph,
+    );
+
     entries.push({
       axes: [planeAxes[0], planeAxes[1]],
       coordinates: coordinateValues,
       omegaAbs: Number.isFinite(omegaAbs) ? omegaAbs : null,
+      graph: tileGraphDescriptor ?? fileGraphDescriptor ?? null,
+      graphSeed: tileGraphSeed ?? fileGraphSeed ?? null,
     });
   }
 
@@ -1827,12 +1918,27 @@ const Phase3Loops = () => {
       const sortedAxes = hotspotAxisOrder.filter((axis) => axesSeen.has(axis));
       setExperimentAxes(sortedAxes.length > 0 ? sortedAxes : hotspotAxisOrder);
 
-      const inferredGraph = canonicalGraphId(originKey);
-      if (inferredGraph) {
-        setGraph((prev) => (prev === inferredGraph ? prev : inferredGraph));
+      const metadataGraph = entries.reduce<string | null>((acc, entry) => {
+        if (acc) {
+          return acc;
+        }
+        return canonicalGraphId(entry.graph ?? null);
+      }, null);
+
+      if (metadataGraph) {
+        setGraph((prev) => (prev === metadataGraph ? prev : metadataGraph));
         setGraphInferenceError(null);
         if (selectedSubstratePath) {
-          inferredGraphCacheRef.current.set(selectedSubstratePath, inferredGraph);
+          inferredGraphCacheRef.current.set(selectedSubstratePath, metadataGraph);
+        }
+      } else {
+        const inferredGraph = canonicalGraphId(originKey);
+        if (inferredGraph) {
+          setGraph((prev) => (prev === inferredGraph ? prev : inferredGraph));
+          setGraphInferenceError(null);
+          if (selectedSubstratePath) {
+            inferredGraphCacheRef.current.set(selectedSubstratePath, inferredGraph);
+          }
         }
       }
 
@@ -1847,12 +1953,13 @@ const Phase3Loops = () => {
             coordinates[axis] = value;
           }
         }
+        const entryGraphId = canonicalGraphId(entry.graph ?? null);
         return {
           id: toImportId(effectiveOrigin || sourceLabel, index),
           name: `Phase 1 ridge #${index + 1}${suffix}`,
           axes: [planeAxes[0], planeAxes[1]],
           coordinates,
-          graph: null,
+          graph: entryGraphId,
           originPath: effectiveOrigin,
           omegaAbs: entry.omegaAbs,
         } satisfies Hotspot;
@@ -3429,3 +3536,4 @@ const Phase3Loops = () => {
 };
 
 export default Phase3Loops;
+export { parsePhase1Hotspots };
