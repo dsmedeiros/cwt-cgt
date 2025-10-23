@@ -431,8 +431,8 @@ def _make_phase1_factory(identifier: str) -> Callable[[int | None], GraphSubstra
                 f"Phase 1 substrate factory '{identifier}' produced no substrate"
             )
 
-        _, substrate = built[0]
-        return substrate
+        record = built[0]
+        return record.substrate
 
     factory.__name__ = f"phase1_{identifier}_factory"
     return factory

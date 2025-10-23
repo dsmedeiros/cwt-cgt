@@ -6,6 +6,7 @@ import argparse
 import csv
 import json
 import math
+import numbers
 import os
 import sys
 from dataclasses import dataclass, field
@@ -157,6 +158,8 @@ class GraphScanResult:
     r_gradient: np.ndarray
     detection: DetectionMetrics
     topology_metrics: dict[str, float] = field(default_factory=dict)
+    factory_seed: int | None = None
+    graph_descriptor: Mapping[str, object] | None = None
 
     def to_dict(self) -> dict:
         axis0_name, axis1_name = self.axes
@@ -175,6 +178,15 @@ class GraphScanResult:
             "detection": self.detection.to_json(),
             "topology": {key: _json_safe_float(value) for key, value in self.topology_metrics.items()},
         }
+
+
+@dataclass(frozen=True)
+class BuiltSubstrate:
+    """Record describing a substrate constructed for the Gate B experiment."""
+
+    name: str
+    substrate: GraphSubstrate
+    factory_seed: int
 
 
 # ---------------------------------------------------------------------------
@@ -831,9 +843,27 @@ def save_numpy_bundle(result: GraphScanResult, out_dir: Path) -> None:
         roc_thresholds=result.detection.roc_thresholds,
     )
 
+    summary_payload: dict[str, object] = dict(result.detection.to_json())
+    descriptor = result.graph_descriptor
+    seed_value: int | None = result.factory_seed
+
+    if descriptor is not None:
+        summary_payload["graph"] = descriptor
+        if seed_value is None and isinstance(descriptor, Mapping):
+            kwargs = descriptor.get("kwargs")  # type: ignore[index]
+            if isinstance(kwargs, Mapping):
+                candidate = kwargs.get("seed")
+                if isinstance(candidate, numbers.Integral):
+                    seed_value = int(candidate)
+                elif isinstance(candidate, numbers.Real) and math.isfinite(float(candidate)):
+                    seed_value = int(float(candidate))
+
+    if seed_value is not None:
+        summary_payload["seed"] = int(seed_value)
+
     with (out_dir / "summary.json").open("w", encoding="utf-8") as fh:
         json.dump(
-            result.detection.to_json(),
+            summary_payload,
             fh,
             indent=2,
             ensure_ascii=False,
@@ -977,6 +1007,9 @@ def scan_graph(
     config: SimulationConfig,
     bootstrap_samples: int,
     detection_seed: int,
+    *,
+    factory_seed: int | None = None,
+    graph_descriptor: Mapping[str, object] | None = None,
 ) -> GraphScanResult:
     """Run the Gate B sweep for a particular substrate."""
 
@@ -1024,9 +1057,23 @@ def scan_graph(
     r_gradient = gradient_magnitude(kuramoto_r, axis0_values, axis1_values)
     detection = detection_from_trace(trace_g, spectral_gap, r_gradient, bootstrap_samples, detection_seed)
 
+    descriptor_copy: dict[str, object] | None = None
+    if graph_descriptor is not None:
+        kwargs: dict[str, object] = {}
+        raw_kwargs = graph_descriptor.get("kwargs") if isinstance(graph_descriptor, Mapping) else None
+        if isinstance(raw_kwargs, Mapping):
+            kwargs = {str(key): value for key, value in raw_kwargs.items()}
+        identifier = graph_descriptor.get("identifier") if isinstance(graph_descriptor, Mapping) else None
+        descriptor_copy = {
+            "identifier": str(identifier) if identifier is not None else name,
+            "kwargs": kwargs,
+        }
+
     return GraphScanResult(
         name=name,
         substrate=substrate,
+        factory_seed=factory_seed,
+        graph_descriptor=descriptor_copy,
         axes=axes,
         axis0_values=axis0_values,
         axis1_values=axis1_values,
@@ -1220,22 +1267,47 @@ _SUBSTRATE_FACTORIES: dict[str, Callable[[int, np.random.Generator], GraphSubstr
 }
 
 
-def build_substrates(graphs: Sequence[str], seed: int) -> list[tuple[str, GraphSubstrate]]:
+def build_substrates(graphs: Sequence[str], seed: int) -> list[BuiltSubstrate]:
     """Build substrates for the requested graph names."""
 
     selections = [str(name).strip().lower() for name in graphs if str(name).strip()]
     if not selections:
         raise ValueError("at least one graph must be specified")
 
-    built: list[tuple[str, GraphSubstrate]] = []
+    built: list[BuiltSubstrate] = []
     for index, key in enumerate(selections):
         factory = _SUBSTRATE_FACTORIES.get(key)
         if factory is None:
             raise ValueError(f"unsupported substrate '{key}'")
         factory_seed = seed + 97 * index
         rng = np.random.default_rng(factory_seed)
-        built.append((key, factory(factory_seed, rng)))
+        built.append(
+            BuiltSubstrate(
+                name=key,
+                substrate=factory(factory_seed, rng),
+                factory_seed=factory_seed,
+            )
+        )
     return built
+
+
+def _graph_descriptor_for_summary(name: str, seed: int) -> dict[str, object]:
+    """Return a JSON-friendly descriptor recording how a substrate was built."""
+
+    identifier = str(name)
+    key = identifier.strip().lower()
+    kwargs: dict[str, object] = {}
+
+    if key == "random_regular":
+        kwargs["N"] = BASELINE_NODE_COUNT
+        kwargs["out_degree"] = max(2, int(round(TARGET_MEAN_DEGREE)))
+        kwargs["seed"] = int(seed)
+    else:
+        kwargs["seed"] = int(seed)
+        if key == "ring3":
+            kwargs["delays"] = [0.6, 1.1, 1.8]
+
+    return {"identifier": identifier, "kwargs": kwargs}
 
 
 def run_experiment(
@@ -1262,18 +1334,21 @@ def run_experiment(
     axis1_values = np.linspace(axis1_range[0], axis1_range[1], num=grid_size)
 
     results: list[GraphScanResult] = []
-    for name, substrate in build_substrates(graphs, seed):
+    for built in build_substrates(graphs, seed):
+        descriptor = _graph_descriptor_for_summary(built.name, built.factory_seed)
         result = scan_graph(
-            name,
-            substrate,
+            built.name,
+            built.substrate,
             axes,
             axis0_values,
             axis1_values,
             sim_config,
             bootstrap_samples,
             detection_seed=seed + 17,
+            factory_seed=built.factory_seed,
+            graph_descriptor=descriptor,
         )
-        graph_dir = output_dir / name
+        graph_dir = output_dir / built.name
         save_heatmaps(result, graph_dir)
         save_roc_curve(result, graph_dir)
         save_numpy_bundle(result, graph_dir)
@@ -1525,11 +1600,15 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     summary_path = output_dir / "summary.json"
     with summary_path.open("w", encoding="utf-8") as fh:
-        summary_payload: dict[str, dict[str, float | None | list[float | None]]] = {}
+        summary_payload: dict[str, dict[str, object]] = {}
         for result in results:
             entry = dict(result.detection.to_json())
             for key, value in result.topology_metrics.items():
                 entry[f"topology_{key}"] = _json_safe_float(value)
+            if result.graph_descriptor is not None:
+                entry["graph"] = result.graph_descriptor
+            if result.factory_seed is not None:
+                entry["seed"] = int(result.factory_seed)
             summary_payload[result.name] = entry
 
         json.dump(
