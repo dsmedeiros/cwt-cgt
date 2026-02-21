@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from types import MappingProxyType
 from typing import Iterable, Mapping, Sequence
 
 import networkx as nx
@@ -12,12 +13,37 @@ from ..graph.substrate import GraphSubstrate
 from .refine import geom_score
 
 __all__ = [
+    "TRIAGE_WEIGHTS",
+    "TRIAGE_WEIGHT_SUM",
     "triage_score",
     "placeholder_triage_score",
     "xi_static",
     "xi_dynamic",
     "xi_update_ema",
 ]
+
+
+TRIAGE_WEIGHT_DEGREE = 0.25
+TRIAGE_WEIGHT_CENTRALITY = 0.15
+TRIAGE_WEIGHT_CURVATURE = 0.20
+TRIAGE_WEIGHT_CLIP = 0.10
+TRIAGE_WEIGHT_SUSCEPTIBILITY = 0.10
+TRIAGE_WEIGHT_GEOMETRY = 0.20
+
+TRIAGE_WEIGHTS: Mapping[str, float] = MappingProxyType(
+    {
+        "degree": TRIAGE_WEIGHT_DEGREE,
+        "centrality": TRIAGE_WEIGHT_CENTRALITY,
+        "curvature": TRIAGE_WEIGHT_CURVATURE,
+        "clip": TRIAGE_WEIGHT_CLIP,
+        "susceptibility": TRIAGE_WEIGHT_SUSCEPTIBILITY,
+        "geometry": TRIAGE_WEIGHT_GEOMETRY,
+    }
+)
+
+TRIAGE_WEIGHT_SUM = float(sum(TRIAGE_WEIGHTS.values()))
+if not math.isclose(TRIAGE_WEIGHT_SUM, 1.0, rel_tol=1e-9, abs_tol=1e-9):
+    raise RuntimeError(f"Triage score weights must sum to 1.0; received {TRIAGE_WEIGHT_SUM:.12f}.")
 
 
 def triage_score(
@@ -91,12 +117,12 @@ def triage_score(
         geom_term = float(np.clip(geom_term, 0.0, 1.0))
 
     score = (
-        0.25 * degree_term
-        + 0.15 * centrality_term
-        + 0.2 * curvature_term
-        + 0.1 * clip_term
-        + 0.1 * susceptibility_term
-        + 0.2 * geom_term
+        TRIAGE_WEIGHTS["degree"] * degree_term
+        + TRIAGE_WEIGHTS["centrality"] * centrality_term
+        + TRIAGE_WEIGHTS["curvature"] * curvature_term
+        + TRIAGE_WEIGHTS["clip"] * clip_term
+        + TRIAGE_WEIGHTS["susceptibility"] * susceptibility_term
+        + TRIAGE_WEIGHTS["geometry"] * geom_term
     )
 
     return float(np.clip(score, 0.0, 1.0))
