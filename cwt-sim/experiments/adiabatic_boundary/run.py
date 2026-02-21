@@ -414,9 +414,7 @@ def _make_phase1_factory(identifier: str) -> Callable[[int | None], GraphSubstra
         try:
             from experiments.gateB_ridge_finder import run as phase1_run
         except ImportError as exc:  # pragma: no cover - defensive guard
-            raise ValueError(
-                f"Phase 1 substrate factory '{identifier}' is unavailable"
-            ) from exc
+            raise ValueError(f"Phase 1 substrate factory '{identifier}' is unavailable") from exc
 
         base_seed = _normalise_phase1_seed(seed)
         try:
@@ -427,9 +425,7 @@ def _make_phase1_factory(identifier: str) -> Callable[[int | None], GraphSubstra
             ) from exc
 
         if not built:
-            raise ValueError(
-                f"Phase 1 substrate factory '{identifier}' produced no substrate"
-            )
+            raise ValueError(f"Phase 1 substrate factory '{identifier}' produced no substrate")
 
         record = built[0]
         return record.substrate
@@ -549,11 +545,7 @@ def _instantiate_graph_from_metadata(
         if param_name in normalised_kwargs:
             filtered_kwargs[param_name] = normalised_kwargs[param_name]
 
-    if (
-        seed_value is not None
-        and "seed" in signature.parameters
-        and "seed" not in filtered_kwargs
-    ):
+    if seed_value is not None and "seed" in signature.parameters and "seed" not in filtered_kwargs:
         filtered_kwargs["seed"] = seed_value
 
     required_kinds = {
@@ -652,9 +644,7 @@ def _load_substrate_from_summary(
                         graph_info.append(merged)
                     else:
                         graph_info.append(descriptor)
-            elif isinstance(graphs_block, Sequence) and not isinstance(
-                graphs_block, (str, bytes, bytearray)
-            ):
+            elif isinstance(graphs_block, Sequence) and not isinstance(graphs_block, (str, bytes, bytearray)):
                 graph_info = list(graphs_block)
 
         if graph_info is None and isinstance(payload, Mapping):
@@ -717,6 +707,7 @@ def _load_substrate_from_summary(
             if identifier is None:
                 raise ValueError("Graph descriptor in summary lacks an identifier")
         elif isinstance(graph_info, Sequence) and not isinstance(graph_info, (str, bytes, bytearray)):
+
             def _extract_seed_candidate(descriptor: Mapping[str, object]) -> object | None:
                 for seed_key in ("seed", "graph_seed", "graphSeed"):
                     if seed_key in descriptor:
@@ -738,9 +729,7 @@ def _load_substrate_from_summary(
                         identifier = candidate
                     continue
                 if isinstance(entry, Mapping):
-                    candidate_identifier, candidate_kwargs = _ingest_mapping(
-                        entry, require_identifier=False
-                    )
+                    candidate_identifier, candidate_kwargs = _ingest_mapping(entry, require_identifier=False)
                     if candidate_identifier and identifier is None:
                         identifier = candidate_identifier
                     for key, value in candidate_kwargs.items():
@@ -750,9 +739,7 @@ def _load_substrate_from_summary(
                         if seed_candidate is not None:
                             graph_kwargs.setdefault("seed", seed_candidate)
                     continue
-                last_error = ValueError(
-                    f"Unsupported graph descriptor entry type: {type(entry).__name__}"
-                )
+                last_error = ValueError(f"Unsupported graph descriptor entry type: {type(entry).__name__}")
 
             if identifier is None:
                 if last_error is not None:
@@ -1185,17 +1172,13 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "--graph-id",
         type=str,
         default=None,
-        help=(
-            "Override the graph factory identifier when substrate metadata is missing."
-        ),
+        help=("Override the graph factory identifier when substrate metadata is missing."),
     )
     parser.add_argument(
         "--graph-params",
         type=str,
         default=None,
-        help=(
-            "JSON object providing keyword arguments for the overridden graph factory."
-        ),
+        help=("JSON object providing keyword arguments for the overridden graph factory."),
     )
 
     args = parser.parse_args(argv)
@@ -1300,4 +1283,3 @@ if __name__ == "__main__":  # pragma: no cover - CLI entry point
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         sys.exit(2)
-

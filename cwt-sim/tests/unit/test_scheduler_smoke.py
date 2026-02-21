@@ -142,3 +142,95 @@ def test_run_parameter_loop_respects_tau_knobs(monkeypatch: pytest.MonkeyPatch) 
     assert run_with({"tau": 1.7}) == pytest.approx(1.7)
     assert run_with({"tau_scale": 2.5}) == pytest.approx(2.5)
     assert run_with({"tau": 1.2, "tau_scale": 1.5}) == pytest.approx(1.2 * 1.5)
+
+
+def test_snapshot_interval_one_preserves_dense_vector_trajectories() -> None:
+    G = nx.DiGraph()
+    G.add_edge(0, 1, weight=1.0, delay=1.0)
+    G.add_edge(1, 2, weight=1.0, delay=1.0)
+    G.add_edge(2, 0, weight=1.0, delay=1.0)
+
+    substrate = build_substrate(G)
+    init_state = LayersState(
+        pQ=np.full(substrate.N, 1.0 / substrate.N),
+        theta=np.zeros(substrate.N),
+    )
+    path = ParameterPath(kind="line", center={"rho": 0.5}, extents={"rho": 0.1}, steps=6, axes=("rho", "rho"))
+    config = RunConfig(snapshot_interval=1, readout={})
+
+    record = run_parameter_loop(substrate, init_state, path, config, seed=0)
+
+    assert len(record.pQ_traj) == path.steps + 1
+    assert len(record.theta_traj) == path.steps + 1
+    assert len(record.psi_traj) == path.steps + 1
+    assert len(record.phase_kicks) == path.steps
+    assert len(record.curvature_biases) == path.steps
+    assert len(record.fs_steps) == path.steps
+    assert record.meta["snapshot_cadence"]["interval"] == 1
+    assert record.meta["snapshot_cadence"]["kept_steps"] == list(range(path.steps + 1))
+
+
+def test_snapshot_interval_reduces_vector_snapshots_predictably() -> None:
+    G = nx.DiGraph()
+    G.add_edge(0, 1, weight=1.0, delay=1.0)
+    G.add_edge(1, 2, weight=1.0, delay=1.0)
+    G.add_edge(2, 0, weight=1.0, delay=1.0)
+
+    substrate = build_substrate(G)
+    init_state = LayersState(
+        pQ=np.full(substrate.N, 1.0 / substrate.N),
+        theta=np.zeros(substrate.N),
+    )
+    path = ParameterPath(kind="line", center={"rho": 0.5}, extents={"rho": 0.1}, steps=5, axes=("rho", "rho"))
+    config = RunConfig(snapshot_interval=2, readout={})
+
+    record = run_parameter_loop(substrate, init_state, path, config, seed=1)
+
+    expected_kept_steps = [0, 2, 4, 5]
+    expected_vector_steps = [2, 4, 5]
+
+    assert len(record.pQ_traj) == len(expected_kept_steps)
+    assert len(record.theta_traj) == len(expected_kept_steps)
+    assert len(record.psi_traj) == len(expected_kept_steps)
+    assert len(record.phase_kicks) == len(expected_vector_steps)
+    assert len(record.curvature_biases) == len(expected_vector_steps)
+    assert len(record.fs_steps) == path.steps
+    assert len(record.overlaps_min) == path.steps
+    assert len(record.clip_counts) == path.steps
+    assert record.meta["snapshot_cadence"]["interval"] == 2
+    assert record.meta["snapshot_cadence"]["kept_steps"] == expected_kept_steps
+
+
+def test_snapshot_interval_keeps_final_snapshot_after_early_abort(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    G = nx.DiGraph()
+    G.add_edge(0, 1, weight=1.0, delay=1.0)
+    G.add_edge(1, 2, weight=1.0, delay=1.0)
+    G.add_edge(2, 0, weight=1.0, delay=1.0)
+
+    substrate = build_substrate(G)
+    init_state = LayersState(
+        pQ=np.full(substrate.N, 1.0 / substrate.N),
+        theta=np.zeros(substrate.N),
+    )
+    path = ParameterPath(kind="line", center={"rho": 0.5}, extents={"rho": 0.1}, steps=8, axes=("rho", "rho"))
+    config = RunConfig(
+        snapshot_interval=3,
+        readout={},
+        fs_step_guard={"enforce_p95": True, "boundary": 1e-12},
+    )
+
+    monkeypatch.setattr(scheduler, "_should_abort_fs", lambda *args, **kwargs: True)
+
+    record = run_parameter_loop(substrate, init_state, path, config, seed=7)
+
+    completed = int(record.meta["path"]["completed"])
+    kept_steps = record.meta["snapshot_cadence"]["kept_steps"]
+
+    assert completed < path.steps
+    assert kept_steps[0] == 0
+    assert kept_steps[-1] == completed
+    assert len(record.pQ_traj) == len(kept_steps)
+    assert len(record.theta_traj) == len(kept_steps)
+    assert len(record.psi_traj) == len(kept_steps)
