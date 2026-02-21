@@ -456,6 +456,8 @@ def _run_orientation(
     pQ_final = center_state.pQ
     theta_final = center_state.theta
 
+    # edge_currents uses W[row, col] for edge col→row and returns net outgoing
+    # current per node (positive means node exports phase current).
     currents = edge_currents(S, pQ_final, theta_final)
     memory = memory_current_coupled(flux_signed, currents)
 

@@ -155,7 +155,8 @@ def memory_current_coupled(Phi: float, J_net: np.ndarray | Sequence[float]) -> n
     Phi:
         Oriented loop flux.
     J_net:
-        Net outgoing current per node.
+        Net outgoing current per node from :func:`edge_currents`, where
+        ``W[row, col]`` encodes an edge ``col → row``.
 
     Returns
     -------
@@ -351,9 +352,13 @@ def readout_spiking(
 def edge_currents(S: GraphSubstrate, pQ: np.ndarray, theta: np.ndarray) -> np.ndarray:
     """Compute net outgoing phase currents per node.
 
-    For each edge ``m → n`` the current is
+    The adjacency/weight matrix uses destination-row, source-column indexing:
+    ``W[row, col]`` corresponds to the directed edge ``col → row``.
+
+    For each edge ``m → n`` (that is ``W[n, m]``) the edge current is
     ``J_nm = W[n, m] * sqrt(p_n p_m) * sin(theta_m - theta_n)``. The returned
-    value is ``sum_n J_nm - J_mn`` for every node ``m``.
+    node current is net outgoing flow for each node ``m``:
+    ``sum_n J_nm - J_mn``.
     """
 
     if not isinstance(S, GraphSubstrate):
