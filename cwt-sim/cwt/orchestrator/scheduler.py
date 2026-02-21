@@ -51,6 +51,7 @@ class RunConfig:
     alpha: float = 1.0
     beta: float = 1.0
     neighbor_settle_steps: int = 20
+    snapshot_interval: int = 1
     geometry: dict[str, Any] = field(default_factory=dict)
     delta_frac: dict[str, float] = field(default_factory=dict)
     xi_kind: dict[str, Any] = field(default_factory=dict)
@@ -691,6 +692,10 @@ def run_parameter_loop(
     }
     readout_interval = int(readout_cfg.get("interval", 0)) if readout_cfg.get("interval") else 0
     collect_final = bool(readout_cfg.get("final", False))
+    snapshot_interval = max(int(config.snapshot_interval), 1)
+
+    def should_snapshot(step: int) -> bool:
+        return (step == path.steps) or (step % snapshot_interval == 0)
 
     for s in range(path.steps):
         if throttle_pending and delta_frac_base:
@@ -862,10 +867,7 @@ def run_parameter_loop(
         if Omega_ij and delta_area != 0.0:
             Gamma = curvature_bias(Xi, Omega_ij, delta_area, float(config.alpha), float(config.beta))
 
-        curvature_biases.append(Gamma.copy())
-
         delta_theta_geom = phase_kick(theta, A_per_knob, delta_lambda)
-        phase_kicks.append(np.asarray(delta_theta_geom, dtype=float).copy())
 
         theta_next = theta_step(theta, omega_n, J, delta_theta_geom, phi_edge=phi_edge)
 
@@ -883,14 +885,18 @@ def run_parameter_loop(
         theta = theta_next
         pQ = pQ_next
 
-        pQ_traj.append(pQ.copy())
-        theta_traj.append(theta.copy())
+        snapshot_step = s + 1
+        if should_snapshot(snapshot_step):
+            pQ_traj.append(pQ.copy())
+            theta_traj.append(theta.copy())
+            curvature_biases.append(Gamma.copy())
+            phase_kicks.append(np.asarray(delta_theta_geom, dtype=float).copy())
 
         psi_raw = build_psi(pQ, theta)
         psi_current, psi_ema = smooth_psi(psi_raw, psi_ema)
 
         fs_step = float("nan")
-        prev_state = psi_traj[-1] if psi_traj else None
+        prev_state = Psi0
         if prev_state is not None and prev_state.size and psi_current.size:
             try:
                 fs_step = float(fs_distance(prev_state, psi_current))
@@ -951,7 +957,8 @@ def run_parameter_loop(
         if delta_frac_base and exceeds_boundary:
             throttle_pending = True
 
-        psi_traj.append(psi_current.copy())
+        if should_snapshot(snapshot_step):
+            psi_traj.append(psi_current.copy())
 
         should_emit = False
         if readout_interval and (s + 1) % readout_interval == 0:
@@ -1093,6 +1100,10 @@ def run_parameter_loop(
 
     meta["fs_step_guard"] = guard_meta
     meta["phi_flux_missing_tiles"] = bool(phi_flux_missing_tiles)
+    meta["snapshot_cadence"] = {
+        "interval": int(snapshot_interval),
+        "kept_steps": [0] + [step for step in range(1, path.steps + 1) if should_snapshot(step)],
+    }
 
     return RunRecord(
         meta=meta,
