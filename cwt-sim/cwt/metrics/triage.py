@@ -12,12 +12,27 @@ from ..graph.substrate import GraphSubstrate
 from .refine import geom_score
 
 __all__ = [
+    "TRIAGE_WEIGHTS",
     "triage_score",
     "placeholder_triage_score",
     "xi_static",
     "xi_dynamic",
     "xi_update_ema",
 ]
+
+
+TRIAGE_WEIGHTS: dict[str, float] = {
+    "degree": 0.25,
+    "centrality": 0.15,
+    "curvature": 0.20,
+    "clip": 0.10,
+    "susceptibility": 0.10,
+    "geometry": 0.20,
+}
+
+_TRIAGE_WEIGHT_SUM = float(sum(TRIAGE_WEIGHTS.values()))
+if not math.isclose(_TRIAGE_WEIGHT_SUM, 1.0, rel_tol=1e-9, abs_tol=1e-9):
+    raise RuntimeError("Triage score weights must sum to 1.0; " f"received {_TRIAGE_WEIGHT_SUM:.12f}.")
 
 
 def triage_score(
@@ -91,12 +106,12 @@ def triage_score(
         geom_term = float(np.clip(geom_term, 0.0, 1.0))
 
     score = (
-        0.25 * degree_term
-        + 0.15 * centrality_term
-        + 0.2 * curvature_term
-        + 0.1 * clip_term
-        + 0.1 * susceptibility_term
-        + 0.2 * geom_term
+        TRIAGE_WEIGHTS["degree"] * degree_term
+        + TRIAGE_WEIGHTS["centrality"] * centrality_term
+        + TRIAGE_WEIGHTS["curvature"] * curvature_term
+        + TRIAGE_WEIGHTS["clip"] * clip_term
+        + TRIAGE_WEIGHTS["susceptibility"] * susceptibility_term
+        + TRIAGE_WEIGHTS["geometry"] * geom_term
     )
 
     return float(np.clip(score, 0.0, 1.0))
