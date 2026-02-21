@@ -110,14 +110,19 @@ def _operator_curvature(
     uL_j = np.conjugate(Psi_j)
     du_i_at_j = (Psi_ij - Psi_j) / delta_i
     A_i_at_j = biorth_connection(uL_j, du_i_at_j)
-    dA_i = (A_i_at_j - A_i) / delta_j
+    d_j_A_i = (A_i_at_j - A_i) / delta_j
 
     uL_i = np.conjugate(Psi_i)
     du_j_at_i = (Psi_ij - Psi_i) / delta_j
     A_j_at_i = biorth_connection(uL_i, du_j_at_i)
-    dA_j = (A_j_at_i - A_j) / delta_i
+    d_i_A_j = (A_j_at_i - A_j) / delta_i
 
-    return biorth_curvature(A_i, A_j, dA_i, dA_j)
+    return biorth_curvature(
+        A_i=A_i,
+        A_j=A_j,
+        d_j_A_i=d_j_A_i,
+        d_i_A_j=d_i_A_j,
+    )
 
 
 def _initial_state(substrate, center: Mapping[str, float], config: RunConfig):
