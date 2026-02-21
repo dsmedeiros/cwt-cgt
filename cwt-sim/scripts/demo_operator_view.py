@@ -29,9 +29,14 @@ def integrate_qp1(num_samples: int) -> float:
         A_x = biorth_connection(state, d_x)
         A_y = biorth_connection(state, d_y)
 
-        dA_i = 0.0  # ∂_x A_y
-        dA_j = -(math.pi**2) * math.sin(math.pi * y)  # ∂_y A_x
-        omega_density = biorth_curvature(A_x, A_y, dA_i, dA_j)
+        d_i_A_j = 0.0  # ∂_x A_y
+        d_j_A_i = -(math.pi**2) * math.sin(math.pi * y)  # ∂_y A_x
+        omega_density = biorth_curvature(
+            A_i=A_x,
+            A_j=A_y,
+            d_j_A_i=d_j_A_i,
+            d_i_A_j=d_i_A_j,
+        )
         total += float(omega_density) * dx * dy
 
     return total

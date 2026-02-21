@@ -68,12 +68,26 @@ def test_qp1_curvature_integrates_to_quantized_value() -> None:
         assert np.isclose(A_x.real, expected_Ax)
         assert abs(A_x.imag) < 1e-12
 
-        dA_i = 0.0  # ∂_x A_y
-        dA_j = -(np.pi**2) * np.sin(np.pi * y)  # ∂_y A_x
-        omega_density = biorth_curvature(A_x, A_y, dA_i, dA_j)
+        d_i_A_j = 0.0  # ∂_x A_y
+        d_j_A_i = -(np.pi**2) * np.sin(np.pi * y)  # ∂_y A_x
+        omega_density = biorth_curvature(
+            A_i=A_x,
+            A_j=A_y,
+            d_j_A_i=d_j_A_i,
+            d_i_A_j=d_i_A_j,
+        )
         total_curvature += omega_density * dx * dy
 
     assert np.isclose(total_curvature, 2.0 * np.pi, atol=5e-3)
+
+
+def test_biorth_curvature_derivative_order_is_explicit() -> None:
+    omega = biorth_curvature(A_i=1.0, A_j=2.0, d_j_A_i=3.0, d_i_A_j=7.0)
+    swapped = biorth_curvature(A_i=1.0, A_j=2.0, d_j_A_i=7.0, d_i_A_j=3.0)
+
+    assert np.isclose(omega, 4.0)
+    assert np.isclose(swapped, -4.0)
+    assert not np.isclose(omega, swapped)
 
 
 def test_trace_metric_spikes_where_gap_shrinks() -> None:
