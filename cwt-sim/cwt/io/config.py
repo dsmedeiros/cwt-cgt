@@ -170,6 +170,8 @@ def _translate_readout_settings(readout: Mapping[str, Any]) -> dict[str, Any]:
         payload["temperature"] = float(readout.get("T", 1.0))
     payload["memory_form"] = str(payload.get("memory_form", "current_coupled"))
     payload["params"] = dict(payload.get("params", {}))
+    for stale in ("type", "T"):
+        payload.pop(stale, None)
     return payload
 
 
@@ -184,6 +186,16 @@ def _translate_noise_settings(noise: Mapping[str, Any]) -> dict[str, float]:
     payload["theta_std"] = float(phase_std)
     payload["prob_std"] = float(amp_std)
     payload["delay_std"] = float(delay_std)
+    for stale in (
+        "theta_sigma",
+        "phase_std",
+        "prob_sigma",
+        "amp_noise",
+        "amp_std",
+        "delay_sigma",
+        "tau_sigma",
+    ):
+        payload.pop(stale, None)
     return payload
 
 

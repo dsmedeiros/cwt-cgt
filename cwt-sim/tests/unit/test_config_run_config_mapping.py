@@ -69,15 +69,20 @@ def test_to_run_config_translates_scheduler_section_keys() -> None:
     assert cfg.geometry["sample_mode"] == "direct"
     assert cfg.geometry["neighbor_steps"] == 2
     assert cfg.geometry["neighbor_settle_steps"] == 17
+    assert cfg.delta_frac == {"tau": 0.015, "zeta": 0.01}
     assert cfg.readout["kind"] == "stochastic"
     assert cfg.readout["temperature"] == 0.7
     assert cfg.readout["memory_form"] == "uniform_charge"
+    assert "type" not in cfg.readout
+    assert "T" not in cfg.readout
     assert cfg.noise["theta_std"] == 0.12
     assert cfg.noise["prob_std"] == 0.03
     assert cfg.noise["delay_std"] == 0.09
+    assert "phase_std" not in cfg.noise
+    assert "amp_noise" not in cfg.noise
 
 
-def test_run_config_from_sections_preserves_readout_and_noise_aliases() -> None:
+def test_run_config_from_sections_preserves_readout_passthrough_and_normalizes_aliases() -> None:
     from cwt.io.config import run_config_from_sections
 
     cfg = run_config_from_sections(
@@ -92,7 +97,12 @@ def test_run_config_from_sections_preserves_readout_and_noise_aliases() -> None:
     assert cfg.readout["interval"] == 2
     assert cfg.readout["kind"] == "stochastic"
     assert cfg.readout["temperature"] == 0.9
+    assert "type" not in cfg.readout
+    assert "T" not in cfg.readout
     assert cfg.noise["theta_std"] == 0.4
     assert cfg.noise["prob_std"] == 0.3
     assert cfg.noise["delay_std"] == 0.2
+    assert "theta_sigma" not in cfg.noise
+    assert "prob_sigma" not in cfg.noise
+    assert "delay_sigma" not in cfg.noise
     assert cfg.alpha == 1.0
