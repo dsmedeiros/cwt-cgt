@@ -60,3 +60,28 @@ def test_rectangle_tau_axes_area_matches_orientation(
     )
     _loop_closure(path_cw, axis_i, axis_j)
     assert math.isclose(_total_area(path_cw), -expected_area, rel_tol=1e-9, abs_tol=1e-9)
+
+
+def test_torus_loop_area_elements_flip_sign_with_orientation() -> None:
+    kwargs = {
+        "kind": "torus_loop",
+        "center": {"tau": 0.85, "zeta": 0.35},
+        "extents": {"tau": 0.07, "zeta": 0.06},
+        "steps": 120,
+        "axes": ("tau", "zeta"),
+        "periodic": {"tau": True, "zeta": False},
+    }
+    path_ccw = ParameterPath(**kwargs, orientation="CCW")
+    path_cw = ParameterPath(**kwargs, orientation="CW")
+
+    _loop_closure(path_ccw, "tau", "zeta")
+    _loop_closure(path_cw, "tau", "zeta")
+
+    areas_ccw = [path_ccw.step(s)[2] for s in range(path_ccw.steps)]
+    areas_cw = [path_cw.step(s)[2] for s in range(path_cw.steps)]
+
+    for step_index, cw_area in enumerate(areas_cw):
+        mirrored_index = (path_ccw.steps - step_index - 1) % path_ccw.steps
+        assert math.isclose(cw_area, -areas_ccw[mirrored_index], rel_tol=1e-9, abs_tol=1e-9)
+
+    assert math.isclose(_total_area(path_cw), -_total_area(path_ccw), rel_tol=1e-9, abs_tol=1e-9)

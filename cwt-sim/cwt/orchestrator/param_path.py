@@ -197,7 +197,7 @@ class ParameterPath:
             lambda_steps.append(lambda_state)
 
         delta_steps = self._make_deltas(lambda_steps)
-        area_steps = self._compute_area_from_deltas(delta_steps, self._axes)
+        area_steps = self._compute_area_from_positions(lambda_steps, self._axes)
         return lambda_steps, delta_steps, area_steps
 
     def _build_torus_loop_path(self) -> tuple[list[dict[str, float]], list[dict[str, float]], list[float]]:
@@ -229,7 +229,7 @@ class ParameterPath:
             wrapped_steps.append(wrapped_state)
 
         delta_steps = self._make_deltas(raw_steps, apply_periodic=True)
-        area_steps = self._compute_area_from_deltas(delta_steps, self._axes)
+        area_steps = self._compute_area_from_positions(raw_steps, self._axes)
         return wrapped_steps, delta_steps, area_steps
 
     # ------------------------------------------------------------------
@@ -257,14 +257,25 @@ class ParameterPath:
         return delta_steps
 
     @staticmethod
-    def _compute_area_from_deltas(
-        deltas: list[dict[str, float]],
+    def _compute_area_from_positions(
+        positions: list[dict[str, float]],
         axes: tuple[str, str] | list[str],
     ) -> list[float]:
         if len(axes) < 2:
-            return [0.0 for _ in deltas]
+            return [0.0 for _ in positions]
         axis_i, axis_j = axes[0], axes[1]
-        return [delta.get(axis_i, 0.0) * delta.get(axis_j, 0.0) for delta in deltas]
+
+        area_steps: list[float] = []
+        steps = len(positions)
+        for step_index in range(steps):
+            current = positions[step_index]
+            nxt = positions[(step_index + 1) % steps]
+            x0 = current.get(axis_i, 0.0)
+            y0 = current.get(axis_j, 0.0)
+            x1 = nxt.get(axis_i, 0.0)
+            y1 = nxt.get(axis_j, 0.0)
+            area_steps.append(0.5 * (x0 * y1 - x1 * y0))
+        return area_steps
 
     @staticmethod
     def _split_steps(total_steps: int, segments: int) -> list[int]:
