@@ -106,3 +106,33 @@ def test_run_config_from_sections_preserves_readout_passthrough_and_normalizes_a
     assert "prob_sigma" not in cfg.noise
     assert "delay_sigma" not in cfg.noise
     assert cfg.alpha == 1.0
+
+
+def test_geom_coupling_corner_area_mode_defaults_to_distributed() -> None:
+    app = AppConfig.model_validate(
+        {
+            "graph": {"kind": "ring3", "weights": 1.0, "delays": 1.0},
+            "params": {"knobs": ["rho", "tau"], "steps": 4},
+            "geometry": {"delta_frac": {"rho": 0.2, "tau": 0.2}},
+            "dynamics": {},
+            "geometric_coupling": {},
+            "readout": {},
+            "noise": {},
+        }
+    )
+    assert app.geometric_coupling.corner_area_mode is False
+
+
+def test_geom_coupling_corner_area_mode_legacy_opt_in_is_preserved() -> None:
+    app = AppConfig.model_validate(
+        {
+            "graph": {"kind": "ring3", "weights": 1.0, "delays": 1.0},
+            "params": {"knobs": ["rho", "tau"], "steps": 4},
+            "geometry": {"delta_frac": {"rho": 0.2, "tau": 0.2}},
+            "dynamics": {},
+            "geometric_coupling": {"corner_area_mode": True},
+            "readout": {},
+            "noise": {},
+        }
+    )
+    assert app.geometric_coupling.corner_area_mode is True

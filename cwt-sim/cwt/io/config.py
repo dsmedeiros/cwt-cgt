@@ -64,14 +64,18 @@ class DynamicsConfig(BaseModel):
 
 
 class GeomCouplingConfig(BaseModel):
-    """Geometric coupling configuration."""
+    """Geometric coupling configuration.
+
+    ``corner_area_mode`` controls rectangle area allocation in ``ParameterPath``:
+    distributed per-step area by default, or legacy corner impulses when enabled.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
     alpha: float = 0.2
     beta: float = 1.0
     xi_kind: dict[str, Any] = Field(default_factory=dict)
-    corner_area_mode: bool = True
+    corner_area_mode: bool = False
 
 
 class ReadoutConfig(BaseModel):

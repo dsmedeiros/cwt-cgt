@@ -29,7 +29,9 @@ geometric_coupling:
   beta: 1.0
   xi_kind:
     type: static
-  corner_area_mode: true
+  # false = distribute rectangle loop area evenly across steps (smoother updates)
+  # true  = legacy corner-area impulses (explicit opt-in for backward compatibility)
+  corner_area_mode: false
 readout:
   type: stochastic
   T: 1.0
