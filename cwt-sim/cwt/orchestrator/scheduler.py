@@ -866,8 +866,13 @@ def run_parameter_loop(
                 step_min_overlap = float("nan")
         overlaps_min.append(step_min_overlap)
 
+        xi_norm_stats: dict[str, int | float | bool] = {
+            "neg_clamped_count": 0,
+            "neg_clamped_mass": 0.0,
+            "uniform_fallback": False,
+        }
         if dynamic_xi:
-            Xi, _ = normalize_prob(pQ, return_stats=True)
+            Xi, xi_norm_stats = normalize_prob(pQ, return_stats=True)
 
         Gamma = np.zeros_like(pQ, dtype=float)
         if Omega_ij and delta_area != 0.0:
@@ -973,6 +978,9 @@ def run_parameter_loop(
             phase_kicks.append(np.asarray(delta_theta_geom, dtype=float).copy())
 
         norm_stats: dict[str, int | float | bool] = {
+            "xi_neg_clamped_count": int(xi_norm_stats.get("neg_clamped_count", 0)),
+            "xi_neg_clamped_mass": float(xi_norm_stats.get("neg_clamped_mass", 0.0)),
+            "xi_uniform_fallback": bool(xi_norm_stats.get("uniform_fallback", False)),
             "q_step_neg_clamped_count": int(stats.get("norm_neg_clamped_count", 0)),
             "q_step_neg_clamped_mass": float(stats.get("norm_neg_clamped_mass", 0.0)),
             "q_step_uniform_fallback": bool(stats.get("norm_uniform_fallback", False)),

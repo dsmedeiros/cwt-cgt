@@ -83,6 +83,44 @@ def test_run_parameter_loop_smoke() -> None:
         assert len(final_readout["memory"]) == substrate.N
 
 
+def test_readouts_include_normalization_diagnostics() -> None:
+    G = nx.DiGraph()
+    G.add_edge(0, 1, weight=1.0, delay=1.0)
+    G.add_edge(1, 0, weight=1.0, delay=1.0)
+
+    substrate = build_substrate(G)
+    init_state = LayersState(
+        pQ=np.array([1.2, -0.2]),
+        theta=np.zeros(substrate.N),
+    )
+    path = ParameterPath(kind="line", center={"rho": 0.3}, extents={"rho": 0.0}, steps=1, axes=("rho", "rho"))
+    config = RunConfig(
+        xi_kind={"type": "dynamic"},
+        readout={"interval": 1, "final": True},
+        noise={"prob_sigma": 0.0, "theta_sigma": 0.0},
+    )
+
+    record = run_parameter_loop(substrate, init_state, path, config, seed=0)
+
+    assert record.readouts
+    final_readout = record.readouts[-1]
+    normalization = final_readout.get("normalization")
+    assert isinstance(normalization, dict)
+    assert {
+        "xi_neg_clamped_count",
+        "xi_neg_clamped_mass",
+        "xi_uniform_fallback",
+        "q_step_neg_clamped_count",
+        "q_step_neg_clamped_mass",
+        "q_step_uniform_fallback",
+        "noise_neg_clamped_count",
+        "noise_neg_clamped_mass",
+        "noise_uniform_fallback",
+    }.issubset(normalization)
+    assert normalization["noise_uniform_fallback"] is False
+    assert normalization["xi_uniform_fallback"] is False
+
+
 def _make_static_path(center: dict[str, float]) -> ParameterPath:
     keys = list(center)
     if not keys:
