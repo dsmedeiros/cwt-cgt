@@ -417,6 +417,7 @@ def _edge_currents_with_delay(
     theta: np.ndarray,
     tau_scale: np.ndarray | None,
 ) -> np.ndarray:
+    """Delay-scaled edge currents with ``W[row, col]`` as ``col → row``."""
     if pQ.shape != (S.N,) or theta.shape != (S.N,):
         raise ValueError("pQ and theta must have shape (S.N,)")
 
@@ -721,6 +722,7 @@ def run_experiment(
         base_center = _state_from_params(substrate, {}, defaults=center)
         pairs = _neighbor_pairs(substrate)
         W_csc = substrate.W.tocsc()
+        # Currents follow W[row, col] for edge col→row; positive is net outgoing.
         base_currents = _edge_currents_with_delay(substrate, base_center.pQ, base_center.theta, None)
         readout_rng = np.random.default_rng(0)
         _, base_weights = readout_stochastic(

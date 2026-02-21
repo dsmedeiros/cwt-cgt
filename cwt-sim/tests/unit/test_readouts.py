@@ -208,18 +208,38 @@ def test_readout_spiking_uses_supplied_rng() -> None:
         )
 
 
-def test_edge_currents_balances_flux() -> None:
-    substrate = factories.dimer(weight=1.0, delay=1.0, bidir=True)
+def test_edge_currents_directed_dimer_signs_follow_row_col_convention() -> None:
+    substrate = factories.dimer(weight=1.0, delay=1.0, bidir=False)
+    pQ = np.array([0.4, 0.6])
+    theta = np.array([np.pi / 2.0, 0.0])
+
+    currents = readouts.edge_currents(substrate, pQ, theta)
+
+    expected_magnitude = np.sqrt(pQ[0] * pQ[1])
+    expected = np.array([expected_magnitude, -expected_magnitude])
+
+    np.testing.assert_allclose(currents, expected)
+    assert np.isclose(currents.sum(), 0.0)
+
+
+def test_edge_currents_reversed_edge_flips_node_current_signs() -> None:
+    substrate = factories.from_edgelist([(1, 0, 1.0, 1.0)])
     pQ = np.array([0.4, 0.6])
     theta = np.array([0.0, np.pi / 2.0])
 
     currents = readouts.edge_currents(substrate, pQ, theta)
 
     expected_magnitude = np.sqrt(pQ[0] * pQ[1])
-    expected = np.array([-2.0 * expected_magnitude, 2.0 * expected_magnitude])
+    expected = np.array([-expected_magnitude, expected_magnitude])
 
     np.testing.assert_allclose(currents, expected)
     assert np.isclose(currents.sum(), 0.0)
+
+
+def test_edge_currents_rejects_invalid_inputs() -> None:
+    substrate = factories.dimer(weight=1.0, delay=1.0, bidir=True)
+    pQ = np.array([0.4, 0.6])
+    theta = np.array([0.0, np.pi / 2.0])
 
     with pytest.raises(TypeError):
         readouts.edge_currents(object(), pQ, theta)  # type: ignore[arg-type]
