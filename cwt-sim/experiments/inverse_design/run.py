@@ -12,6 +12,7 @@ import numpy as np
 
 from cwt.graph import factories
 from cwt.graph.substrate import GraphSubstrate
+from cwt.io.config import run_config_from_sections
 from cwt.layers.state import LayersState
 from cwt.orchestrator.param_path import ParameterPath
 from cwt.orchestrator.scheduler import RunConfig, _psi_at, run_parameter_loop
@@ -56,30 +57,25 @@ def _initial_state(
 
 
 def _run_config(max_fs: float, target_index: int) -> RunConfig:
-    return RunConfig(
-        eta_q=0.3,
-        zeta=0.0,
-        omega_scale=1.0,
-        s_min=0.6,
-        smooth_window=3,
-        compute_metric=False,
-        compute_curvature=True,
-        adapt_levels=1,
-        ci_tol=0.05,
-        alpha=0.3,
-        beta=1.0,
-        neighbor_settle_steps=40,
-        geometry={"sample_mode": "direct", "neighbor_steps": 1},
-        delta_frac={"tau": 0.01, "zeta": 0.01},
-        xi_kind={"type": "static"},
+    return run_config_from_sections(
+        dynamics={"eta_q": 0.3, "zeta": 0.0, "omega_scale": 1.0},
+        geometry={
+            "s_min": 0.6,
+            "smooth_window": 3,
+            "compute_metric": False,
+            "compute_curvature": True,
+            "adapt_levels": 1,
+            "ci_tol": 0.05,
+            "sample_mode": "direct",
+            "neighbor_steps": 1,
+            "neighbor_settle_steps": 40,
+            "delta_frac": {"tau": 0.01, "zeta": 0.01},
+        },
+        geometric_coupling={"alpha": 0.3, "beta": 1.0, "xi_kind": {"type": "static"}},
         readout={
             "final": True,
             "memory_form": "uniform_charge",
-            "params": {
-                "mode": "one_hot",
-                "target": int(target_index),
-                "pQ_source": "probability",
-            },
+            "params": {"mode": "one_hot", "target": int(target_index), "pQ_source": "probability"},
         },
         noise={},
         fs_step_guard={"threshold": float(max_fs), "fraction": 0.25, "window": 32, "action": "warn"},
