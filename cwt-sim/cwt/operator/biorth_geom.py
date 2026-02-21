@@ -26,7 +26,7 @@ def biorth_connection(uL: np.ndarray, duR: np.ndarray) -> complex:
     return 1j * overlap
 
 
-def biorth_curvature(A_i, A_j, d_j_A_i, d_i_A_j) -> float:
+def biorth_curvature(*, A_i, A_j, d_j_A_i, d_i_A_j) -> float:
     """Return the scalar biorthogonal curvature density for one band.
 
     Expected inputs are connection components and their crossed derivatives:

@@ -90,6 +90,11 @@ def test_biorth_curvature_derivative_order_is_explicit() -> None:
     assert not np.isclose(omega, swapped)
 
 
+def test_biorth_curvature_requires_keyword_arguments() -> None:
+    with np.testing.assert_raises(TypeError):
+        biorth_curvature(1.0, 2.0, 3.0, 7.0)
+
+
 def test_trace_metric_spikes_where_gap_shrinks() -> None:
     op = qp1_step_operator()
     lam = {"x": 0.0, "y": 0.0}
