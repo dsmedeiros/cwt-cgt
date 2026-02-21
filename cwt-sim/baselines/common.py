@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
 
@@ -24,24 +25,28 @@ class BaselineRunConfig:
     map_to_cwt: bool = True
 
 
-_AXIS_MAP_CACHE: Mapping[str, object] | None = None
+@lru_cache(maxsize=None)
+def _load_axis_map_cache(axis_map_path: Path) -> Mapping[str, object]:
+    return load_axis_map(axis_map_path)
 
 
-def _load_axis_map_cache() -> Mapping[str, object]:
-    global _AXIS_MAP_CACHE
+def clear_axis_map_cache() -> None:
+    """Clear cached axis-map entries to support deterministic tests."""
 
-    if _AXIS_MAP_CACHE is None:
-        _AXIS_MAP_CACHE = load_axis_map(DEFAULT_AXIS_MAP_PATH)
-    return _AXIS_MAP_CACHE
+    _load_axis_map_cache.cache_clear()
 
 
-def map_axes(model_axes: dict[str, float], model_name: str) -> dict[str, float]:
+def map_axes(
+    model_axes: dict[str, float],
+    model_name: str,
+    axis_map_path: Path = DEFAULT_AXIS_MAP_PATH,
+) -> dict[str, float]:
     """Translate model-specific axis names to the canonical CWT terminology."""
 
     if not model_name:
         raise ValueError("model_name must be a non-empty string")
 
-    mapping = _load_axis_map_cache()
+    mapping = _load_axis_map_cache(axis_map_path)
     models_section = mapping.get("models")
     if not isinstance(models_section, Mapping):
         raise KeyError("Axis map is missing the 'models' section")
