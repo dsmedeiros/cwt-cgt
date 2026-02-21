@@ -86,13 +86,18 @@ def q_step(
 
         exempt_columns = is_zero_support | is_self_loop
         stochastic_columns = ~exempt_columns
-        off_columns = stochastic_columns & ~np.isclose(col_sums, 1.0, atol=tol, rtol=0.0)
 
-        assert not np.any(off_columns), (
-            "K must be column-stochastic outside explicit zero-support/self-loop "
-            f"columns; offending columns={columns[off_columns].tolist()}, "
-            f"sums={col_sums[off_columns].tolist()}"
-        )
+        if np.any(~np.isfinite(col_sums)):
+            bad = columns[~np.isfinite(col_sums)]
+            raise ValueError(f"K contains non-finite column sums at columns={bad.tolist()}")
+
+        off_columns = stochastic_columns & ~np.isclose(col_sums, 1.0, atol=tol, rtol=0.0)
+        if np.any(off_columns):
+            raise AssertionError(
+                "K must be column-stochastic outside explicit zero-support/self-loop "
+                f"columns; offending columns={columns[off_columns].tolist()}, "
+                f"sums={col_sums[off_columns].tolist()}"
+            )
 
     transported = K.dot(p_arr)
 
