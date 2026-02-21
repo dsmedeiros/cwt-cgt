@@ -88,6 +88,38 @@ def test_q_step_clipping_and_normalisation() -> None:
     assert stats["clipped_count"] >= stats["neg_before_clip"]
 
 
+def test_q_step_validate_kernel_accepts_stochastic_kernel() -> None:
+    p = np.array([0.2, 0.5, 0.3])
+    K = sp.csr_matrix(
+        np.array(
+            [
+                [0.6, 0.0, 0.3],
+                [0.4, 0.5, 0.2],
+                [0.0, 0.5, 0.5],
+            ]
+        )
+    )
+
+    p_next, _ = q_step(p, K, eta=0.6, validate_kernel=True)
+    assert p_next.sum() == pytest.approx(1.0)
+
+
+def test_q_step_validate_kernel_rejects_non_stochastic_kernel() -> None:
+    p = np.array([0.2, 0.5, 0.3])
+    K = sp.csr_matrix(
+        np.array(
+            [
+                [0.6, 0.0, 0.1],
+                [0.4, 0.4, 0.2],
+                [0.0, 0.4, 0.3],
+            ]
+        )
+    )
+
+    with pytest.raises(AssertionError, match="column-stochastic"):
+        q_step(p, K, eta=0.6, validate_kernel=True)
+
+
 def simple_substrate() -> GraphSubstrate:
     G = nx.DiGraph()
     G.add_edge(0, 1, weight=1.0, delay=1.0)
