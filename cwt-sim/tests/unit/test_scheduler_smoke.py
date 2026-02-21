@@ -174,3 +174,35 @@ def test_run_parameter_loop_does_not_mutate_init_state_last_lambda() -> None:
 
     assert init_state.last_lambda == original_last_lambda
     assert record.meta["last_lambda"] == record.lambda_path[-1]
+
+
+def test_run_parameter_loop_can_mutate_init_state_when_opted_in() -> None:
+    G = nx.DiGraph()
+    G.add_edge(0, 1, weight=1.0, delay=1.0)
+    G.add_edge(1, 0, weight=1.0, delay=1.0)
+    substrate = build_substrate(G)
+
+    init_state = LayersState(
+        pQ=np.array([0.5, 0.5]),
+        theta=np.zeros(2),
+        last_lambda={"rho": 0.0},
+    )
+
+    path = ParameterPath(
+        kind="line",
+        center={"rho": 0.5, "tau": 1.0},
+        extents={"rho": 0.1},
+        steps=2,
+    )
+    config = RunConfig(
+        compute_metric=False,
+        compute_curvature=False,
+        readout={},
+        noise={},
+        mutate_init_state=True,
+    )
+
+    record = run_parameter_loop(substrate, init_state, path, config, seed=0)
+
+    assert init_state.last_lambda == record.lambda_path[-1]
+    assert init_state.last_lambda is not record.lambda_path[-1]
