@@ -313,14 +313,18 @@ def _collect_readout(
     pQ: np.ndarray,
     theta: np.ndarray,
     clip_count: int,
+    normalization_stats: Mapping[str, int | float | bool] | None = None,
 ) -> dict[str, Any]:
-    return {
+    payload = {
         "step": int(s),
         "lambda": {k: float(v) for k, v in lambda_state.items()},
         "probability_sum": float(pQ.sum()),
         "theta_mean": float(theta.mean()) if theta.size else 0.0,
         "clip_count": int(clip_count),
     }
+    if normalization_stats:
+        payload["normalization"] = dict(normalization_stats)
+    return payload
 
 
 def _centrality_vector(S: GraphSubstrate, spec: Any) -> np.ndarray | None:
@@ -546,7 +550,8 @@ def run_parameter_loop(
     if pQ.size != N:
         raise ValueError("Layer state size must match the substrate size.")
 
-    pQ = normalize_prob(pQ)
+    pQ, init_norm_stats = normalize_prob(pQ, return_stats=True)
+    latest_norm_stats: dict[str, int | float | bool] = dict(init_norm_stats)
     theta = wrap_angles(theta)
 
     rng = np.random.default_rng(seed)
@@ -862,7 +867,7 @@ def run_parameter_loop(
         overlaps_min.append(step_min_overlap)
 
         if dynamic_xi:
-            Xi = normalize_prob(pQ)
+            Xi, _ = normalize_prob(pQ, return_stats=True)
 
         Gamma = np.zeros_like(pQ, dtype=float)
         if Omega_ij and delta_area != 0.0:
@@ -879,9 +884,14 @@ def run_parameter_loop(
 
         if theta_sigma > 0.0 and theta_next.size:
             theta_next = wrap_angles(theta_next + rng.normal(0.0, theta_sigma, size=theta_next.shape))
+        noise_norm_stats: dict[str, int | float | bool] = {
+            "neg_clamped_count": 0,
+            "neg_clamped_mass": 0.0,
+            "uniform_fallback": False,
+        }
         if prob_sigma > 0.0 and pQ_next.size:
             perturb = rng.normal(0.0, prob_sigma, size=pQ_next.shape)
-            pQ_next = normalize_prob(np.maximum(pQ_next + perturb, 0.0))
+            pQ_next, noise_norm_stats = normalize_prob(np.maximum(pQ_next + perturb, 0.0), return_stats=True)
 
         theta = theta_next
         pQ = pQ_next
@@ -962,13 +972,24 @@ def run_parameter_loop(
             curvature_biases.append(Gamma.copy())
             phase_kicks.append(np.asarray(delta_theta_geom, dtype=float).copy())
 
+        norm_stats: dict[str, int | float | bool] = {
+            "q_step_neg_clamped_count": int(stats.get("norm_neg_clamped_count", 0)),
+            "q_step_neg_clamped_mass": float(stats.get("norm_neg_clamped_mass", 0.0)),
+            "q_step_uniform_fallback": bool(stats.get("norm_uniform_fallback", False)),
+            "noise_neg_clamped_count": int(noise_norm_stats.get("neg_clamped_count", 0)),
+            "noise_neg_clamped_mass": float(noise_norm_stats.get("neg_clamped_mass", 0.0)),
+            "noise_uniform_fallback": bool(noise_norm_stats.get("uniform_fallback", False)),
+        }
+
+        latest_norm_stats = norm_stats
+
         should_emit = False
         if readout_interval and (s + 1) % readout_interval == 0:
             should_emit = True
         if readout_steps and ((s + 1) in readout_steps or s in readout_steps):
             should_emit = True
         if should_emit:
-            readouts.append(_collect_readout(s + 1, lambda_state, pQ, theta, clip_count))
+            readouts.append(_collect_readout(s + 1, lambda_state, pQ, theta, clip_count, norm_stats))
 
         init_state.last_lambda = lambda_state
 
@@ -978,7 +999,9 @@ def run_parameter_loop(
     if collect_final:
         final_lambda = lambda_path[-1] if lambda_path else {}
         final_clip = clip_counts[-1] if clip_counts else 0
-        readouts.append(_collect_readout(len(lambda_path), final_lambda, pQ, theta, final_clip))
+        readouts.append(
+            _collect_readout(len(lambda_path), final_lambda, pQ, theta, final_clip, latest_norm_stats)
+        )
 
     completed_steps = len(fs_steps)
 
