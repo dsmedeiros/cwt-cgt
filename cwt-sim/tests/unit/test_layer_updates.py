@@ -18,9 +18,37 @@ nx = pytest.importorskip("networkx")
 
 def test_normalize_prob_uniform_fallback() -> None:
     vec = np.array([-1.0, -0.5, -3.0])
-    norm = normalize_prob(vec)
+    with pytest.warns(RuntimeWarning) as caught:
+        norm = normalize_prob(vec)
+
+    assert any("uniform fallback" in str(item.message) for item in caught)
     assert norm.shape == vec.shape
     assert np.allclose(norm, np.full(vec.shape, 1.0 / vec.size))
+
+
+def test_normalize_prob_returns_stats_and_warns_on_clamped_mass() -> None:
+    vec = np.array([0.3, -0.2, 0.1])
+
+    with pytest.warns(RuntimeWarning, match="clamped negative probability mass"):
+        norm, stats = normalize_prob(vec, return_stats=True, clamp_warn_tol=1e-9)
+
+    assert norm.sum() == pytest.approx(1.0)
+    assert stats["neg_clamped_count"] == 1
+    assert stats["neg_clamped_mass"] == pytest.approx(0.2)
+    assert stats["uniform_fallback"] is False
+
+
+def test_normalize_prob_warns_on_uniform_fallback_with_stats() -> None:
+    vec = np.array([-1.0, -0.5, -3.0])
+
+    with pytest.warns(RuntimeWarning) as caught:
+        norm, stats = normalize_prob(vec, return_stats=True)
+
+    assert any("uniform fallback" in str(item.message) for item in caught)
+
+    assert np.allclose(norm, np.full(vec.shape, 1.0 / vec.size))
+    assert stats["neg_clamped_count"] == 3
+    assert stats["uniform_fallback"] is True
 
 
 def test_wrap_angles_range_and_endpoint() -> None:
@@ -40,7 +68,11 @@ def test_q_step_identity_kernel_conserves_probability() -> None:
     p_next, stats = q_step(p, K, eta=0.7)
 
     assert np.allclose(p_next, p)
-    assert stats == {"clipped_count": 0, "neg_before_clip": 0}
+    assert stats["clipped_count"] == 0
+    assert stats["neg_before_clip"] == 0
+    assert stats["norm_neg_clamped_count"] == 0
+    assert stats["norm_neg_clamped_mass"] == pytest.approx(0.0)
+    assert stats["norm_uniform_fallback"] is False
 
 
 def test_q_step_clipping_and_normalisation() -> None:
