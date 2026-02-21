@@ -33,6 +33,38 @@ def test_map_axes_raises_for_missing_axis() -> None:
         baselines_common.map_axes({"steps": 10}, "percolation")
 
 
+def test_map_axes_caches_per_axis_map_path(tmp_path: Path) -> None:
+    axis_map_path_a = tmp_path / "axis_map_a.yml"
+    axis_map_path_b = tmp_path / "axis_map_b.yml"
+
+    axis_map_path_a.write_text(
+        """
+models:
+  ising:
+    axes:
+      tau: temperature
+""".strip(),
+        encoding="utf-8",
+    )
+    axis_map_path_b.write_text(
+        """
+models:
+  ising:
+    axes:
+      tau: steps
+""".strip(),
+        encoding="utf-8",
+    )
+
+    model_axes = {"temperature": 1.5, "steps": 10}
+
+    mapped_a = baselines_common.map_axes(model_axes, "ising", axis_map_path_a)
+    mapped_b = baselines_common.map_axes(model_axes, "ising", axis_map_path_b)
+
+    assert mapped_a == {"tau": 1.5}
+    assert mapped_b == {"tau": 10.0}
+
+
 def test_map_axes_uses_updated_axis_map_after_cache_clear(tmp_path: Path) -> None:
     axis_map_path = tmp_path / "axis_map.yml"
     axis_map_path.write_text(
