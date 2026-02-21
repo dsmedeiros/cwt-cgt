@@ -12,12 +12,12 @@ import networkx as nx
 
 from cwt.graph import factories
 from cwt.graph.substrate import GraphSubstrate, build_substrate
-from cwt.io.config import AppConfig, load_config
+from cwt.io.config import AppConfig, load_config, to_run_config
 from cwt.io.placeholders import fabricate_record
 from cwt.io.registry import save_run
 from cwt.layers.state import LayersState
 from cwt.orchestrator.param_path import ParameterPath
-from cwt.orchestrator.scheduler import RunConfig, RunRecord, run_parameter_loop
+from cwt.orchestrator.scheduler import RunRecord, run_parameter_loop
 
 
 def _build_substrate(app_config: AppConfig) -> GraphSubstrate:
@@ -133,47 +133,13 @@ def _build_parameter_path(config: AppConfig) -> ParameterPath:
     )
 
 
-def _build_run_config(config: AppConfig) -> RunConfig:
-    """Translate :class:`AppConfig` values into a :class:`RunConfig`."""
-
-    geometry = config.geometry
-    dynamics = config.dynamics
-    coupling = config.geometric_coupling
-
-    geometry_settings = {
-        "sample_mode": geometry.sample_mode,
-        "neighbor_steps": geometry.neighbor_steps,
-        "neighbor_settle_steps": geometry.neighbor_settle_steps,
-    }
-
-    return RunConfig(
-        eta_q=dynamics.eta_q,
-        zeta=dynamics.zeta,
-        omega_scale=dynamics.omega_scale,
-        s_min=geometry.s_min,
-        smooth_window=geometry.smooth_window,
-        compute_metric=geometry.compute_metric,
-        compute_curvature=geometry.compute_curvature,
-        adapt_levels=geometry.adapt_levels,
-        ci_tol=geometry.ci_tol,
-        alpha=coupling.alpha,
-        beta=coupling.beta,
-        neighbor_settle_steps=geometry.neighbor_settle_steps,
-        geometry=geometry_settings,
-        delta_frac=dict(geometry.delta_frac),
-        xi_kind=dict(coupling.xi_kind),
-        readout=config.readout.model_dump(),
-        noise=config.noise.model_dump(),
-    )
-
-
 def _run_simulation(app_config: AppConfig, *, label: str) -> RunRecord:
     """Execute a small simulation loop and return the resulting record."""
 
     substrate = _build_substrate(app_config)
     init_state = _initial_layers_state(substrate)
     path = _build_parameter_path(app_config)
-    run_config = _build_run_config(app_config)
+    run_config = to_run_config(app_config)
 
     record = run_parameter_loop(substrate, init_state, path, run_config, seed=app_config.seed)
     record.meta = {

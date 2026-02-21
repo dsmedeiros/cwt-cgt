@@ -17,7 +17,8 @@ from cwt.geometry.fs_distance import fs_distance
 from cwt.geometry.psi import inner
 from cwt.graph.factories import random_regular_digraph
 from cwt.graph.substrate import GraphSubstrate, build_substrate
-from cwt.orchestrator.scheduler import RunConfig, _psi_at
+from cwt.io.config import run_config_from_sections
+from cwt.orchestrator.scheduler import _psi_at
 
 VALID_AXES = ("rho", "tau", "zeta", "zeta_phase", "kappa")
 DEFAULT_BASE = {"rho": 1.5, "tau": 1.75, "zeta": 1.2, "zeta_phase": 0.0, "kappa": 1.0}
@@ -475,11 +476,10 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     substrate = _build_substrate(args.graph, args.seed)
     p0, theta0 = _initial_state(substrate)
-    config = RunConfig(
-        eta_q=args.eta_q,
-        zeta=args.zeta,
-        omega_scale=args.omega_scale,
-        neighbor_settle_steps=max(settle_steps, 1),
+    config = run_config_from_sections(
+        dynamics={"eta_q": args.eta_q, "zeta": args.zeta, "omega_scale": args.omega_scale},
+        geometry={"neighbor_settle_steps": max(settle_steps, 1)},
+        geometric_coupling={},
     )
 
     template = dict(DEFAULT_BASE)

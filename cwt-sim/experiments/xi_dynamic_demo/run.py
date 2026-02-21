@@ -10,6 +10,7 @@ from typing import Mapping, Sequence
 import numpy as np
 
 from cwt.graph import factories
+from cwt.io.config import run_config_from_sections
 from cwt.layers.state import LayersState
 from cwt.orchestrator.param_path import ParameterPath
 from cwt.orchestrator.scheduler import RunConfig, _psi_at, run_parameter_loop
@@ -142,22 +143,21 @@ def _xi_norm_deltas(traj: Sequence[np.ndarray]) -> np.ndarray:
 
 
 def _build_config(xi_type: str) -> RunConfig:
-    return RunConfig(
-        eta_q=0.35,
-        zeta=0.0,
-        omega_scale=1.0,
-        s_min=0.6,
-        smooth_window=4,
-        compute_metric=False,
-        compute_curvature=True,
-        adapt_levels=1,
-        ci_tol=0.05,
-        alpha=0.4,
-        beta=1.0,
-        neighbor_settle_steps=50,
-        geometry={"sample_mode": "direct", "neighbor_steps": 1},
-        delta_frac={"tau": 0.01, "zeta": 0.01},
-        xi_kind={"type": xi_type},
+    return run_config_from_sections(
+        dynamics={"eta_q": 0.35, "zeta": 0.0, "omega_scale": 1.0},
+        geometry={
+            "s_min": 0.6,
+            "smooth_window": 4,
+            "compute_metric": False,
+            "compute_curvature": True,
+            "adapt_levels": 1,
+            "ci_tol": 0.05,
+            "sample_mode": "direct",
+            "neighbor_steps": 1,
+            "neighbor_settle_steps": 50,
+            "delta_frac": {"tau": 0.01, "zeta": 0.01},
+        },
+        geometric_coupling={"alpha": 0.4, "beta": 1.0, "xi_kind": {"type": xi_type}},
         readout={"final": True},
         noise={},
         fs_step_guard={},
