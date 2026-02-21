@@ -57,6 +57,7 @@ class RunConfig:
     readout: dict[str, Any] = field(default_factory=dict)
     noise: dict[str, Any] = field(default_factory=dict)
     fs_step_guard: dict[str, Any] = field(default_factory=dict)
+    mutate_init_state: bool = False
 
 
 @dataclass
@@ -961,7 +962,8 @@ def run_parameter_loop(
         if should_emit:
             readouts.append(_collect_readout(s + 1, lambda_state, pQ, theta, clip_count))
 
-        init_state.last_lambda = lambda_state
+        if config.mutate_init_state:
+            init_state.last_lambda = lambda_state.copy()
 
         if guard_abort_pending:
             break
@@ -1093,6 +1095,7 @@ def run_parameter_loop(
 
     meta["fs_step_guard"] = guard_meta
     meta["phi_flux_missing_tiles"] = bool(phi_flux_missing_tiles)
+    meta["last_lambda"] = lambda_path[-1].copy() if lambda_path else {}
 
     return RunRecord(
         meta=meta,

@@ -142,3 +142,35 @@ def test_run_parameter_loop_respects_tau_knobs(monkeypatch: pytest.MonkeyPatch) 
     assert run_with({"tau": 1.7}) == pytest.approx(1.7)
     assert run_with({"tau_scale": 2.5}) == pytest.approx(2.5)
     assert run_with({"tau": 1.2, "tau_scale": 1.5}) == pytest.approx(1.2 * 1.5)
+
+
+def test_run_parameter_loop_does_not_mutate_init_state_last_lambda() -> None:
+    G = nx.DiGraph()
+    G.add_edge(0, 1, weight=1.0, delay=1.0)
+    G.add_edge(1, 0, weight=1.0, delay=1.0)
+    substrate = build_substrate(G)
+
+    original_last_lambda = {"rho": 0.123}
+    init_state = LayersState(
+        pQ=np.array([0.5, 0.5]),
+        theta=np.zeros(2),
+        last_lambda=original_last_lambda.copy(),
+    )
+
+    path = ParameterPath(
+        kind="line",
+        center={"rho": 0.5, "tau": 1.0},
+        extents={"rho": 0.1},
+        steps=2,
+    )
+    config = RunConfig(
+        compute_metric=False,
+        compute_curvature=False,
+        readout={},
+        noise={},
+    )
+
+    record = run_parameter_loop(substrate, init_state, path, config, seed=0)
+
+    assert init_state.last_lambda == original_last_lambda
+    assert record.meta["last_lambda"] == record.lambda_path[-1]
