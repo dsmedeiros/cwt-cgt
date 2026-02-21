@@ -16,6 +16,7 @@ def q_step(
     eta: float,
     geom_bias: np.ndarray | None = None,
     clip_floor: float = 0.0,
+    validate_kernel: bool = False,
 ) -> tuple[np.ndarray, Dict[str, int | float | bool]]:
     """Advance the Q-layer probabilities by one explicit step.
 
@@ -36,6 +37,11 @@ def q_step(
         Minimum allowed value for the pre-normalised probabilities. Values
         below this floor are clipped to preserve positivity before
         normalisation.
+    validate_kernel:
+        If ``True``, assert that each transport-kernel column is stochastic
+        (sum close to one). The check allows explicitly handled degenerate
+        columns used by some nonstandard kernels: empty (zero-support)
+        columns and pure self-loop columns.
 
     Returns
     -------
@@ -62,6 +68,36 @@ def q_step(
 
     if K.shape != (N, N):
         raise ValueError("K must be a square matrix with side length matching pQ.")
+
+    if validate_kernel:
+        K_csc = K.tocsc(copy=False)
+        col_sums = np.asarray(K_csc.sum(axis=0)).ravel()
+        col_nnz = np.diff(K_csc.indptr)
+        tol = 1e-8
+
+        columns = np.arange(N)
+        is_zero_support = col_nnz == 0
+        is_self_loop = np.zeros(N, dtype=bool)
+
+        single_entry = np.where(col_nnz == 1)[0]
+        for col in single_entry:
+            start, end = K_csc.indptr[col], K_csc.indptr[col + 1]
+            is_self_loop[col] = bool(K_csc.indices[start:end][0] == col)
+
+        exempt_columns = is_zero_support | is_self_loop
+        stochastic_columns = ~exempt_columns
+
+        if np.any(~np.isfinite(col_sums)):
+            bad = columns[~np.isfinite(col_sums)]
+            raise ValueError(f"K contains non-finite column sums at columns={bad.tolist()}")
+
+        off_columns = stochastic_columns & ~np.isclose(col_sums, 1.0, atol=tol, rtol=0.0)
+        if np.any(off_columns):
+            raise AssertionError(
+                "K must be column-stochastic outside explicit zero-support/self-loop "
+                f"columns; offending columns={columns[off_columns].tolist()}, "
+                f"sums={col_sums[off_columns].tolist()}"
+            )
 
     transported = K.dot(p_arr)
 

@@ -88,6 +88,63 @@ def test_q_step_clipping_and_normalisation() -> None:
     assert stats["clipped_count"] >= stats["neg_before_clip"]
 
 
+def test_q_step_validate_kernel_accepts_stochastic_kernel() -> None:
+    p = np.array([0.2, 0.5, 0.3])
+    K = sp.csr_matrix(
+        np.array(
+            [
+                [0.6, 0.0, 0.3],
+                [0.4, 0.5, 0.2],
+                [0.0, 0.5, 0.5],
+            ]
+        )
+    )
+
+    p_next, _ = q_step(p, K, eta=0.6, validate_kernel=True)
+    assert p_next.sum() == pytest.approx(1.0)
+
+
+def test_q_step_validate_kernel_rejects_non_stochastic_kernel() -> None:
+    p = np.array([0.2, 0.5, 0.3])
+    K = sp.csr_matrix(
+        np.array(
+            [
+                [0.6, 0.0, 0.1],
+                [0.4, 0.4, 0.2],
+                [0.0, 0.4, 0.3],
+            ]
+        )
+    )
+
+    with pytest.raises(AssertionError, match="column-stochastic"):
+        q_step(p, K, eta=0.6, validate_kernel=True)
+
+
+def test_q_step_validate_kernel_allows_zero_support_and_self_loop_columns() -> None:
+    p = np.array([0.3, 0.4, 0.3])
+    # Col 0: stochastic. Col 1: zero-support. Col 2: explicit self-loop only.
+    K = sp.csr_matrix(
+        np.array(
+            [
+                [0.7, 0.0, 0.0],
+                [0.3, 0.0, 0.0],
+                [0.0, 0.0, 0.8],
+            ]
+        )
+    )
+
+    p_next, _ = q_step(p, K, eta=0.6, validate_kernel=True)
+    assert p_next.sum() == pytest.approx(1.0)
+
+
+def test_q_step_validate_kernel_rejects_non_finite_column_sum() -> None:
+    p = np.array([0.5, 0.5])
+    K = sp.csr_matrix(np.array([[np.nan, 0.0], [0.0, 1.0]]))
+
+    with pytest.raises(ValueError, match="non-finite column sums"):
+        q_step(p, K, eta=0.2, validate_kernel=True)
+
+
 def simple_substrate() -> GraphSubstrate:
     G = nx.DiGraph()
     G.add_edge(0, 1, weight=1.0, delay=1.0)
