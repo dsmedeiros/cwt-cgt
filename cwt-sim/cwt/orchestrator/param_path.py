@@ -14,6 +14,19 @@ class ParameterPath:
     The path generates a sequence of points :math:`\\lambda_s`, step increments
     ``Δλ_s`` and (optionally) oriented area elements ``Δσ_s``.  These are used to
     drive control loops and apply curvature-dependent bias corrections.
+
+    For ``kind="rectangle"``, ``corner_area_mode`` controls *how* the oriented
+    area is distributed in time while preserving the same loop-integrated signed
+    area:
+
+    - ``corner_area_mode=False`` (default) distributes the rectangle area
+      uniformly over all steps. This yields smoother per-step geometric coupling
+      contributions and is typically better for consistency checks that inspect
+      each update.
+    - ``corner_area_mode=True`` preserves the legacy behavior, concentrating area
+      into impulses at the first sample of each corner transition. This keeps
+      backward compatibility for experiments that were calibrated against the
+      corner-impulse profile.
     """
 
     kind: Literal["rectangle", "line", "lissajous", "torus_loop"]
@@ -22,7 +35,7 @@ class ParameterPath:
     steps: int
     orientation: Literal["CW", "CCW"] = "CCW"
     periodic: dict[str, bool] | None = None
-    corner_area_mode: bool = True
+    corner_area_mode: bool = False
     axes: Tuple[str, str] = ("rho", "tau")
 
     def __post_init__(self) -> None:
@@ -103,6 +116,15 @@ class ParameterPath:
     # Path construction helpers
     # ------------------------------------------------------------------
     def _build_rectangle_path(self) -> tuple[list[dict[str, float]], list[dict[str, float]], list[float]]:
+        """Build an axis-aligned rectangle path.
+
+        ``corner_area_mode`` affects only the area-allocation profile, not the
+        integrated signed area:
+
+        - Legacy ``True`` mode emits one quarter of the rectangle area at each
+          corner-entry step.
+        - Distributed ``False`` mode emits equal area on every step.
+        """
         if len(self._varying) < 2:
             raise ValueError("rectangle path requires at least two varying knobs")
         if self.steps < 4:
@@ -132,6 +154,7 @@ class ParameterPath:
         delta_steps: list[dict[str, float]] = []
         area_steps: list[float] = []
         corner_area = abs(self._extents[axes[0]]) * abs(self._extents[axes[1]])
+        distributed_area = self._orientation_sign * (4.0 * corner_area / self.steps)
 
         for edge_idx in range(4):
             count = steps_per_edge[edge_idx]
@@ -148,10 +171,13 @@ class ParameterPath:
                     lambda_state[axis_name] = self._center[axis_name] + extent * current_norm[axis_i]
                     delta_state[axis_name] = extent * delta_norm[axis_i]
 
-                if self.corner_area_mode and step_in_edge == 0:
-                    area_steps.append(self._orientation_sign * corner_area)
+                if self.corner_area_mode:
+                    if step_in_edge == 0:
+                        area_steps.append(self._orientation_sign * corner_area)
+                    else:
+                        area_steps.append(0.0)
                 else:
-                    area_steps.append(delta_state[axes[0]] * delta_state[axes[1]])
+                    area_steps.append(distributed_area)
 
                 lambda_steps.append(lambda_state)
                 delta_steps.append(delta_state)
@@ -302,9 +328,16 @@ def placeholder_param_path(
     steps: int = 16,
     orientation: Literal["CW", "CCW"] = "CCW",
     periodic: dict[str, bool] | None = None,
-    corner_area_mode: bool = True,
+    corner_area_mode: bool = False,
 ) -> list[dict[str, float]]:
-    """Construct a canonical parameter path and return its λ samples."""
+    """Construct a canonical parameter path and return its λ samples.
+
+    Parameters
+    ----------
+    corner_area_mode:
+        Rectangle-only area allocation mode. ``False`` uses distributed per-step
+        area (default). ``True`` opts into legacy corner-impulse allocation.
+    """
 
     if center is None:
         center = {"rho": 0.0, "tau": 0.0}

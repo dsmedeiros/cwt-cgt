@@ -64,3 +64,52 @@ def test_lissajous_area_elements_flip_sign_with_orientation() -> None:
     for step_index, cw_area in enumerate(areas_cw):
         mirrored_index = (path_ccw.steps - step_index - 1) % path_ccw.steps
         assert math.isclose(cw_area, -areas_ccw[mirrored_index], rel_tol=1e-9, abs_tol=1e-9)
+
+
+def test_rectangle_total_signed_area_matches_geometry_in_both_area_modes() -> None:
+    extents = {"x": 0.25, "y": 0.15}
+    center = {"x": -0.1, "y": 0.2}
+    expected_area = 4.0 * abs(extents["x"]) * abs(extents["y"])
+
+    for corner_area_mode in (False, True):
+        path_ccw = ParameterPath(
+            kind="rectangle",
+            center=center,
+            extents=extents,
+            steps=20,
+            orientation="CCW",
+            axes=("x", "y"),
+            corner_area_mode=corner_area_mode,
+        )
+        path_cw = ParameterPath(
+            kind="rectangle",
+            center=center,
+            extents=extents,
+            steps=20,
+            orientation="CW",
+            axes=("x", "y"),
+            corner_area_mode=corner_area_mode,
+        )
+
+        assert math.isclose(_total_area(path_ccw), expected_area, rel_tol=1e-9, abs_tol=1e-9)
+        assert math.isclose(_total_area(path_cw), -expected_area, rel_tol=1e-9, abs_tol=1e-9)
+
+
+def test_rectangle_area_profile_differs_between_modes() -> None:
+    kwargs = {
+        "kind": "rectangle",
+        "center": {"x": 0.0, "y": 0.0},
+        "extents": {"x": 0.2, "y": 0.1},
+        "steps": 8,
+        "orientation": "CCW",
+        "axes": ("x", "y"),
+    }
+    distributed = ParameterPath(**kwargs, corner_area_mode=False)
+    legacy = ParameterPath(**kwargs, corner_area_mode=True)
+
+    distributed_areas = [distributed.step(s)[2] for s in range(distributed.steps)]
+    legacy_areas = [legacy.step(s)[2] for s in range(legacy.steps)]
+
+    assert len({round(value, 12) for value in distributed_areas}) == 1
+    assert sum(1 for value in legacy_areas if not math.isclose(value, 0.0, abs_tol=1e-12)) == 4
+    assert math.isclose(sum(distributed_areas), sum(legacy_areas), rel_tol=1e-9, abs_tol=1e-9)
