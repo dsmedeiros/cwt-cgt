@@ -91,12 +91,12 @@ def test_curvature_anytime_refines_on_low_overlap(monkeypatch):
     assert call_count == 8
 
 
-def test_curvature_anytime_fallback_prefers_consistent_sign(monkeypatch):
+def test_curvature_anytime_fallback_uses_neutral_tiebreak(monkeypatch):
     samples = [
-        (10.0, 0.40),
-        (-9.0, 0.39),
-        (11.0, 0.38),
-        (-12.0, 0.37),
+        (1.0, 0.40),
+        (-5.0, 0.40),
+        (2.0, 0.30),
+        (-4.0, 0.30),
     ]
     responses = iter(samples)
 
@@ -120,7 +120,23 @@ def test_curvature_anytime_fallback_prefers_consistent_sign(monkeypatch):
 
     assert call_count == 4
     assert result.samples_used == 2
-    assert result.omega_mean == pytest.approx(10.5)
+    assert result.fallback_used is True
+    assert result.omega_mean == pytest.approx(-4.5)
     lower, upper = result.omega_ci
     assert lower < result.omega_mean < upper
-    assert result.min_overlap == pytest.approx(0.37)
+    assert result.min_overlap == pytest.approx(0.30)
+
+
+def test_curvature_anytime_marks_non_fallback_path(monkeypatch):
+    responses = iter((0.2, 0.95) for _ in range(4))
+
+    def stub_curvature(*args):
+        omega, overlap = next(responses)
+        return omega, {"min_overlap": overlap}
+
+    monkeypatch.setattr("cwt.geometry.adapt_mesh.curvature_tile", stub_curvature)
+
+    result = curvature_anytime(lambda *_: (None, None, None, None), 1.0, 1.0, max_levels=1)
+
+    assert result.samples_used == 4
+    assert result.fallback_used is False
