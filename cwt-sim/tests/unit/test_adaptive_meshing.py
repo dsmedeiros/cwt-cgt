@@ -100,6 +100,53 @@ def test_curvature_anytime_refines_on_low_overlap(monkeypatch):
     ]
 
 
+def test_curvature_anytime_refines_with_expected_asymmetric_level_steps(monkeypatch):
+    responses = iter(
+        [
+            (0.0, 0.95),
+            (1.0, 0.95),
+            (0.0, 0.95),
+            (1.0, 0.95),
+            (0.1, 0.95),
+            (0.9, 0.95),
+            (0.1, 0.95),
+            (0.9, 0.95),
+        ]
+    )
+
+    def stub_curvature(*args):
+        omega, overlap = next(responses)
+        return omega, {"min_overlap": overlap}
+
+    monkeypatch.setattr("cwt.geometry.adapt_mesh.curvature_tile", stub_curvature)
+
+    calls = []
+
+    def sampler(delta_i, delta_j):
+        calls.append((delta_i, delta_j))
+        return (None, None, None, None)
+
+    result = curvature_anytime(
+        sampler,
+        2.0,
+        0.5,
+        ci_tol=0.1,
+        max_levels=2,
+    )
+
+    assert result.depth_used == 2
+    assert calls == [
+        (2.0, 0.5),
+        (2.0, 0.5),
+        (2.0, 0.5),
+        (2.0, 0.5),
+        (1.0, 0.25),
+        (1.0, 0.25),
+        (1.0, 0.25),
+        (1.0, 0.25),
+    ]
+
+
 def test_curvature_anytime_uses_direct_level_steps(monkeypatch):
     monkeypatch.setattr(
         "cwt.geometry.adapt_mesh.micro_plaquettes",
