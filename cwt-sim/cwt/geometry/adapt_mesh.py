@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Callable, Sequence
+from typing import Callable, Iterator, Sequence
 
 import numpy as np
 
@@ -49,6 +49,15 @@ def micro_plaquettes(
         current_i *= 0.5
         current_j *= 0.5
     return schedule
+
+
+def _level_steps(delta_i: float, delta_j: float, level: int) -> Iterator[tuple[float, float]]:
+    """Yield the four sub-plaquette step sizes for a refinement level."""
+
+    scale = 0.5 ** (level - 1)
+    level_step = (delta_i * scale, delta_j * scale)
+    for _ in range(4):
+        yield level_step
 
 
 def _mean_and_ci(samples: Sequence[float]) -> tuple[float, tuple[float, float]]:
@@ -104,9 +113,7 @@ def curvature_anytime(
 
     for level in range(1, max_levels + 1):
         depth_used = level
-        schedule = micro_plaquettes(Psi_sampler, step_i, step_j, level)
-        start = (level - 1) * 4
-        for sub_step_i, sub_step_j in schedule[start : start + 4]:
+        for sub_step_i, sub_step_j in _level_steps(step_i, step_j, level):
             if len(accepted) >= max_samples:
                 break
 
