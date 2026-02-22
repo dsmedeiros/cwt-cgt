@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Callable, Sequence
+from typing import Callable, Iterator, Sequence
 
 import numpy as np
 
@@ -51,7 +51,7 @@ def micro_plaquettes(
     return schedule
 
 
-def _level_steps(delta_i: float, delta_j: float, level: int):
+def _level_steps(delta_i: float, delta_j: float, level: int) -> Iterator[tuple[float, float]]:
     """Yield the four sub-plaquette step sizes for a refinement level."""
 
     scale = 0.5 ** (level - 1)
