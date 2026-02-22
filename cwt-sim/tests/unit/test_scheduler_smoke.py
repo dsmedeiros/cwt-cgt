@@ -179,7 +179,35 @@ def test_run_parameter_loop_respects_tau_knobs(monkeypatch: pytest.MonkeyPatch) 
 
     assert run_with({"tau": 1.7}) == pytest.approx(1.7)
     assert run_with({"tau_scale": 2.5}) == pytest.approx(2.5)
-    assert run_with({"tau": 1.2, "tau_scale": 1.5}) == pytest.approx(1.2 * 1.5)
+
+    with pytest.warns(RuntimeWarning, match="using 'tau' and ignoring 'tau_scale'"):
+        assert run_with({"tau": 1.2, "tau_scale": 1.5}) == pytest.approx(1.2)
+
+
+@pytest.mark.parametrize(
+    ("lam", "default", "expected"),
+    [
+        ({}, 1.0, 1.0),
+        ({"tau": 2.0}, 1.0, 2.0),
+        ({"tau_scale": 3.0}, 1.0, 3.0),
+        ({"tau": 2.0, "tau_scale": 2.0}, 1.0, 2.0),
+        ({"tau": -1.0, "tau_scale": 4.0}, 1.0, 4.0),
+        ({"tau": 0.0, "tau_scale": -1.0}, 1.25, 1.25),
+    ],
+)
+def test_resolve_tau_scale_combinations(
+    lam: dict[str, float],
+    default: float,
+    expected: float,
+) -> None:
+    assert scheduler._resolve_tau_scale(lam, default=default) == pytest.approx(expected)
+
+
+def test_resolve_tau_scale_warns_on_conflicting_tau_and_tau_scale() -> None:
+    with pytest.warns(RuntimeWarning, match="using 'tau' and ignoring 'tau_scale'"):
+        resolved = scheduler._resolve_tau_scale({"tau": 1.1, "tau_scale": 2.2})
+
+    assert resolved == pytest.approx(1.1)
 
 
 def test_snapshot_interval_one_preserves_dense_vector_trajectories() -> None:

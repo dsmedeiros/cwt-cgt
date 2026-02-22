@@ -201,8 +201,8 @@ def _resolve_tau_scale(lam: Mapping[str, float], *, default: float = 1.0) -> flo
     Parameters
     ----------
     lam:
-        Mapping containing optional ``tau`` (absolute) and ``tau_scale`` (relative)
-        knobs.
+        Mapping containing optional ``tau`` and ``tau_scale`` knobs.
+        Resolution rule: ``tau`` takes precedence when both are usable.
     default:
         Fallback value when neither knob provides a usable entry.
     """
@@ -229,7 +229,15 @@ def _resolve_tau_scale(lam: Mapping[str, float], *, default: float = 1.0) -> flo
         return tau_abs
     if math.isclose(tau_abs, tau_rel, rel_tol=1e-9, abs_tol=1e-12):
         return tau_abs
-    return tau_abs * tau_rel
+    warnings.warn(
+        (
+            "Both 'tau' and 'tau_scale' were provided with different values; "
+            "using 'tau' and ignoring 'tau_scale'."
+        ),
+        RuntimeWarning,
+        stacklevel=2,
+    )
+    return tau_abs
 
 
 def _psi_at(
