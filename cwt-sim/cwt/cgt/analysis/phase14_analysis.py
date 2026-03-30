@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -23,6 +24,24 @@ from ..models import ScanConfig
 from ..open_system import coherence_ratio, observable_operator
 
 
+def _sanitize_for_json(obj):
+    """Replace NaN/Inf floats with None for valid JSON output (RFC 8259)."""
+    if isinstance(obj, dict):
+        return {k: _sanitize_for_json(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_sanitize_for_json(v) for v in obj]
+    if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
+        return None
+    if isinstance(obj, np.floating):
+        v = float(obj)
+        return None if (math.isnan(v) or math.isinf(v)) else v
+    if isinstance(obj, np.integer):
+        return int(obj)
+    if isinstance(obj, np.ndarray):
+        return _sanitize_for_json(obj.tolist())
+    return obj
+
+
 @dataclass(frozen=True)
 class Phase14Config:
     benchmark_ids: tuple[str, ...] = ('benchmark_a', 'benchmark_b', 'benchmark_c', 'benchmark_d', 'benchmark_f')
@@ -36,6 +55,8 @@ class Phase14Config:
     default_switch_gamma: float = 0.30
 
 
+# NOTE: Intentionally duplicated from phase13/phase14 — each phase analysis
+# module is self-contained. Extracting would couple their evolution.
 class DensityCache:
     def __init__(self, fn):
         self.fn = fn
@@ -445,7 +466,7 @@ def _benchmark_payload(
     }
     benchmark_dir = output_root / benchmark.slug
     benchmark_dir.mkdir(parents=True, exist_ok=True)
-    (benchmark_dir / f'{benchmark_id}_phase14_field.json').write_text(json.dumps(payload, indent=2))
+    (benchmark_dir / f'{benchmark_id}_phase14_field.json').write_text(json.dumps(_sanitize_for_json(payload), indent=2))
     return payload
 
 
@@ -499,7 +520,7 @@ def phase14_payload(output_root: Path, phase14_config: Phase14Config | None = No
     }
     reports_dir = output_root.parents[1] / '05_reports'
     reports_dir.mkdir(parents=True, exist_ok=True)
-    (reports_dir / 'phase14_summary.json').write_text(json.dumps(suite, indent=2))
+    (reports_dir / 'phase14_summary.json').write_text(json.dumps(_sanitize_for_json(suite), indent=2))
     return suite
 
 

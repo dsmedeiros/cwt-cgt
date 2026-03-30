@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -26,6 +27,24 @@ from ..models import LoopConfig, ScanConfig
 from ..open_system import coherence_ratio, observable_operator
 
 
+def _sanitize_for_json(obj):
+    """Replace NaN/Inf floats with None for valid JSON output (RFC 8259)."""
+    if isinstance(obj, dict):
+        return {k: _sanitize_for_json(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_sanitize_for_json(v) for v in obj]
+    if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
+        return None
+    if isinstance(obj, np.floating):
+        v = float(obj)
+        return None if (math.isnan(v) or math.isinf(v)) else v
+    if isinstance(obj, np.integer):
+        return int(obj)
+    if isinstance(obj, np.ndarray):
+        return _sanitize_for_json(obj.tolist())
+    return obj
+
+
 @dataclass(frozen=True)
 class LoopFamilySpec:
     shapes: tuple[str, ...]
@@ -43,6 +62,8 @@ class Phase13Config:
     coherence_switch_floor: float = 0.20
 
 
+# NOTE: Intentionally duplicated from phase13/phase14 — each phase analysis
+# module is self-contained. Extracting would couple their evolution.
 class DensityCache:
     def __init__(self, fn: Callable):
         self.fn = fn
@@ -487,7 +508,7 @@ def phase13_payload(output_root: Path, phase13_config: Phase13Config | None = No
         }
         bench_dir = output_root / payload['slug']
         bench_dir.mkdir(parents=True, exist_ok=True)
-        (bench_dir / f"{benchmark_id}_phase13_atlas.json").write_text(json.dumps(payload, indent=2))
+        (bench_dir / f"{benchmark_id}_phase13_atlas.json").write_text(json.dumps(_sanitize_for_json(payload), indent=2))
 
     focus_id = cfg.benchmark_focus
     focus_payload = benchmark_payloads[focus_id]
@@ -502,7 +523,7 @@ def phase13_payload(output_root: Path, phase13_config: Phase13Config | None = No
         'focus_benchmark': focus_id,
         'focus_backend_comparison': {
             'switch_gamma': float(focus_payload['recommended_switch_gamma']),
-            'metric_curvature_focus_corr': _corr(np.asarray(focus_scan['bures_metric_trace'], dtype=float), np.asarray(focus_scan['bures_metric_trace'], dtype=float)),
+            'metric_curvature_focus_corr': _corr(np.asarray(focus_scan['bures_metric_trace'], dtype=float), np.asarray(focus_scan['mixed_curvature'], dtype=float)),
             'switch_global_fit': focus_switch['global_fit'],
             'switch_best_patch_key': focus_switch['best_patch_key'],
             'switch_best_patch_r2': focus_switch['best_patch_r2'],
@@ -515,7 +536,7 @@ def phase13_payload(output_root: Path, phase13_config: Phase13Config | None = No
     }
     reports_dir = output_root.parents[1] / '05_reports'
     reports_dir.mkdir(parents=True, exist_ok=True)
-    (reports_dir / 'phase13_summary.json').write_text(json.dumps(suite, indent=2))
+    (reports_dir / 'phase13_summary.json').write_text(json.dumps(_sanitize_for_json(suite), indent=2))
     return suite
 
 
