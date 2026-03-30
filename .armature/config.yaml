@@ -1,0 +1,53 @@
+# Armature Project Configuration
+# Populated during /armature-init Phase 1 (Project Discovery)
+
+project:
+  name: "CWT/CGT Toolkit"
+  description: >
+    Dual-stack research sandbox for Causal Web Theory and Geometric Tensor
+    dynamics. Python simulation package (cwt-sim) implements the CWT/CGT
+    mathematical framework — graph substrates, three-layer dynamics (Q, Θ, C),
+    geometric estimators, and parameter sweep orchestration. Electron/React
+    desktop lab (cwt_lab) provides phase-specific dashboards for interactive
+    exploration, baseline comparison, and experiment management.
+  domain: "computational physics / graph-based field simulation"
+
+stack:
+  languages: ["Python 3.11+", "TypeScript", "React/TSX"]
+  frameworks:
+    - "Typer (CLI)"
+    - "Electron 28 (desktop)"
+    - "React 18 (UI)"
+    - "Material-UI 5"
+    - "Zustand (state)"
+    - "Plotly.js (viz)"
+    - "Pydantic 2 (config)"
+  databases: ["better-sqlite3 (local run history)"]
+  infrastructure: []
+  ci: "GitHub Actions"
+
+topology:
+  components:
+    - path: "cwt-sim/cwt"
+      responsibility: "Core simulation engine — geometry, layers, orchestrator, metrics, noise, operator modules"
+      adrs: [ADR-0001, ADR-0002, ADR-0003]
+    - path: "cwt-sim/baselines"
+      responsibility: "Canonical model runners (Ising, Kuramoto, percolation, SIS) for validation against known physics"
+      adrs: [ADR-0001, ADR-0004]
+    - path: "cwt-sim/experiments"
+      responsibility: "Research workflows with gate-based progression (stage0 through gateD)"
+      adrs: [ADR-0001, ADR-0003, ADR-0005]
+    - path: "cwt_lab/electron"
+      responsibility: "Electron main process — IPC bridge, Python invocation, run management, environment detection"
+      adrs: [ADR-0002, ADR-0006]
+    - path: "cwt_lab/renderer"
+      responsibility: "React UI — phase dashboards, visualization components, experiment navigation"
+      adrs: [ADR-0002, ADR-0006]
+    - path: "cwt_lab/shared"
+      responsibility: "Cross-process validators (Zod schemas), type contracts, shared constants"
+      adrs: [ADR-0002, ADR-0006]
+
+governance:
+  build-candidate-prefix: "bc"
+  circuit-breaker-threshold: 3
+  reviewer-required: true
