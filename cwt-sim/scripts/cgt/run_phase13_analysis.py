@@ -3,6 +3,9 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+import matplotlib
+matplotlib.use('Agg')
+
 from cwt.cgt.analysis.phase13_analysis import Phase13Config, phase13_payload, phase13_report
 
 

@@ -33,6 +33,8 @@ def _sanitize_for_json(obj):
         return {k: _sanitize_for_json(v) for k, v in obj.items()}
     if isinstance(obj, list):
         return [_sanitize_for_json(v) for v in obj]
+    if isinstance(obj, tuple):
+        return [_sanitize_for_json(v) for v in obj]
     if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
         return None
     if isinstance(obj, np.floating):
@@ -523,7 +525,10 @@ def phase13_payload(output_root: Path, phase13_config: Phase13Config | None = No
         'focus_benchmark': focus_id,
         'focus_backend_comparison': {
             'switch_gamma': float(focus_payload['recommended_switch_gamma']),
-            'metric_curvature_focus_corr': _corr(np.asarray(focus_scan['bures_metric_trace'], dtype=float), np.asarray(focus_scan['mixed_curvature'], dtype=float)),
+            'metric_curvature_focus_corr': _corr(
+                np.asarray(focus_scan['bures_metric_trace'], dtype=float)[:-1, :-1].ravel(),
+                np.asarray(focus_scan['mixed_curvature'], dtype=float).ravel(),
+            ),
             'switch_global_fit': focus_switch['global_fit'],
             'switch_best_patch_key': focus_switch['best_patch_key'],
             'switch_best_patch_r2': focus_switch['best_patch_r2'],
