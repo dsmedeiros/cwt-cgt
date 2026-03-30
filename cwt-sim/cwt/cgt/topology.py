@@ -45,7 +45,9 @@ def _hamiltonian(kx: float, ky: float, mass: float, perturbation: float) -> np.n
     return np.asarray([[dz, dx - 1j * dy], [dx + 1j * dy, -dz]], dtype=complex)
 
 
-def _lower_band_eigenvector(kx: float, ky: float, mass: float, perturbation: float) -> tuple[np.ndarray, float]:
+def _lower_band_eigenvector(
+    kx: float, ky: float, mass: float, perturbation: float
+) -> tuple[np.ndarray, float]:
     h = _hamiltonian(kx, ky, mass, perturbation)
     evals, evecs = np.linalg.eigh(h)
     idx = int(np.argmin(evals))
@@ -69,7 +71,9 @@ def _link(a: np.ndarray, b: np.ndarray) -> complex:
     return ov / mag
 
 
-def _band_grid(mesh: int, mass: float, perturbation: float) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def _band_grid(
+    mesh: int, mass: float, perturbation: float
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     grid_kx = np.linspace(-np.pi, np.pi, mesh, endpoint=False, dtype=float)
     grid_ky = np.linspace(-np.pi, np.pi, mesh, endpoint=False, dtype=float)
     vecs = np.zeros((mesh, mesh, 2), dtype=complex)
@@ -140,7 +144,9 @@ def compute_band_case(mesh: int, mass: float, perturbation: float) -> BandCase:
     )
 
 
-def _summarize_plateaus(mass_values: np.ndarray, chern_values: np.ndarray, gap_values: np.ndarray, gap_floor: float) -> list[dict]:
+def _summarize_plateaus(
+    mass_values: np.ndarray, chern_values: np.ndarray, gap_values: np.ndarray, gap_floor: float
+) -> list[dict]:
     plateaus: list[dict] = []
     if mass_values.size == 0:
         return plateaus
@@ -152,12 +158,12 @@ def _summarize_plateaus(mass_values: np.ndarray, chern_values: np.ndarray, gap_v
             sl = slice(start, idx)
             plateaus.append(
                 {
-                    'chern_rounded': current,
-                    'mass_min': float(mass_values[sl][0]),
-                    'mass_max': float(mass_values[sl][-1]),
-                    'min_gap': float(np.min(gap_values[sl])),
-                    'gap_protected': bool(np.min(gap_values[sl]) > gap_floor),
-                    'count': int(idx - start),
+                    "chern_rounded": current,
+                    "mass_min": float(mass_values[sl][0]),
+                    "mass_max": float(mass_values[sl][-1]),
+                    "min_gap": float(np.min(gap_values[sl])),
+                    "gap_protected": bool(np.min(gap_values[sl]) > gap_floor),
+                    "count": int(idx - start),
                 }
             )
             if idx < mass_values.size:
@@ -168,7 +174,7 @@ def _summarize_plateaus(mass_values: np.ndarray, chern_values: np.ndarray, gap_v
 
 def topology_benchmark_payload(output_root: Path, config: TopologyConfig | None = None) -> dict:
     cfg = config or TopologyConfig()
-    benchmark_dir = output_root / 'benchmark_E_topology_torus'
+    benchmark_dir = output_root / "benchmark_E_topology_torus"
     benchmark_dir.mkdir(parents=True, exist_ok=True)
 
     mass_values = np.asarray(cfg.mass_values, dtype=float)
@@ -185,56 +191,59 @@ def topology_benchmark_payload(output_root: Path, config: TopologyConfig | None 
             gaps.append(case.min_gap)
             rows.append(
                 {
-                    'mass': case.mass,
-                    'chern_number': case.chern_number,
-                    'chern_rounded': case.chern_rounded,
-                    'min_gap': case.min_gap,
-                    'wilson_winding': case.wilson_winding,
+                    "mass": case.mass,
+                    "chern_number": case.chern_number,
+                    "chern_rounded": case.chern_rounded,
+                    "min_gap": case.min_gap,
+                    "wilson_winding": case.wilson_winding,
                 }
             )
         sweeps.append(
             {
-                'perturbation': float(perturbation),
-                'rows': rows,
-                'plateaus': _summarize_plateaus(mass_values, np.asarray(cherns, dtype=float), np.asarray(gaps, dtype=float), cfg.gap_floor),
+                "perturbation": float(perturbation),
+                "rows": rows,
+                "plateaus": _summarize_plateaus(
+                    mass_values, np.asarray(cherns, dtype=float), np.asarray(gaps, dtype=float), cfg.gap_floor
+                ),
             }
         )
 
     for perturbation in cfg.perturbation_values:
         for mass in cfg.representative_masses:
             case = compute_band_case(cfg.mesh, float(mass), float(perturbation))
-            key = f'mass_{mass:+.1f}_eps_{perturbation:.2f}'.replace('+', 'p').replace('-', 'm')
+            key = f"mass_{mass:+.1f}_eps_{perturbation:.2f}".replace("+", "p").replace("-", "m")
             representative[key] = {
-                'mass': case.mass,
-                'perturbation': case.perturbation,
-                'chern_number': case.chern_number,
-                'chern_rounded': case.chern_rounded,
-                'min_gap': case.min_gap,
-                'max_abs_curvature': case.max_abs_curvature,
-                'wilson_winding': case.wilson_winding,
-                'curvature': case.curvature,
-                'gap_map': case.gap_map,
-                'wilson_phase_by_ky': case.wilson_phase_by_ky,
-                'grid_kx': case.grid_kx,
-                'grid_ky': case.grid_ky,
+                "mass": case.mass,
+                "perturbation": case.perturbation,
+                "chern_number": case.chern_number,
+                "chern_rounded": case.chern_rounded,
+                "min_gap": case.min_gap,
+                "max_abs_curvature": case.max_abs_curvature,
+                "wilson_winding": case.wilson_winding,
+                "curvature": case.curvature,
+                "gap_map": case.gap_map,
+                "wilson_phase_by_ky": case.wilson_phase_by_ky,
+                "grid_kx": case.grid_kx,
+                "grid_ky": case.grid_ky,
             }
 
     payload = {
-        'benchmark': 'benchmark_e_topology',
-        'slug': 'benchmark_E_topology_torus',
-        'description': 'Auxiliary periodic two-band torus benchmark for legitimate topological claims.',
-        'model': 'Perturbed Qi-Wu-Zhang lower-band benchmark on (k_x, k_y) ∈ T².',
-        'mesh': int(cfg.mesh),
-        'gap_floor': float(cfg.gap_floor),
-        'mass_values': mass_values.tolist(),
-        'perturbation_values': [float(x) for x in cfg.perturbation_values],
-        'sweeps': sweeps,
-        'representative_cases': representative,
-        'notes': [
-            'Integer Chern claims are only reported in this periodic, gapped auxiliary-band sector.',
-            'The discrete invariant uses the gauge-invariant Fukui-Hatsugai-Suzuki plaquette formula.',
-            'Wilson-loop winding is included as a secondary topology diagnostic and should track the Chern number while the band gap remains open.',
+        "benchmark": "benchmark_e_topology",
+        "slug": "benchmark_E_topology_torus",
+        "description": "Auxiliary periodic two-band torus benchmark for legitimate topological claims.",
+        "model": "Perturbed Qi-Wu-Zhang lower-band benchmark on (k_x, k_y) ∈ T².",
+        "mesh": int(cfg.mesh),
+        "gap_floor": float(cfg.gap_floor),
+        "mass_values": mass_values.tolist(),
+        "perturbation_values": [float(x) for x in cfg.perturbation_values],
+        "sweeps": sweeps,
+        "representative_cases": representative,
+        "notes": [
+            "Integer Chern claims are only reported in this periodic, gapped auxiliary-band sector.",
+            "The discrete invariant uses the gauge-invariant Fukui-Hatsugai-Suzuki plaquette formula.",
+            "Wilson-loop winding is included as a secondary topology diagnostic and should track the"
+            " Chern number while the band gap remains open.",
         ],
     }
-    (benchmark_dir / 'benchmark_e_topology.json').write_text(json.dumps(payload, indent=2))
+    (benchmark_dir / "benchmark_e_topology.json").write_text(json.dumps(payload, indent=2))
     return payload

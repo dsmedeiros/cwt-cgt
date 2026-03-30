@@ -50,7 +50,9 @@ def unpack_state_vector(vector: np.ndarray, node_count: int) -> tuple[np.ndarray
     return p, theta
 
 
-def _phase_modulated_kernel(kernel: np.ndarray, theta: np.ndarray, theta_ref: np.ndarray, gain: float) -> np.ndarray:
+def _phase_modulated_kernel(
+    kernel: np.ndarray, theta: np.ndarray, theta_ref: np.ndarray, gain: float
+) -> np.ndarray:
     delta = np.sin((theta[None, :] - theta[:, None]) - (theta_ref[None, :] - theta_ref[:, None]))
     modulated = np.asarray(kernel, dtype=float) * (1.0 + gain * delta)
     modulated = np.maximum(modulated, 1e-9)
@@ -58,7 +60,9 @@ def _phase_modulated_kernel(kernel: np.ndarray, theta: np.ndarray, theta_ref: np
     return modulated
 
 
-def branch_map_step(vector: np.ndarray, reference_state: BranchState, config: JacobianConfig | None = None) -> np.ndarray:
+def branch_map_step(
+    vector: np.ndarray, reference_state: BranchState, config: JacobianConfig | None = None
+) -> np.ndarray:
     cfg = config or JacobianConfig()
     p_ref, theta_ref, kernel_ref = _state_parts(reference_state)
     node_count = p_ref.size
@@ -76,13 +80,18 @@ def branch_map_step(vector: np.ndarray, reference_state: BranchState, config: Ja
     centered_prob = p - p_ref
     centered_prob = centered_prob - np.mean(centered_prob)
     theta_next = canonicalize_phase(
-        theta - cfg.phase_relaxation * local_phase_error + cfg.phase_sync_gain * sync + cfg.phase_probability_gain * centered_prob,
+        theta
+        - cfg.phase_relaxation * local_phase_error
+        + cfg.phase_sync_gain * sync
+        + cfg.phase_probability_gain * centered_prob,
         p_next,
     )
     return np.concatenate([p_next, theta_next]).astype(float)
 
 
-def numerical_branch_jacobian(reference_state: BranchState, config: JacobianConfig | None = None) -> np.ndarray:
+def numerical_branch_jacobian(
+    reference_state: BranchState, config: JacobianConfig | None = None
+) -> np.ndarray:
     cfg = config or JacobianConfig()
     x0 = state_vector(reference_state)
     dim = x0.size
@@ -96,7 +105,9 @@ def numerical_branch_jacobian(reference_state: BranchState, config: JacobianConf
     return jac
 
 
-def _resolve_reference_state(benchmark, controls: tuple[float, float], branch_id: str, fallback_state: BranchState) -> BranchState:
+def _resolve_reference_state(
+    benchmark, controls: tuple[float, float], branch_id: str, fallback_state: BranchState
+) -> BranchState:
     candidate = benchmark.resolve_candidate_by_id(float(controls[0]), float(controls[1]), branch_id)
     if candidate is not None:
         return candidate.state
@@ -118,10 +129,18 @@ def control_coupling_vectors(
 ) -> tuple[np.ndarray, np.ndarray]:
     cfg = config or JacobianConfig()
     x0 = state_vector(reference_state)
-    plus_u = _resolve_reference_state(benchmark, _clip_controls(benchmark, (u + cfg.control_eps, v)), branch_id, reference_state)
-    minus_u = _resolve_reference_state(benchmark, _clip_controls(benchmark, (u - cfg.control_eps, v)), branch_id, reference_state)
-    plus_v = _resolve_reference_state(benchmark, _clip_controls(benchmark, (u, v + cfg.control_eps)), branch_id, reference_state)
-    minus_v = _resolve_reference_state(benchmark, _clip_controls(benchmark, (u, v - cfg.control_eps)), branch_id, reference_state)
+    plus_u = _resolve_reference_state(
+        benchmark, _clip_controls(benchmark, (u + cfg.control_eps, v)), branch_id, reference_state
+    )
+    minus_u = _resolve_reference_state(
+        benchmark, _clip_controls(benchmark, (u - cfg.control_eps, v)), branch_id, reference_state
+    )
+    plus_v = _resolve_reference_state(
+        benchmark, _clip_controls(benchmark, (u, v + cfg.control_eps)), branch_id, reference_state
+    )
+    minus_v = _resolve_reference_state(
+        benchmark, _clip_controls(benchmark, (u, v - cfg.control_eps)), branch_id, reference_state
+    )
 
     bu = (branch_map_step(x0, plus_u, cfg) - branch_map_step(x0, minus_u, cfg)) / (2.0 * cfg.control_eps)
     bv = (branch_map_step(x0, plus_v, cfg) - branch_map_step(x0, minus_v, cfg)) / (2.0 * cfg.control_eps)
@@ -144,7 +163,9 @@ def response_vectors(
     config: JacobianConfig | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     jac = numerical_branch_jacobian(reference_state, config=config)
-    bu, bv = control_coupling_vectors(benchmark, u=u, v=v, branch_id=branch_id, reference_state=reference_state, config=config)
+    bu, bv = control_coupling_vectors(
+        benchmark, u=u, v=v, branch_id=branch_id, reference_state=reference_state, config=config
+    )
     du = solve_branch_response(jac, bu)
     dv = solve_branch_response(jac, bv)
     return jac, du, dv
@@ -162,7 +183,9 @@ def vector_to_dpsi(reference_state: BranchState, response_vector: np.ndarray) ->
     return prefactor * (amplitude_term + phase_term)
 
 
-def response_metric_trace_and_curvature(reference_state: BranchState, du_vec: np.ndarray, dv_vec: np.ndarray) -> tuple[float, float]:
+def response_metric_trace_and_curvature(
+    reference_state: BranchState, du_vec: np.ndarray, dv_vec: np.ndarray
+) -> tuple[float, float]:
     psi0 = psi_from_state(reference_state)
     dpsi_u = vector_to_dpsi(reference_state, du_vec)
     dpsi_v = vector_to_dpsi(reference_state, dv_vec)

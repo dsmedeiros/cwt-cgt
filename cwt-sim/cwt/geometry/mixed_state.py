@@ -17,6 +17,7 @@ from .berry import psi_from_state
 # Density-matrix construction and projection
 # ---------------------------------------------------------------------------
 
+
 def density_from_state(state) -> np.ndarray:
     """Pure-state density matrix rho = |psi><psi| from a branch state."""
     psi = psi_from_state(state)
@@ -40,6 +41,7 @@ def project_to_density(rho: np.ndarray) -> np.ndarray:
 # Matrix square-root helpers
 # ---------------------------------------------------------------------------
 
+
 def matrix_sqrt_psd(matrix: np.ndarray) -> np.ndarray:
     """Positive-semidefinite matrix square root via eigen-decomposition."""
     evals, evecs = np.linalg.eigh(0.5 * (matrix + matrix.conj().T))
@@ -47,9 +49,7 @@ def matrix_sqrt_psd(matrix: np.ndarray) -> np.ndarray:
     return evecs @ np.diag(np.sqrt(evals)) @ evecs.conj().T
 
 
-def matrix_inv_sqrt_psd(
-    matrix: np.ndarray, floor: float = 1e-12
-) -> np.ndarray:
+def matrix_inv_sqrt_psd(matrix: np.ndarray, floor: float = 1e-12) -> np.ndarray:
     """Inverse square root, clamping small eigenvalues above *floor*."""
     evals, evecs = np.linalg.eigh(0.5 * (matrix + matrix.conj().T))
     evals = np.clip(np.real(evals), floor, None)
@@ -59,6 +59,7 @@ def matrix_inv_sqrt_psd(
 # ---------------------------------------------------------------------------
 # Fidelity and Bures distance
 # ---------------------------------------------------------------------------
+
 
 def fidelity(rho: np.ndarray, sigma: np.ndarray) -> float:
     """Uhlmann fidelity F(rho, sigma)."""
@@ -78,6 +79,7 @@ def bures_distance_sq(rho: np.ndarray, sigma: np.ndarray) -> float:
 # Coherence and purity diagnostics
 # ---------------------------------------------------------------------------
 
+
 def offdiag_norm(rho: np.ndarray) -> float:
     """Off-diagonal Frobenius norm (coherence measure)."""
     diag = np.diag(np.diag(rho))
@@ -93,6 +95,7 @@ def purity(rho: np.ndarray) -> float:
 # Uhlmann parallel transport and holonomy
 # ---------------------------------------------------------------------------
 
+
 def polar_unitary(matrix: np.ndarray, tol: float = 1e-12) -> np.ndarray:
     """Unitary factor from the polar decomposition of *matrix*."""
     u, s, vh = np.linalg.svd(matrix, full_matrices=False)
@@ -101,9 +104,7 @@ def polar_unitary(matrix: np.ndarray, tol: float = 1e-12) -> np.ndarray:
     return u @ vh
 
 
-def uhlmann_link_unitary(
-    rho_a: np.ndarray, rho_b: np.ndarray
-) -> np.ndarray:
+def uhlmann_link_unitary(rho_a: np.ndarray, rho_b: np.ndarray) -> np.ndarray:
     """Uhlmann transport link between two density matrices."""
     sqrt_a = matrix_sqrt_psd(rho_a)
     sqrt_b = matrix_sqrt_psd(rho_b)
@@ -141,6 +142,7 @@ def mixed_plaquette_curvature(
 # Phase-convention utilities (Phase 12)
 # ---------------------------------------------------------------------------
 
+
 def unwrap_phase_sequence(
     phases: list[float] | np.ndarray,
 ) -> np.ndarray:
@@ -167,9 +169,7 @@ def phase_alignment_sign(
     return 1.0 if score >= 0.0 else -1.0
 
 
-def harmonize_phase_sequence(
-    phases: list[float] | np.ndarray, sign: float = 1.0
-) -> np.ndarray:
+def harmonize_phase_sequence(phases: list[float] | np.ndarray, sign: float = 1.0) -> np.ndarray:
     """Unwrap and apply sign harmonisation to a phase sequence."""
     arr = unwrap_phase_sequence(phases)
     return float(sign) * arr

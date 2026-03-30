@@ -70,7 +70,7 @@ class ScanConfig:
 
 @dataclass(frozen=True)
 class LoopConfig:
-    shape: str = 'square'
+    shape: str = "square"
     steps_per_segment: int = 24
     phase_relaxation: float = 0.35
     current_phase_gain: float = 0.45

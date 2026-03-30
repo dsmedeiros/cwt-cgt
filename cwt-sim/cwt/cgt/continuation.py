@@ -78,7 +78,7 @@ def _assigned_neighbor_states(
     references = []
     rows = len(states)
     cols = len(states[0]) if rows else 0
-    offsets = [(-1, 0), (0, -1)] if direction == 'forward' else [(1, 0), (0, 1)]
+    offsets = [(-1, 0), (0, -1)] if direction == "forward" else [(1, 0), (0, 1)]
     for di, dj in offsets:
         ii = i + di
         jj = j + dj
@@ -99,13 +99,13 @@ def _sweep_mesh(
     rows = grid_u.size
     cols = grid_v.size
     states: list[list] = [[None for _ in range(cols)] for _ in range(rows)]
-    branch_ids: list[list[str]] = [['unresolved' for _ in range(cols)] for _ in range(rows)]
+    branch_ids: list[list[str]] = [["unresolved" for _ in range(cols)] for _ in range(rows)]
     residuals = np.full((rows, cols), np.nan, dtype=float)
     margin_gaps = np.full((rows, cols), np.nan, dtype=float)
     candidate_counts = np.zeros((rows, cols), dtype=int)
 
-    order_i = range(rows) if direction == 'forward' else range(rows - 1, -1, -1)
-    order_j = range(cols) if direction == 'forward' else range(cols - 1, -1, -1)
+    order_i = range(rows) if direction == "forward" else range(rows - 1, -1, -1)
+    order_j = range(cols) if direction == "forward" else range(cols - 1, -1, -1)
     seed_id = _seed_branch_id(benchmark, direction)
 
     for i in order_i:
@@ -117,7 +117,7 @@ def _sweep_mesh(
             preferred = None
             if refs:
                 neighbor_ids = []
-                for di, dj in [(-1, 0), (0, -1)] if direction == 'forward' else [(1, 0), (0, 1)]:
+                for di, dj in [(-1, 0), (0, -1)] if direction == "forward" else [(1, 0), (0, 1)]:
                     ii = i + di
                     jj = j + dj
                     if 0 <= ii < rows and 0 <= jj < cols and states[ii][jj] is not None:
@@ -152,14 +152,18 @@ def build_branch_atlas(
     grid_v: np.ndarray,
     config: ScanConfig,
 ) -> dict:
-    forward = _sweep_mesh(benchmark=benchmark, grid_u=grid_u, grid_v=grid_v, direction='forward', config=config)
-    backward = _sweep_mesh(benchmark=benchmark, grid_u=grid_u, grid_v=grid_v, direction='backward', config=config)
+    forward = _sweep_mesh(
+        benchmark=benchmark, grid_u=grid_u, grid_v=grid_v, direction="forward", config=config
+    )
+    backward = _sweep_mesh(
+        benchmark=benchmark, grid_u=grid_u, grid_v=grid_v, direction="backward", config=config
+    )
 
     rows = grid_u.size
     cols = grid_v.size
     chosen_states: list[list] = [[None for _ in range(cols)] for _ in range(rows)]
-    persistent_ids: list[list[str]] = [['unresolved' for _ in range(cols)] for _ in range(rows)]
-    chosen_ids: list[list[str]] = [['unresolved' for _ in range(cols)] for _ in range(rows)]
+    persistent_ids: list[list[str]] = [["unresolved" for _ in range(cols)] for _ in range(rows)]
+    chosen_ids: list[list[str]] = [["unresolved" for _ in range(cols)] for _ in range(rows)]
     disagreement_map = [[False for _ in range(cols)] for _ in range(rows)]
     ambiguous_map = [[False for _ in range(cols)] for _ in range(rows)]
     residual_map = np.full((rows, cols), np.nan, dtype=float)
@@ -183,7 +187,9 @@ def build_branch_atlas(
             ambiguous = (not agree) or low_gap or high_residual
             disagreement_map[i][j] = not agree
             ambiguous_map[i][j] = ambiguous
-            ambiguity_score[i, j] = max(0.0, config.branch_ambiguity_gap - min(f_gap, b_gap)) if candidate_count > 1 else 0.0
+            ambiguity_score[i, j] = (
+                max(0.0, config.branch_ambiguity_gap - min(f_gap, b_gap)) if candidate_count > 1 else 0.0
+            )
 
             if f_res <= b_res:
                 chosen_states[i][j] = forward.states[i][j]
@@ -194,41 +200,41 @@ def build_branch_atlas(
                 chosen_ids[i][j] = b_id
                 residual_map[i, j] = b_res
 
-            persistent_ids[i][j] = f_id if agree and not ambiguous else 'ambiguous'
+            persistent_ids[i][j] = f_id if agree and not ambiguous else "ambiguous"
             if ambiguous:
                 switch_tiles.append(
                     {
-                        'u_index': i,
-                        'v_index': j,
-                        'u': float(grid_u[i]),
-                        'v': float(grid_v[j]),
-                        'forward_branch_id': f_id,
-                        'backward_branch_id': b_id,
-                        'forward_residual': f_res,
-                        'backward_residual': b_res,
-                        'forward_margin_gap': f_gap,
-                        'backward_margin_gap': b_gap,
-                        'candidate_count': candidate_count,
+                        "u_index": i,
+                        "v_index": j,
+                        "u": float(grid_u[i]),
+                        "v": float(grid_v[j]),
+                        "forward_branch_id": f_id,
+                        "backward_branch_id": b_id,
+                        "forward_residual": f_res,
+                        "backward_residual": b_res,
+                        "forward_margin_gap": f_gap,
+                        "backward_margin_gap": b_gap,
+                        "candidate_count": candidate_count,
                     }
                 )
 
     return {
-        'forward_branch_id_map': forward.branch_ids,
-        'backward_branch_id_map': backward.branch_ids,
-        'chosen_branch_id_map': chosen_ids,
-        'persistent_branch_id_map': persistent_ids,
-        'disagreement_map': disagreement_map,
-        'ambiguous_map': ambiguous_map,
-        'forward_residual_map': forward.residuals.tolist(),
-        'backward_residual_map': backward.residuals.tolist(),
-        'forward_margin_gap_map': forward.margin_gaps.tolist(),
-        'backward_margin_gap_map': backward.margin_gaps.tolist(),
-        'candidate_count_map': forward.candidate_counts.tolist(),
-        'chosen_residual_map': residual_map.tolist(),
-        'ambiguity_score_map': ambiguity_score.tolist(),
-        'switch_tiles': switch_tiles,
-        'seed_branches': dict(benchmark.seed_branch_ids),
-        'chosen_states': chosen_states,
+        "forward_branch_id_map": forward.branch_ids,
+        "backward_branch_id_map": backward.branch_ids,
+        "chosen_branch_id_map": chosen_ids,
+        "persistent_branch_id_map": persistent_ids,
+        "disagreement_map": disagreement_map,
+        "ambiguous_map": ambiguous_map,
+        "forward_residual_map": forward.residuals.tolist(),
+        "backward_residual_map": backward.residuals.tolist(),
+        "forward_margin_gap_map": forward.margin_gaps.tolist(),
+        "backward_margin_gap_map": backward.margin_gaps.tolist(),
+        "candidate_count_map": forward.candidate_counts.tolist(),
+        "chosen_residual_map": residual_map.tolist(),
+        "ambiguity_score_map": ambiguity_score.tolist(),
+        "switch_tiles": switch_tiles,
+        "seed_branches": dict(benchmark.seed_branch_ids),
+        "chosen_states": chosen_states,
     }
 
 
@@ -245,7 +251,7 @@ def continue_path_with_branch_ids(
 
     previous_state = None
     previous_branch_id = None
-    loop_seed_id = benchmark.seed_branch_ids.get('loop', benchmark.canonical_branch_id)
+    loop_seed_id = benchmark.seed_branch_ids.get("loop", benchmark.canonical_branch_id)
 
     for index, (u, v) in enumerate(path):
         candidates = benchmark.candidate_states_fn(float(u), float(v))
@@ -269,17 +275,17 @@ def continue_path_with_branch_ids(
         branch_ids.append(choice.candidate.branch_id)
         step_log.append(
             {
-                'step_index': index,
-                'u': float(u),
-                'v': float(v),
-                'selected_branch_id': choice.candidate.branch_id,
-                'candidate_ids': choice.candidate_ids,
-                'candidate_count': choice.candidate_count,
-                'residual': float(choice.residual),
-                'margin_gap': float(choice.margin_gap),
-                'used_preferred_id': bool(choice.used_preferred_id),
-                'switched': bool(switched),
-                'ambiguous': bool(ambiguous),
+                "step_index": index,
+                "u": float(u),
+                "v": float(v),
+                "selected_branch_id": choice.candidate.branch_id,
+                "candidate_ids": choice.candidate_ids,
+                "candidate_count": choice.candidate_count,
+                "residual": float(choice.residual),
+                "margin_gap": float(choice.margin_gap),
+                "used_preferred_id": bool(choice.used_preferred_id),
+                "switched": bool(switched),
+                "ambiguous": bool(ambiguous),
             }
         )
         previous_state = choice.candidate.state
@@ -287,13 +293,13 @@ def continue_path_with_branch_ids(
 
     unique_branch_ids = sorted(set(branch_ids))
     return {
-        'states': states,
-        'branch_ids': branch_ids,
-        'unique_branch_ids': unique_branch_ids,
-        'switch_markers': switch_markers,
-        'ambiguous_steps': ambiguous_steps,
-        'step_log': step_log,
-        'switch_count': len(switch_markers),
-        'ambiguous_step_count': len(ambiguous_steps),
-        'seed_branch_id': loop_seed_id,
+        "states": states,
+        "branch_ids": branch_ids,
+        "unique_branch_ids": unique_branch_ids,
+        "switch_markers": switch_markers,
+        "ambiguous_steps": ambiguous_steps,
+        "step_log": step_log,
+        "switch_count": len(switch_markers),
+        "ambiguous_step_count": len(ambiguous_steps),
+        "seed_branch_id": loop_seed_id,
     }

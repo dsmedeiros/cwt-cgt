@@ -22,7 +22,9 @@ class LindbladConfig:
     scan_mesh: int = 9
 
 
-def lindblad_operators(state, config: LindbladConfig, dephasing: float) -> tuple[np.ndarray, list[np.ndarray]]:
+def lindblad_operators(
+    state, config: LindbladConfig, dephasing: float
+) -> tuple[np.ndarray, list[np.ndarray]]:
     kernel = np.asarray(state.kernel, dtype=float)
     n = kernel.shape[0]
     h = branch_hamiltonian(state, config)

@@ -62,7 +62,7 @@ def biorthogonal_modal_frame(operator: np.ndarray, dominant_target: complex = 1.
         other = np.delete(distances, dominant_index)
         spectral_gap = float(np.min(other) - dominant_distance)
     else:
-        spectral_gap = float('inf')
+        spectral_gap = float("inf")
 
     return ModalFrame(
         eigenvalues=right_vals,

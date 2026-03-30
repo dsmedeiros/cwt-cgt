@@ -31,8 +31,8 @@ def _nan_grid(mesh: int) -> np.ndarray:
 
 def _regime_label(avg_overlap: float, coherence: float, config: ScanConfig) -> str:
     if avg_overlap < config.overlap_floor or coherence < config.coherence_floor:
-        return 'R3'
-    return 'R1'
+        return "R3"
+    return "R1"
 
 
 def run_benchmark_scan(benchmark_id: str, output_root: Path, config: ScanConfig | None = None) -> dict:
@@ -49,7 +49,7 @@ def run_benchmark_scan(benchmark_id: str, output_root: Path, config: ScanConfig 
     metric_trace = _nan_grid(scan_config.mesh)
     operator_softness = _nan_grid(scan_config.mesh)
     max_multiplier = _nan_grid(scan_config.mesh)
-    regime_map = [['unresolved' for _ in range(scan_config.mesh)] for _ in range(scan_config.mesh)]
+    regime_map = [["unresolved" for _ in range(scan_config.mesh)] for _ in range(scan_config.mesh)]
 
     for i, u in enumerate(grid_u):
         row = []
@@ -75,7 +75,9 @@ def run_benchmark_scan(benchmark_id: str, output_root: Path, config: ScanConfig 
             if j - 1 >= 0:
                 overlaps.append(overlap(psi_here, psi_from_state(states[i][j - 1])))
             avg_overlap[i, j] = float(np.mean(overlaps)) if overlaps else math.nan
-            regime_map[i][j] = _regime_label(avg_overlap=float(avg_overlap[i, j]), coherence=float(coherence[i, j]), config=scan_config)
+            regime_map[i][j] = _regime_label(
+                avg_overlap=float(avg_overlap[i, j]), coherence=float(coherence[i, j]), config=scan_config
+            )
 
     for i in range(1, scan_config.mesh - 1):
         for j in range(1, scan_config.mesh - 1):
@@ -111,47 +113,50 @@ def run_benchmark_scan(benchmark_id: str, output_root: Path, config: ScanConfig 
             regime_counts[label] = regime_counts.get(label, 0) + 1
 
     atlas = build_branch_atlas(benchmark=benchmark, grid_u=grid_u, grid_v=grid_v, config=scan_config)
-    residual_flat = [v for row in atlas['chosen_residual_map'] for v in row]
-    ambiguity_flat = [v for row in atlas['ambiguity_score_map'] for v in row]
+    residual_flat = [v for row in atlas["chosen_residual_map"] for v in row]
+    ambiguity_flat = [v for row in atlas["ambiguity_score_map"] for v in row]
     branch_continuation = {
-        'persistent_branch_counts': {
-            bid: sum(cell == bid for row in atlas['persistent_branch_id_map'] for cell in row)
-            for bid in set(cell for row in atlas['persistent_branch_id_map'] for cell in row)
+        "persistent_branch_counts": {
+            bid: sum(cell == bid for row in atlas["persistent_branch_id_map"] for cell in row)
+            for bid in set(cell for row in atlas["persistent_branch_id_map"] for cell in row)
         },
-        'chosen_branch_counts': {
-            bid: sum(cell == bid for row in atlas['chosen_branch_id_map'] for cell in row)
-            for bid in set(cell for row in atlas['chosen_branch_id_map'] for cell in row)
+        "chosen_branch_counts": {
+            bid: sum(cell == bid for row in atlas["chosen_branch_id_map"] for cell in row)
+            for bid in set(cell for row in atlas["chosen_branch_id_map"] for cell in row)
         },
-        'switch_tile_count': int(sum(1 for row in atlas['ambiguous_map'] for cell in row if cell)),
-        'ambiguous_tile_count': int(sum(1 for row in atlas['disagreement_map'] for cell in row if cell)),
-        'residual_summary': summarize(iter(residual_flat)),
-        'ambiguity_score_summary': summarize(iter(ambiguity_flat)),
+        "switch_tile_count": int(sum(1 for row in atlas["ambiguous_map"] for cell in row if cell)),
+        "ambiguous_tile_count": int(sum(1 for row in atlas["disagreement_map"] for cell in row if cell)),
+        "residual_summary": summarize(iter(residual_flat)),
+        "ambiguity_score_summary": summarize(iter(ambiguity_flat)),
     }
 
     payload = {
-        'benchmark': benchmark.benchmark_id,
-        'description': benchmark.description,
-        'expected_behavior': benchmark.expected_behavior,
-        'expected_regime': benchmark.expected_regime,
-        'control_names': list(benchmark.control_names),
-        'grid_u': grid_u.tolist(),
-        'grid_v': grid_v.tolist(),
-        'coherence': coherence.tolist(),
-        'avg_overlap': avg_overlap.tolist(),
-        'metric_trace': metric_trace.tolist(),
-        'curvature': curvature.tolist(),
-        'operator_softness': operator_softness.tolist(),
-        'max_multiplier': max_multiplier.tolist(),
-        'regime_map': regime_map,
-        'metric_summary': summarize(metric_trace.ravel()),
-        'curvature_summary': summarize_abs(curvature.ravel()),
-        'regime_summary': regime_counts,
-        'branch_continuation': branch_continuation,
-        'notes': 'Passive analytic branch scan for the hardened benchmark scaffold. Loop protocols are stored in a separate *_loops.json artifact.',
+        "benchmark": benchmark.benchmark_id,
+        "description": benchmark.description,
+        "expected_behavior": benchmark.expected_behavior,
+        "expected_regime": benchmark.expected_regime,
+        "control_names": list(benchmark.control_names),
+        "grid_u": grid_u.tolist(),
+        "grid_v": grid_v.tolist(),
+        "coherence": coherence.tolist(),
+        "avg_overlap": avg_overlap.tolist(),
+        "metric_trace": metric_trace.tolist(),
+        "curvature": curvature.tolist(),
+        "operator_softness": operator_softness.tolist(),
+        "max_multiplier": max_multiplier.tolist(),
+        "regime_map": regime_map,
+        "metric_summary": summarize(metric_trace.ravel()),
+        "curvature_summary": summarize_abs(curvature.ravel()),
+        "regime_summary": regime_counts,
+        "branch_continuation": branch_continuation,
+        "notes": (
+            "Passive analytic branch scan for the hardened benchmark scaffold."
+            " Loop protocols are stored in a separate *_loops.json artifact."
+        ),
     }
     benchmark_dir = output_root / benchmark.slug
     benchmark_dir.mkdir(parents=True, exist_ok=True)
-    output_path = benchmark_dir / f'{benchmark.benchmark_id}_scan.json'
+    output_path = benchmark_dir / f"{benchmark.benchmark_id}_scan.json"
     output_path.write_text(json.dumps(payload, indent=2))
     return payload
 
@@ -164,4 +169,4 @@ def run_benchmark_all(
 ) -> dict:
     scan_payload = run_benchmark_scan(benchmark_id=benchmark_id, output_root=output_root, config=scan_config)
     loop_payload = run_benchmark_loops(benchmark_id=benchmark_id, output_root=output_root, config=loop_config)
-    return {'scan': scan_payload, 'loops': loop_payload}
+    return {"scan": scan_payload, "loops": loop_payload}

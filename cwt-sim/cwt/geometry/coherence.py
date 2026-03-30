@@ -33,9 +33,7 @@ def wrap_phase(values: np.ndarray | float) -> np.ndarray | float:
     return wrapped
 
 
-def canonicalize_phase(
-    theta: np.ndarray, p: np.ndarray | None = None
-) -> np.ndarray:
+def canonicalize_phase(theta: np.ndarray, p: np.ndarray | None = None) -> np.ndarray:
     """Remove the p-weighted mean phase so the centroid sits at zero."""
     theta_arr = np.asarray(theta, dtype=float)
     if p is None:
@@ -53,9 +51,7 @@ def phase_coherence(state) -> float:
     return float(abs(np.sum(p * np.exp(1j * theta))))
 
 
-def _projective_derivative(
-    psi0: np.ndarray, derivative: np.ndarray
-) -> np.ndarray:
+def _projective_derivative(psi0: np.ndarray, derivative: np.ndarray) -> np.ndarray:
     """Project *derivative* onto the orthogonal complement of *psi0*."""
     return derivative - psi0 * np.vdot(psi0, derivative)
 
@@ -70,14 +66,8 @@ def projective_metric_trace_and_curvature(
     dv: float,
 ) -> tuple[float, float]:
     """Five-point central-difference projective metric trace and curvature."""
-    dpsi_u = (
-        np.asarray(psi_u_plus, dtype=complex)
-        - np.asarray(psi_u_minus, dtype=complex)
-    ) / (2.0 * du)
-    dpsi_v = (
-        np.asarray(psi_v_plus, dtype=complex)
-        - np.asarray(psi_v_minus, dtype=complex)
-    ) / (2.0 * dv)
+    dpsi_u = (np.asarray(psi_u_plus, dtype=complex) - np.asarray(psi_u_minus, dtype=complex)) / (2.0 * du)
+    dpsi_v = (np.asarray(psi_v_plus, dtype=complex) - np.asarray(psi_v_minus, dtype=complex)) / (2.0 * dv)
     q_u = _projective_derivative(np.asarray(psi0, dtype=complex), dpsi_u)
     q_v = _projective_derivative(np.asarray(psi0, dtype=complex), dpsi_v)
     g_uu = float(np.real(np.vdot(q_u, q_u)))

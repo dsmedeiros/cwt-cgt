@@ -36,7 +36,9 @@ def branch_hamiltonian(state, config: OpenSystemConfig) -> np.ndarray:
     theta = canonicalize_phase(np.asarray(state.theta, dtype=float), p)
     n = p.size
     h = np.zeros((n, n), dtype=complex)
-    diag = -config.site_potential_scale * (np.log(np.maximum(p, 1e-12)) - float(np.mean(np.log(np.maximum(p, 1e-12)))))
+    diag = -config.site_potential_scale * (
+        np.log(np.maximum(p, 1e-12)) - float(np.mean(np.log(np.maximum(p, 1e-12))))
+    )
     h += np.diag(diag)
     for i in range(n):
         for j in range(i + 1, n):
@@ -106,20 +108,19 @@ def apply_local_open_step(rho: np.ndarray, state, config: OpenSystemConfig, deph
     return project_to_density(updated)
 
 
-
-
 def effective_branch_density(state, config: OpenSystemConfig, dephasing: float) -> np.ndarray:
     rho = density_from_state(state)
     for _ in range(max(int(config.branch_steps), 1)):
         rho = apply_local_open_step(rho, state=state, config=config, dephasing=dephasing)
     return project_to_density(rho)
 
+
 def fixed_point_density(state, config: OpenSystemConfig, dephasing: float) -> np.ndarray:
     n = state.p.size
     rho = np.eye(n, dtype=complex) / n
     for _ in range(config.fixed_point_max_iter):
         updated = apply_local_open_step(rho, state=state, config=config, dephasing=dephasing)
-        delta = float(np.linalg.norm(updated - rho, ord='fro'))
+        delta = float(np.linalg.norm(updated - rho, ord="fro"))
         rho = updated
         if delta < config.fixed_point_tol:
             break
@@ -134,21 +135,21 @@ def coherence_ratio(noisy_rho: np.ndarray, reference_state) -> float:
 
 def observable_operator(benchmark, state) -> np.ndarray:
     n = state.p.size
-    if benchmark.primary_observable == 'final_p1':
+    if benchmark.primary_observable == "final_p1":
         op = np.zeros((n, n), dtype=complex)
         op[0, 0] = 1.0
         return op
-    if benchmark.primary_observable == 'final_p3':
+    if benchmark.primary_observable == "final_p3":
         op = np.zeros((n, n), dtype=complex)
         op[2, 2] = 1.0
         return op
-    if benchmark.primary_observable == 'final_p4':
+    if benchmark.primary_observable == "final_p4":
         op = np.zeros((n, n), dtype=complex)
         op[3, 3] = 1.0
         return op
-    if benchmark.primary_observable == 'mean_position':
+    if benchmark.primary_observable == "mean_position":
         return np.diag(np.arange(1, n + 1, dtype=float)).astype(complex)
-    if benchmark.primary_observable == 'excess_circulation' and n == 3:
+    if benchmark.primary_observable == "excess_circulation" and n == 3:
         return np.array(
             [[0.0, 1j, -1j], [-1j, 0.0, 1j], [1j, -1j, 0.0]],
             dtype=complex,

@@ -28,16 +28,10 @@ def branch_distance(
     theta_a = canonicalize_phase(np.asarray(state_a.theta, dtype=float), p_a)
     theta_b = canonicalize_phase(np.asarray(state_b.theta, dtype=float), p_b)
     theta_diff = np.asarray(wrap_phase(theta_a - theta_b), dtype=float)
-    theta_term = float(
-        np.linalg.norm(theta_diff)
-        / max(math.sqrt(theta_diff.size) * np.pi, 1e-12)
-    )
+    theta_term = float(np.linalg.norm(theta_diff) / max(math.sqrt(theta_diff.size) * np.pi, 1e-12))
 
     kernel_term = 0.0
-    if (
-        getattr(state_a, "kernel", None) is not None
-        and getattr(state_b, "kernel", None) is not None
-    ):
+    if getattr(state_a, "kernel", None) is not None and getattr(state_b, "kernel", None) is not None:
         ka = np.asarray(state_a.kernel, dtype=float)
         kb = np.asarray(state_b.kernel, dtype=float)
         kernel_term = float(np.linalg.norm(ka - kb) / max(ka.size, 1))
