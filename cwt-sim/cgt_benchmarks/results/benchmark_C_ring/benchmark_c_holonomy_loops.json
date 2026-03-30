@@ -1,0 +1,162 @@
+{
+  "benchmark": "benchmark_c",
+  "sign_harmonization_factor": -1.0,
+  "trusted_run_count": 8,
+  "runs": [
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.1,
+      "orientation": "ccw",
+      "trusted_r1": true,
+      "response": -8.014084361763623e-06,
+      "signed_flux": 0.0014582561671868492,
+      "raw_tangent_holonomy_phase": -0.0014582561671878313,
+      "harmonized_tangent_holonomy_phase": 0.0014582561671878313,
+      "harmonized_predicted_signed_flux": -3.0875629776633456e-05,
+      "tangent_mixing_score": 0.0016449630309000104
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.1,
+      "orientation": "cw",
+      "trusted_r1": true,
+      "response": 7.806527591451863e-06,
+      "signed_flux": -0.0014582561671868484,
+      "raw_tangent_holonomy_phase": 0.0014582561671871912,
+      "harmonized_tangent_holonomy_phase": -0.0014582561671871912,
+      "harmonized_predicted_signed_flux": 3.0875629776633456e-05,
+      "tangent_mixing_score": 0.001644963030900012
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.16,
+      "orientation": "ccw",
+      "trusted_r1": true,
+      "response": -2.0363363888673257e-05,
+      "signed_flux": 0.003732826985976899,
+      "raw_tangent_holonomy_phase": -0.0037328269859763286,
+      "harmonized_tangent_holonomy_phase": 0.0037328269859763286,
+      "harmonized_predicted_signed_flux": -7.699017471601942e-05,
+      "tangent_mixing_score": 0.002657266616242658
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.16,
+      "orientation": "cw",
+      "trusted_r1": true,
+      "response": 1.9940009246757225e-05,
+      "signed_flux": -0.003732826985976904,
+      "raw_tangent_holonomy_phase": 0.0037328269859771192,
+      "harmonized_tangent_holonomy_phase": -0.0037328269859771192,
+      "harmonized_predicted_signed_flux": 7.699017471601942e-05,
+      "tangent_mixing_score": 0.0026572666162426547
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.22,
+      "orientation": "ccw",
+      "trusted_r1": true,
+      "response": -3.8128322422385867e-05,
+      "signed_flux": 0.007056520148404547,
+      "raw_tangent_holonomy_phase": -0.007056520148404977,
+      "harmonized_tangent_holonomy_phase": 0.007056520148404977,
+      "harmonized_predicted_signed_flux": -0.0001393124047809736,
+      "tangent_mixing_score": 0.0037284825942316183
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.22,
+      "orientation": "cw",
+      "trusted_r1": true,
+      "response": 3.757632068165928e-05,
+      "signed_flux": -0.007056520148404556,
+      "raw_tangent_holonomy_phase": 0.007056520148403797,
+      "harmonized_tangent_holonomy_phase": -0.007056520148403797,
+      "harmonized_predicted_signed_flux": 0.0001393124047809736,
+      "tangent_mixing_score": 0.0037284825942316183
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.28,
+      "orientation": "ccw",
+      "trusted_r1": true,
+      "response": -6.1029129347273684e-05,
+      "signed_flux": 0.01142856466400135,
+      "raw_tangent_holonomy_phase": -0.011428564664002324,
+      "harmonized_tangent_holonomy_phase": 0.011428564664002324,
+      "harmonized_predicted_signed_flux": -0.00021173234067226084,
+      "tangent_mixing_score": 0.004954336031651332
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.28,
+      "orientation": "cw",
+      "trusted_r1": true,
+      "response": 6.060729906465539e-05,
+      "signed_flux": -0.01142856466400136,
+      "raw_tangent_holonomy_phase": 0.011428564664001115,
+      "harmonized_tangent_holonomy_phase": -0.011428564664001115,
+      "harmonized_predicted_signed_flux": 0.00021173234067226084,
+      "tangent_mixing_score": 0.004954336031651335
+    }
+  ],
+  "summary": {
+    "fit_response_vs_harmonized_tangent_phase": {
+      "slope": -0.00533895348175474,
+      "r2": 0.9999442535881575,
+      "count": 8
+    },
+    "fit_harmonized_tangent_phase_vs_state_signed_flux": {
+      "slope": 1.0000000000000167,
+      "r2": 1.0,
+      "count": 8
+    },
+    "fit_response_vs_harmonized_predicted_flux": {
+      "slope": 0.2804610316115035,
+      "r2": 0.9988640796454619,
+      "count": 8
+    },
+    "fit_harmonized_predicted_flux_vs_state_signed_flux": {
+      "slope": -0.019012209108796176,
+      "r2": 0.998544303586109,
+      "count": 8
+    },
+    "mean_tangent_mixing": 0.0032462620682564046
+  },
+  "notes": [
+    "The accepted Phase 7 holonomy observable is the harmonized tangent holonomy phase, not the old Jacobian modal phase.",
+    "Harmonized tangent phase is expected to agree in sign with state signed flux on trusted R1 loops."
+  ]
+}

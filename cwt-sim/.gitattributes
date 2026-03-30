@@ -1,0 +1,3 @@
+# Treat pre-computed benchmark result artefacts as binary so they
+# collapse in diffs rather than flooding PRs with 100K+ lines of JSON.
+cgt_benchmarks/**/*.json binary
