@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm list:*)",
+      "Bash(task-master init:*)",
+      "Bash(claude mcp:*)"
+    ]
+  }
+}
