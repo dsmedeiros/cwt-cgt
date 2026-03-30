@@ -23,6 +23,7 @@ _OFFCENTER_CENTERS: dict[str, tuple[tuple[float, float], ...]] = {
     'benchmark_b': ((-0.24, -0.18), (0.24, 0.00)),
     'benchmark_c': ((-0.22, -0.18), (0.18, 0.02)),
     'benchmark_d': ((-0.03, 0.18), (0.03, 0.26)),
+    'benchmark_f': ((0.18, 0.00), (-0.18, 0.00)),
 }
 
 
@@ -64,7 +65,7 @@ def protocol_suite(benchmark_id: str) -> list[RobustnessProtocol]:
 
 def _evaluate_payload(benchmark_id: str, payload: dict) -> dict[str, str | bool | int | float | None]:
     summary = payload['summary']
-    protocol_name = summary.get('protocol_name', '')
+    protocol_name = payload.get('protocol_name', '') or summary.get('protocol_name', '')
     trusted_pairs = int(summary.get('trusted_pair_count', 0))
     sign_flip = float(summary.get('sign_flip_fraction_r1', 0.0))
     flux_fit = summary.get('fit_response_vs_signed_flux', {})

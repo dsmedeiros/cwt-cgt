@@ -15,6 +15,7 @@ from ._geom_compat import (
     wrap_phase,
 )
 from .benchmarks import get_benchmark
+from .continuation import continue_path_with_branch_ids
 from .models import BenchmarkDefinition, LoopConfig
 
 
@@ -94,6 +95,9 @@ def _primary_value(
     if benchmark.primary_observable == 'final_p3':
         value = float(final_state.p[2])
         return value, None, None
+    if benchmark.primary_observable == 'final_p4':
+        value = float(final_state.p[3])
+        return value, None, None
     if benchmark.primary_observable == 'mean_position':
         indices = np.arange(1, final_state.p.size + 1, dtype=float)
         value = float(np.dot(indices, final_state.p))
@@ -122,7 +126,8 @@ def run_single_loop(
     config: LoopConfig,
 ) -> dict:
     path = build_loop_path(center=center, side=side, orientation=orientation, shape=config.shape, steps_per_segment=config.steps_per_segment)
-    states = [benchmark.branch_state_fn(*point) for point in path]
+    continuation = continue_path_with_branch_ids(benchmark=benchmark, path=path, config=config)
+    states = continuation['states']
     theta_actual = states[0].theta.copy()
     overlaps: list[float] = []
     coherences: list[float] = []
@@ -168,6 +173,12 @@ def run_single_loop(
     regime = classify_loop_regime(avg_overlap=avg_overlap, avg_coherence=avg_coherence, max_adiabatic_proxy=max_adiabatic, config=config)
     bounds_u = [float(min(point[0] for point in path)), float(max(point[0] for point in path))]
     bounds_v = [float(min(point[1] for point in path)), float(max(point[1] for point in path))]
+    branch_ids_list: list[str] = continuation['branch_ids']
+    total_steps = max(len(branch_ids_list), 1)
+    dwell_counts: dict[str, int] = {}
+    for bid in branch_ids_list:
+        dwell_counts[bid] = dwell_counts.get(bid, 0) + 1
+    branch_dwell_fractions = {bid: count / total_steps for bid, count in dwell_counts.items()}
     return {
         'center': [float(center[0]), float(center[1])],
         'shape': config.shape,
@@ -189,6 +200,10 @@ def run_single_loop(
             'v': bounds_v,
         },
         'path_length': int(len(path)),
+        'switch_count': int(continuation['switch_count']),
+        'ambiguous_step_count': int(continuation['ambiguous_step_count']),
+        'unique_branch_ids': list(continuation['unique_branch_ids']),
+        'branch_dwell_fractions': branch_dwell_fractions,
     }
 
 
@@ -202,6 +217,9 @@ def _pair_summary(benchmark: BenchmarkDefinition, ccw: dict, cw: dict) -> dict:
         return 0
 
     sign_flip = _sign(ccw['response']) == -_sign(cw['response']) and (_sign(ccw['response']) != 0 or _sign(cw['response']) != 0)
+    switch_count_total = int(ccw['switch_count']) + int(cw['switch_count'])
+    pair_r4 = bool(ccw['regime_label'] == 'R4' or cw['regime_label'] == 'R4' or switch_count_total > 0)
+    excluded_reason: str | None = 'R4 branch switching' if pair_r4 else None
     return {
         'center': ccw['center'],
         'shape': ccw['shape'],
@@ -214,6 +232,10 @@ def _pair_summary(benchmark: BenchmarkDefinition, ccw: dict, cw: dict) -> dict:
         'response_sign_reversed': sign_flip,
         'orientation_gap': float(ccw['response'] - cw['response']),
         'orientation_sum': float(ccw['response'] + cw['response']),
+        'pair_r4': pair_r4,
+        'switch_count_total': switch_count_total,
+        'net_branch_jump_difference': float(abs(int(ccw['switch_count']) - int(cw['switch_count']))),
+        'excluded_reason': excluded_reason,
         'ccw': ccw,
         'cw': cw,
     }
@@ -229,7 +251,7 @@ def _fit_through_origin(xs: np.ndarray, ys: np.ndarray) -> dict[str, float | Non
     return {'slope': slope, 'r2': r2, 'count': int(xs.size)}
 
 
-def run_benchmark_loops(benchmark_id: str, output_root: Path, config: LoopConfig | None = None) -> dict:
+def run_benchmark_loops(benchmark_id: str, output_root: Path, config: LoopConfig | None = None, protocol_name: str | None = None, filename: str | None = None) -> dict:
     benchmark = get_benchmark(benchmark_id)
     loop_config = config or LoopConfig()
     centers = loop_config.centers or benchmark.default_loop_centers
@@ -269,6 +291,30 @@ def run_benchmark_loops(benchmark_id: str, output_root: Path, config: LoopConfig
         'fit_response_vs_signed_area': fit_vs_area,
         'fit_response_vs_signed_flux': fit_vs_flux,
     }
+
+    # Per-center fits for robustness off-center protocols
+    grouped_by_center: dict[int, list[dict]] = {}
+    for pair in trusted_pairs:
+        grouped_by_center.setdefault(pair.get('center_index', 0), []).append(pair)
+    by_center_fits: list[dict] = []
+    for center_idx in sorted(grouped_by_center):
+        local_pairs = grouped_by_center[center_idx]
+        local_fluxes: list[float] = []
+        local_responses: list[float] = []
+        for pair in local_pairs:
+            local_fluxes.extend([pair['ccw']['signed_flux'], pair['cw']['signed_flux']])
+            local_responses.extend([pair['ccw']['response'], pair['cw']['response']])
+        local_fit = _fit_through_origin(
+            np.asarray(local_fluxes, dtype=float),
+            np.asarray(local_responses, dtype=float),
+        )
+        by_center_fits.append({
+            'center': local_pairs[0]['center'],
+            'center_index': center_idx,
+            'trusted_pair_count': len(local_pairs),
+            'fit_response_vs_signed_flux': local_fit,
+        })
+    summary['fit_response_vs_signed_flux_by_center'] = by_center_fits
     notes = []
     if benchmark.benchmark_id in {'benchmark_a', 'benchmark_b', 'benchmark_d'}:
         notes.append('Null/near-null benchmark: any strong reproducible signed loop law should be treated as a warning.')
@@ -277,6 +323,7 @@ def run_benchmark_loops(benchmark_id: str, output_root: Path, config: LoopConfig
 
     payload = {
         'benchmark': benchmark.benchmark_id,
+        'protocol_name': protocol_name,
         'description': benchmark.description,
         'expected_behavior': benchmark.expected_behavior,
         'expected_regime': benchmark.expected_regime,
@@ -297,6 +344,7 @@ def run_benchmark_loops(benchmark_id: str, output_root: Path, config: LoopConfig
 
     benchmark_dir = output_root / benchmark.slug
     benchmark_dir.mkdir(parents=True, exist_ok=True)
-    output_path = benchmark_dir / f'{benchmark.benchmark_id}_loops.json'
+    output_filename = filename if filename is not None else f'{benchmark.benchmark_id}_loops.json'
+    output_path = benchmark_dir / output_filename
     output_path.write_text(__import__('json').dumps(payload, indent=2))
     return payload

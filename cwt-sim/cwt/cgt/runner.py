@@ -16,6 +16,7 @@ from ._geom_compat import (
     summarize_abs,
 )
 from .benchmarks import get_benchmark
+from .continuation import build_branch_atlas
 from .loop_protocols import run_benchmark_loops
 from .models import LoopConfig, ScanConfig
 
@@ -109,6 +110,24 @@ def run_benchmark_scan(benchmark_id: str, output_root: Path, config: ScanConfig 
         for label in row:
             regime_counts[label] = regime_counts.get(label, 0) + 1
 
+    atlas = build_branch_atlas(benchmark=benchmark, grid_u=grid_u, grid_v=grid_v, config=scan_config)
+    residual_flat = [v for row in atlas['chosen_residual_map'] for v in row]
+    ambiguity_flat = [v for row in atlas['ambiguity_score_map'] for v in row]
+    branch_continuation = {
+        'persistent_branch_counts': {
+            bid: sum(cell == bid for row in atlas['persistent_branch_id_map'] for cell in row)
+            for bid in set(cell for row in atlas['persistent_branch_id_map'] for cell in row)
+        },
+        'chosen_branch_counts': {
+            bid: sum(cell == bid for row in atlas['chosen_branch_id_map'] for cell in row)
+            for bid in set(cell for row in atlas['chosen_branch_id_map'] for cell in row)
+        },
+        'switch_tile_count': int(sum(1 for row in atlas['ambiguous_map'] for cell in row if cell)),
+        'ambiguous_tile_count': int(sum(1 for row in atlas['disagreement_map'] for cell in row if cell)),
+        'residual_summary': summarize(iter(residual_flat)),
+        'ambiguity_score_summary': summarize(iter(ambiguity_flat)),
+    }
+
     payload = {
         'benchmark': benchmark.benchmark_id,
         'description': benchmark.description,
@@ -127,6 +146,7 @@ def run_benchmark_scan(benchmark_id: str, output_root: Path, config: ScanConfig 
         'metric_summary': summarize(metric_trace.ravel()),
         'curvature_summary': summarize_abs(curvature.ravel()),
         'regime_summary': regime_counts,
+        'branch_continuation': branch_continuation,
         'notes': 'Passive analytic branch scan for the hardened benchmark scaffold. Loop protocols are stored in a separate *_loops.json artifact.',
     }
     benchmark_dir = output_root / benchmark.slug

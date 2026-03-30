@@ -83,15 +83,26 @@ def auxiliary_operator_from_state(state) -> np.ndarray:
     return phase_diag @ kernel @ phase_diag.conj().T
 
 
-def modal_diagnostics(frame: ModalFrame) -> dict:
+@dataclass(frozen=True)
+class ModalDiagnostics:
+    spectral_gap: float
+    inverse_gap_proxy: float
+    dominant_phase: float
+    biorthogonality_error: float
+    dominant_eigenvalue: complex
+    dominant_eigenvalue_abs: float
+
+
+def modal_diagnostics(frame: ModalFrame) -> ModalDiagnostics:
     """Return summary diagnostics for a modal frame."""
-    return {
-        "spectral_gap": frame.spectral_gap,
-        "biorthogonality_error": frame.biorthogonality_error,
-        "dominant_eigenvalue": complex(frame.eigenvalues[frame.dominant_index]),
-        "dominant_eigenvalue_abs": float(abs(frame.eigenvalues[frame.dominant_index])),
-        "inverse_gap": 1.0 / max(abs(frame.spectral_gap), 1e-12),
-    }
+    return ModalDiagnostics(
+        spectral_gap=frame.spectral_gap,
+        inverse_gap_proxy=1.0 / max(abs(frame.spectral_gap), 1e-12),
+        dominant_phase=float(np.angle(frame.eigenvalues[frame.dominant_index])),
+        biorthogonality_error=frame.biorthogonality_error,
+        dominant_eigenvalue=complex(frame.eigenvalues[frame.dominant_index]),
+        dominant_eigenvalue_abs=float(abs(frame.eigenvalues[frame.dominant_index])),
+    )
 
 
 def off_diagonal_mixing_score(frame_a: ModalFrame, frame_b: ModalFrame) -> float:
@@ -105,7 +116,7 @@ def mode_connection(frame_a: ModalFrame, frame_b: ModalFrame) -> np.ndarray:
     return frame_a.left_modes.conj().T @ frame_b.right_modes
 
 
-def mode_wilson_phase(frames: list[ModalFrame], mode_index: int) -> float:
+def mode_wilson_phase(frames: list[ModalFrame], mode_index: int = 0) -> float:
     if len(frames) < 2:
         return 0.0
     prod = 1.0 + 0.0j
