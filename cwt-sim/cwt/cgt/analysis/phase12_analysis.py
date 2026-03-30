@@ -402,8 +402,11 @@ def phase12_payload(output_root: Path, phase12_config: Phase12Config | None = No
 
     eff_cache = DensityCache(lambda state, gamma: effective_branch_density(state, open_cfg, gamma))
     lind_cache = DensityCache(lambda state, gamma: lindblad_branch_density(state, lind_cfg, gamma))
-    eff_step = lambda rho, state, gamma: apply_local_open_step(rho, state=state, config=open_cfg, dephasing=gamma)
-    lind_step = lambda rho, state, gamma: apply_lindblad_step(rho, state=state, config=lind_cfg, dephasing=gamma)
+    def eff_step(rho, state, gamma):
+        return apply_local_open_step(rho, state=state, config=open_cfg, dephasing=gamma)
+
+    def lind_step(rho, state, gamma):
+        return apply_lindblad_step(rho, state=state, config=lind_cfg, dephasing=gamma)
 
     benchmark_payloads: dict[str, dict] = {}
     for benchmark_id in cfg.benchmark_ids:

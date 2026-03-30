@@ -7,6 +7,16 @@ name = "cwt-sim"
 version = "0.0.0"
 description = "Placeholder package scaffolding for continuous wavelet transport simulations"
 requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "networkx>=3.0",
+    "pydantic>=2.0",
+    "PyYAML>=6.0",
+    "matplotlib>=3.7",
+    "typer>=0.9",
+    "pandas>=2.0",
+]
 
 [tool.black]
 line-length = 110
