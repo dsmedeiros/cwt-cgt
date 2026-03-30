@@ -6,9 +6,12 @@ and phase-alignment helpers.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
+from cwt.cgt.analysis.phase14_analysis import Phase14Config, phase14_payload
 from cwt.cgt.benchmarks import BENCHMARKS, get_benchmark
 from cwt.cgt.continuation import build_branch_atlas
 from cwt.cgt.models import BranchState, ScanConfig
@@ -184,3 +187,18 @@ def test_phase_alignment_sign_all_nan() -> None:
     target = [float('nan'), float('nan')]
     sign = phase_alignment_sign(reference, target)
     assert sign == 1.0
+
+
+@pytest.mark.unit
+def test_phase14_smoke(tmp_path: Path) -> None:
+    payload = phase14_payload(
+        output_root=tmp_path,
+        phase14_config=Phase14Config(
+            benchmark_ids=('benchmark_c',),
+            benchmark_focus='benchmark_c',
+            scan_mesh=5,
+            dephasing_values=(0.0, 0.30),
+        ),
+    )
+    assert 'benchmark_c' in payload['benchmark_summaries']
+    assert payload['benchmark_summaries']['benchmark_c']['benchmark'] == 'benchmark_c'
