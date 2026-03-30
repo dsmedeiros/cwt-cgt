@@ -32,3 +32,9 @@ cwt_lab/config.json
 cwt-sim/experiments/wilson_loop_3d/artifacts/REPORT.md
 cwt-sim/experiments/wilson_loop_3d/artifacts/summary.json
 *.zip
+
+# Armature ephemeral state
+.armature/session/
+.armature/reviews/
+.armature/escalations/
+.armature/journal.md
