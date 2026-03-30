@@ -1,0 +1,297 @@
+{
+  "benchmark": "benchmark_f",
+  "description": "Four-node explicitly bistable line benchmark for branch-switching and hysteresis.",
+  "scan_branch_atlas": {
+    "persistent_branch_counts": {
+      "left": 24,
+      "ambiguous": 35,
+      "right": 22
+    },
+    "chosen_branch_counts": {
+      "left": 33,
+      "right": 48
+    },
+    "switch_tile_count": 35,
+    "ambiguous_tile_count": 35,
+    "residual_summary": {
+      "count": 81,
+      "min": 0.0,
+      "max": 0.1654932479089959,
+      "mean": 0.06003900921992007,
+      "median": 0.058691219406771716
+    },
+    "ambiguity_score_summary": {
+      "count": 81,
+      "min": 0.0,
+      "max": 0.0,
+      "mean": 0.0,
+      "median": 0.0
+    }
+  },
+  "pair_rows": [
+    {
+      "center": [
+        0.0,
+        0.35
+      ],
+      "side_length": 0.14,
+      "pair_trusted_r1": false,
+      "pair_r4": true,
+      "switch_count_total": 0,
+      "net_branch_jump_difference": 0.0,
+      "orientation_gap": 0.0,
+      "excluded_reason": "branch_switch_or_ambiguity|branch_switch_or_ambiguity",
+      "ccw_branch_ids": [
+        "left"
+      ],
+      "cw_branch_ids": [
+        "left"
+      ],
+      "ccw_dwell": {
+        "left": 1.0
+      },
+      "cw_dwell": {
+        "left": 1.0
+      }
+    },
+    {
+      "center": [
+        0.0,
+        0.35
+      ],
+      "side_length": 0.22,
+      "pair_trusted_r1": false,
+      "pair_r4": true,
+      "switch_count_total": 0,
+      "net_branch_jump_difference": 0.0,
+      "orientation_gap": 0.0,
+      "excluded_reason": "branch_switch_or_ambiguity|branch_switch_or_ambiguity",
+      "ccw_branch_ids": [
+        "left"
+      ],
+      "cw_branch_ids": [
+        "left"
+      ],
+      "ccw_dwell": {
+        "left": 1.0
+      },
+      "cw_dwell": {
+        "left": 1.0
+      }
+    },
+    {
+      "center": [
+        0.0,
+        0.35
+      ],
+      "side_length": 0.3,
+      "pair_trusted_r1": false,
+      "pair_r4": true,
+      "switch_count_total": 0,
+      "net_branch_jump_difference": 0.0,
+      "orientation_gap": 0.0,
+      "excluded_reason": "branch_switch_or_ambiguity|branch_switch_or_ambiguity",
+      "ccw_branch_ids": [
+        "left"
+      ],
+      "cw_branch_ids": [
+        "left"
+      ],
+      "ccw_dwell": {
+        "left": 1.0
+      },
+      "cw_dwell": {
+        "left": 1.0
+      }
+    },
+    {
+      "center": [
+        0.5,
+        0.35
+      ],
+      "side_length": 0.14,
+      "pair_trusted_r1": true,
+      "pair_r4": false,
+      "switch_count_total": 0,
+      "net_branch_jump_difference": 0.0,
+      "orientation_gap": 0.0,
+      "excluded_reason": null,
+      "ccw_branch_ids": [
+        "right"
+      ],
+      "cw_branch_ids": [
+        "right"
+      ],
+      "ccw_dwell": {
+        "right": 1.0
+      },
+      "cw_dwell": {
+        "right": 1.0
+      }
+    },
+    {
+      "center": [
+        0.5,
+        0.35
+      ],
+      "side_length": 0.22,
+      "pair_trusted_r1": false,
+      "pair_r4": true,
+      "switch_count_total": 2,
+      "net_branch_jump_difference": 0.0,
+      "orientation_gap": 0.0,
+      "excluded_reason": "branch_switch_or_ambiguity|branch_switch_or_ambiguity",
+      "ccw_branch_ids": [
+        "left",
+        "right"
+      ],
+      "cw_branch_ids": [
+        "left",
+        "right"
+      ],
+      "ccw_dwell": {
+        "left": 0.041237113402061855,
+        "right": 0.9587628865979382
+      },
+      "cw_dwell": {
+        "left": 0.28865979381443296,
+        "right": 0.711340206185567
+      }
+    },
+    {
+      "center": [
+        0.5,
+        0.35
+      ],
+      "side_length": 0.3,
+      "pair_trusted_r1": false,
+      "pair_r4": true,
+      "switch_count_total": 2,
+      "net_branch_jump_difference": 0.0,
+      "orientation_gap": 0.0,
+      "excluded_reason": "branch_switch_or_ambiguity|branch_switch_or_ambiguity",
+      "ccw_branch_ids": [
+        "left",
+        "right"
+      ],
+      "cw_branch_ids": [
+        "left",
+        "right"
+      ],
+      "ccw_dwell": {
+        "left": 0.061855670103092786,
+        "right": 0.9381443298969072
+      },
+      "cw_dwell": {
+        "left": 0.30927835051546393,
+        "right": 0.6907216494845361
+      }
+    },
+    {
+      "center": [
+        -0.5,
+        0.35
+      ],
+      "side_length": 0.14,
+      "pair_trusted_r1": true,
+      "pair_r4": false,
+      "switch_count_total": 0,
+      "net_branch_jump_difference": 0.0,
+      "orientation_gap": 0.0,
+      "excluded_reason": null,
+      "ccw_branch_ids": [
+        "left"
+      ],
+      "cw_branch_ids": [
+        "left"
+      ],
+      "ccw_dwell": {
+        "left": 1.0
+      },
+      "cw_dwell": {
+        "left": 1.0
+      }
+    },
+    {
+      "center": [
+        -0.5,
+        0.35
+      ],
+      "side_length": 0.22,
+      "pair_trusted_r1": true,
+      "pair_r4": false,
+      "switch_count_total": 0,
+      "net_branch_jump_difference": 0.0,
+      "orientation_gap": 0.0,
+      "excluded_reason": null,
+      "ccw_branch_ids": [
+        "left"
+      ],
+      "cw_branch_ids": [
+        "left"
+      ],
+      "ccw_dwell": {
+        "left": 1.0
+      },
+      "cw_dwell": {
+        "left": 1.0
+      }
+    },
+    {
+      "center": [
+        -0.5,
+        0.35
+      ],
+      "side_length": 0.3,
+      "pair_trusted_r1": true,
+      "pair_r4": false,
+      "switch_count_total": 0,
+      "net_branch_jump_difference": 0.0,
+      "orientation_gap": 0.0,
+      "excluded_reason": null,
+      "ccw_branch_ids": [
+        "left"
+      ],
+      "cw_branch_ids": [
+        "left"
+      ],
+      "ccw_dwell": {
+        "left": 1.0
+      },
+      "cw_dwell": {
+        "left": 1.0
+      }
+    }
+  ],
+  "summary": {
+    "pair_count": 9,
+    "trusted_pair_count": 4,
+    "excluded_pair_count": 5,
+    "r4_pair_count": 5,
+    "switch_count_total_summary": {
+      "count": 9,
+      "min": 0.0,
+      "max": 2.0,
+      "mean": 0.4444444444444444,
+      "median": 0.0
+    },
+    "net_branch_jump_difference_summary": {
+      "count": 9,
+      "min": 0.0,
+      "max": 0.0,
+      "mean": 0.0,
+      "median": 0.0
+    },
+    "orientation_gap_summary": {
+      "count": 9,
+      "min": 0.0,
+      "max": 0.0,
+      "mean": 0.0,
+      "median": 0.0
+    }
+  },
+  "notes": [
+    "Branch-jump observables are primary in benchmark F: they are meant to expose switching and exclusion, not a positive signed-flux law.",
+    "Trusted pairs should remain null-like while excluded pairs localize near the explicit R4/hysteretic band."
+  ]
+}

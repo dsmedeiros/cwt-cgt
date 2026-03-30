@@ -1,0 +1,384 @@
+{
+  "benchmark": "benchmark_c",
+  "description": "Three-node ring first positive signed-loop benchmark.",
+  "expected_behavior": "Nonzero curvature on a trusted patch and signed loop response.",
+  "expected_regime": "R1",
+  "control_names": [
+    "u",
+    "v"
+  ],
+  "loop_family": {
+    "shape": "square",
+    "centers": [
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "side_lengths": [
+      0.1,
+      0.16,
+      0.22,
+      0.28
+    ],
+    "steps_per_segment": 24,
+    "phase_relaxation": 0.25,
+    "current_phase_gain": 0.85,
+    "use_excess_circulation": true
+  },
+  "pair_results": [
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.1,
+      "area_magnitude": 0.010000000000000002,
+      "flux_magnitude": 0.0014582561671868657,
+      "pair_regime": "R1",
+      "pair_trusted_r1": true,
+      "flux_sign_reversed": true,
+      "response_sign_reversed": true,
+      "orientation_gap": -4.6902833996550096e-05,
+      "orientation_sum": -8.457466705225604e-07,
+      "ccw": {
+        "center": [
+          0.0,
+          0.0
+        ],
+        "shape": "square",
+        "side_length": 0.1,
+        "orientation": "ccw",
+        "signed_area": 0.010000000000000002,
+        "signed_flux": 0.0014582561671868657,
+        "response": -2.387429033353633e-05,
+        "raw_response": -9.910680559171935e-05,
+        "branch_response": -7.523251525818302e-05,
+        "secondary_value": 0.3117324606762133,
+        "avg_overlap": 0.9999978997692268,
+        "avg_coherence": 0.9997121305303226,
+        "max_adiabatic_proxy": 0.003127029699598593,
+        "regime_label": "R1",
+        "trusted_r1": true,
+        "path_bounds": {
+          "u": [
+            -0.05,
+            0.05
+          ],
+          "v": [
+            -0.05,
+            0.05
+          ]
+        },
+        "path_length": 97
+      },
+      "cw": {
+        "center": [
+          0.0,
+          0.0
+        ],
+        "shape": "square",
+        "side_length": 0.1,
+        "orientation": "cw",
+        "signed_area": -0.010000000000000002,
+        "signed_flux": -0.0014582561671868627,
+        "response": 2.3028543663013768e-05,
+        "raw_response": -5.220397159516982e-05,
+        "branch_response": -7.523251525818359e-05,
+        "secondary_value": 0.3117324606762133,
+        "avg_overlap": 0.9999978997692268,
+        "avg_coherence": 0.9997121305303226,
+        "max_adiabatic_proxy": 0.0031257241546402493,
+        "regime_label": "R1",
+        "trusted_r1": true,
+        "path_bounds": {
+          "u": [
+            -0.05,
+            0.05
+          ],
+          "v": [
+            -0.05,
+            0.05
+          ]
+        },
+        "path_length": 97
+      },
+      "center_index": 0
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.16,
+      "area_magnitude": 0.025599999999999998,
+      "flux_magnitude": 0.0037328269859768994,
+      "pair_regime": "R1",
+      "pair_trusted_r1": true,
+      "flux_sign_reversed": true,
+      "response_sign_reversed": true,
+      "orientation_gap": -0.00011940581003121132,
+      "orientation_sum": -1.7260884120906471e-06,
+      "ccw": {
+        "center": [
+          0.0,
+          0.0
+        ],
+        "shape": "square",
+        "side_length": 0.16,
+        "orientation": "ccw",
+        "signed_area": 0.025599999999999998,
+        "signed_flux": 0.0037328269859768994,
+        "response": -6.056594922165099e-05,
+        "raw_response": -0.00015499104109439573,
+        "branch_response": -9.442509187274474e-05,
+        "secondary_value": 0.29911859835444976,
+        "avg_overlap": 0.999994608381626,
+        "avg_coherence": 0.9992634414927754,
+        "max_adiabatic_proxy": 0.005096623467872164,
+        "regime_label": "R1",
+        "trusted_r1": true,
+        "path_bounds": {
+          "u": [
+            -0.08,
+            0.08
+          ],
+          "v": [
+            -0.08,
+            0.08
+          ]
+        },
+        "path_length": 97
+      },
+      "cw": {
+        "center": [
+          0.0,
+          0.0
+        ],
+        "shape": "square",
+        "side_length": 0.16,
+        "orientation": "cw",
+        "signed_area": -0.025599999999999998,
+        "signed_flux": -0.0037328269859768855,
+        "response": 5.883986080956034e-05,
+        "raw_response": -3.55852310631844e-05,
+        "branch_response": -9.442509187274474e-05,
+        "secondary_value": 0.29911859835444976,
+        "avg_overlap": 0.999994608381626,
+        "avg_coherence": 0.9992634414927754,
+        "max_adiabatic_proxy": 0.005094534690043842,
+        "regime_label": "R1",
+        "trusted_r1": true,
+        "path_bounds": {
+          "u": [
+            -0.08,
+            0.08
+          ],
+          "v": [
+            -0.08,
+            0.08
+          ]
+        },
+        "path_length": 97
+      },
+      "center_index": 0
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.22,
+      "area_magnitude": 0.0484,
+      "flux_magnitude": 0.007056520148404539,
+      "pair_regime": "R1",
+      "pair_trusted_r1": true,
+      "flux_sign_reversed": true,
+      "response_sign_reversed": true,
+      "orientation_gap": -0.000224146785235497,
+      "orientation_sum": -2.2706761472579784e-06,
+      "ccw": {
+        "center": [
+          0.0,
+          0.0
+        ],
+        "shape": "square",
+        "side_length": 0.22,
+        "orientation": "ccw",
+        "signed_area": 0.0484,
+        "signed_flux": 0.007056520148404539,
+        "response": -0.00011320873069137748,
+        "raw_response": -0.0002091603338454559,
+        "branch_response": -9.595160315407842e-05,
+        "secondary_value": 0.28678037038303383,
+        "avg_overlap": 0.999989765099794,
+        "avg_coherence": 0.998607930016719,
+        "max_adiabatic_proxy": 0.007136249197532068,
+        "regime_label": "R1",
+        "trusted_r1": true,
+        "path_bounds": {
+          "u": [
+            -0.11,
+            0.11
+          ],
+          "v": [
+            -0.11,
+            0.11
+          ]
+        },
+        "path_length": 97
+      },
+      "cw": {
+        "center": [
+          0.0,
+          0.0
+        ],
+        "shape": "square",
+        "side_length": 0.22,
+        "orientation": "cw",
+        "signed_area": -0.0484,
+        "signed_flux": -0.007056520148404534,
+        "response": 0.0001109380545441195,
+        "raw_response": 1.4986451390040517e-05,
+        "branch_response": -9.595160315407899e-05,
+        "secondary_value": 0.28678037038303383,
+        "avg_overlap": 0.9999897650997942,
+        "avg_coherence": 0.9986079300167189,
+        "max_adiabatic_proxy": 0.007133377257411949,
+        "regime_label": "R1",
+        "trusted_r1": true,
+        "path_bounds": {
+          "u": [
+            -0.11,
+            0.11
+          ],
+          "v": [
+            -0.11,
+            0.11
+          ]
+        },
+        "path_length": 97
+      },
+      "center_index": 0
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.28,
+      "area_magnitude": 0.07840000000000001,
+      "flux_magnitude": 0.01142856466400136,
+      "pair_regime": "R1",
+      "pair_trusted_r1": true,
+      "flux_sign_reversed": true,
+      "response_sign_reversed": true,
+      "orientation_gap": -0.0003599284292826331,
+      "orientation_sum": -1.8115666487965158e-06,
+      "ccw": {
+        "center": [
+          0.0,
+          0.0
+        ],
+        "shape": "square",
+        "side_length": 0.28,
+        "orientation": "ccw",
+        "signed_area": 0.07840000000000001,
+        "signed_flux": 0.01142856466400136,
+        "response": -0.00018086999796571482,
+        "raw_response": -0.0002631272244777058,
+        "branch_response": -8.225722651199096e-05,
+        "secondary_value": 0.2747287796485585,
+        "avg_overlap": 0.9999833334200001,
+        "avg_coherence": 0.9977454882823776,
+        "max_adiabatic_proxy": 0.009245906888577838,
+        "regime_label": "R1",
+        "trusted_r1": true,
+        "path_bounds": {
+          "u": [
+            -0.14,
+            0.14
+          ],
+          "v": [
+            -0.14,
+            0.14
+          ]
+        },
+        "path_length": 97
+      },
+      "cw": {
+        "center": [
+          0.0,
+          0.0
+        ],
+        "shape": "square",
+        "side_length": 0.28,
+        "orientation": "cw",
+        "signed_area": -0.07840000000000001,
+        "signed_flux": -0.011428564664001379,
+        "response": 0.0001790584313169183,
+        "raw_response": 9.680120480492706e-05,
+        "branch_response": -8.225722651199125e-05,
+        "secondary_value": 0.2747287796485585,
+        "avg_overlap": 0.9999833334200001,
+        "avg_coherence": 0.9977454882823774,
+        "max_adiabatic_proxy": 0.009242251856744682,
+        "regime_label": "R1",
+        "trusted_r1": true,
+        "path_bounds": {
+          "u": [
+            -0.14,
+            0.14
+          ],
+          "v": [
+            -0.14,
+            0.14
+          ]
+        },
+        "path_length": 97
+      },
+      "center_index": 0
+    }
+  ],
+  "summary": {
+    "benchmark": "benchmark_c",
+    "trusted_pair_count": 4,
+    "pair_count": 4,
+    "sign_flip_fraction_r1": 1.0,
+    "flux_summary": {
+      "count": 8,
+      "min": -0.011428564664001379,
+      "max": 0.01142856466400136,
+      "mean_abs": 0.005919041991392416
+    },
+    "response_summary": {
+      "count": 8,
+      "min": -0.00018086999796571482,
+      "max": 0.0001790584313169183,
+      "mean_abs": 9.379798231823645e-05
+    },
+    "orientation_gap_summary": {
+      "count": 4,
+      "min": -0.0003599284292826331,
+      "max": -4.6902833996550096e-05,
+      "mean_abs": 0.0001875959646364729
+    },
+    "fit_response_vs_signed_area": {
+      "slope": -0.002303694222818428,
+      "r2": 0.9999086502705448,
+      "count": 8
+    },
+    "fit_response_vs_signed_flux": {
+      "slope": -0.01580234042773883,
+      "r2": 0.9999096941290988,
+      "count": 8
+    }
+  },
+  "notes": [
+    "Response uses excess circulation (raw minus branch baseline) to separate path-induced pumping from static chirality bias."
+  ]
+}

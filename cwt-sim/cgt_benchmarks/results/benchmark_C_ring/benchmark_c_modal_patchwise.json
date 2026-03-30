@@ -1,0 +1,46 @@
+{
+  "benchmark": "benchmark_c",
+  "center_summaries": [
+    {
+      "center": [
+        -0.22,
+        -0.18
+      ],
+      "mean_response_vs_signed_flux_slope": -0.00982774517009503,
+      "mean_response_vs_modal_phase_slope": -0.014819831125320699,
+      "mean_modal_phase_vs_signed_flux_slope": 0.6632905033761871,
+      "predicted_flux_slope_from_modal_factors": -0.009829853247064051,
+      "relative_error": 0.00021450260792628794
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "mean_response_vs_signed_flux_slope": -0.005283332650805809,
+      "mean_response_vs_modal_phase_slope": -0.0072359798376959005,
+      "mean_modal_phase_vs_signed_flux_slope": 0.7301819841335968,
+      "predicted_flux_slope_from_modal_factors": -0.005283582115039495,
+      "relative_error": 4.721721121368506e-05
+    },
+    {
+      "center": [
+        0.18,
+        0.02
+      ],
+      "mean_response_vs_signed_flux_slope": -0.0031917648407629204,
+      "mean_response_vs_modal_phase_slope": -0.004231338028455481,
+      "mean_modal_phase_vs_signed_flux_slope": 0.7539898670380738,
+      "predicted_flux_slope_from_modal_factors": -0.0031903859974682937,
+      "relative_error": 0.0004320002767801188
+    }
+  ],
+  "correlations": {
+    "observed_vs_predicted_flux_slope": 0.9999999961243405,
+    "observed_vs_modal_susceptibility": 0.9994072452756447
+  },
+  "notes": [
+    "Patchwise slope variation is decomposed into response-per-modal-phase and modal-phase-per-signed-flux factors.",
+    "In the current benchmark C implementation, most center-to-center variation lives in the response-per-modal-phase factor."
+  ]
+}

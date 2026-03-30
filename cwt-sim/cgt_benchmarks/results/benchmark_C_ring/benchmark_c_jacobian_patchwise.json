@@ -1,0 +1,45 @@
+{
+  "benchmark": "benchmark_c",
+  "center_summaries": [
+    {
+      "center": [
+        -0.22,
+        -0.18
+      ],
+      "mean_response_vs_predicted_flux_slope": -0.044710684377506214,
+      "mean_predicted_flux_vs_state_flux_slope": 0.2220920571637814,
+      "mean_response_vs_state_flux_slope": -0.00993011751561641,
+      "reconstructed_response_vs_state_flux_slope": -0.009929887870600897,
+      "relative_error": 2.3126112571300062e-05
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "mean_response_vs_predicted_flux_slope": -0.28652387098559695,
+      "mean_predicted_flux_vs_state_flux_slope": 0.01860882677762034,
+      "mean_response_vs_state_flux_slope": -0.005338367365918369,
+      "reconstructed_response_vs_state_flux_slope": -0.005331873082824213,
+      "relative_error": 0.0012165298206371475
+    },
+    {
+      "center": [
+        0.18,
+        0.02
+      ],
+      "mean_response_vs_predicted_flux_slope": 0.04609599283969107,
+      "mean_predicted_flux_vs_state_flux_slope": -0.06999292071701513,
+      "mean_response_vs_state_flux_slope": -0.0032250123911873618,
+      "reconstructed_response_vs_state_flux_slope": -0.003226393172200594,
+      "relative_error": 0.00042814750634929006
+    }
+  ],
+  "correlations": {
+    "observed_vs_reconstructed_state_flux_slope": 0.9999992637317479
+  },
+  "notes": [
+    "Patchwise signed-loop slopes are decomposed into a response-vs-predicted-flux factor and a predicted-flux-vs-state-flux factor.",
+    "This is the main explanatory result of the explicit Jacobian route in the current implementation."
+  ]
+}

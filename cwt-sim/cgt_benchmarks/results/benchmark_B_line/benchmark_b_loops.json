@@ -1,0 +1,384 @@
+{
+  "benchmark": "benchmark_b",
+  "description": "Three-node line sensitivity without robust pumping.",
+  "expected_behavior": "Metric hotspots, weak or patchy curvature, no strong loop law.",
+  "expected_regime": "R1",
+  "control_names": [
+    "u",
+    "v"
+  ],
+  "loop_family": {
+    "shape": "square",
+    "centers": [
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "side_lengths": [
+      0.1,
+      0.16,
+      0.22,
+      0.28
+    ],
+    "steps_per_segment": 24,
+    "phase_relaxation": 0.25,
+    "current_phase_gain": 0.85,
+    "use_excess_circulation": true
+  },
+  "pair_results": [
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.1,
+      "area_magnitude": 0.010000000000000002,
+      "flux_magnitude": 1.5213374377749023e-18,
+      "pair_regime": "R1",
+      "pair_trusted_r1": true,
+      "flux_sign_reversed": true,
+      "response_sign_reversed": false,
+      "orientation_gap": 0.0,
+      "orientation_sum": 0.6666666666666663,
+      "ccw": {
+        "center": [
+          0.0,
+          0.0
+        ],
+        "shape": "square",
+        "side_length": 0.1,
+        "orientation": "ccw",
+        "signed_area": 0.010000000000000002,
+        "signed_flux": -1.5213374377749023e-18,
+        "response": 0.33333333333333315,
+        "raw_response": null,
+        "branch_response": null,
+        "secondary_value": null,
+        "avg_overlap": 0.9999999071596691,
+        "avg_coherence": 0.9999818987825645,
+        "max_adiabatic_proxy": 0.0007925310156064782,
+        "regime_label": "R1",
+        "trusted_r1": true,
+        "path_bounds": {
+          "u": [
+            -0.05,
+            0.05
+          ],
+          "v": [
+            -0.05,
+            0.05
+          ]
+        },
+        "path_length": 97
+      },
+      "cw": {
+        "center": [
+          0.0,
+          0.0
+        ],
+        "shape": "square",
+        "side_length": 0.1,
+        "orientation": "cw",
+        "signed_area": -0.010000000000000002,
+        "signed_flux": 1.3044977994782974e-18,
+        "response": 0.33333333333333315,
+        "raw_response": null,
+        "branch_response": null,
+        "secondary_value": null,
+        "avg_overlap": 0.9999999071596694,
+        "avg_coherence": 0.9999818987825645,
+        "max_adiabatic_proxy": 0.0007925317860892692,
+        "regime_label": "R1",
+        "trusted_r1": true,
+        "path_bounds": {
+          "u": [
+            -0.05,
+            0.05
+          ],
+          "v": [
+            -0.05,
+            0.05
+          ]
+        },
+        "path_length": 97
+      },
+      "center_index": 0
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.16,
+      "area_magnitude": 0.025599999999999998,
+      "flux_magnitude": 8.67208710645727e-18,
+      "pair_regime": "R1",
+      "pair_trusted_r1": true,
+      "flux_sign_reversed": true,
+      "response_sign_reversed": false,
+      "orientation_gap": 0.0,
+      "orientation_sum": 0.6666666666666656,
+      "ccw": {
+        "center": [
+          0.0,
+          0.0
+        ],
+        "shape": "square",
+        "side_length": 0.16,
+        "orientation": "ccw",
+        "signed_area": 0.025599999999999998,
+        "signed_flux": 8.67208710645727e-18,
+        "response": 0.3333333333333328,
+        "raw_response": null,
+        "branch_response": null,
+        "secondary_value": null,
+        "avg_overlap": 0.9999997621018151,
+        "avg_coherence": 0.9999536650161484,
+        "max_adiabatic_proxy": 0.0012811222709369452,
+        "regime_label": "R1",
+        "trusted_r1": true,
+        "path_bounds": {
+          "u": [
+            -0.08,
+            0.08
+          ],
+          "v": [
+            -0.08,
+            0.08
+          ]
+        },
+        "path_length": 97
+      },
+      "cw": {
+        "center": [
+          0.0,
+          0.0
+        ],
+        "shape": "square",
+        "side_length": 0.16,
+        "orientation": "cw",
+        "signed_area": -0.025599999999999998,
+        "signed_flux": -7.80469026646893e-18,
+        "response": 0.3333333333333328,
+        "raw_response": null,
+        "branch_response": null,
+        "secondary_value": null,
+        "avg_overlap": 0.9999997621018151,
+        "avg_coherence": 0.9999536650161482,
+        "max_adiabatic_proxy": 0.001281123490534895,
+        "regime_label": "R1",
+        "trusted_r1": true,
+        "path_bounds": {
+          "u": [
+            -0.08,
+            0.08
+          ],
+          "v": [
+            -0.08,
+            0.08
+          ]
+        },
+        "path_length": 97
+      },
+      "center_index": 0
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.22,
+      "area_magnitude": 0.0484,
+      "flux_magnitude": 3.829953997902375e-18,
+      "pair_regime": "R1",
+      "pair_trusted_r1": true,
+      "flux_sign_reversed": true,
+      "response_sign_reversed": false,
+      "orientation_gap": 0.0,
+      "orientation_sum": 0.6666666666666672,
+      "ccw": {
+        "center": [
+          0.0,
+          0.0
+        ],
+        "shape": "square",
+        "side_length": 0.22,
+        "orientation": "ccw",
+        "signed_area": 0.0484,
+        "signed_flux": 3.829953997902375e-18,
+        "response": 0.3333333333333336,
+        "raw_response": null,
+        "branch_response": null,
+        "secondary_value": null,
+        "avg_overlap": 0.9999995495966634,
+        "avg_coherence": 0.9999123962859214,
+        "max_adiabatic_proxy": 0.0017795180107425315,
+        "regime_label": "R1",
+        "trusted_r1": true,
+        "path_bounds": {
+          "u": [
+            -0.11,
+            0.11
+          ],
+          "v": [
+            -0.11,
+            0.11
+          ]
+        },
+        "path_length": 97
+      },
+      "cw": {
+        "center": [
+          0.0,
+          0.0
+        ],
+        "shape": "square",
+        "side_length": 0.22,
+        "orientation": "cw",
+        "signed_area": -0.0484,
+        "signed_flux": -4.58896665476771e-18,
+        "response": 0.3333333333333336,
+        "raw_response": null,
+        "branch_response": null,
+        "secondary_value": null,
+        "avg_overlap": 0.9999995495966634,
+        "avg_coherence": 0.9999123962859214,
+        "max_adiabatic_proxy": 0.0017795196695744478,
+        "regime_label": "R1",
+        "trusted_r1": true,
+        "path_bounds": {
+          "u": [
+            -0.11,
+            0.11
+          ],
+          "v": [
+            -0.11,
+            0.11
+          ]
+        },
+        "path_length": 97
+      },
+      "center_index": 0
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.28,
+      "area_magnitude": 0.07840000000000001,
+      "flux_magnitude": 1.2410833704375954e-17,
+      "pair_regime": "R1",
+      "pair_trusted_r1": true,
+      "flux_sign_reversed": true,
+      "response_sign_reversed": false,
+      "orientation_gap": 0.0,
+      "orientation_sum": 0.6666666666666663,
+      "ccw": {
+        "center": [
+          0.0,
+          0.0
+        ],
+        "shape": "square",
+        "side_length": 0.28,
+        "orientation": "ccw",
+        "signed_area": 0.07840000000000001,
+        "signed_flux": 1.2410833704375954e-17,
+        "response": 0.33333333333333315,
+        "raw_response": null,
+        "branch_response": null,
+        "secondary_value": null,
+        "avg_overlap": 0.999999269084507,
+        "avg_coherence": 0.9998580785146473,
+        "max_adiabatic_proxy": 0.002287718235023237,
+        "regime_label": "R1",
+        "trusted_r1": true,
+        "path_bounds": {
+          "u": [
+            -0.14,
+            0.14
+          ],
+          "v": [
+            -0.14,
+            0.14
+          ]
+        },
+        "path_length": 97
+      },
+      "cw": {
+        "center": [
+          0.0,
+          0.0
+        ],
+        "shape": "square",
+        "side_length": 0.28,
+        "orientation": "cw",
+        "signed_area": -0.07840000000000001,
+        "signed_flux": -1.1760216691733987e-17,
+        "response": 0.33333333333333315,
+        "raw_response": null,
+        "branch_response": null,
+        "secondary_value": null,
+        "avg_overlap": 0.999999269084507,
+        "avg_coherence": 0.999858078514647,
+        "max_adiabatic_proxy": 0.0022877203232080433,
+        "regime_label": "R1",
+        "trusted_r1": true,
+        "path_bounds": {
+          "u": [
+            -0.14,
+            0.14
+          ],
+          "v": [
+            -0.14,
+            0.14
+          ]
+        },
+        "path_length": 97
+      },
+      "center_index": 0
+    }
+  ],
+  "summary": {
+    "benchmark": "benchmark_b",
+    "trusted_pair_count": 4,
+    "pair_count": 4,
+    "sign_flip_fraction_r1": 0.0,
+    "flux_summary": {
+      "count": 8,
+      "min": -1.1760216691733987e-17,
+      "max": 1.2410833704375954e-17,
+      "mean_abs": 6.486572957369928e-18
+    },
+    "response_summary": {
+      "count": 8,
+      "min": 0.3333333333333328,
+      "max": 0.3333333333333336,
+      "mean_abs": 0.33333333333333315
+    },
+    "orientation_gap_summary": {
+      "count": 4,
+      "min": 0.0,
+      "max": 0.0,
+      "mean_abs": 0.0
+    },
+    "fit_response_vs_signed_area": {
+      "slope": 9.65770220682394e-17,
+      "r2": 0.0,
+      "count": 8
+    },
+    "fit_response_vs_signed_flux": {
+      "slope": null,
+      "r2": null,
+      "count": 8
+    }
+  },
+  "notes": [
+    "Null/near-null benchmark: any strong reproducible signed loop law should be treated as a warning."
+  ]
+}

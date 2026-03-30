@@ -1,0 +1,274 @@
+{
+  "benchmark": "benchmark_c",
+  "protocol_name": null,
+  "loop_family": {
+    "shape": "square",
+    "centers": [
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "side_lengths": [
+      0.1,
+      0.16,
+      0.22,
+      0.28
+    ],
+    "steps_per_segment": 24,
+    "phase_relaxation": 0.35,
+    "current_phase_gain": 0.45,
+    "use_excess_circulation": true
+  },
+  "trusted_run_count": 8,
+  "runs": [
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.1,
+      "orientation": "ccw",
+      "trusted_r1": true,
+      "signed_flux": 0.0014582561671868492,
+      "response": -8.097564407197796e-06,
+      "predicted_signed_flux_center": 3.111906990238866e-05,
+      "predicted_signed_flux_pathmean": 3.0875629776633456e-05,
+      "jacobian_modal_phase": -2.372282039346631,
+      "avg_jacobian_modal_mixing": 22693.546868562855,
+      "max_spectral_radius": 0.5804606296577189,
+      "max_inverse_min_singular_i_minus_m": 2.394420324452425,
+      "mean_nonnormality_ratio": 1.0053638962499682
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.1,
+      "orientation": "cw",
+      "trusted_r1": true,
+      "signed_flux": -0.0014582561671868484,
+      "response": 7.887845587195864e-06,
+      "predicted_signed_flux_center": -3.111906990238866e-05,
+      "predicted_signed_flux_pathmean": -3.0875629776633456e-05,
+      "jacobian_modal_phase": -2.422543427267722,
+      "avg_jacobian_modal_mixing": 21305.413200218616,
+      "max_spectral_radius": 0.5804606296577189,
+      "max_inverse_min_singular_i_minus_m": 2.394420324452425,
+      "mean_nonnormality_ratio": 1.0053638962499685
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.16,
+      "orientation": "ccw",
+      "trusted_r1": true,
+      "signed_flux": 0.003732826985976899,
+      "response": -2.0575482262516195e-05,
+      "predicted_signed_flux_center": 7.966481895011485e-05,
+      "predicted_signed_flux_pathmean": 7.699017471601942e-05,
+      "jacobian_modal_phase": -0.16382331906139513,
+      "avg_jacobian_modal_mixing": 33808.46504812611,
+      "max_spectral_radius": 0.5805219375439302,
+      "max_inverse_min_singular_i_minus_m": 2.4052047952380207,
+      "mean_nonnormality_ratio": 1.0099496403407484
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.16,
+      "orientation": "cw",
+      "trusted_r1": true,
+      "signed_flux": -0.003732826985976904,
+      "response": 2.0147717676411513e-05,
+      "predicted_signed_flux_center": -7.966481895011485e-05,
+      "predicted_signed_flux_pathmean": -7.699017471601942e-05,
+      "jacobian_modal_phase": -2.94811162741169,
+      "avg_jacobian_modal_mixing": 33799.35787699392,
+      "max_spectral_radius": 0.5805219375439302,
+      "max_inverse_min_singular_i_minus_m": 2.4052047952380207,
+      "mean_nonnormality_ratio": 1.0099496403407484
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.22,
+      "orientation": "ccw",
+      "trusted_r1": true,
+      "signed_flux": 0.007056520148404547,
+      "response": -3.8525492447618166e-05,
+      "predicted_signed_flux_center": 0.00015061629832756101,
+      "predicted_signed_flux_pathmean": 0.0001393124047809736,
+      "jacobian_modal_phase": -0.10240924792875317,
+      "avg_jacobian_modal_mixing": 17322.59826610005,
+      "max_spectral_radius": 0.5805832357031668,
+      "max_inverse_min_singular_i_minus_m": 2.4214271380532937,
+      "mean_nonnormality_ratio": 1.0166224514076805
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.22,
+      "orientation": "cw",
+      "trusted_r1": true,
+      "signed_flux": -0.007056520148404556,
+      "response": 3.7967740688760486e-05,
+      "predicted_signed_flux_center": -0.00015061629832756101,
+      "predicted_signed_flux_pathmean": -0.0001393124047809736,
+      "jacobian_modal_phase": -0.15549737251051782,
+      "avg_jacobian_modal_mixing": 19621.756919273732,
+      "max_spectral_radius": 0.5805832357031668,
+      "max_inverse_min_singular_i_minus_m": 2.4214271380532937,
+      "mean_nonnormality_ratio": 1.0166224514076805
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.28,
+      "orientation": "ccw",
+      "trusted_r1": true,
+      "signed_flux": 0.01142856466400135,
+      "response": -6.166484944464314e-05,
+      "predicted_signed_flux_center": 0.00024397350803472695,
+      "predicted_signed_flux_pathmean": 0.00021173234067235576,
+      "jacobian_modal_phase": 1.3474562422836394,
+      "avg_jacobian_modal_mixing": 45472.85193630913,
+      "max_spectral_radius": 0.5806445126757749,
+      "max_inverse_min_singular_i_minus_m": 2.4434939671090907,
+      "mean_nonnormality_ratio": 1.0253531099717483
+    },
+    {
+      "center": [
+        0.0,
+        0.0
+      ],
+      "shape": "square",
+      "side_length": 0.28,
+      "orientation": "cw",
+      "trusted_r1": true,
+      "signed_flux": -0.01142856466400136,
+      "response": 6.123862509657742e-05,
+      "predicted_signed_flux_center": -0.00024397350803472695,
+      "predicted_signed_flux_pathmean": -0.00021173234067235576,
+      "jacobian_modal_phase": 1.299722346881552,
+      "avg_jacobian_modal_mixing": 45324.71095217209,
+      "max_spectral_radius": 0.5806445126757749,
+      "max_inverse_min_singular_i_minus_m": 2.4434939671090907,
+      "mean_nonnormality_ratio": 1.0253531099717483
+    }
+  ],
+  "summary": {
+    "fit_response_vs_predicted_signed_flux": {
+      "slope": -0.2833825006907138,
+      "r2": 0.9988640796454759,
+      "count": 8
+    },
+    "fit_predicted_signed_flux_vs_state_signed_flux": {
+      "slope": 0.019012209108801695,
+      "r2": 0.9985443035861247,
+      "count": 8
+    },
+    "fit_response_vs_jacobian_modal_phase": {
+      "slope": -2.584042169442689e-06,
+      "r2": 0.013870200911507924,
+      "count": 8
+    },
+    "fit_jacobian_modal_phase_vs_signed_flux": {
+      "slope": 28.978666858402587,
+      "r2": 0.013891071882554562,
+      "count": 8
+    },
+    "fit_response_vs_predicted_signed_flux_by_center": [
+      {
+        "center": [
+          0.0,
+          0.0
+        ],
+        "trusted_run_count": 8,
+        "fit_response_vs_predicted_signed_flux_pathmean": {
+          "slope": -0.2833825006907138,
+          "r2": 0.9988640796454759,
+          "count": 8
+        }
+      }
+    ],
+    "fit_predicted_signed_flux_vs_state_signed_flux_by_center": [
+      {
+        "center": [
+          0.0,
+          0.0
+        ],
+        "trusted_run_count": 8,
+        "fit_predicted_signed_flux_pathmean_vs_signed_flux": {
+          "slope": 0.019012209108801695,
+          "r2": 0.9985443035861247,
+          "count": 8
+        }
+      }
+    ],
+    "predicted_signed_flux_summary": {
+      "count": 8,
+      "min": 3.0875629776633456e-05,
+      "max": 0.00021173234067235576,
+      "mean": 0.00011472763748649557,
+      "median": 0.0001081512897484965
+    },
+    "jacobian_modal_phase_summary": {
+      "count": 8,
+      "min": 0.10240924792875317,
+      "max": 2.94811162741169,
+      "mean": 1.3514807028364877,
+      "median": 1.3235892945825958
+    },
+    "jacobian_modal_mixing_summary": {
+      "count": 8,
+      "min": 17322.59826610005,
+      "max": 45472.85193630913,
+      "mean": 29918.587633469564,
+      "median": 28246.45237277839
+    },
+    "max_spectral_radius_summary": {
+      "count": 8,
+      "min": 0.5804606296577189,
+      "max": 0.5806445126757749,
+      "mean": 0.5805525788951478,
+      "median": 0.5805525866235486
+    },
+    "max_inverse_min_singular_i_minus_m_summary": {
+      "count": 8,
+      "min": 2.394420324452425,
+      "max": 2.4434939671090907,
+      "mean": 2.4161365562132078,
+      "median": 2.413315966645657
+    },
+    "mean_nonnormality_ratio_summary": {
+      "count": 8,
+      "min": 1.0053638962499682,
+      "max": 1.0253531099717483,
+      "mean": 1.0143222744925364,
+      "median": 1.0132860458742146
+    }
+  },
+  "notes": [
+    "Predicted signed flux uses the path-mean Jacobian-derived curvature multiplied by the signed loop area.",
+    "Jacobian modal phases are retained as a secondary diagnostic but are weaker than the derived predicted-flux law in the current implementation."
+  ]
+}

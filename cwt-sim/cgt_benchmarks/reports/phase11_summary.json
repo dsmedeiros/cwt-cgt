@@ -1,0 +1,74 @@
+{
+  "phase": "phase11_continuous_time_lindblad",
+  "benchmark_summaries": {
+    "benchmark_a": {
+      "benchmark": "benchmark_a",
+      "recommended_switch_gamma": 0.2,
+      "trusted_pair_count_at_switch": 4,
+      "excluded_pair_count_at_switch": 0,
+      "fit_r2_at_switch": null,
+      "fit_slope_at_switch": null,
+      "mean_abs_mixed_curvature_at_switch": 4.013752287226526e-16
+    },
+    "benchmark_b": {
+      "benchmark": "benchmark_b",
+      "recommended_switch_gamma": 0.2,
+      "trusted_pair_count_at_switch": 4,
+      "excluded_pair_count_at_switch": 0,
+      "fit_r2_at_switch": null,
+      "fit_slope_at_switch": null,
+      "mean_abs_mixed_curvature_at_switch": 4.4991844220223677e-10
+    },
+    "benchmark_c": {
+      "benchmark": "benchmark_c",
+      "recommended_switch_gamma": 0.2,
+      "trusted_pair_count_at_switch": 4,
+      "excluded_pair_count_at_switch": 0,
+      "fit_r2_at_switch": 0.8610126798341613,
+      "fit_slope_at_switch": -958.235278245205,
+      "mean_abs_mixed_curvature_at_switch": 1.1270578686663146e-05
+    },
+    "benchmark_d": {
+      "benchmark": "benchmark_d",
+      "recommended_switch_gamma": 0.2,
+      "trusted_pair_count_at_switch": 4,
+      "excluded_pair_count_at_switch": 0,
+      "fit_r2_at_switch": null,
+      "fit_slope_at_switch": null,
+      "mean_abs_mixed_curvature_at_switch": 9.013434689412744e-06
+    },
+    "benchmark_f": {
+      "benchmark": "benchmark_f",
+      "recommended_switch_gamma": 0.2,
+      "trusted_pair_count_at_switch": 0,
+      "excluded_pair_count_at_switch": 4,
+      "fit_r2_at_switch": null,
+      "fit_slope_at_switch": null,
+      "mean_abs_mixed_curvature_at_switch": 0.0
+    }
+  },
+  "benchmark_c_backend_comparison": {
+    "benchmark": "benchmark_c",
+    "comparison_gamma": 0.2,
+    "effective_switch_gamma": 0.2,
+    "lindblad_switch_gamma": 0.2,
+    "mean_bures_distance_between_backends": 0.0002610504829012277,
+    "curvature_correlation_at_gamma": 0.9999037435027373,
+    "metric_correlation_at_gamma": 0.9999390020360104,
+    "effective_global_fit_at_gamma": {
+      "slope": 3445.984742447182,
+      "r2": 0.8152400944967021,
+      "count": 4
+    },
+    "lindblad_global_fit_at_gamma": {
+      "slope": -958.235278245205,
+      "r2": 0.8610126798341613,
+      "count": 4
+    }
+  },
+  "notes": [
+    "Phase 11 upgrades the noisy lane from an effective K-step map to a continuous-time Lindblad-style graph-local generator.",
+    "The current project artifacts use a coarse dephasing grid {0.0, 0.2}; switch recommendations are therefore only resolved to that grid.",
+    "Benchmark F remains an exclusion benchmark in the mixed-state lane because R4 branch switching dominates loop families."
+  ]
+}

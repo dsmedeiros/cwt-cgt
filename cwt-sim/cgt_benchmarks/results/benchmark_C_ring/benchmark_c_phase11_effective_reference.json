@@ -1,0 +1,1009 @@
+{
+  "phase": "phase10_effective_k_step_reference",
+  "backend": "effective",
+  "benchmark": "benchmark_c",
+  "slug": "benchmark_C_ring",
+  "dephasing_values": [
+    0.0,
+    0.2
+  ],
+  "recommended_switch_gamma": 0.2,
+  "scan_levels": [
+    {
+      "dephasing": 0.0,
+      "grid_u": [
+        -0.7,
+        -0.35,
+        0.0,
+        0.34999999999999987,
+        0.7
+      ],
+      "grid_v": [
+        -0.7,
+        -0.35,
+        0.0,
+        0.34999999999999987,
+        0.7
+      ],
+      "bures_metric_trace": [
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          0.27843611304495197,
+          0.2950937583583655,
+          0.3409430040275594,
+          NaN
+        ],
+        [
+          NaN,
+          0.4469492671008821,
+          0.46524382899327565,
+          0.4975743783677381,
+          NaN
+        ],
+        [
+          NaN,
+          0.6778591656452218,
+          0.6715052592850275,
+          0.6543127425925175,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ]
+      ],
+      "mixed_curvature": [
+        [
+          3.287711344351804e-07,
+          7.644668661441483e-07,
+          NaN,
+          NaN
+        ],
+        [
+          4.4989413552441645e-06,
+          5.194861713688144e-06,
+          NaN,
+          NaN
+        ],
+        [
+          1.6685345822283953e-05,
+          1.6803670570997935e-05,
+          NaN,
+          NaN
+        ],
+        [
+          3.704429177248851e-05,
+          3.503690473661344e-05,
+          NaN,
+          NaN
+        ]
+      ],
+      "coherence_ratio": [
+        [
+          0.9575723438776587,
+          0.9534166816424346,
+          0.9478297812094102,
+          0.9423882716315403,
+          0.9393177302415724
+        ],
+        [
+          0.9601689621308542,
+          0.9493822615459199,
+          0.9415389150808178,
+          0.9382626753084318,
+          0.9420087103301708
+        ],
+        [
+          0.9599790473877733,
+          0.9438255417964391,
+          0.9387269260428643,
+          0.9437330627189009,
+          0.9593059803672491
+        ],
+        [
+          0.9534239476864311,
+          0.9360356344240784,
+          0.9425704702431134,
+          0.962816281339652,
+          0.9889531016350297
+        ],
+        [
+          0.939628321077581,
+          0.9259970616659827,
+          0.9557653139994308,
+          0.9958255916195685,
+          1.019244928983827
+        ]
+      ],
+      "purity": [
+        [
+          0.91820279420577,
+          0.9186387518447028,
+          0.9190644301952104,
+          0.9194777203751344,
+          0.9198689662083606
+        ],
+        [
+          0.9199778901900098,
+          0.9202016720599242,
+          0.9203520060177174,
+          0.9204658211126023,
+          0.9205520943616121
+        ],
+        [
+          0.9205927635238284,
+          0.9207653857185656,
+          0.920805494451924,
+          0.9207664693472251,
+          0.9206040690572028
+        ],
+        [
+          0.9201661507573752,
+          0.9202940235602641,
+          0.9203578310756271,
+          0.9202532424232657,
+          0.9196859485563873
+        ],
+        [
+          0.9190389510405645,
+          0.9189444385137244,
+          0.9191085205425179,
+          0.9188828514932119,
+          0.9175177090719494
+        ]
+      ],
+      "metric_summary": {
+        "count": 9,
+        "min": 0.27843611304495197,
+        "max": 0.6778591656452218,
+        "mean": 0.48087972415728214,
+        "median": 0.46524382899327565
+      },
+      "mixed_curvature_summary": {
+        "count": 8,
+        "min": 3.287711344351804e-07,
+        "max": 3.704429177248851e-05,
+        "mean": 1.4544656746486934e-05,
+        "median": 1.0940103767986049e-05
+      },
+      "coherence_ratio_summary": {
+        "count": 25,
+        "min": 0.9259970616659827,
+        "max": 1.019244928983827,
+        "mean": 0.9535087017594692,
+        "median": 0.9478297812094102
+      },
+      "purity_summary": {
+        "count": 25,
+        "min": 0.9175177090719494,
+        "max": 0.920805494451924,
+        "mean": 0.9197834398281871,
+        "median": 0.9201661507573752
+      },
+      "mean_abs_mixed_curvature": 1.4544656746486934e-05,
+      "ambiguous_tile_count": 4,
+      "branch_atlas": {
+        "persistent_branch_id_map": [
+          [
+            "base",
+            "base",
+            "base",
+            "base",
+            "base"
+          ],
+          [
+            "base",
+            "base",
+            "base",
+            "ambiguous",
+            "ambiguous"
+          ],
+          [
+            "base",
+            "base",
+            "base",
+            "ambiguous",
+            "base"
+          ],
+          [
+            "base",
+            "base",
+            "base",
+            "ambiguous",
+            "base"
+          ],
+          [
+            "base",
+            "base",
+            "base",
+            "base",
+            "base"
+          ]
+        ],
+        "ambiguous_map": [
+          [
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            true,
+            true
+          ],
+          [
+            false,
+            false,
+            false,
+            true,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            true,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        ],
+        "switch_tile_count": 4
+      }
+    },
+    {
+      "dephasing": 0.2,
+      "grid_u": [
+        -0.7,
+        -0.35,
+        0.0,
+        0.34999999999999987,
+        0.7
+      ],
+      "grid_v": [
+        -0.7,
+        -0.35,
+        0.0,
+        0.34999999999999987,
+        0.7
+      ],
+      "bures_metric_trace": [
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          0.24283168814765163,
+          0.2545374457598912,
+          0.29083147764909606,
+          NaN
+        ],
+        [
+          NaN,
+          0.38139677490961005,
+          0.39410350772168723,
+          0.419478566811618,
+          NaN
+        ],
+        [
+          NaN,
+          0.5657101811635541,
+          0.5585105241823085,
+          0.5453860394503176,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ]
+      ],
+      "mixed_curvature": [
+        [
+          2.658179826963004e-07,
+          5.609910247749744e-07,
+          NaN,
+          NaN
+        ],
+        [
+          3.497630167096033e-06,
+          4.058714141777372e-06,
+          NaN,
+          NaN
+        ],
+        [
+          1.3007564546303439e-05,
+          1.3353654630579944e-05,
+          NaN,
+          NaN
+        ],
+        [
+          2.7378598464073015e-05,
+          2.6049653461775384e-05,
+          NaN,
+          NaN
+        ]
+      ],
+      "coherence_ratio": [
+        [
+          0.8574753699668355,
+          0.8535634103696513,
+          0.848318776908209,
+          0.8432205146294433,
+          0.8403468383299826
+        ],
+        [
+          0.8597538961942038,
+          0.8496911024175149,
+          0.8423643381633001,
+          0.8393164503202197,
+          0.8428264562284599
+        ],
+        [
+          0.8595319461645671,
+          0.8444833653654936,
+          0.8397139472828261,
+          0.8443974025570218,
+          0.8589070898351099
+        ],
+        [
+          0.8534603177246443,
+          0.8372730718282307,
+          0.8433230109472328,
+          0.8621761347955199,
+          0.8864426712597983
+        ],
+        [
+          0.8406980677267842,
+          0.8280397198120363,
+          0.8556898847865073,
+          0.8928955834198273,
+          0.9145650705537409
+        ]
+      ],
+      "purity": [
+        [
+          0.8142316289002807,
+          0.8124233701331472,
+          0.8106575748291402,
+          0.8089394072101953,
+          0.8073066950383649
+        ],
+        [
+          0.8068307530354519,
+          0.805912403413551,
+          0.8052972268287071,
+          0.8048213843420164,
+          0.8044491965116727
+        ],
+        [
+          0.8042673500325744,
+          0.8035674674604498,
+          0.8034130088408701,
+          0.8035630308893629,
+          0.8042206083717924
+        ],
+        [
+          0.806036283645828,
+          0.8055258780285218,
+          0.8052727843153709,
+          0.8056858496355793,
+          0.8080363548199087
+        ],
+        [
+          0.8107307514515114,
+          0.8111462177569524,
+          0.8104724853122949,
+          0.811386472336294,
+          0.8170781600297654
+        ]
+      ],
+      "metric_summary": {
+        "count": 9,
+        "min": 0.24283168814765163,
+        "max": 0.5657101811635541,
+        "mean": 0.4058651339773038,
+        "median": 0.39410350772168723
+      },
+      "mixed_curvature_summary": {
+        "count": 8,
+        "min": 2.658179826963004e-07,
+        "max": 2.7378598464073015e-05,
+        "mean": 1.1021578052384557e-05,
+        "median": 8.533139344040405e-06
+      },
+      "coherence_ratio_summary": {
+        "count": 25,
+        "min": 0.8280397198120363,
+        "max": 0.9145650705537409,
+        "mean": 0.8535389775034865,
+        "median": 0.848318776908209
+      },
+      "purity_summary": {
+        "count": 25,
+        "min": 0.8034130088408701,
+        "max": 0.8170781600297654,
+        "mean": 0.8076508937267842,
+        "median": 0.806036283645828
+      },
+      "mean_abs_mixed_curvature": 1.1021578052384557e-05,
+      "ambiguous_tile_count": 4,
+      "branch_atlas": {
+        "persistent_branch_id_map": [
+          [
+            "base",
+            "base",
+            "base",
+            "base",
+            "base"
+          ],
+          [
+            "base",
+            "base",
+            "base",
+            "ambiguous",
+            "ambiguous"
+          ],
+          [
+            "base",
+            "base",
+            "base",
+            "ambiguous",
+            "base"
+          ],
+          [
+            "base",
+            "base",
+            "base",
+            "ambiguous",
+            "base"
+          ],
+          [
+            "base",
+            "base",
+            "base",
+            "base",
+            "base"
+          ]
+        ],
+        "ambiguous_map": [
+          [
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            true,
+            true
+          ],
+          [
+            false,
+            false,
+            false,
+            true,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            true,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        ],
+        "switch_tile_count": 4
+      }
+    }
+  ],
+  "loop_levels": [
+    {
+      "dephasing": 0.0,
+      "pair_rows": [
+        {
+          "center": [
+            0.0,
+            0.0
+          ],
+          "side_length": 0.1,
+          "dephasing": 0.0,
+          "trusted_pair": true,
+          "pair_r4": false,
+          "orientation_gap": 0.0015126767521929933,
+          "orientation_sum": -0.0034726720117297734,
+          "mixed_holonomy_gap": 1.2558056597473643e-09,
+          "avg_coherence_ratio_mean": 0.44387140229835714,
+          "avg_purity_mean": 0.496052466833764,
+          "ccw": {
+            "center": [
+              0.0,
+              0.0
+            ],
+            "side_length": 0.1,
+            "orientation": "ccw",
+            "dephasing": 0.0,
+            "response": -0.00097999762976839,
+            "mixed_holonomy_phase": 6.279032864499975e-10,
+            "avg_coherence_ratio": 0.44359913190302686,
+            "avg_purity": 0.49602585620350875,
+            "switch_count": 0,
+            "ambiguous_step_count": 0,
+            "unique_branch_ids": [
+              "base"
+            ]
+          },
+          "cw": {
+            "center": [
+              0.0,
+              0.0
+            ],
+            "side_length": 0.1,
+            "orientation": "cw",
+            "dephasing": 0.0,
+            "response": -0.0024926743819613834,
+            "mixed_holonomy_phase": -6.279023732973667e-10,
+            "avg_coherence_ratio": 0.44414367269368743,
+            "avg_purity": 0.4960790774640193,
+            "switch_count": 0,
+            "ambiguous_step_count": 0,
+            "unique_branch_ids": [
+              "base"
+            ]
+          }
+        },
+        {
+          "center": [
+            0.0,
+            0.0
+          ],
+          "side_length": 0.16,
+          "dephasing": 0.0,
+          "trusted_pair": true,
+          "pair_r4": false,
+          "orientation_gap": 0.00375089499073805,
+          "orientation_sum": -0.008913259924637094,
+          "mixed_holonomy_gap": 2.1027227298311068e-08,
+          "avg_coherence_ratio_mean": 0.4415978496989982,
+          "avg_purity_mean": 0.4957660387390887,
+          "ccw": {
+            "center": [
+              0.0,
+              0.0
+            ],
+            "side_length": 0.16,
+            "orientation": "ccw",
+            "dephasing": 0.0,
+            "response": -0.002581182466949522,
+            "mixed_holonomy_phase": 1.0513613267078787e-08,
+            "avg_coherence_ratio": 0.44092360586308676,
+            "avg_purity": 0.4957022995759952,
+            "switch_count": 0,
+            "ambiguous_step_count": 0,
+            "unique_branch_ids": [
+              "base"
+            ]
+          },
+          "cw": {
+            "center": [
+              0.0,
+              0.0
+            ],
+            "side_length": 0.16,
+            "orientation": "cw",
+            "dephasing": 0.0,
+            "response": -0.006332077457687572,
+            "mixed_holonomy_phase": -1.051361403123228e-08,
+            "avg_coherence_ratio": 0.44227209353490954,
+            "avg_purity": 0.4958297779021822,
+            "switch_count": 0,
+            "ambiguous_step_count": 0,
+            "unique_branch_ids": [
+              "base"
+            ]
+          }
+        },
+        {
+          "center": [
+            0.0,
+            0.0
+          ],
+          "side_length": 0.22,
+          "dephasing": 0.0,
+          "trusted_pair": true,
+          "pair_r4": false,
+          "orientation_gap": 0.006856653863624395,
+          "orientation_sum": -0.016841303968465816,
+          "mixed_holonomy_gap": 1.4169105377446382e-07,
+          "avg_coherence_ratio_mean": 0.4384533486009795,
+          "avg_purity_mean": 0.49537081229069646,
+          "ccw": {
+            "center": [
+              0.0,
+              0.0
+            ],
+            "side_length": 0.22,
+            "orientation": "ccw",
+            "dephasing": 0.0,
+            "response": -0.004992325052420711,
+            "mixed_holonomy_phase": 7.08455268323692e-08,
+            "avg_coherence_ratio": 0.43722520796088954,
+            "avg_purity": 0.49525904604036153,
+            "switch_count": 0,
+            "ambiguous_step_count": 0,
+            "unique_branch_ids": [
+              "base"
+            ]
+          },
+          "cw": {
+            "center": [
+              0.0,
+              0.0
+            ],
+            "side_length": 0.22,
+            "orientation": "cw",
+            "dephasing": 0.0,
+            "response": -0.011848978916045106,
+            "mixed_holonomy_phase": -7.084552694209463e-08,
+            "avg_coherence_ratio": 0.43968148924106953,
+            "avg_purity": 0.4954825785410314,
+            "switch_count": 0,
+            "ambiguous_step_count": 0,
+            "unique_branch_ids": [
+              "base"
+            ]
+          }
+        },
+        {
+          "center": [
+            0.0,
+            0.0
+          ],
+          "side_length": 0.28,
+          "dephasing": 0.0,
+          "trusted_pair": true,
+          "pair_r4": false,
+          "orientation_gap": 0.010720766216819161,
+          "orientation_sum": -0.027181339315283534,
+          "mixed_holonomy_gap": 5.999369781042016e-07,
+          "avg_coherence_ratio_mean": 0.4345805590177569,
+          "avg_purity_mean": 0.49488489157652726,
+          "ccw": {
+            "center": [
+              0.0,
+              0.0
+            ],
+            "side_length": 0.28,
+            "orientation": "ccw",
+            "dephasing": 0.0,
+            "response": -0.008230286549232186,
+            "mixed_holonomy_phase": 2.999684903972183e-07,
+            "avg_coherence_ratio": 0.4326711238694735,
+            "avg_purity": 0.49471837283271164,
+            "switch_count": 0,
+            "ambiguous_step_count": 0,
+            "unique_branch_ids": [
+              "base"
+            ]
+          },
+          "cw": {
+            "center": [
+              0.0,
+              0.0
+            ],
+            "side_length": 0.28,
+            "orientation": "cw",
+            "dephasing": 0.0,
+            "response": -0.018951052766051347,
+            "mixed_holonomy_phase": -2.999684877069834e-07,
+            "avg_coherence_ratio": 0.4364899941660403,
+            "avg_purity": 0.49505141032034283,
+            "switch_count": 0,
+            "ambiguous_step_count": 0,
+            "unique_branch_ids": [
+              "base"
+            ]
+          }
+        }
+      ],
+      "fit_orientation_gap_vs_mixed_holonomy": {
+        "slope": 19671.941788451044,
+        "r2": 0.8256955045020559,
+        "count": 4
+      },
+      "coherence_ratio_summary": {
+        "count": 4,
+        "min": 0.4345805590177569,
+        "max": 0.44387140229835714,
+        "mean": 0.4396257899040229,
+        "median": 0.44002559914998884
+      },
+      "purity_summary": {
+        "count": 4,
+        "min": 0.49488489157652726,
+        "max": 0.496052466833764,
+        "mean": 0.49551855236001907,
+        "median": 0.49556842551489255
+      },
+      "trusted_pair_count": 4,
+      "excluded_pair_count": 0
+    },
+    {
+      "dephasing": 0.2,
+      "pair_rows": [
+        {
+          "center": [
+            0.0,
+            0.0
+          ],
+          "side_length": 0.1,
+          "dephasing": 0.2,
+          "trusted_pair": true,
+          "pair_r4": false,
+          "orientation_gap": 0.0002172143760315534,
+          "orientation_sum": -0.000919807160401012,
+          "mixed_holonomy_gap": 9.76380168532309e-10,
+          "avg_coherence_ratio_mean": 0.17135459157740812,
+          "avg_purity_mean": 0.38043973211209126,
+          "ccw": {
+            "center": [
+              0.0,
+              0.0
+            ],
+            "side_length": 0.1,
+            "orientation": "ccw",
+            "dephasing": 0.2,
+            "response": -0.0003512963921847293,
+            "mixed_holonomy_phase": 4.881901388738779e-10,
+            "avg_coherence_ratio": 0.17134180383226924,
+            "avg_purity": 0.3804543851929845,
+            "switch_count": 0,
+            "ambiguous_step_count": 0,
+            "unique_branch_ids": [
+              "base"
+            ]
+          },
+          "cw": {
+            "center": [
+              0.0,
+              0.0
+            ],
+            "side_length": 0.1,
+            "orientation": "cw",
+            "dephasing": 0.2,
+            "response": -0.0005685107682162827,
+            "mixed_holonomy_phase": -4.88190029658431e-10,
+            "avg_coherence_ratio": 0.171367379322547,
+            "avg_purity": 0.380425079031198,
+            "switch_count": 0,
+            "ambiguous_step_count": 0,
+            "unique_branch_ids": [
+              "base"
+            ]
+          }
+        },
+        {
+          "center": [
+            0.0,
+            0.0
+          ],
+          "side_length": 0.16,
+          "dephasing": 0.2,
+          "trusted_pair": true,
+          "pair_r4": false,
+          "orientation_gap": 0.0005285607873298413,
+          "orientation_sum": -0.00238298080045946,
+          "mixed_holonomy_gap": 1.6335647945502077e-08,
+          "avg_coherence_ratio_mean": 0.17136268717087005,
+          "avg_purity_mean": 0.38062502104493623,
+          "ccw": {
+            "center": [
+              0.0,
+              0.0
+            ],
+            "side_length": 0.16,
+            "orientation": "ccw",
+            "dephasing": 0.2,
+            "response": -0.0009272100065648094,
+            "mixed_holonomy_phase": 8.167824048862698e-09,
+            "avg_coherence_ratio": 0.1713272441732661,
+            "avg_purity": 0.38066078035225304,
+            "switch_count": 0,
+            "ambiguous_step_count": 0,
+            "unique_branch_ids": [
+              "base"
+            ]
+          },
+          "cw": {
+            "center": [
+              0.0,
+              0.0
+            ],
+            "side_length": 0.16,
+            "orientation": "cw",
+            "dephasing": 0.2,
+            "response": -0.0014557707938946507,
+            "mixed_holonomy_phase": -8.16782389663938e-09,
+            "avg_coherence_ratio": 0.17139813016847397,
+            "avg_purity": 0.3805892617376194,
+            "switch_count": 0,
+            "ambiguous_step_count": 0,
+            "unique_branch_ids": [
+              "base"
+            ]
+          }
+        },
+        {
+          "center": [
+            0.0,
+            0.0
+          ],
+          "side_length": 0.22,
+          "dephasing": 0.2,
+          "trusted_pair": true,
+          "pair_r4": false,
+          "orientation_gap": 0.00094724428234471,
+          "orientation_sum": -0.0045460401546213655,
+          "mixed_holonomy_gap": 1.0995013110182652e-07,
+          "avg_coherence_ratio_mean": 0.17137394237032677,
+          "avg_purity_mean": 0.38088206776856004,
+          "ccw": {
+            "center": [
+              0.0,
+              0.0
+            ],
+            "side_length": 0.22,
+            "orientation": "ccw",
+            "dephasing": 0.2,
+            "response": -0.0017993979361383278,
+            "mixed_holonomy_phase": 5.4975065556334474e-08,
+            "avg_coherence_ratio": 0.1713021278355065,
+            "avg_purity": 0.38094610770615184,
+            "switch_count": 0,
+            "ambiguous_step_count": 0,
+            "unique_branch_ids": [
+              "base"
+            ]
+          },
+          "cw": {
+            "center": [
+              0.0,
+              0.0
+            ],
+            "side_length": 0.22,
+            "orientation": "cw",
+            "dephasing": 0.2,
+            "response": -0.0027466422184830377,
+            "mixed_holonomy_phase": -5.497506554549204e-08,
+            "avg_coherence_ratio": 0.17144575690514707,
+            "avg_purity": 0.38081802783096824,
+            "switch_count": 0,
+            "ambiguous_step_count": 0,
+            "unique_branch_ids": [
+              "base"
+            ]
+          }
+        },
+        {
+          "center": [
+            0.0,
+            0.0
+          ],
+          "side_length": 0.28,
+          "dephasing": 0.2,
+          "trusted_pair": true,
+          "pair_r4": false,
+          "orientation_gap": 0.0014503257324713372,
+          "orientation_sum": -0.0074106862007080245,
+          "mixed_holonomy_gap": 4.648335329828926e-07,
+          "avg_coherence_ratio_mean": 0.17138931262749668,
+          "avg_purity_mean": 0.3812005019891369,
+          "ccw": {
+            "center": [
+              0.0,
+              0.0
+            ],
+            "side_length": 0.28,
+            "orientation": "ccw",
+            "dephasing": 0.2,
+            "response": -0.002980180234118344,
+            "mixed_holonomy_phase": 2.3241676660153777e-07,
+            "avg_coherence_ratio": 0.17126648933336183,
+            "avg_purity": 0.38129818802201165,
+            "switch_count": 0,
+            "ambiguous_step_count": 0,
+            "unique_branch_ids": [
+              "base"
+            ]
+          },
+          "cw": {
+            "center": [
+              0.0,
+              0.0
+            ],
+            "side_length": 0.28,
+            "orientation": "cw",
+            "dephasing": 0.2,
+            "response": -0.004430505966589681,
+            "mixed_holonomy_phase": -2.3241676638135483e-07,
+            "avg_coherence_ratio": 0.17151213592163153,
+            "avg_purity": 0.3811028159562622,
+            "switch_count": 0,
+            "ambiguous_step_count": 0,
+            "unique_branch_ids": [
+              "base"
+            ]
+          }
+        }
+      ],
+      "fit_orientation_gap_vs_mixed_holonomy": {
+        "slope": 3445.984742447182,
+        "r2": 0.8152400944967021,
+        "count": 4
+      },
+      "coherence_ratio_summary": {
+        "count": 4,
+        "min": 0.17135459157740812,
+        "max": 0.17138931262749668,
+        "mean": 0.1713701334365254,
+        "median": 0.1713683147705984
+      },
+      "purity_summary": {
+        "count": 4,
+        "min": 0.38043973211209126,
+        "max": 0.3812005019891369,
+        "mean": 0.3807868307286811,
+        "median": 0.38075354440674813
+      },
+      "trusted_pair_count": 4,
+      "excluded_pair_count": 0
+    }
+  ],
+  "patchwise_fit_at_switch_gamma": {
+    "(0.00,0.00)": {
+      "slope": 3445.984742447182,
+      "r2": 0.8152400944967021,
+      "count": 4
+    }
+  },
+  "global_fit_at_switch_gamma": {
+    "slope": 3445.984742447182,
+    "r2": 0.8152400944967021,
+    "count": 4
+  }
+}
