@@ -1,0 +1,1656 @@
+{
+  "phase": "phase14_smoothed_local_mixed_state_field",
+  "backend": "lindblad",
+  "benchmark": "benchmark_b",
+  "slug": "benchmark_B_line",
+  "description": "Three-node line sensitivity without robust pumping.",
+  "dephasing_values": [
+    0.0,
+    0.1,
+    0.2,
+    0.3
+  ],
+  "alignment": {
+    "reference": "mixed_curvature_area_at_gamma0",
+    "sign": 1.0
+  },
+  "recommended_switch_gamma": 0.3,
+  "levels": [
+    {
+      "dephasing": 0.0,
+      "trusted_plaquette_count": 18,
+      "excluded_plaquette_count": 18,
+      "smoothed_field": [
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ]
+      ],
+      "sign_consistency": [
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ]
+      ],
+      "effective_support": [
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ]
+      ],
+      "mean_abs_holonomy_gap": [
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ]
+      ],
+      "valid_mask": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "cells_u": [
+        -0.6666666666666667,
+        -0.4000000000000001,
+        -0.13333333333333336,
+        0.1333333333333333,
+        0.3999999999999999,
+        0.6666666666666666
+      ],
+      "cells_v": [
+        -0.5,
+        -0.30000000000000004,
+        -0.1,
+        0.09999999999999998,
+        0.29999999999999993,
+        0.49999999999999994
+      ],
+      "raw_valid_point_count": 0,
+      "valid_field_cell_count": 0,
+      "zero_crossings": [],
+      "zero_crossing_u_mean": null,
+      "local_field_summary": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null
+      },
+      "local_field_abs_summary": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null
+      },
+      "consistency_summary": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null
+      },
+      "support_summary": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null
+      },
+      "gap_summary": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null
+      },
+      "sampled_centers": {},
+      "verdict": "weak_control"
+    },
+    {
+      "dephasing": 0.1,
+      "trusted_plaquette_count": 18,
+      "excluded_plaquette_count": 18,
+      "smoothed_field": [
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ]
+      ],
+      "sign_consistency": [
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ]
+      ],
+      "effective_support": [
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ]
+      ],
+      "mean_abs_holonomy_gap": [
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ]
+      ],
+      "valid_mask": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "cells_u": [
+        -0.6666666666666667,
+        -0.4000000000000001,
+        -0.13333333333333336,
+        0.1333333333333333,
+        0.3999999999999999,
+        0.6666666666666666
+      ],
+      "cells_v": [
+        -0.5,
+        -0.30000000000000004,
+        -0.1,
+        0.09999999999999998,
+        0.29999999999999993,
+        0.49999999999999994
+      ],
+      "raw_valid_point_count": 0,
+      "valid_field_cell_count": 0,
+      "zero_crossings": [],
+      "zero_crossing_u_mean": null,
+      "local_field_summary": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null
+      },
+      "local_field_abs_summary": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null
+      },
+      "consistency_summary": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null
+      },
+      "support_summary": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null
+      },
+      "gap_summary": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null
+      },
+      "sampled_centers": {},
+      "verdict": "weak_control"
+    },
+    {
+      "dephasing": 0.2,
+      "trusted_plaquette_count": 18,
+      "excluded_plaquette_count": 18,
+      "smoothed_field": [
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ]
+      ],
+      "sign_consistency": [
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ]
+      ],
+      "effective_support": [
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ]
+      ],
+      "mean_abs_holonomy_gap": [
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ]
+      ],
+      "valid_mask": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "cells_u": [
+        -0.6666666666666667,
+        -0.4000000000000001,
+        -0.13333333333333336,
+        0.1333333333333333,
+        0.3999999999999999,
+        0.6666666666666666
+      ],
+      "cells_v": [
+        -0.5,
+        -0.30000000000000004,
+        -0.1,
+        0.09999999999999998,
+        0.29999999999999993,
+        0.49999999999999994
+      ],
+      "raw_valid_point_count": 0,
+      "valid_field_cell_count": 0,
+      "zero_crossings": [],
+      "zero_crossing_u_mean": null,
+      "local_field_summary": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null
+      },
+      "local_field_abs_summary": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null
+      },
+      "consistency_summary": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null
+      },
+      "support_summary": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null
+      },
+      "gap_summary": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null
+      },
+      "sampled_centers": {},
+      "verdict": "weak_control"
+    },
+    {
+      "dephasing": 0.3,
+      "trusted_plaquette_count": 18,
+      "excluded_plaquette_count": 18,
+      "smoothed_field": [
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ]
+      ],
+      "sign_consistency": [
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ]
+      ],
+      "effective_support": [
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ]
+      ],
+      "mean_abs_holonomy_gap": [
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ],
+        [
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN,
+          NaN
+        ]
+      ],
+      "valid_mask": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "cells_u": [
+        -0.6666666666666667,
+        -0.4000000000000001,
+        -0.13333333333333336,
+        0.1333333333333333,
+        0.3999999999999999,
+        0.6666666666666666
+      ],
+      "cells_v": [
+        -0.5,
+        -0.30000000000000004,
+        -0.1,
+        0.09999999999999998,
+        0.29999999999999993,
+        0.49999999999999994
+      ],
+      "raw_valid_point_count": 0,
+      "valid_field_cell_count": 0,
+      "zero_crossings": [],
+      "zero_crossing_u_mean": null,
+      "local_field_summary": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null
+      },
+      "local_field_abs_summary": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null
+      },
+      "consistency_summary": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null
+      },
+      "support_summary": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null
+      },
+      "gap_summary": {
+        "count": 0,
+        "min": null,
+        "max": null,
+        "mean": null,
+        "median": null
+      },
+      "sampled_centers": {},
+      "verdict": "weak_control"
+    }
+  ],
+  "switch_level": {
+    "dephasing": 0.3,
+    "trusted_plaquette_count": 18,
+    "excluded_plaquette_count": 18,
+    "smoothed_field": [
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ]
+    ],
+    "sign_consistency": [
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ]
+    ],
+    "effective_support": [
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ]
+    ],
+    "mean_abs_holonomy_gap": [
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ]
+    ],
+    "valid_mask": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "cells_u": [
+      -0.6666666666666667,
+      -0.4000000000000001,
+      -0.13333333333333336,
+      0.1333333333333333,
+      0.3999999999999999,
+      0.6666666666666666
+    ],
+    "cells_v": [
+      -0.5,
+      -0.30000000000000004,
+      -0.1,
+      0.09999999999999998,
+      0.29999999999999993,
+      0.49999999999999994
+    ],
+    "raw_valid_point_count": 0,
+    "valid_field_cell_count": 0,
+    "zero_crossings": [],
+    "zero_crossing_u_mean": null,
+    "local_field_summary": {
+      "count": 0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "median": null
+    },
+    "local_field_abs_summary": {
+      "count": 0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "median": null
+    },
+    "consistency_summary": {
+      "count": 0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "median": null
+    },
+    "support_summary": {
+      "count": 0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "median": null
+    },
+    "gap_summary": {
+      "count": 0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "median": null
+    },
+    "sampled_centers": {},
+    "verdict": "weak_control"
+  },
+  "phase13_reference": {
+    "available": true,
+    "recommended_switch_gamma": 0.3,
+    "switch_by_center": {
+      "(+0.00,+0.00)": {
+        "fit": {
+          "slope": null,
+          "r2": null,
+          "count": 6
+        },
+        "count_total": 6,
+        "count_trusted": 6,
+        "count_excluded": 0,
+        "mean_abs_aligned_holonomy_gap": 2.998219846178728e-12,
+        "mean_abs_orientation_gap": 0.00015488865357692524,
+        "coherence_ratio_summary": {
+          "count": 6,
+          "min": 0.58989809418562,
+          "max": 0.590319474845473,
+          "mean": 0.5900689243687097,
+          "median": 0.5900221701178261
+        },
+        "purity_summary": {
+          "count": 6,
+          "min": 0.575078979471124,
+          "max": 0.576233579270285,
+          "mean": 0.5754959908862104,
+          "median": 0.5753532973074797
+        },
+        "side_lengths": [
+          0.1,
+          0.16,
+          0.22
+        ],
+        "patch_class": "insufficient"
+      },
+      "(+0.00,+0.20)": {
+        "fit": {
+          "slope": null,
+          "r2": null,
+          "count": 0
+        },
+        "count_total": 6,
+        "count_trusted": 0,
+        "count_excluded": 6,
+        "mean_abs_aligned_holonomy_gap": null,
+        "mean_abs_orientation_gap": null,
+        "coherence_ratio_summary": {
+          "count": 6,
+          "min": 0.5856600555618579,
+          "max": 0.5869692781600861,
+          "mean": 0.5862516562465525,
+          "median": 0.5861786456461743
+        },
+        "purity_summary": {
+          "count": 6,
+          "min": 0.5729856416617511,
+          "max": 0.5735400201567218,
+          "mean": 0.5732536073961417,
+          "median": 0.5732353070305958
+        },
+        "side_lengths": [
+          0.1,
+          0.16,
+          0.22
+        ],
+        "patch_class": "insufficient"
+      }
+    },
+    "switch_verdict": "weak_control"
+  },
+  "notes": [
+    "Phase 14 replaces the discrete patch-family atlas summary with a smoothed local field built from generator-driven minimal plaquettes.",
+    "The field is estimated from aligned local \u03c7 = \u0394R / \u0394\u03a6_mix values after a per-point holonomy floor and robust clipping.",
+    "This is more local than the patch atlas, but still not a final closed-form derivation from the nonlinear graph rule."
+  ]
+}

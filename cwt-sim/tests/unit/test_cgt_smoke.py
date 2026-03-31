@@ -6,9 +6,13 @@ and phase-alignment helpers.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
+from cwt.cgt.analysis.phase13_analysis import Phase13Config, phase13_payload
+from cwt.cgt.analysis.phase14_analysis import Phase14Config, phase14_payload
 from cwt.cgt.benchmarks import BENCHMARKS, get_benchmark
 from cwt.cgt.continuation import build_branch_atlas
 from cwt.cgt.models import BranchState, ScanConfig
@@ -20,11 +24,11 @@ from cwt.geometry.mixed_state import phase_alignment_sign, unwrap_phase_sequence
 # a) Benchmark construction
 # ---------------------------------------------------------------------------
 
-BENCHMARK_IDS = ['benchmark_a', 'benchmark_b', 'benchmark_c', 'benchmark_d', 'benchmark_f']
+BENCHMARK_IDS = ["benchmark_a", "benchmark_b", "benchmark_c", "benchmark_d", "benchmark_f"]
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize('benchmark_id', BENCHMARK_IDS)
+@pytest.mark.parametrize("benchmark_id", BENCHMARK_IDS)
 def test_benchmark_instantiation(benchmark_id: str) -> None:
     """get_benchmark returns a BenchmarkDefinition for every known benchmark."""
     benchmark = get_benchmark(benchmark_id)
@@ -34,7 +38,7 @@ def test_benchmark_instantiation(benchmark_id: str) -> None:
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize('benchmark_id', BENCHMARK_IDS)
+@pytest.mark.parametrize("benchmark_id", BENCHMARK_IDS)
 def test_branch_state_fn_returns_valid_state(benchmark_id: str) -> None:
     """branch_state_fn(0.5, 0.5) returns a BranchState with valid p, theta, kernel."""
     benchmark = get_benchmark(benchmark_id)
@@ -64,42 +68,43 @@ def test_branch_state_fn_returns_valid_state(benchmark_id: str) -> None:
 def test_benchmark_known_key_error() -> None:
     """get_benchmark raises KeyError for an unknown benchmark id."""
     with pytest.raises(KeyError):
-        get_benchmark('benchmark_unknown_xyz')
+        get_benchmark("benchmark_unknown_xyz")
 
 
 # ---------------------------------------------------------------------------
 # b) Benchmark A scan produces expected keys
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.unit
 def test_benchmark_a_scan_keys(tmp_path: pytest.TempPathFactory) -> None:
     """run_benchmark_scan returns a dict with all required top-level keys."""
     config = ScanConfig(mesh=5)
-    result = run_benchmark_scan('benchmark_a', output_root=tmp_path, config=config)
+    result = run_benchmark_scan("benchmark_a", output_root=tmp_path, config=config)
 
     required_keys = {
-        'benchmark',
-        'grid_u',
-        'grid_v',
-        'metric_trace',
-        'curvature',
+        "benchmark",
+        "grid_u",
+        "grid_v",
+        "metric_trace",
+        "curvature",
     }
     for key in required_keys:
         assert key in result, f"Missing key in scan result: {key!r}"
 
-    assert result['benchmark'] == 'benchmark_a'
-    assert len(result['grid_u']) == 5
-    assert len(result['grid_v']) == 5
+    assert result["benchmark"] == "benchmark_a"
+    assert len(result["grid_u"]) == 5
+    assert len(result["grid_v"]) == 5
 
 
 @pytest.mark.unit
 def test_benchmark_a_scan_output_file(tmp_path: pytest.TempPathFactory) -> None:
     """run_benchmark_scan writes a JSON file to the expected location."""
     config = ScanConfig(mesh=5)
-    run_benchmark_scan('benchmark_a', output_root=tmp_path, config=config)
+    run_benchmark_scan("benchmark_a", output_root=tmp_path, config=config)
 
-    benchmark = get_benchmark('benchmark_a')
-    output_file = tmp_path / benchmark.slug / f'{benchmark.benchmark_id}_scan.json'
+    benchmark = get_benchmark("benchmark_a")
+    output_file = tmp_path / benchmark.slug / f"{benchmark.benchmark_id}_scan.json"
     assert output_file.exists(), f"Expected output file not found: {output_file}"
     assert output_file.stat().st_size > 0
 
@@ -108,10 +113,11 @@ def test_benchmark_a_scan_output_file(tmp_path: pytest.TempPathFactory) -> None:
 # c) Benchmark F branch atlas has ambiguous points
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.unit
 def test_benchmark_f_atlas_has_ambiguous_points() -> None:
     """build_branch_atlas for benchmark_f produces ambiguous tiles by construction."""
-    benchmark = get_benchmark('benchmark_f')
+    benchmark = get_benchmark("benchmark_f")
     mesh = 9
     grid_u = np.linspace(benchmark.control_bounds[0][0], benchmark.control_bounds[0][1], mesh)
     grid_v = np.linspace(benchmark.control_bounds[1][0], benchmark.control_bounds[1][1], mesh)
@@ -119,8 +125,8 @@ def test_benchmark_f_atlas_has_ambiguous_points() -> None:
 
     atlas = build_branch_atlas(benchmark, grid_u, grid_v, config)
 
-    assert 'ambiguous_map' in atlas
-    ambiguous_map = atlas['ambiguous_map']
+    assert "ambiguous_map" in atlas
+    ambiguous_map = atlas["ambiguous_map"]
     ambiguity_count = sum(ambiguous_map[i][j] for i in range(mesh) for j in range(mesh))
 
     assert ambiguity_count > 0, (
@@ -132,6 +138,7 @@ def test_benchmark_f_atlas_has_ambiguous_points() -> None:
 # ---------------------------------------------------------------------------
 # d) Phase alignment helpers
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 def test_unwrap_phase_sequence_monotone() -> None:
@@ -180,7 +187,53 @@ def test_phase_alignment_sign_opposite_direction() -> None:
 @pytest.mark.unit
 def test_phase_alignment_sign_all_nan() -> None:
     """phase_alignment_sign falls back to +1.0 when no finite overlap exists."""
-    reference = [float('nan'), float('nan')]
-    target = [float('nan'), float('nan')]
+    reference = [float("nan"), float("nan")]
+    target = [float("nan"), float("nan")]
     sign = phase_alignment_sign(reference, target)
     assert sign == 1.0
+
+
+@pytest.mark.unit
+def test_phase13_smoke(tmp_path: Path) -> None:
+    payload = phase13_payload(
+        output_root=tmp_path,
+        reports_dir=tmp_path / "reports",
+        phase13_config=Phase13Config(
+            benchmark_ids=("benchmark_c",),
+            benchmark_focus="benchmark_c",
+            scan_mesh=5,
+            dephasing_values=(0.0, 0.30),
+        ),
+    )
+    assert "benchmark_c" in payload["benchmark_summaries"]
+    assert payload["benchmark_summaries"]["benchmark_c"]["benchmark"] == "benchmark_c"
+
+
+@pytest.mark.unit
+def test_phase14_smoke(tmp_path: Path) -> None:
+    phase13_payload(
+        output_root=tmp_path,
+        reports_dir=tmp_path / "reports",
+        phase13_config=Phase13Config(
+            benchmark_ids=("benchmark_c",),
+            benchmark_focus="benchmark_c",
+            scan_mesh=5,
+            dephasing_values=(0.0, 0.30),
+        ),
+    )
+    payload = phase14_payload(
+        output_root=tmp_path,
+        reports_dir=tmp_path / "reports",
+        phase14_config=Phase14Config(
+            benchmark_ids=("benchmark_c",),
+            benchmark_focus="benchmark_c",
+            scan_mesh=5,
+            dephasing_values=(0.0, 0.30),
+        ),
+    )
+    assert "benchmark_c" in payload["benchmark_summaries"]
+    assert payload["benchmark_summaries"]["benchmark_c"]["benchmark"] == "benchmark_c"
+    bench_payload = payload["benchmark_payloads"]["benchmark_c"]
+    assert bench_payload["phase13_reference"]["available"] is True
+    assert bench_payload["phase13_reference"]["switch_by_center"]
+    assert bench_payload["switch_level"]["sampled_centers"]
