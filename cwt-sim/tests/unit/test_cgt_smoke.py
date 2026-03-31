@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from cwt.cgt.analysis.phase13_analysis import Phase13Config, phase13_payload
 from cwt.cgt.analysis.phase14_analysis import Phase14Config, phase14_payload
 from cwt.cgt.benchmarks import BENCHMARKS, get_benchmark
 from cwt.cgt.continuation import build_branch_atlas
@@ -190,9 +191,26 @@ def test_phase_alignment_sign_all_nan() -> None:
 
 
 @pytest.mark.unit
+def test_phase13_smoke(tmp_path: Path) -> None:
+    payload = phase13_payload(
+        output_root=tmp_path,
+        reports_dir=tmp_path / 'reports',
+        phase13_config=Phase13Config(
+            benchmark_ids=('benchmark_c',),
+            benchmark_focus='benchmark_c',
+            scan_mesh=5,
+            dephasing_values=(0.0, 0.30),
+        ),
+    )
+    assert 'benchmark_c' in payload['benchmark_summaries']
+    assert payload['benchmark_summaries']['benchmark_c']['benchmark'] == 'benchmark_c'
+
+
+@pytest.mark.unit
 def test_phase14_smoke(tmp_path: Path) -> None:
     payload = phase14_payload(
         output_root=tmp_path,
+        reports_dir=tmp_path / 'reports',
         phase14_config=Phase14Config(
             benchmark_ids=('benchmark_c',),
             benchmark_focus='benchmark_c',

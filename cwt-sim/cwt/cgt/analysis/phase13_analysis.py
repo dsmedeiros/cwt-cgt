@@ -472,7 +472,13 @@ def _benchmark_payload(benchmark_id: str, family: LoopFamilySpec, dephasing_valu
     return payload
 
 
-def phase13_payload(output_root: Path, phase13_config: Phase13Config | None = None, scan_config: ScanConfig | None = None, lindblad_config: LindbladConfig | None = None) -> dict:
+def phase13_payload(
+    output_root: Path,
+    phase13_config: Phase13Config | None = None,
+    scan_config: ScanConfig | None = None,
+    lindblad_config: LindbladConfig | None = None,
+    reports_dir: Path | None = None,
+) -> dict:
     cfg = phase13_config or Phase13Config()
     scan_cfg = scan_config or ScanConfig(mesh=cfg.scan_mesh)
     lind_cfg = lindblad_config or LindbladConfig(scan_mesh=cfg.scan_mesh, dephasing_values=cfg.dephasing_values, coherence_switch_floor=cfg.coherence_switch_floor)
@@ -539,9 +545,9 @@ def phase13_payload(output_root: Path, phase13_config: Phase13Config | None = No
             'The atlas is estimated from the continuous-time Lindblad-style graph-local generator, not from direct response interpolation.',
         ],
     }
-    reports_dir = output_root.parents[1] / '05_reports'
-    reports_dir.mkdir(parents=True, exist_ok=True)
-    (reports_dir / 'phase13_summary.json').write_text(json.dumps(_sanitize_for_json(suite), indent=2))
+    suite_reports_dir = reports_dir if reports_dir is not None else (output_root / '05_reports')
+    suite_reports_dir.mkdir(parents=True, exist_ok=True)
+    (suite_reports_dir / 'phase13_summary.json').write_text(json.dumps(_sanitize_for_json(suite), indent=2))
     return suite
 
 
@@ -702,7 +708,7 @@ def phase13_report(output_root: Path, payload: dict) -> dict[str, Path]:
     report_path.write_text('\n'.join(md_lines))
 
     acceptance_lines = [
-        '# CWT-CGT benchmark acceptance report v7',
+        '# CWT-CGT benchmark acceptance report v8',
         '',
         'This version reports the mixed-state lane with a local susceptibility atlas rather than a single global noisy slope.',
         '',
@@ -717,8 +723,8 @@ def phase13_report(output_root: Path, payload: dict) -> dict[str, Path]:
         acceptance_lines.append(f"- Locality gap: {row['locality_gap']}")
         acceptance_lines.append(f"- Trusted / excluded pairs: {row['trusted_pair_count']} / {row['excluded_pair_count']}")
         acceptance_lines.append('')
-    acceptance_path = reports_dir / 'CWT-CGT_Benchmark_Acceptance_Report_v7.md'
+    acceptance_path = reports_dir / 'CWT-CGT_Benchmark_Acceptance_Report_v8.md'
     acceptance_path.write_text('\n'.join(acceptance_lines))
     plot_paths['phase13_report'] = report_path
-    plot_paths['acceptance_report_v7'] = acceptance_path
+    plot_paths['acceptance_report_v8'] = acceptance_path
     return plot_paths

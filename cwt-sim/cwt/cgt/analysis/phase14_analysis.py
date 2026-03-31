@@ -332,8 +332,7 @@ def _sample_smoothed_field(field_payload: dict, centers: Iterable[tuple[float, f
     if not points:
         return {}
     coords = np.asarray([[point['u'], point['v']] for point in points], dtype=float)
-    raw_chi = np.asarray([point['chi'] for point in points], dtype=float)
-    clipped = _robust_clip(raw_chi, mad_scale=4.0)
+    clipped = np.asarray([point['chi'] for point in points], dtype=float)
     abs_gaps = np.asarray([point['abs_gap'] for point in points], dtype=float)
     sigma = float(field_payload['sigma'])
     results: dict[str, dict] = {}
@@ -472,7 +471,13 @@ def _benchmark_payload(
     return payload
 
 
-def phase14_payload(output_root: Path, phase14_config: Phase14Config | None = None, scan_config: ScanConfig | None = None, lindblad_config: LindbladConfig | None = None) -> dict:
+def phase14_payload(
+    output_root: Path,
+    phase14_config: Phase14Config | None = None,
+    scan_config: ScanConfig | None = None,
+    lindblad_config: LindbladConfig | None = None,
+    reports_dir: Path | None = None,
+) -> dict:
     cfg = phase14_config or Phase14Config()
     scan_cfg = scan_config or ScanConfig(mesh=cfg.scan_mesh)
     lind_cfg = lindblad_config or LindbladConfig(scan_mesh=cfg.scan_mesh, dephasing_values=cfg.dephasing_values)
@@ -520,9 +525,9 @@ def phase14_payload(output_root: Path, phase14_config: Phase14Config | None = No
             'The field is derived from minimal plaquettes of the Lindblad-style generator, which is more local than the Phase 13 patch-family fit.',
         ],
     }
-    reports_dir = output_root.parents[1] / '05_reports'
-    reports_dir.mkdir(parents=True, exist_ok=True)
-    (reports_dir / 'phase14_summary.json').write_text(json.dumps(_sanitize_for_json(suite), indent=2))
+    suite_reports_dir = reports_dir if reports_dir is not None else (output_root / '05_reports')
+    suite_reports_dir.mkdir(parents=True, exist_ok=True)
+    (suite_reports_dir / 'phase14_summary.json').write_text(json.dumps(_sanitize_for_json(suite), indent=2))
     return suite
 
 
