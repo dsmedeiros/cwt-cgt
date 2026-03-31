@@ -13,7 +13,7 @@ import pytest
 
 from cwt.cgt.analysis.phase13_analysis import Phase13Config, phase13_payload
 from cwt.cgt.analysis.phase14_analysis import Phase14Config, phase14_payload
-from cwt.cgt.analysis.phase15_analysis import Phase15Config, phase15_payload
+from cwt.cgt.analysis.phase15_analysis import Phase15Config, phase15_payload, phase15_report
 from cwt.cgt.benchmarks import get_benchmark
 from cwt.cgt.continuation import build_branch_atlas
 from cwt.cgt.models import BranchState, ScanConfig
@@ -253,7 +253,32 @@ def test_phase15_smoke(tmp_path: Path) -> None:
         ),
     )
     assert "benchmark_c" in payload["benchmark_summaries"]
-    assert payload["benchmark_summaries"]["benchmark_c"]["benchmark"] == "benchmark_c"
+    summary = payload["benchmark_summaries"]["benchmark_c"]
+    assert summary["benchmark"] == "benchmark_c"
+    assert summary["valid_cell_count"] > 0, "expected at least one valid cell"
+    assert summary["structural_amplitude"] > 0.0, "structural amplitude should be positive"
+    bench = payload["benchmark_payloads"]["benchmark_c"]
+    assert bench["tangent_field"]["raw_point_count"] > 0
+
+
+@pytest.mark.unit
+def test_phase15_report_respects_reports_dir(tmp_path: Path) -> None:
+    reports_dir = tmp_path / "reports"
+    payload = phase15_payload(
+        output_root=tmp_path,
+        reports_dir=reports_dir,
+        phase15_config=Phase15Config(
+            benchmark_ids=("benchmark_c",),
+            benchmark_focus="benchmark_c",
+            scan_mesh=5,
+            dense_mesh_focus=7,
+            focus_dephasing_values=(0.0, 0.30),
+        ),
+    )
+    plots = phase15_report(output_root=tmp_path, payload=payload, reports_dir=reports_dir)
+    report_path = plots["phase15_report"]
+    assert report_path.exists()
+    assert report_path.parent == reports_dir
 
 
 @pytest.mark.unit

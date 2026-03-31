@@ -73,12 +73,27 @@ class DensityCache:
         return self._cache[key]
 
 
-def _load_phase14_reference(output_root: Path, benchmark_id: str) -> dict | None:
+def _load_phase14_reference(
+    output_root: Path,
+    benchmark_id: str,
+    expected_state_dimension: int | None = None,
+) -> dict | None:
     benchmark = get_benchmark(benchmark_id)
     path = output_root / benchmark.slug / f'{benchmark_id}_phase14_field.json'
     if not path.exists():
         return None
-    return json.loads(path.read_text())
+    payload = json.loads(path.read_text())
+    model_sig = payload.get('model_signature', {})
+    ref_dim = model_sig.get('state_dimension')
+    if (
+        expected_state_dimension is not None
+        and ref_dim is not None
+        and int(ref_dim) != int(expected_state_dimension)
+    ):
+        return None
+    if benchmark_id == 'benchmark_f' and ref_dim is None:
+        return None
+    return payload
 
 
 def _build_context(benchmark_id: str, scan_mesh: int) -> dict:
@@ -337,6 +352,9 @@ def _suite_verdict(
     if phase14_switch_verdict is not None:
         return str(phase14_switch_verdict)
     if benchmark_id == 'benchmark_b':
+        weaker_floor = max(1.0, 0.5 * structural_amplitude_floor)
+        if structural_amplitude >= weaker_floor and zero_crossing_count > 0:
+            return 'generator_structured_control_candidate'
         return 'weak_control'
     return 'null_like'
 
@@ -351,7 +369,12 @@ def _benchmark_phase15_payload(
 ) -> dict:
     benchmark = get_benchmark(benchmark_id)
     context = _build_context(benchmark_id=benchmark_id, scan_mesh=phase15_config.scan_mesh)
-    phase14_reference = _load_phase14_reference(output_root=output_root, benchmark_id=benchmark_id)
+    example_state = context['atlas']['chosen_states'][0][0]
+    phase14_reference = _load_phase14_reference(
+        output_root=output_root,
+        benchmark_id=benchmark_id,
+        expected_state_dimension=int(example_state.p.size),
+    )
     if phase14_reference is not None:
         switch_gamma = float(phase14_reference['recommended_switch_gamma'])
     else:
@@ -730,9 +753,13 @@ def _plot_line(path: Path, x: np.ndarray, y: np.ndarray, title: str, ylabel: str
     plt.close()
 
 
-def phase15_report(output_root: Path, payload: dict) -> dict[str, Path]:
-    project_root = output_root.parents[1]
-    reports_dir = project_root / '05_reports'
+def phase15_report(
+    output_root: Path,
+    payload: dict,
+    reports_dir: Path | None = None,
+) -> dict[str, Path]:
+    suite_reports_dir = reports_dir if reports_dir is not None else output_root / '05_reports'
+    reports_dir = suite_reports_dir
     plots_root = reports_dir / 'plots' / 'phase15_tangent_field'
     reports_dir.mkdir(parents=True, exist_ok=True)
     plot_paths: dict[str, Path] = {}

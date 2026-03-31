@@ -33,7 +33,11 @@ def main() -> None:
         phase15_config=Phase15Config(),
         reports_dir=args.reports_dir,
     )
-    plots = phase15_report(output_root=args.output_root, payload=payload)
+    plots = phase15_report(
+        output_root=args.output_root,
+        payload=payload,
+        reports_dir=args.reports_dir,
+    )
     summary_path = str(args.reports_dir / "phase15_summary.json")
     print(
         json.dumps(
