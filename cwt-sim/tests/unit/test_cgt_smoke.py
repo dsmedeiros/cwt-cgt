@@ -21,6 +21,7 @@ from cwt.cgt.analysis.phase15_analysis import (
 )
 from cwt.cgt.benchmarks import get_benchmark
 from cwt.cgt.continuation import build_branch_atlas
+from cwt.cgt.loop_protocols import _secondary_value
 from cwt.cgt.models import BranchState, ScanConfig
 from cwt.cgt.open_system import observable_operator
 from cwt.cgt.runner import run_benchmark_scan
@@ -320,6 +321,16 @@ def test_observable_operator_index_observables_fallback_on_small_state() -> None
 
     np.testing.assert_allclose(op_p4, np.eye(state.p.size, dtype=complex))
     np.testing.assert_allclose(op_p5, np.eye(state.p.size, dtype=complex))
+
+
+@pytest.mark.unit
+def test_loop_secondary_value_supports_edge_current_23() -> None:
+    benchmark = get_benchmark("benchmark_b")
+    state = benchmark.branch_state_fn(0.1, 0.0)
+
+    secondary_value = _secondary_value(benchmark, state)
+    assert secondary_value is not None
+    assert np.isfinite(secondary_value)
 
 
 @pytest.mark.unit
