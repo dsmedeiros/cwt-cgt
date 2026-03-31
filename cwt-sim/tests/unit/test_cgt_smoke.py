@@ -13,12 +13,12 @@ import pytest
 
 from cwt.cgt.analysis.phase13_analysis import Phase13Config, phase13_payload
 from cwt.cgt.analysis.phase14_analysis import Phase14Config, phase14_payload
-from cwt.cgt.benchmarks import BENCHMARKS, get_benchmark
+from cwt.cgt.analysis.phase15_analysis import Phase15Config, phase15_payload
+from cwt.cgt.benchmarks import get_benchmark
 from cwt.cgt.continuation import build_branch_atlas
 from cwt.cgt.models import BranchState, ScanConfig
 from cwt.cgt.runner import run_benchmark_scan
 from cwt.geometry.mixed_state import phase_alignment_sign, unwrap_phase_sequence
-
 
 # ---------------------------------------------------------------------------
 # a) Benchmark construction
@@ -237,3 +237,39 @@ def test_phase14_smoke(tmp_path: Path) -> None:
     assert bench_payload["phase13_reference"]["available"] is True
     assert bench_payload["phase13_reference"]["switch_by_center"]
     assert bench_payload["switch_level"]["sampled_centers"]
+
+
+@pytest.mark.unit
+def test_phase15_smoke(tmp_path: Path) -> None:
+    payload = phase15_payload(
+        output_root=tmp_path,
+        phase15_config=Phase15Config(
+            benchmark_ids=("benchmark_c",),
+            benchmark_focus="benchmark_c",
+            scan_mesh=5,
+            dense_mesh_focus=7,
+            focus_dephasing_values=(0.0, 0.30),
+        ),
+    )
+    assert "benchmark_c" in payload["benchmark_summaries"]
+    assert payload["benchmark_summaries"]["benchmark_c"]["benchmark"] == "benchmark_c"
+
+
+@pytest.mark.unit
+def test_phase15_nan_sanitization(tmp_path: Path) -> None:
+    """Benchmark F produces untrusted cells with NaN; verify JSON is clean."""
+    import json
+
+    payload = phase15_payload(
+        output_root=tmp_path,
+        phase15_config=Phase15Config(
+            benchmark_ids=("benchmark_f",),
+            benchmark_focus="benchmark_f",
+            scan_mesh=5,
+            dense_mesh_focus=7,
+            focus_dephasing_values=(0.0, 0.30),
+        ),
+    )
+    text = json.dumps(payload)
+    assert "NaN" not in text
+    assert "Infinity" not in text

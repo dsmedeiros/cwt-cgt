@@ -133,25 +133,35 @@ def coherence_ratio(noisy_rho: np.ndarray, reference_state) -> float:
     return float(offdiag_norm(noisy_rho) / denom)
 
 
-def observable_operator(benchmark, state) -> np.ndarray:
+def observable_operator(benchmark, state, observable_name: str | None = None) -> np.ndarray:
     n = state.p.size
-    if benchmark.primary_observable == "final_p1":
+    name = observable_name or benchmark.primary_observable
+    if name == "final_p1":
         op = np.zeros((n, n), dtype=complex)
         op[0, 0] = 1.0
         return op
-    if benchmark.primary_observable == "final_p3":
+    if name == "final_p3":
         op = np.zeros((n, n), dtype=complex)
         op[2, 2] = 1.0
         return op
-    if benchmark.primary_observable == "final_p4":
+    if name == "final_p4":
         op = np.zeros((n, n), dtype=complex)
         op[3, 3] = 1.0
         return op
-    if benchmark.primary_observable == "mean_position":
+    if name == "final_p5":
+        op = np.zeros((n, n), dtype=complex)
+        op[4, 4] = 1.0
+        return op
+    if name == "mean_position":
         return np.diag(np.arange(1, n + 1, dtype=float)).astype(complex)
-    if benchmark.primary_observable == "excess_circulation" and n == 3:
+    if name == "excess_circulation" and n == 3:
         return np.array(
             [[0.0, 1j, -1j], [-1j, 0.0, 1j], [1j, -1j, 0.0]],
             dtype=complex,
         )
+    if name == "edge_current_23" and n >= 3:
+        op = np.zeros((n, n), dtype=complex)
+        op[1, 2] = 1j
+        op[2, 1] = -1j
+        return op
     return np.eye(n, dtype=complex)
