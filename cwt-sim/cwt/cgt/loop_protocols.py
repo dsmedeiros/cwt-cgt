@@ -95,6 +95,10 @@ def _secondary_value(benchmark: BenchmarkDefinition, final_state) -> float | Non
         return float(final_state.p[0])
     if benchmark.secondary_observable == "final_p5":
         return float(final_state.p[4])
+    if benchmark.secondary_observable == "edge_current_23" and final_state.p.size >= 3:
+        magnitude = math.sqrt(float(final_state.p[1] * final_state.p[2]))
+        phase_delta = float(final_state.theta[2] - final_state.theta[1])
+        return float(2.0 * magnitude * math.sin(phase_delta))
     return None
 
 

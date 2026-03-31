@@ -447,6 +447,9 @@ def _benchmark_payload(
         'backend': 'lindblad',
         'benchmark': benchmark_id,
         'slug': benchmark.slug,
+        'model_signature': {
+            'state_dimension': int(context['atlas']['chosen_states'][0][0].p.size),
+        },
         'description': benchmark.description,
         'dephasing_values': [float(x) for x in phase14_config.dephasing_values],
         'alignment': {'reference': 'mixed_curvature_area_at_gamma0', 'sign': float(sign)},

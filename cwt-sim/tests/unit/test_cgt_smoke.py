@@ -13,12 +13,19 @@ import pytest
 
 from cwt.cgt.analysis.phase13_analysis import Phase13Config, phase13_payload
 from cwt.cgt.analysis.phase14_analysis import Phase14Config, phase14_payload
-from cwt.cgt.benchmarks import BENCHMARKS, get_benchmark
+from cwt.cgt.analysis.phase15_analysis import (
+    Phase15Config,
+    _suite_verdict,
+    phase15_payload,
+    phase15_report,
+)
+from cwt.cgt.benchmarks import get_benchmark
 from cwt.cgt.continuation import build_branch_atlas
+from cwt.cgt.loop_protocols import _secondary_value
 from cwt.cgt.models import BranchState, ScanConfig
+from cwt.cgt.open_system import observable_operator
 from cwt.cgt.runner import run_benchmark_scan
 from cwt.geometry.mixed_state import phase_alignment_sign, unwrap_phase_sequence
-
 
 # ---------------------------------------------------------------------------
 # a) Benchmark construction
@@ -237,3 +244,110 @@ def test_phase14_smoke(tmp_path: Path) -> None:
     assert bench_payload["phase13_reference"]["available"] is True
     assert bench_payload["phase13_reference"]["switch_by_center"]
     assert bench_payload["switch_level"]["sampled_centers"]
+
+
+@pytest.mark.unit
+def test_phase15_smoke(tmp_path: Path) -> None:
+    payload = phase15_payload(
+        output_root=tmp_path,
+        phase15_config=Phase15Config(
+            benchmark_ids=("benchmark_c",),
+            benchmark_focus="benchmark_c",
+            scan_mesh=5,
+            dense_mesh_focus=7,
+            focus_dephasing_values=(0.0, 0.30),
+        ),
+    )
+    assert "benchmark_c" in payload["benchmark_summaries"]
+    summary = payload["benchmark_summaries"]["benchmark_c"]
+    assert summary["benchmark"] == "benchmark_c"
+    assert summary["valid_cell_count"] > 0, "expected at least one valid cell"
+    assert summary["structural_amplitude"] > 0.0, "structural amplitude should be positive"
+    bench = payload["benchmark_payloads"]["benchmark_c"]
+    assert bench["tangent_field"]["raw_point_count"] > 0
+
+
+@pytest.mark.unit
+def test_phase15_report_respects_reports_dir(tmp_path: Path) -> None:
+    reports_dir = tmp_path / "reports"
+    payload = phase15_payload(
+        output_root=tmp_path,
+        reports_dir=reports_dir,
+        phase15_config=Phase15Config(
+            benchmark_ids=("benchmark_c",),
+            benchmark_focus="benchmark_c",
+            scan_mesh=5,
+            dense_mesh_focus=7,
+            focus_dephasing_values=(0.0, 0.30),
+        ),
+    )
+    plots = phase15_report(output_root=tmp_path, payload=payload, reports_dir=reports_dir)
+    report_path = plots["phase15_report"]
+    assert report_path.exists()
+    assert report_path.parent == reports_dir
+
+
+@pytest.mark.unit
+def test_phase15_suite_verdict_records_benchmark_b_signal_strength() -> None:
+    weak = _suite_verdict(
+        benchmark_id="benchmark_b",
+        phase14_switch_verdict=None,
+        structural_amplitude=0.5,
+        zero_crossing_count=0,
+        structural_amplitude_floor=5.0,
+    )
+    assert weak.startswith("weak_control_amp_")
+    assert weak.endswith("_zc_0")
+
+    structured = _suite_verdict(
+        benchmark_id="benchmark_b",
+        phase14_switch_verdict=None,
+        structural_amplitude=3.0,
+        zero_crossing_count=2,
+        structural_amplitude_floor=5.0,
+    )
+    assert structured.startswith("generator_structured_control_candidate_amp_")
+    assert structured.endswith("_zc_2")
+
+
+@pytest.mark.unit
+def test_observable_operator_index_observables_fallback_on_small_state() -> None:
+    benchmark = get_benchmark("benchmark_f")
+    state = benchmark.branch_state_fn(0.5, 0.5)
+    assert state.p.size < 4
+
+    op_p4 = observable_operator(benchmark, state, observable_name="final_p4")
+    op_p5 = observable_operator(benchmark, state, observable_name="final_p5")
+
+    np.testing.assert_allclose(op_p4, np.eye(state.p.size, dtype=complex))
+    np.testing.assert_allclose(op_p5, np.eye(state.p.size, dtype=complex))
+
+
+@pytest.mark.unit
+def test_loop_secondary_value_supports_edge_current_23() -> None:
+    benchmark = get_benchmark("benchmark_b")
+    state = benchmark.branch_state_fn(0.1, 0.0)
+
+    secondary_value = _secondary_value(benchmark, state)
+    assert secondary_value is not None
+    assert np.isfinite(secondary_value)
+
+
+@pytest.mark.unit
+def test_phase15_nan_sanitization(tmp_path: Path) -> None:
+    """Benchmark F produces untrusted cells with NaN; verify JSON is clean."""
+    import json
+
+    payload = phase15_payload(
+        output_root=tmp_path,
+        phase15_config=Phase15Config(
+            benchmark_ids=("benchmark_f",),
+            benchmark_focus="benchmark_f",
+            scan_mesh=5,
+            dense_mesh_focus=7,
+            focus_dephasing_values=(0.0, 0.30),
+        ),
+    )
+    text = json.dumps(payload)
+    assert "NaN" not in text
+    assert "Infinity" not in text
