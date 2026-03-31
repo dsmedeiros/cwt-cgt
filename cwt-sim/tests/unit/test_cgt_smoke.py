@@ -13,7 +13,12 @@ import pytest
 
 from cwt.cgt.analysis.phase13_analysis import Phase13Config, phase13_payload
 from cwt.cgt.analysis.phase14_analysis import Phase14Config, phase14_payload
-from cwt.cgt.analysis.phase15_analysis import Phase15Config, phase15_payload, phase15_report
+from cwt.cgt.analysis.phase15_analysis import (
+    Phase15Config,
+    _suite_verdict,
+    phase15_payload,
+    phase15_report,
+)
 from cwt.cgt.benchmarks import get_benchmark
 from cwt.cgt.continuation import build_branch_atlas
 from cwt.cgt.models import BranchState, ScanConfig
@@ -279,6 +284,29 @@ def test_phase15_report_respects_reports_dir(tmp_path: Path) -> None:
     report_path = plots["phase15_report"]
     assert report_path.exists()
     assert report_path.parent == reports_dir
+
+
+@pytest.mark.unit
+def test_phase15_suite_verdict_records_benchmark_b_signal_strength() -> None:
+    weak = _suite_verdict(
+        benchmark_id="benchmark_b",
+        phase14_switch_verdict=None,
+        structural_amplitude=0.5,
+        zero_crossing_count=0,
+        structural_amplitude_floor=5.0,
+    )
+    assert weak.startswith("weak_control_amp_")
+    assert weak.endswith("_zc_0")
+
+    structured = _suite_verdict(
+        benchmark_id="benchmark_b",
+        phase14_switch_verdict=None,
+        structural_amplitude=3.0,
+        zero_crossing_count=2,
+        structural_amplitude_floor=5.0,
+    )
+    assert structured.startswith("generator_structured_control_candidate_amp_")
+    assert structured.endswith("_zc_2")
 
 
 @pytest.mark.unit

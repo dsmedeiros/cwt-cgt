@@ -353,9 +353,10 @@ def _suite_verdict(
         return str(phase14_switch_verdict)
     if benchmark_id == 'benchmark_b':
         weaker_floor = max(1.0, 0.5 * structural_amplitude_floor)
+        amp_tag = f'amp_{structural_amplitude:.3f}_zc_{int(zero_crossing_count)}'
         if structural_amplitude >= weaker_floor and zero_crossing_count > 0:
-            return 'generator_structured_control_candidate'
-        return 'weak_control'
+            return f'generator_structured_control_candidate_{amp_tag}'
+        return f'weak_control_{amp_tag}'
     return 'null_like'
 
 
