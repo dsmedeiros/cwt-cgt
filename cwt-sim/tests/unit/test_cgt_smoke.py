@@ -17,6 +17,7 @@ from cwt.cgt.analysis.phase15_analysis import Phase15Config, phase15_payload
 from cwt.cgt.benchmarks import get_benchmark
 from cwt.cgt.continuation import build_branch_atlas
 from cwt.cgt.models import BranchState, ScanConfig
+from cwt.cgt.open_system import observable_operator
 from cwt.cgt.runner import run_benchmark_scan
 from cwt.geometry.mixed_state import phase_alignment_sign, unwrap_phase_sequence
 
@@ -253,6 +254,19 @@ def test_phase15_smoke(tmp_path: Path) -> None:
     )
     assert "benchmark_c" in payload["benchmark_summaries"]
     assert payload["benchmark_summaries"]["benchmark_c"]["benchmark"] == "benchmark_c"
+
+
+@pytest.mark.unit
+def test_observable_operator_index_observables_fallback_on_small_state() -> None:
+    benchmark = get_benchmark("benchmark_f")
+    state = benchmark.branch_state_fn(0.5, 0.5)
+    assert state.p.size < 4
+
+    op_p4 = observable_operator(benchmark, state, observable_name="final_p4")
+    op_p5 = observable_operator(benchmark, state, observable_name="final_p5")
+
+    np.testing.assert_allclose(op_p4, np.eye(state.p.size, dtype=complex))
+    np.testing.assert_allclose(op_p5, np.eye(state.p.size, dtype=complex))
 
 
 @pytest.mark.unit

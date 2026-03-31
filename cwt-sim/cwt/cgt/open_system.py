@@ -144,11 +144,11 @@ def observable_operator(benchmark, state, observable_name: str | None = None) ->
         op = np.zeros((n, n), dtype=complex)
         op[2, 2] = 1.0
         return op
-    if name == "final_p4":
+    if name == "final_p4" and n >= 4:
         op = np.zeros((n, n), dtype=complex)
         op[3, 3] = 1.0
         return op
-    if name == "final_p5":
+    if name == "final_p5" and n >= 5:
         op = np.zeros((n, n), dtype=complex)
         op[4, 4] = 1.0
         return op
