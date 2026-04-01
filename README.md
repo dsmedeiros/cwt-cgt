@@ -1,5 +1,7 @@
 # Causal Web Theory & Geometric Tensor Toolkit
 
+**Author:** Dave Medeiros / Panoptic Systems
+
 A multi-language research sandbox for studying **Causal Web Theory (CWT)** and the associated **CWT Geometric Tensor (CGT)**. The repository couples a Python simulation package with an Electron + React desktop laboratory so that analytic experiments, automated sweeps, and operator-facing tooling can share the same configuration and persistence model.
 
 ## Table of contents
@@ -219,4 +221,4 @@ Install `requirements.test.txt` and `npm install` dependencies beforehand so the
 - `cwt-sim/README.md` – package-level reference covering modules, metrics, and developer tips.
 
 ## License and citation
-The simulation scaffolding ships with placeholder metadata in [`cwt-sim/LICENSE`](cwt-sim/LICENSE) and [`cwt-sim/CITATION.cff`](cwt-sim/CITATION.cff). Update these files with project-specific details before public release or academic dissemination.
+Copyright © 2025-2026 Dave Medeiros / Panoptic Systems. Licensed under the [Apache License 2.0](cwt-sim/LICENSE). See [`cwt-sim/CITATION.cff`](cwt-sim/CITATION.cff) for citation metadata.

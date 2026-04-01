@@ -1,5 +1,7 @@
 # CWT Lab Developer Guide
 
+**Author:** Dave Medeiros / Panoptic Systems
+
 CWT Lab is the Electron + React companion UI for the CWT calibration toolkit. This document captures the
 engineering workflows for installing dependencies, running the desktop shell during development, packaging
 for distribution, and extending the command catalogue.

@@ -1,5 +1,7 @@
 # Theory Pointers
 
+**Author:** Dave Medeiros / Panoptic Systems
+
 The full derivations and conceptual background live in the top-level [theory.md](../../theory.md) document. This note just acts as a waypoint and maps the major sections to the implementation modules inside `cwt-sim`.
 
 ## Section → Implementation map

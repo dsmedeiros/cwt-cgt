@@ -1,3 +1,7 @@
+**Author:** Dave Medeiros / Panoptic Systems
+
+---
+
 ## 1. Scope & Motivation
 
 Causal Web Theory (CWT) posits that observed dynamics emerge from strictly local propagation on a graph substrate with density-dependent delays. Three interacting layers capture distinct aspects of evolution:

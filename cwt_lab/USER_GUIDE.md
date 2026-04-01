@@ -1,5 +1,7 @@
 # CWT Lab – Operator Field Notes
 
+**Author:** Dave Medeiros / Panoptic Systems
+
 The lab’s renderer mirrors the phase-oriented layout described in the root-level [User Guide](../USER_GUIDE.md), but the desktop workspace also carries extra tooling intended for analysts who want fast feedback without leaving the Electron shell. These notes focus on the Baselines panel introduced in the 0.7 series and document how to read the alignment cues it emits.
 
 ## Baselines & Alignment

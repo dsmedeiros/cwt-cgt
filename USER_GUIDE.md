@@ -1,5 +1,7 @@
 # CWT Lab – User Guide
 
+**Author:** Dave Medeiros / Panoptic Systems
+
 Welcome to the Curvature Workflow Toolkit (CWT) Lab. This guide walks through each phase of the calibration
 journey, explains the telemetry terms that appear across the UI, and documents the built-in troubleshooting
 playbook.

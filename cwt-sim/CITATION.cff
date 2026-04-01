@@ -1,3 +1,10 @@
 cff-version: 1.2.0
-title: cwt-sim
-message: Please cite the cwt-sim project if you use this scaffold.
+title: "CWT-CGT: Causal Web Theory & Geometric Tensor Toolkit"
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Medeiros
+    given-names: Dave
+    affiliation: Panoptic Systems
+type: software
+license: Apache-2.0
+repository-code: "https://github.com/dsmedeiros/cwt-cgt"
