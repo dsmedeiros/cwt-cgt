@@ -19,6 +19,30 @@ from .continuation import continue_path_with_branch_ids
 from .models import BenchmarkDefinition, LoopConfig
 
 
+def _polygon_loop(
+    vertices: list[tuple[float, float]], orientation: str, steps_per_segment: int
+) -> list[tuple[float, float]]:
+    points = vertices if orientation == "ccw" else [vertices[0]] + list(reversed(vertices[1:]))
+    path: list[tuple[float, float]] = []
+    for idx in range(len(points)):
+        start = np.asarray(points[idx], dtype=float)
+        stop = np.asarray(points[(idx + 1) % len(points)], dtype=float)
+        for step in range(steps_per_segment):
+            point = start + (stop - start) * (step / steps_per_segment)
+            path.append((float(point[0]), float(point[1])))
+    path.append(path[0])
+    return path
+
+
+def _parametric_loop(
+    center: tuple[float, float], coords: list[tuple[float, float]], orientation: str
+) -> list[tuple[float, float]]:
+    seq = coords if orientation == "ccw" else list(reversed(coords))
+    path = [(float(center[0] + u), float(center[1] + v)) for u, v in seq]
+    path.append(path[0])
+    return path
+
+
 def _square_loop(
     center: tuple[float, float], side: float, orientation: str, steps_per_segment: int
 ) -> list[tuple[float, float]]:
@@ -38,6 +62,31 @@ def _square_loop(
     return path
 
 
+def _diamond_loop(
+    center: tuple[float, float], side: float, orientation: str, steps_per_segment: int
+) -> list[tuple[float, float]]:
+    u0, v0 = center
+    half = side / 2.0
+    vertices = [(u0, v0 - half), (u0 + half, v0), (u0, v0 + half), (u0 - half, v0)]
+    return _polygon_loop(vertices, orientation=orientation, steps_per_segment=steps_per_segment)
+
+
+def _regular_polygon_loop(
+    center: tuple[float, float],
+    side: float,
+    orientation: str,
+    steps_per_segment: int,
+    sides: int,
+    phase: float = 0.0,
+) -> list[tuple[float, float]]:
+    radius = side / 2.0
+    vertices = []
+    for idx in range(sides):
+        angle = phase + 2.0 * np.pi * idx / sides
+        vertices.append((center[0] + radius * math.cos(angle), center[1] + radius * math.sin(angle)))
+    return _polygon_loop(vertices, orientation=orientation, steps_per_segment=steps_per_segment)
+
+
 def _circle_loop(
     center: tuple[float, float], side: float, orientation: str, steps_per_segment: int
 ) -> list[tuple[float, float]]:
@@ -54,6 +103,66 @@ def _circle_loop(
     return path
 
 
+def _ellipse_loop(
+    center: tuple[float, float], side: float, orientation: str, steps_per_segment: int
+) -> list[tuple[float, float]]:
+    a = side / 2.0
+    b = 0.68 * a
+    samples = max(20, 4 * steps_per_segment)
+    coords = []
+    for idx in range(samples):
+        angle = 2.0 * np.pi * idx / samples
+        coords.append((a * math.cos(angle), b * math.sin(angle)))
+    return _parametric_loop(center, coords, orientation=orientation)
+
+
+def _superellipse_loop(
+    center: tuple[float, float],
+    side: float,
+    orientation: str,
+    steps_per_segment: int,
+    exponent: float,
+) -> list[tuple[float, float]]:
+    a = side / 2.0
+    b = side / 2.0
+    samples = max(24, 4 * steps_per_segment)
+    coords = []
+    for idx in range(samples):
+        angle = 2.0 * np.pi * idx / samples
+        c = math.cos(angle)
+        s = math.sin(angle)
+        u = a * math.copysign(abs(c) ** (2.0 / exponent), c)
+        v = b * math.copysign(abs(s) ** (2.0 / exponent), s)
+        coords.append((u, v))
+    return _parametric_loop(center, coords, orientation=orientation)
+
+
+def _stadium_loop(
+    center: tuple[float, float], side: float, orientation: str, steps_per_segment: int
+) -> list[tuple[float, float]]:
+    r = 0.18 * side
+    half_len = side / 2.0 - r
+    samples_arc = max(8, steps_per_segment)
+    coords = []
+    # bottom segment
+    for idx in range(steps_per_segment):
+        t = idx / steps_per_segment
+        coords.append((-half_len + 2.0 * half_len * t, -r))
+    # right arc
+    for idx in range(samples_arc):
+        ang = -np.pi / 2.0 + np.pi * idx / samples_arc
+        coords.append((half_len + r * math.cos(ang), r * math.sin(ang)))
+    # top segment
+    for idx in range(steps_per_segment):
+        t = idx / steps_per_segment
+        coords.append((half_len - 2.0 * half_len * t, r))
+    # left arc
+    for idx in range(samples_arc):
+        ang = np.pi / 2.0 + np.pi * idx / samples_arc
+        coords.append((-half_len + r * math.cos(ang), r * math.sin(ang)))
+    return _parametric_loop(center, coords, orientation=orientation)
+
+
 def build_loop_path(
     center: tuple[float, float],
     side: float,
@@ -68,6 +177,27 @@ def build_loop_path(
     if shape == "circle":
         return _circle_loop(
             center=center, side=side, orientation=orientation, steps_per_segment=steps_per_segment
+        )
+    if shape == "diamond":
+        return _diamond_loop(
+            center=center, side=side, orientation=orientation, steps_per_segment=steps_per_segment
+        )
+    if shape == "rounded_square":
+        return _superellipse_loop(
+            center=center, side=side, orientation=orientation, steps_per_segment=steps_per_segment, exponent=4.0
+        )
+    if shape == "ellipse":
+        return _ellipse_loop(
+            center=center, side=side, orientation=orientation, steps_per_segment=steps_per_segment
+        )
+    if shape == "stadium":
+        return _stadium_loop(
+            center=center, side=side, orientation=orientation, steps_per_segment=steps_per_segment
+        )
+    if shape == "hexagon":
+        return _regular_polygon_loop(
+            center=center, side=side, orientation=orientation, steps_per_segment=steps_per_segment,
+            sides=6, phase=np.pi / 6.0,
         )
     raise ValueError(f"Unsupported loop shape: {shape}")
 

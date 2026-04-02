@@ -465,7 +465,7 @@ def phase10_report(output_root: Path, payload: dict) -> dict[str, Path]:
         "The fit remains patchwise. That means the theory should continue to state the noisy law as a local"
         " susceptibility law rather than as a single universal global coefficient.\n"
     )
-    md_path.write_text(md_text)
+    md_path.write_text(md_text, encoding='utf-8')
     return {
         "report": md_path,
         "scatter_plot": scatter_path,
