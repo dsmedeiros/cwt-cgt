@@ -2,181 +2,308 @@
 # Each invariant maps to a defining ADR and enforcement mechanism.
 
 invariants:
-  # === Layer Dynamics (ADR-0001) ===
-  - id: LAYER-001
+  # === Armature Governance ===
+  SPEC-001:
+    name: "Specification internal consistency"
     severity: critical
+    description: "ARMATURE.md section numbering, cross-references, and schema definitions must all agree internally."
+    rule: "ARMATURE.md must be internally consistent — no broken cross-references or contradictory schema definitions."
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      ci:
+        - .armature/hooks/post-stop.sh
+    referenced-in:
+      - .armature/agents.md
+    status: active
+
+  SPEC-002:
+    name: "Framework-generic file integrity"
+    severity: high
+    description: "Framework-generic files must match the canonical Armature repo and not be locally modified without backport."
+    rule: "Framework-generic files (personas, templates, hooks, commands) must stay in sync with the canonical Armature repository."
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      ci:
+        - .armature/hooks/post-stop.sh
+    referenced-in:
+      - .armature/agents.md
+      - .claude/commands/agents.md
+    status: active
+
+  SCHEMA-001:
+    name: "Config.yaml schema compliance"
+    severity: high
+    description: "config.yaml must contain all required fields defined by the ARMATURE.md specification."
+    rule: "config.yaml must conform to the schema defined in ARMATURE.md — all required fields present with correct types."
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      ci:
+        - .armature/hooks/post-stop.sh
+    referenced-in:
+      - .armature/agents.md
+    status: active
+
+  SCHEMA-002:
+    name: "Registry.yaml schema compliance"
+    severity: high
+    description: "registry.yaml entries must conform to the registry entry schema defined in ARMATURE.md."
+    rule: "Every registry entry must have id, name, severity, description, rule, defined-in, enforced-by, referenced-in, and status fields."
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      ci:
+        - .armature/hooks/post-stop.sh
+    referenced-in:
+      - .armature/agents.md
+    status: active
+
+  # === Layer Dynamics (ADR-0001) ===
+  LAYER-001:
+    name: "Layer update purity"
+    severity: critical
+    description: "Layer update functions must be referentially transparent to ensure reproducible simulation results."
     rule: "Each layer update function must be pure — no hidden state, no side effects, no mutation of input arrays."
     defined-in: docs/adr/ADR-0001-three-layer-dynamics-model.md
     enforced-by:
-      - cwt-sim/tests/unit/test_layer_updates.py
+      ci:
+        - cwt-sim/tests/unit/test_layer_updates.py
     referenced-in:
       - cwt-sim/cwt/agents.md
+    status: active
 
-  - id: LAYER-002
+  LAYER-002:
+    name: "Layer module isolation"
     severity: critical
+    description: "Prevents hidden coupling between layer modules; all inter-layer data flows through the orchestrator."
     rule: "Layer modules must not import from each other. Cross-layer coupling flows through the orchestrator only."
     defined-in: docs/adr/ADR-0001-three-layer-dynamics-model.md
     enforced-by:
-      - .armature/hooks/post-stop.sh  # TODO: add import check
+      ci:
+        - .armature/hooks/post-stop.sh  # TODO: add import check
     referenced-in:
       - cwt-sim/cwt/agents.md
+    status: active
 
-  - id: LAYER-003
+  LAYER-003:
+    name: "Explicit geometric corrections"
     severity: high
+    description: "Geometric corrections are passed as parameters, keeping layer modules independent of geometry internals."
     rule: "Geometric corrections must be passed as explicit parameters, never computed inside layer modules."
     defined-in: docs/adr/ADR-0001-three-layer-dynamics-model.md
     enforced-by:
-      - cwt-sim/tests/unit/test_layer_updates.py  # TODO: add explicit parameter check
+      ci:
+        - cwt-sim/tests/unit/test_layer_updates.py  # TODO: add explicit parameter check
     referenced-in:
       - cwt-sim/cwt/agents.md
+    status: active
 
   # === IPC Bridge (ADR-0002) ===
-  - id: IPC-001
+  IPC-001:
+    name: "Renderer process isolation"
     severity: critical
+    description: "Renderer must be sandboxed from Node.js APIs; all backend access flows through the IPC bridge."
     rule: "Renderer code must never import from electron/ or spawn child processes. All Python interaction flows through IPC."
     defined-in: docs/adr/ADR-0002-ipc-bridge-pattern.md
     enforced-by:
-      - .github/workflows/cwt-lab-tests.yml  # TODO: add import boundary lint
+      ci:
+        - .github/workflows/cwt-lab-tests.yml  # TODO: add import boundary lint
     referenced-in:
       - cwt_lab/electron/agents.md
       - cwt_lab/renderer/agents.md
+    status: active
 
-  - id: IPC-002
+  IPC-002:
+    name: "IPC input validation"
     severity: high
+    description: "Zod schemas validate all IPC payloads before reaching Python, preventing malformed invocations."
     rule: "Every IPC handler must validate inputs using shared Zod schemas before invoking Python."
     defined-in: docs/adr/ADR-0002-ipc-bridge-pattern.md
     enforced-by:
-      - cwt_lab/electron/__tests__/ipc.artifacts.test.ts
+      ci:
+        - cwt_lab/electron/__tests__/ipc.artifacts.test.ts
     referenced-in:
       - cwt_lab/electron/agents.md
       - cwt_lab/shared/agents.md
+    status: active
 
-  - id: IPC-003
+  IPC-003:
+    name: "Python environment fallback chain"
     severity: high
+    description: "Environment detection uses a progressive fallback to support multiple Python installation methods."
     rule: "Python environment detection must use the progressive fallback chain. No hardcoded paths."
     defined-in: docs/adr/ADR-0002-ipc-bridge-pattern.md
     enforced-by:
-      - cwt_lab/electron/runner/__tests__/env.sanitize.test.ts
+      ci:
+        - cwt_lab/electron/runner/__tests__/env.sanitize.test.ts
     referenced-in:
       - cwt_lab/electron/agents.md
+    status: active
 
-  - id: IPC-004
+  IPC-004:
+    name: "Python invocation timeout"
     severity: high
+    description: "All Python invocations must have bounded execution time to prevent UI hangs."
     rule: "Every Python invocation must have a configurable timeout. No unbounded waits."
     defined-in: docs/adr/ADR-0002-ipc-bridge-pattern.md
     enforced-by:
-      - cwt_lab/electron/runner/__tests__/runManager.integration.test.ts
+      ci:
+        - cwt_lab/electron/runner/__tests__/runManager.integration.test.ts
     referenced-in:
       - cwt_lab/electron/agents.md
+    status: active
 
   # === Geometric Estimators (ADR-0003) ===
-  - id: GEOM-001
+  GEOM-001:
+    name: "Geometry module isolation"
     severity: critical
+    description: "Geometry modules are a pure math layer; importing from application modules would couple them to specific use cases."
     rule: "Geometry modules must not import from layers/, orchestrator/, experiments/, or baselines/."
     defined-in: docs/adr/ADR-0003-geometric-estimator-separation.md
     enforced-by:
-      - .armature/hooks/post-stop.sh  # TODO: add import check
+      ci:
+        - .armature/hooks/post-stop.sh  # TODO: add import check
     referenced-in:
       - cwt-sim/cwt/agents.md
+    status: active
 
-  - id: GEOM-002
+  GEOM-002:
+    name: "Explicit geometry inputs"
     severity: high
+    description: "All geometry functions take explicit arrays to remain testable and composable."
     rule: "All geometry functions must accept explicit graph and field arrays — no global state access."
     defined-in: docs/adr/ADR-0003-geometric-estimator-separation.md
     enforced-by:
-      - cwt-sim/tests/unit/test_curvature_estimator.py
-      - cwt-sim/tests/unit/test_metric_estimator.py
+      ci:
+        - cwt-sim/tests/unit/test_curvature_estimator.py
+        - cwt-sim/tests/unit/test_metric_estimator.py
     referenced-in:
       - cwt-sim/cwt/agents.md
+    status: active
 
-  - id: GEOM-003
+  GEOM-003:
+    name: "Degenerate graph robustness"
     severity: high
+    description: "Curvature and metric estimators handle edge cases gracefully to avoid runtime crashes."
     rule: "Curvature and metric estimators must handle degenerate graphs without raising unhandled exceptions."
     defined-in: docs/adr/ADR-0003-geometric-estimator-separation.md
     enforced-by:
-      - cwt-sim/tests/unit/test_curvature_estimator.py
+      ci:
+        - cwt-sim/tests/unit/test_curvature_estimator.py
     referenced-in:
       - cwt-sim/cwt/agents.md
+    status: active
 
   # === Baselines (ADR-0004) ===
-  - id: BASE-001
+  BASE-001:
+    name: "Baseline run() interface"
     severity: high
+    description: "Consistent run() interface allows uniform invocation and result comparison across all baseline models."
     rule: "Every baseline runner must expose a run() function with a consistent return schema."
     defined-in: docs/adr/ADR-0004-baseline-model-runners.md
     enforced-by:
-      - cwt-sim/baselines/__tests__/test_sis_run.py
-      - cwt-sim/baselines/__tests__/test_ising_run.py
+      ci:
+        - cwt-sim/baselines/__tests__/test_sis_run.py
+        - cwt-sim/baselines/__tests__/test_ising_run.py
     referenced-in:
       - cwt-sim/baselines/agents.md
+    status: active
 
-  - id: BASE-002
+  BASE-002:
+    name: "Fixture data immutability"
     severity: high
+    description: "Fixture CSVs are the ground truth for regression testing; modifying them would silently invalidate comparisons."
     rule: "Fixture CSV files are append-only. Existing fixture data must not be modified without explicit ADR amendment."
     defined-in: docs/adr/ADR-0004-baseline-model-runners.md
-    enforced-by: []  # TODO: add git pre-commit hook for fixture files
+    enforced-by: {}  # TODO: add git pre-commit hook for fixture files
     referenced-in:
       - cwt-sim/baselines/agents.md
+    status: active
 
-  - id: BASE-003
+  BASE-003:
+    name: "Baseline independence from CWT"
     severity: critical
+    description: "Baselines are independent reference models; importing from cwt/ would create circular validation."
     rule: "Baseline runners must not import from cwt/ modules. They implement independent reference models."
     defined-in: docs/adr/ADR-0004-baseline-model-runners.md
     enforced-by:
-      - .armature/hooks/post-stop.sh  # TODO: add import check
+      ci:
+        - .armature/hooks/post-stop.sh  # TODO: add import check
     referenced-in:
       - cwt-sim/baselines/agents.md
+    status: active
 
   # === Gate Progression (ADR-0005) ===
-  - id: GATE-001
+  GATE-001:
+    name: "Stage0 prerequisite"
     severity: high
+    description: "Stage0 analytic checks establish the mathematical baseline that higher experiments build upon."
     rule: "No experiment above stage0 may be considered validated unless stage0 analytic checks pass on the same graph family."
     defined-in: docs/adr/ADR-0005-gate-based-experiment-progression.md
     enforced-by:
-      - cwt-sim/tests/regression/test_stage0_analytic.py
+      ci:
+        - cwt-sim/tests/regression/test_stage0_analytic.py
     referenced-in:
       - cwt-sim/experiments/agents.md
+    status: active
 
-  - id: GATE-002
+  GATE-002:
+    name: "Experiment artifact isolation"
     severity: high
+    description: "Each experiment writes to its own directory to prevent cross-experiment contamination."
     rule: "Experiment artifacts must be written to the experiment's own artifacts/ directory, never to shared locations."
     defined-in: docs/adr/ADR-0005-gate-based-experiment-progression.md
-    enforced-by: []  # TODO: add path check in experiment runners
+    enforced-by: {}  # TODO: add path check in experiment runners
     referenced-in:
       - cwt-sim/experiments/agents.md
+    status: active
 
-  - id: GATE-003
-    severity: medium
+  GATE-003:
+    name: "Standalone experiment CLI"
+    severity: standard
+    description: "Each experiment must be independently runnable from the command line for reproducibility."
     rule: "Each experiment's run.py must be invokable as a standalone CLI command via Typer."
     defined-in: docs/adr/ADR-0005-gate-based-experiment-progression.md
     enforced-by:
-      - cwt-sim/tests/experiments/test_loop_at_hotspot_cli.py
+      ci:
+        - cwt-sim/tests/experiments/test_loop_at_hotspot_cli.py
     referenced-in:
       - cwt-sim/experiments/agents.md
+    status: active
 
   # === Desktop Lab (ADR-0006) ===
-  - id: LAB-001
+  LAB-001:
+    name: "Renderer validation delegation"
     severity: high
+    description: "Business logic for validation lives in shared/ Zod schemas, keeping renderer components purely presentational."
     rule: "Renderer components must not contain business logic for simulation parameter validation. All validation flows through shared/ Zod schemas."
     defined-in: docs/adr/ADR-0006-desktop-lab-architecture.md
     enforced-by:
-      - cwt_lab/shared/__tests__/validators.test.ts
+      ci:
+        - cwt_lab/shared/__tests__/validators.test.ts
     referenced-in:
       - cwt_lab/renderer/agents.md
       - cwt_lab/shared/agents.md
+    status: active
 
-  - id: LAB-002
-    severity: medium
+  LAB-002:
+    name: "Zustand state management"
+    severity: standard
+    description: "Centralized state management prevents prop-drilling and ensures consistent cross-component data."
     rule: "State management must use Zustand stores in renderer/store/. No component-local state for cross-component data."
     defined-in: docs/adr/ADR-0006-desktop-lab-architecture.md
-    enforced-by: []  # TODO: add lint rule
+    enforced-by: {}  # TODO: add lint rule
     referenced-in:
       - cwt_lab/renderer/agents.md
+    status: active
 
-  - id: LAB-003
-    severity: medium
+  LAB-003:
+    name: "Demo mode independence"
+    severity: standard
+    description: "The desktop lab must be demonstrable without Python to support onboarding and UI development."
     rule: "The desktop lab must function in demo mode without Python available."
     defined-in: docs/adr/ADR-0006-desktop-lab-architecture.md
     enforced-by:
-      - cwt_lab/renderer/demo/DemoModeContext.tsx
+      ci:
+        - cwt_lab/renderer/demo/DemoModeContext.tsx
     referenced-in:
       - cwt_lab/renderer/agents.md
+    status: active

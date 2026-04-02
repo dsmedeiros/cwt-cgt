@@ -4,6 +4,15 @@ Hard rules extracted from ADRs. Violations block commits via reviewer gate.
 
 ---
 
+## Armature Governance
+
+| ID | Severity | Rule | Rationale | Enforcement |
+|---|---|---|---|---|
+| SPEC-001 | critical | ARMATURE.md must be internally consistent — no broken cross-references or contradictory schema definitions | Specification integrity underpins all governance | `post-stop.sh` |
+| SPEC-002 | high | Framework-generic files must stay in sync with canonical Armature repo | Prevents governance drift across backports | `post-stop.sh` |
+| SCHEMA-001 | high | config.yaml must conform to schema in ARMATURE.md | Ensures machine-readable governance metadata is complete | `post-stop.sh` |
+| SCHEMA-002 | high | Registry entries must have all required fields (id, name, severity, description, rule, defined-in, enforced-by, referenced-in, status) | Enables automated invariant verification | `post-stop.sh` |
+
 ## Layer Dynamics
 
 | ID | Severity | Rule | Rationale | Enforcement |

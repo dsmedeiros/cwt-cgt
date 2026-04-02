@@ -1,5 +1,3 @@
 # Armature ephemeral working state (do not commit)
 .armature/session/
-.armature/reviews/
 .armature/escalations/
-.armature/journal.md

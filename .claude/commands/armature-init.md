@@ -54,7 +54,7 @@ Combine what you learned from scanning the codebase with a conversation with the
 **After the conversation:**
 
 1. Summarize what you've learned — both from code analysis and conversation — back to the human in structured form. Get explicit confirmation.
-2. Write the project metadata to `.armature/config.yaml`.
+2. Write the project metadata to `.armature/config.yaml`. The `governance.changeset-budget` section is populated with defaults (target-loc: 300, warn-loc: 500, planner-trigger-loc: 400). Ask the human if they want to adjust these thresholds based on their project's characteristics — smaller projects may want lower targets, larger codebases may need higher ones.
 3. Generate the initial PRD from the conversation and save it to `.taskmaster/docs/prd.txt`. Confirm the PRD with the human.
 4. Proceed to Phase 2 only after the human confirms both the config and the PRD.
 
@@ -170,7 +170,7 @@ Note: Do NOT gitignore `.taskmaster/tasks/` — commit task files for persistenc
 **Then, for both cases:**
 5. Parse the PRD from Phase 1 via Taskmaster's `parse_prd` MCP tool.
 6. Run complexity analysis via `analyze_project_complexity`.
-7. Expand any tasks scoring > 7 via `expand_task`.
+7. Expand any tasks scoring > 7 or exceeding `changeset-budget.planner-trigger-loc` via `expand_task`.
 8. Present the full task graph to the human: task titles, dependency order, complexity scores, target scope (agents.md path). Confirm the plan.
 9. Recommend committing `.taskmaster/tasks/` to version control.
 
