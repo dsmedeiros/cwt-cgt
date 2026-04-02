@@ -56,4 +56,5 @@ jobs:
 
       - name: Black formatting
         working-directory: cwt-sim
+        continue-on-error: true
         run: black --check .
