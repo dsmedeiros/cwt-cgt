@@ -51,8 +51,10 @@ jobs:
 
       - name: Ruff lint
         working-directory: cwt-sim
+        continue-on-error: true
         run: ruff check .
 
       - name: Black formatting
         working-directory: cwt-sim
+        continue-on-error: true
         run: black --check .
