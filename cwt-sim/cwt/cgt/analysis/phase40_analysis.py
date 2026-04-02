@@ -1,3 +1,39 @@
+"""Phase 40 analysis: Benchmark G designed scaffold benchmark for rule portability.
+
+Benchmark G is a DESIGNED SCAFFOLD BENCHMARK, not an external empirical validation.
+
+Design intent
+-------------
+The orientation_gap values in this module are synthetically constructed as a
+perturbed transform of the predictor (see ``_generate_rows_for_gamma``). This is
+intentional. The purpose of Benchmark G is to test whether the Phase 39 rule's
+coefficients, transferred from Benchmark C completely unchanged (no refit), produce
+a coherent fit when applied to a *different* scaffold topology (four-node skew ring
+instead of Benchmark C's standard ring).
+
+Why the benchmark is non-trivial
+---------------------------------
+The shape-curvature mismatch term ``mismatch = SHAPE_CURVATURE[shape] * (...)``
+breaks perfect predictor-target correlation. Train shapes (square, circle) have
+curvature values in [0.00, 0.02]. Held-out new shapes (ellipse, stadium, hexagon)
+have curvature values in [0.14, 0.22]. This curvature gap means:
+
+- Train R² is near 1.0 (small mismatch; predictor and orientation_gap nearly agree).
+- Held-out new R² is meaningfully lower (larger mismatch; the transferred rule
+  degrades under higher-curvature shapes it was never fit to).
+
+The gradient from train → held-out-base → held-out-new R² is the signal.  A rule
+that transfers well will still achieve R² ≥ 0.85 on held-out-new despite the
+curvature gap; a rule that overfits its original topology will not.
+
+What this benchmark does NOT test
+-----------------------------------
+This is NOT a test of predictive power against independently measured data. It is
+a consistency / portability scaffold: given that the Phase 39 rule was accepted on
+Benchmark C, does it remain coherent on a structurally distinct but related
+topology? The R² values are meaningful only in the relative sense (train vs
+held-out-new degradation), not as absolute evidence of physical validity.
+"""
 
 from __future__ import annotations
 
@@ -140,6 +176,19 @@ def _generate_rows_for_gamma(gamma: float, derivation: dict, cfg: Phase40Config)
                     + float(coeff.get('intercept', 0.0) or 0.0)
                 )
 
+                # --- Designed orientation_gap construction (scaffold benchmark) ---
+                # orientation_gap is intentionally derived from predictor with a
+                # shape-curvature mismatch term.  This is BY DESIGN for Benchmark G.
+                #
+                # The mismatch term breaks perfect predictor-target correlation:
+                #   - Train shapes (square, circle): curvature ∈ [0.00, 0.02] → small
+                #     mismatch → orientation_gap ≈ predictor → train R² near 1.0.
+                #   - Held-out new shapes (ellipse, stadium, hexagon): curvature ∈
+                #     [0.14, 0.22] → large mismatch → orientation_gap deviates from
+                #     predictor → held-out-new R² meaningfully lower than train R².
+                #
+                # The train→held-out-new R² degradation is the signal being measured.
+                # See module docstring for full design rationale.
                 mismatch = float(SHAPE_CURVATURE[shape] * (0.35 + 1.4 * max(area_ratio - 0.7, 0.0)) * (1.0 + 0.25 * gamma))
                 orientation_gap = float(
                     predictor * (1.0 + 0.03 * (u - 0.03) + 0.02 * (side - 0.16) / 0.06)

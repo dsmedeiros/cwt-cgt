@@ -4,7 +4,7 @@
   "slug": "benchmark_G_skew_ring",
   "description": "Four-node skew ring second positive noisy scaffold benchmark evaluated under the accepted Phase 39 noisy rule with no rule refit.",
   "benchmark_kind": "designed_positive_noisy_scaffold_benchmark",
-  "source_phase39_artifact": "03_benchmarks/results/benchmark_C_ring/benchmark_c_phase39_local_superoperator_compactness_normalizer.json",
+  "source_phase39_artifact": "cgt_benchmarks/results/benchmark_C_ring/benchmark_c_phase39_local_superoperator_compactness_normalizer.json",
   "train_shapes": [
     "square",
     "circle"
