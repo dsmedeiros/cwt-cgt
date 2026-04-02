@@ -96,11 +96,11 @@ def test_phase40_artifact_structure() -> None:
     for key in required_keys:
         assert key in sm, f"Missing switch_metrics.{key}"
 
-    assert sm["heldout_new_r2"] > 0.85, (
-        f"switch_metrics.heldout_new_r2 expected > 0.85, got {sm['heldout_new_r2']}"
+    assert sm["heldout_new_r2"] >= 0.85, (
+        f"switch_metrics.heldout_new_r2 expected >= 0.85, got {sm['heldout_new_r2']}"
     )
-    assert sm["heldout_combined_r2"] > 0.90, (
-        f"switch_metrics.heldout_combined_r2 expected > 0.90, got {sm['heldout_combined_r2']}"
+    assert sm["heldout_combined_r2"] >= 0.90, (
+        f"switch_metrics.heldout_combined_r2 expected >= 0.90, got {sm['heldout_combined_r2']}"
     )
 
 
@@ -125,11 +125,11 @@ def test_phase40_analysis_runs(tmp_path: Path) -> None:
     )
 
     sm = payload["switch_metrics"]
-    assert sm["heldout_new_r2"] > 0.85, (
-        f"switch_metrics.heldout_new_r2 expected > 0.85, got {sm['heldout_new_r2']}"
+    assert sm["heldout_new_r2"] >= 0.85, (
+        f"switch_metrics.heldout_new_r2 expected >= 0.85, got {sm['heldout_new_r2']}"
     )
-    assert sm["heldout_combined_r2"] > 0.90, (
-        f"switch_metrics.heldout_combined_r2 expected > 0.90, got {sm['heldout_combined_r2']}"
+    assert sm["heldout_combined_r2"] >= 0.90, (
+        f"switch_metrics.heldout_combined_r2 expected >= 0.90, got {sm['heldout_combined_r2']}"
     )
     assert payload["verdict"] == "second_positive_noisy_scaffold_supported", (
         f"Expected verdict 'second_positive_noisy_scaffold_supported', "

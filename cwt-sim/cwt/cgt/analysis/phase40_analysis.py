@@ -59,6 +59,17 @@ def _safe_float(v: object) -> float:
     return float('nan') if v is None else float(v)  # type: ignore[arg-type]
 
 
+def _nan_to_none(obj: object) -> object:
+    """Recursively replace float('nan') with None for JSON-safe serialization."""
+    if isinstance(obj, float) and math.isnan(obj):
+        return None
+    if isinstance(obj, dict):
+        return {k: _nan_to_none(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_nan_to_none(v) for v in obj]
+    return obj
+
+
 @dataclass(frozen=True)
 class Phase40Config:
     benchmark_focus: str = 'benchmark_g'
@@ -190,9 +201,9 @@ def _generate_rows_for_gamma(gamma: float, derivation: dict, cfg: Phase40Config)
                 # The train→held-out-new R² degradation is the signal being measured.
                 # See module docstring for full design rationale.
                 mismatch = float(SHAPE_CURVATURE[shape] * (0.35 + 1.4 * max(area_ratio - 0.7, 0.0)) * (1.0 + 0.25 * gamma))
+                # mismatch preserves predictor sign (sign(x)*|x| == x)
                 orientation_gap = float(
-                    predictor * (1.0 + 0.03 * (u - 0.03) + 0.02 * (side - 0.16) / 0.06)
-                    + np.sign(predictor) * abs(predictor) * mismatch
+                    predictor * (1.0 + 0.03 * (u - 0.03) + 0.02 * (side - 0.16) / 0.06 + mismatch)
                 )
 
                 rows.append(
@@ -377,7 +388,7 @@ def run_phase40_analysis(project_root: Path, output_root: Path | None = None, co
 
     out_path = output_root / 'cgt_benchmarks' / 'results' / cfg.slug / 'benchmark_g_phase40_second_positive_noisy.json'
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(payload, indent=2))
+    out_path.write_text(json.dumps(_nan_to_none(payload), indent=2))
     return payload
 
 
