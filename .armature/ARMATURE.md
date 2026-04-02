@@ -60,7 +60,8 @@ project-root/
 │   ├── config.yaml                        ← Project metadata and topology
 │   ├── personas/
 │   │   ├── orchestrator.md                ← Orchestrator persona
-│   │   ├── reviewer.md                    ← Reviewer persona
+│   │   ├── reviewer.md                    ← Reviewer persona (compliance)
+│   │   ├── reviewer-redteam.md            ← Red team reviewer persona (adversarial)
 │   │   ├── planner.md                     ← Opt-in planner persona
 │   │   └── implementers/
 │   │       └── {component}.md             ← Per-component implementer personas
@@ -71,7 +72,7 @@ project-root/
 │   │   ├── agents.md.tmpl                 ← AGENTS.md skeleton
 │   │   ├── adr.md.tmpl                    ← ADR template
 │   │   └── persona.md.tmpl               ← Implementer persona template
-│   ├── journal.md                         ← Governance journal (gitignored, append-only)
+│   ├── journal.md                         ← Governance journal (committed, append-only)
 │   ├── session/
 │   │   ├── state.md                       ← Living session state
 │   │   └── logs/                          ← Completed session logs
@@ -82,11 +83,14 @@ project-root/
 ├── .claude/
 │   ├── agents/
 │   │   ├── reviewer.md                    ← Claude Code subagent → .armature/personas/reviewer.md
+│   │   ├── reviewer-redteam.md            ← Claude Code subagent → .armature/personas/reviewer-redteam.md
 │   │   ├── planner.md                     ← Claude Code subagent → .armature/personas/planner.md
 │   │   └── {component}-impl.md            ← Claude Code subagent → .armature/personas/implementers/{component}.md
 │   └── commands/
 │       ├── armature-init.md               ← Instantiation protocol
 │       ├── armature-extend.md             ← Component onboarding
+│       ├── armature-update.md              ← Specification update protocol
+│       ├── armature-backport.md            ← Framework upgrade from canonical source
 │       └── checkpoint.md                  ← Pre-compaction state save
 ├── docs/
 │   └── adr/                               ← Architecture decision records
@@ -104,6 +108,8 @@ project-root/
 - `.armature/invariants/` (registry and invariants.md)
 - `.armature/templates/`
 - `.armature/hooks/`
+- `.armature/journal.md` (governance journal — append-only institutional memory)
+- `.armature/reviews/` (reviewer verdict artifacts — audit trail)
 - `.claude/agents/` (reviewer, planner, implementer subagents — not orchestrator)
 - `.claude/commands/`
 - `docs/adr/`
@@ -112,9 +118,7 @@ project-root/
 
 **Gitignored:**
 - `.armature/session/` (ephemeral working state)
-- `.armature/reviews/` (ephemeral review artifacts)
 - `.armature/escalations/` (ephemeral escalation packages)
-- `.armature/journal.md` (governance journal — survives rollbacks by being unversioned)
 
 ### 3.3 CLAUDE.md — Orchestrator Entry Point and Lean Router
 
@@ -178,6 +182,7 @@ enforced-by:                               # CI/runtime enforcement for this sco
 persona: implementer                       # Agent persona type for this scope
 authority: [read, write, test]             # Permitted actions
 restricted: [cross-cutting-changes, schema-migration]  # Prohibited actions
+test-scope: unit                              # Test boundary: unit | integration | e2e | none
 ---
 ```
 
@@ -187,6 +192,9 @@ restricted: [cross-cutting-changes, schema-migration]  # Prohibited actions
 2. **Behavioral Directives** — Non-negotiable rules for this scope. Use imperative language: "must," "must not," "always," "never."
 3. **Change Expectations** — What must not change when modifying this component. Preservation rules.
 4. **Cross-Links** — References to related ADRs, invariants, and other `agents.md` files.
+
+**Test scope convention:**
+Test files are considered part of the scope of the code they test, even if they reside in a separate directory tree (e.g., `tests/integration/ledger_test.go` is in-scope for the `src/ledger/` component). The `test-scope` frontmatter field declares the expected test boundary. The reviewer uses this to determine whether test file modifications outside the component directory are in-scope or out-of-scope.
 
 **Inheritance Model:**
 
@@ -250,21 +258,13 @@ invariants:
 **Registry Rules:**
 
 - Every invariant must have a unique ID using the pattern `{CATEGORY}-{NNN}`
-- Every invariant must trace to at least one ADR (`defined-in`)
+- Every invariant should trace to at least one ADR (`defined-in`). For pre-1.0 projects where formal ADRs have not yet been written, invariants may reference `invariants.md` as their `defined-in` source. This is a bootstrap accommodation — once the project stabilizes, invariants should be backfilled with proper ADR references. The registry entry's `defined-in` field must never be empty.
 - Every critical-severity invariant must have at least one CI enforcement (`enforced-by.ci`)
 - Exceptions must include a rationale and reference a justifying ADR
 - The registry is the source of truth for which invariants exist; `invariants.md` is the human-readable rendering
+- Registry entries carry a `status` field (`active` or `deprecated`) and an optional `superseded-by` field pointing to a replacement invariant ID. See §7.4 for the full invariant lifecycle management protocol. Deprecated invariants remain in the registry for traceability but are not enforced by the reviewer.
 
 `.armature/invariants/invariants.md` is the human-readable companion — prose descriptions of each invariant grouped by category. It is generated from or manually kept in sync with the registry. In degraded mode (no agentic tooling), this is what a human reads.
-
-### 3.8 ADR Relaxation
-
-Pre-1.0 projects operate under reduced ADR ceremony:
-
-- **Pre-1.0:** ADRs are recommended but not required for architectural decisions. The orchestrator may record decisions in the governance journal or session state instead of creating a formal ADR. This reduces overhead during early, high-churn development where architectural direction changes frequently.
-- **Post-1.0:** ADRs are required for any change that touches invariants or cross-cutting concerns. Once a project reaches 1.0, its architectural surface is stable enough that formal decision records are worth the overhead.
-
-The transition is triggered by the first `v1.0.0` tag. The orchestrator enforces the appropriate level of ceremony based on the project's version in `.armature/config.yaml`.
 
 ---
 
@@ -272,13 +272,14 @@ The transition is triggered by the first `v1.0.0` tag. The orchestrator enforces
 
 ### 4.1 Overview
 
-Armature defines four agent personas organized by decision authority, not skill level:
+Armature defines five agent personas organized by decision authority, not skill level:
 
 | Persona | Authority | Scope | Writes Code? | Agent Level |
 |---|---|---|---|---|
 | Orchestrator | Planning, delegation, acceptance | Global | No | Main agent |
 | Implementer | Execution within declared scope | Per-component | Yes | Subagent |
 | Reviewer | Invariant compliance, veto | Global (read-only) | No | Subagent |
+| Red Team Reviewer | Adversarial engineering quality, veto | Global (read-only) | No | Subagent |
 | Planner | Step-by-step decomposition | Per-task (opt-in) | No | Subagent |
 
 The orchestrator runs as the main Claude Code agent (established by directive in CLAUDE.md). Implementers, reviewers, and planners are subagents spawned by the orchestrator. This keeps the hierarchy to two levels maximum — clean context boundaries, no nesting problems.
@@ -307,7 +308,7 @@ Conversation → PRD → Task Graph → Delegation → Review → Acceptance
 **Phase B — Milestone and Task Decomposition:**
 - Decomposes the PRD into 5–10 milestones, each producing a working verifiable increment
 - Parses the current milestone into Taskmaster tasks (not the whole PRD at once)
-- Runs complexity analysis; flags tasks scoring > 7 for planner involvement
+- Runs complexity analysis; flags tasks scoring > 7 or exceeding `changeset-budget.planner-trigger-loc` for planner involvement
 - Expands complex tasks into subtasks
 - Annotates each task with its target agents.md scope
 - Presents the milestone list and current milestone's task graph for confirmation
@@ -332,7 +333,8 @@ Conversation → PRD → Task Graph → Delegation → Review → Acceptance
 - Bypass the reviewer
 - Delegate cross-cutting changes to a single implementer
 - Delegate two tasks to the same scope simultaneously
-- Continue past the circuit breaker threshold (3 rejection cycles → escalate)
+- Delegate a task expected to exceed `changeset-budget.warn-loc` without decomposing it first
+- Continue past the circuit breaker threshold (3 rejection cycles per checkpoint → escalate)
 
 **Authority over governance files:**
 - Can update CLAUDE.md (routing table, critical invariants)
@@ -340,6 +342,7 @@ Conversation → PRD → Task Graph → Delegation → Review → Acceptance
 - Can update the invariant registry (new invariants, new references)
 - Can create new scoped agents.md files (component onboarding)
 - Can generate and update PRDs in `.taskmaster/docs/`
+- Can update ARMATURE.md (specification amendments, protocol additions) via the /armature-update protocol
 - Can log exceptions to invariants with rationale
 - Can write to the governance journal
 - Can commit accepted changes and tag build candidates
@@ -350,6 +353,46 @@ Conversation → PRD → Task Graph → Delegation → Review → Acceptance
 - Point each implementer at only the files listed in its scoped AGENTS.md frontmatter
 - Do not read application source code — delegate exploration tasks instead
 - Checkpoint proactively at milestone boundaries; prefer fresh sessions over extended runs
+
+**Subagent spawning protocol:**
+
+Claude Code's Agent tool does not automatically load `.claude/agents/` files. The orchestrator must explicitly construct each delegation. The canonical pattern:
+
+1. **Read the subagent definition:** Read `.claude/agents/{name}.md` to get the subagent's instructions.
+2. **Read the scoped agents.md frontmatter:** Read the YAML frontmatter of the target scope's `agents.md` to identify invariants, ADRs, authority, and restrictions.
+3. **Compose the delegation prompt:** Combine the subagent instructions, scope context, and task-specific details into a single prompt for the Agent tool.
+4. **Spawn:** Use the Agent tool with `subagent_type: "general-purpose"` and the composed prompt.
+
+**Implementer delegation template:**
+```
+You are the {component} implementer. Read and follow your instructions:
+
+[paste content of .claude/agents/{component}-impl.md]
+
+Your task: {task description}
+
+Scope: {agents.md path}
+Invariants to respect: {invariant IDs from frontmatter}
+Files you may modify: {file list}
+
+When done, report: files changed, invariants touched, any discovered context.
+```
+
+**Reviewer delegation template:**
+```
+You are the reviewer. Read and follow your instructions:
+
+[paste content of .claude/agents/reviewer.md]
+
+Review this changeset:
+- Files modified: {list}
+- Declared scope: {scope}
+- Invariants touched: {list}
+
+Write your verdict to .armature/reviews/{task-id}.md
+```
+
+This explicit construction is intentional — it forces the orchestrator to think about scope and context before each delegation, preventing accidental scope creep.
 
 ### 4.3 Implementer
 
@@ -368,8 +411,11 @@ Implementer personas are created per-component during onboarding. Each is scoped
 **Dynamic scoping:**
 The implementer's authority is defined by the `authority` and `restricted` fields in its scoped AGENTS.md frontmatter. The persona file provides the behavioral baseline (communication style, decision-making approach, error handling philosophy). The frontmatter provides the scope-specific boundaries.
 
+**Checkpoint-bounded execution:**
+When working from a planner checkpoint plan, the implementer completes work up to the next review gate and stops. It reports the partial changeset for that checkpoint only. The orchestrator invokes the reviewer before the implementer proceeds to the next checkpoint. This keeps each review pass within the changeset budget.
+
 **Circuit breaker awareness:**
-If rejected by the reviewer, the implementer on re-delegation reads the structured verdict file at `.armature/reviews/{task-id}.md` before starting. It does not rely on conversational context from previous attempts. After 3 rejection cycles, the orchestrator escalates rather than re-delegating.
+If rejected by the reviewer, the implementer on re-delegation reads the structured verdict file at `.armature/reviews/{task-id}.md` before starting. It does not rely on conversational context from previous attempts. After 3 rejection cycles per checkpoint, the orchestrator escalates rather than re-delegating.
 
 ### 4.4 Reviewer
 
@@ -413,36 +459,78 @@ The reviewer is an independent compliance checker with veto authority. It:
 - Override its own verdict
 - Trigger rollback (it recommends; the orchestrator decides)
 
-### 4.5 Planner (Opt-In)
+**Verdict persistence:** Reviewer verdicts at `.armature/reviews/{task-id}.md` are committed to version control, creating an audit trail of review decisions. This enables post-hoc analysis of review patterns and allows the orchestrator to reference historical verdicts when similar changes arise. Verdicts for rolled-back work remain in the git history even after rollback.
+
+### 4.5 Red Team Reviewer
+
+**File:** `.armature/personas/reviewer-redteam.md`
+**Claude Code subagent:** `.claude/agents/reviewer-redteam.md`
+
+The red team reviewer is an adversarial engineering quality checker with veto authority. It operates after the standard reviewer passes, taking an aggressive posture toward code changes to hunt for subtle bugs, silent regressions, semantic drift, edge-case failures, and breaking changes that pass compliance review.
+
+**Invocation criteria (evaluated by the orchestrator after standard reviewer PASS):**
+- **Required:** Changes touch a critical-severity invariant (from registry.yaml), changes are cross-cutting (span multiple agents.md boundaries), or the human explicitly requests deep review
+- **Recommended:** Complex logic changes (complexity > 5), test infrastructure modifications, or implementer-reported uncertainty about edge cases
+- **Skippable:** All fast-path criteria hold (complexity ≤ 3, single scope, LOC ≤ target), no critical invariants at risk, and the human has not requested deep review
+
+A PASS_WITH_ADVISORIES verdict means: commit proceeds, but advisories are logged in the governance journal for tracking. Advisories do not block the commit.
+
+Where the standard reviewer checks governance compliance (invariants, scope boundaries, exceptions), the red team reviewer checks engineering correctness:
+
+- Reads every line of changed code (not just frontmatter and registries)
+- Traces data flow through inputs, dependencies, and consumers
+- Attacks test quality — looking for tautological tests, missing negative tests, and false greens
+- Stresses interfaces for schema/reality mismatches and forward/backward compatibility
+- Runs tests independently and feeds edge-case inputs to verify behavior
+- Produces a structured verdict at `.armature/reviews/{task-id}-redteam.md`
+
+**Verdict outcomes:** PASS, FAIL, or PASS_WITH_ADVISORIES. A FAIL blocks the commit even if the standard reviewer passed. PASS_WITH_ADVISORIES tracks non-blocking issues.
+
+**Severity calibration:**
+- CRITICAL: Silent wrong output, data corruption, security issue — always blocks
+- HIGH: Crash on valid input, regression, nondeterminism — blocks unless explicitly accepted
+- MEDIUM: Missing edge-case handling, test gap — tracked but does not block
+- LOW: Style, naming — never blocks
+
+**The red team reviewer must not:**
+- Write or modify application code
+- Write or modify governance files (except its verdict file)
+- Suggest implementation approaches (only identify what is wrong and why)
+- Override its own verdict
+
+### 4.6 Planner (Opt-In)
 
 **File:** `.armature/personas/planner.md`
 **Claude Code subagent:** `.claude/agents/planner.md`
 
-The planner is activated by the orchestrator when a task within a single scope is too complex for a single implementer pass. It:
+The planner is activated by the orchestrator when a task within a single scope is too complex for a single implementer pass OR when the estimated LOC exceeds `changeset-budget.planner-trigger-loc`. It:
 
 - Reads the local AGENTS.md and referenced ADRs for the target scope
-- Produces a numbered implementation plan with invariant checkpoints
+- Produces a numbered implementation plan with invariant checkpoints and LOC estimates per step
 - Identifies dependencies between steps
-- Flags steps that require reviewer validation before proceeding
-- Hands the plan to the implementer for execution
+- Marks review checkpoints between groups of steps — mandatory for plans with more than 3 steps (at least one intermediate checkpoint required)
+- Ensures each checkpoint stays within the changeset budget (`target-loc`)
+- Hands the plan to the orchestrator for checkpoint-bounded delegation
 
-The orchestrator decides when to invoke the planner based on task complexity. Not every task requires planning — simple, well-scoped changes go directly to an implementer.
+The orchestrator invokes the planner when: (a) task complexity > 7, OR (b) estimated LOC > `changeset-budget.planner-trigger-loc`. Simple, small, well-scoped changes go directly to an implementer without planning.
 
-### 4.6 Subagent Spawning Protocol
+#### 4.6.1 Complexity Scoring Rubric
 
-Every subagent delegation follows a strict 4-step protocol. The orchestrator must not skip steps or combine them implicitly.
+Complexity is scored on a 1–10 scale. The orchestrator assigns a score during Phase B decomposition. When Taskmaster is available, its `analyze_project_complexity` tool provides a starting estimate that the orchestrator may adjust.
 
-1. **Read the agent file.** Read the target persona's `agents.md` frontmatter (scope, invariants, ADRs, authority boundaries). For implementers, also read the persona file at `.armature/personas/implementers/{component}.md`.
-2. **Compose the delegation prompt.** The prompt must explicitly include:
-   - Task description and acceptance criteria
-   - Scope boundary (which files/directories the agent may modify)
-   - Applicable invariant IDs (from the agents.md frontmatter, not the full registry)
-   - Deliverables expected (files changed, tests passing, artifacts produced)
-   - Constraints (what the agent must not do, any prior reviewer feedback)
-3. **Spawn via the Agent tool.** Use the appropriate `subagent_type` from `.claude/agents/`. Set `run_in_background` only when Bash permission is pre-approved and the task is independent.
-4. **Collect and evaluate the result.** Read the agent's output. Verify it claims to have stayed in scope. Route the changeset to the reviewer.
+| Score | Label | Characteristics | Routing |
+|---|---|---|---|
+| 1–2 | Trivial | Single-file, no logic changes, config/docs only | Fast path |
+| 3 | Simple | Single-scope, clear intent, < 100 LOC, no new invariants | Fast path ceiling |
+| 4–5 | Moderate | Single-scope, some logic, 100–300 LOC, may touch existing invariants | Direct to implementer |
+| 6 | Involved | Multi-file within scope, 200–400 LOC, new tests required | Planner recommended |
+| 7 | Complex | Approaching scope boundary, 300–500 LOC, invariant interaction | Planner required |
+| 8–9 | High | Near-scope-boundary, 500+ LOC estimated, may need new invariants or ADRs | Planner required; consider further decomposition |
+| 10 | Architectural | Cross-cutting, new ADR likely, fundamental design change | Must decompose before planning; likely needs human design input |
 
-This protocol prevents the orchestrator from writing code "temporarily" when composing a delegation feels like more work than just doing the task. If composing the delegation prompt is difficult, that is a signal the task needs further decomposition — not that the orchestrator should implement it directly.
+**Scoring inputs:** LOC estimate, file count, invariants at risk, cross-scope dependencies, test requirements, novelty (is this a pattern the codebase has done before?).
+
+**Tie-breaking rule:** When in doubt, score higher. Over-planning wastes less time than under-planning followed by rejection cycles.
 
 ---
 
@@ -451,10 +539,40 @@ This protocol prevents the orchestrator from writing code "temporarily" when com
 ### 5.1 In-Session Pipeline (Agentic)
 
 ```
-Human ←→ Orchestrator → PRD → Taskmaster → [Planner?] → Implementer → Reviewer → Orchestrator
+Human ←→ Orchestrator → PRD → Taskmaster → [Planner?] → Implementer → Reviewer → [Red Team?] → Orchestrator
               ↑                                                                        ↓
               └──────────────────────── Accept / Reject / Escalate ────────────────────┘
 ```
+
+**Fast path (complexity ≤ 3):**
+
+Not every change warrants the full pipeline. For small, well-scoped work — bug fixes, config tweaks, single-file changes with clear scope — the orchestrator uses a streamlined flow:
+
+```
+Human → Orchestrator → Implementer → Reviewer → Accept
+```
+
+**Fast path criteria (all must hold):**
+- Change touches a single component scope (one `agents.md` boundary)
+- No new invariants or ADRs are involved
+- The human's intent is unambiguous — no discovery conversation needed
+- Estimated complexity ≤ 3 (trivial to straightforward)
+- Estimated LOC ≤ `changeset-budget.target-loc` (default 300)
+
+**Fast path skips:**
+- PRD generation
+- Taskmaster task creation (uses TodoWrite or inline tracking instead)
+- Planner involvement
+- Milestone decomposition
+
+**Fast path preserves:**
+- Scoped delegation (implementer reads its `agents.md`)
+- Reviewer check (never skipped) — reviewer still writes a structured verdict to `.armature/reviews/{task-id}.md`, not just an inline report. This keeps the governance journal consistent regardless of which path was used.
+- Structured commit message
+- Session state update
+- Journal entry if governance-relevant
+
+The orchestrator decides which path to use. When in doubt, use the full pipeline. The fast path is an optimization, not an escape hatch.
 
 **Phase A — Requirements:**
 1. Human describes intent conversationally to the orchestrator
@@ -465,21 +583,48 @@ Human ←→ Orchestrator → PRD → Taskmaster → [Planner?] → Implementer 
 4. Orchestrator decomposes PRD into milestones (5–10 working increments)
 5. Orchestrator parses current milestone into Taskmaster tasks (via MCP `parse_prd` or `add_task`)
 6. Orchestrator runs complexity analysis, expands complex tasks, annotates with scope
-7. Orchestrator presents the plan to human for confirmation
+7. Orchestrator estimates LOC for each task. Tasks exceeding `changeset-budget.planner-trigger-loc` must route through the planner regardless of complexity score. Tasks exceeding `changeset-budget.warn-loc` must be decomposed into smaller subtasks before delegation.
+8. Orchestrator presents the plan to human for confirmation
 
 **Phase C — Execution (per task):**
 7. Orchestrator queries Taskmaster for next task
 8. Orchestrator annotates task with target agents.md scope
-9. If complexity > 7, orchestrator invokes planner first
-10. Orchestrator writes delegation intent to session state (auto-compaction safety)
-11. Orchestrator delegates to scoped implementer
-12. Implementer executes, reports changeset
-13. Orchestrator spawns reviewer against the changeset
-14. Reviewer writes structured verdict to `.armature/reviews/{task-id}.md`
-15. Orchestrator evaluates:
-   - **PASS** → Commit with structured message, update Taskmaster, tag build candidate if milestone, write to journal if governance-relevant
-   - **FAIL** → Re-delegate to implementer with verdict file reference (max 3 cycles)
+9. **Pre-flight estimation:** Orchestrator estimates files to be touched, expected net LOC, invariants at risk, and cross-scope dependencies. If estimated LOC > `changeset-budget.target-loc`, return to Phase B for further decomposition or planner invocation. Log the estimate in session state.
+10. If complexity > 7 OR estimated LOC > `changeset-budget.planner-trigger-loc`, orchestrator invokes planner first
+11. Orchestrator writes delegation intent to session state (auto-compaction safety)
+12. Orchestrator delegates to scoped implementer (or to first checkpoint if planner produced a checkpoint plan — see incremental review below)
+13. Implementer executes, reports changeset
+12a. **Post-implementation LOC check:** Compare actual LOC from implementer report against pre-flight estimate (step 9). Log variance in session state. If actual > warn-loc, log in governance journal (diagnostic only — review proceeds).
+14. Orchestrator spawns reviewer against the changeset
+15. Reviewer writes structured verdict to `.armature/reviews/{task-id}.md`
+16. On reviewer PASS, orchestrator evaluates red team invocation criteria (see §4.5):
+    - **Required:** critical-severity invariant touched, cross-cutting change, or human-requested deep review
+    - **Recommended:** complex logic (complexity > 5), test infrastructure changes, implementer uncertainty
+    - **Skippable:** fast-path criteria met, no critical invariants, no human request
+17. Red team reviewer writes verdict to `.armature/reviews/{task-id}-redteam.md` (if spawned)
+18. Orchestrator evaluates:
+   - **PASS** (both reviewers) → Commit with structured message, update Taskmaster, tag build candidate if milestone, write to journal if governance-relevant
+   - **FAIL** (either reviewer) → Re-delegate to implementer with verdict file reference (max 3 cycles per checkpoint)
    - **ESCALATE** → Write to `.armature/escalations/` and `.armature/journal.md`, surface to human
+
+**Incremental review (checkpoint-bounded execution):**
+
+When the planner produces a plan with review checkpoints, execution follows a chunked pipeline instead of the single-pass flow above:
+
+```
+For each checkpoint in the plan:
+  Orchestrator → Implementer (steps up to checkpoint) → Reviewer → [Red Team?] → Commit checkpoint
+```
+
+1. Orchestrator delegates the steps up to the first review checkpoint
+2. Implementer executes those steps only, stops, and reports the partial changeset
+3. Orchestrator spawns the reviewer on the partial changeset (optionally red team)
+4. On PASS: commit the checkpoint immediately with message `task-{id}/checkpoint-{n}: {description}`
+5. On FAIL: re-delegate the current checkpoint only (max 3 cycles — circuit breaker is per-checkpoint)
+6. On checkpoint PASS: proceed to next checkpoint, delegating the next batch of steps
+7. Completed checkpoints are committed and preserved regardless of failures in later checkpoints
+
+This ensures that review surface area per pass stays within the changeset budget. A task estimated at 900 LOC becomes three ~300 LOC review passes instead of one monolithic review.
 
 ### 5.2 On-Stop Hooks (Mechanical)
 
@@ -513,34 +658,6 @@ Implemented per-project in the test suite. These validate that architectural inv
 - Referential integrity tests (configs reference real entities)
 - Startup fail-fast validation (services reject invalid configuration)
 - Domain-specific invariant checks
-
-### 5.5 Fast Path Pipeline
-
-For tasks with complexity ≤ 3 (trivial changes, single-file fixes, documentation updates), the full pipeline is unnecessarily heavy. The fast path reduces ceremony while preserving the mandatory reviewer gate.
-
-**Fast path flow:**
-```
-Human → Orchestrator → Implementer → Reviewer → Accept
-```
-
-**What is skipped:**
-- PRD generation (the orchestrator creates a Taskmaster task directly from conversation)
-- Planner invocation (complexity is below threshold)
-- Milestone decomposition (single task, no milestone needed)
-
-**What is NOT skipped:**
-- Reviewer gate (mandatory, no exceptions)
-- Structured commit message
-- Session state update
-- Governance journal entry (if governance-relevant)
-
-**Eligibility criteria:**
-- Task complexity ≤ 3 (as assessed by the orchestrator or Taskmaster's complexity analysis)
-- Single implementer scope (task maps to exactly one agents.md boundary)
-- No invariant ambiguity (all applicable invariants are clear)
-- No cross-cutting changes
-
-If any criterion is not met, the task follows the standard pipeline. The orchestrator makes the routing decision and records it in session state.
 
 ---
 
@@ -650,11 +767,11 @@ If a subsequent task introduces a regression or the reviewer recommends rollback
 
 **Rollback is an orchestrator-only action.** The reviewer can recommend it. Implementers cannot trigger it.
 
-**Governance file rollback:** Committed governance files (agents.md, ADRs, registry entries) roll back with the code — this is correct for code-coupled governance. The governance journal is gitignored and survives rollback, providing the institutional memory needed to determine whether rolled-back governance changes should be re-applied.
+**Governance file rollback:** Committed governance files (agents.md, ADRs, registry entries) roll back with the code — this is correct for code-coupled governance. The governance journal is committed and rolls back with the code. Before executing a rollback, the orchestrator reads the journal to identify governance decisions that will be lost, recording them in session state so they can be re-applied if appropriate.
 
 ### 6.5 Governance Journal
 
-`.armature/journal.md` is an append-only, gitignored log of governance-relevant events. It provides institutional memory that survives code-level rollbacks, session boundaries, and compaction.
+`.armature/journal.md` is an append-only, **committed** log of governance-relevant events. It provides institutional memory that survives session boundaries and compaction. Because the journal is version-controlled, it rolls back with the code on `git reset`. To preserve governance memory across rollbacks, the orchestrator must read the journal *before* executing a rollback and note any governance decisions that will be lost (recording them in session state or as a separate pre-rollback journal snapshot).
 
 **The orchestrator writes to the journal when:**
 - An invariant exception is approved (with rationale and ADR reference)
@@ -692,6 +809,8 @@ If an implementer is rejected 3 times on the same task, the orchestrator stops a
 
 **Three cycles is the hard limit.** More spinning almost never helps. Either the invariants are ambiguous, the decomposition was wrong, or there's a design tension requiring human judgment.
 
+**Circuit breaker with incremental review:** When using checkpoint-bounded incremental review (see §5.1), the 3-cycle counter applies per checkpoint, not per task. Each checkpoint is an independent review unit. Completed and committed checkpoints are preserved regardless of failures in subsequent checkpoints — their work is already accepted and committed. This means a 5-checkpoint task can tolerate up to 3 rejection cycles per checkpoint without losing any previously accepted work.
+
 **Escalation recovery:** When the human resolves an escalation and tells the orchestrator what was decided, the orchestrator writes the resolution to the journal, clears the escalation directory, applies any governance changes that follow from the resolution, and resumes execution from the resolved task.
 
 ### 6.7 Cold Start vs. Warm Start
@@ -709,6 +828,15 @@ CLAUDE.md reloads (re-establishing orchestrator identity) → orchestrator reads
 5. Checks that working tree is clean relative to the last build candidate
 6. If dirty state detected → surface to human before starting new work
 7. Queries Taskmaster for any pending/in-progress tasks
+
+**Checkpoint recovery (mid-task crash):**
+When cold start detects a partially completed task (session state shows active delegation with no reviewer verdict and no commit for that task), follow this recovery protocol:
+1. Read session state for the in-flight task ID, scope, and LOC estimate
+2. Read git log for any `task-{id}/checkpoint-{n}` commits to determine how many checkpoints completed
+3. Check `git status` for uncommitted changes in the delegated scope
+4. If uncommitted changes exist: spawn the reviewer against the partial changeset. On PASS, commit as a recovery checkpoint and log in the journal. On FAIL, discard uncommitted changes (`git checkout -- {scope}`) and re-delegate from the last committed checkpoint.
+5. If no uncommitted changes: re-delegate from the last committed checkpoint (or from scratch if no checkpoints were committed)
+6. Update session state to reflect the recovery action
 
 ### 6.8 Taskmaster Integration
 
@@ -772,8 +900,8 @@ The human never interacts with Taskmaster directly. The orchestrator manages the
 6. Expand complex tasks (> 7) via `expand_task`
 7. Present the task graph to the human for confirmation
 8. Query Taskmaster for the next task via `next_task`
-9. If complexity > 7, invoke the planner persona first
-10. Delegate task to scoped implementer
+9. If complexity > 7 OR estimated LOC > `changeset-budget.planner-trigger-loc`, invoke the planner persona first
+10. Delegate task to scoped implementer (or to first checkpoint if using incremental review)
 11. On cycle completion: update Taskmaster via `set_task_status` (complete / blocked / escalated)
 12. Tag build candidate on milestone task completion
 13. Loop from step 8 until all tasks complete or human redirects
@@ -781,33 +909,21 @@ The human never interacts with Taskmaster directly. The orchestrator manages the
 
 For small, well-scoped work that doesn't warrant a PRD, the orchestrator can create tasks directly via `add_task` from conversation.
 
+**Fallback: When Taskmaster is unavailable:**
+
+Taskmaster is the preferred task management tool, but the orchestrator must degrade gracefully when it is not installed or its MCP server is not registered. The fallback protocol:
+
+1. **Detection:** At session start, the orchestrator checks whether Taskmaster MCP tools are available. If they are not, it proceeds in lightweight mode.
+2. **Lightweight task tracking:** The orchestrator uses its built-in TodoWrite tool (or a markdown task list in `.armature/session/state.md` under a `## Task Status` section) to track tasks, dependencies, and status. Each task entry must use the Taskmaster-compatible schema: `{ id, title, description, status, dependencies[], priority, complexity }`. This ensures tasks can be migrated to Taskmaster without reformatting when it becomes available.
+3. **No PRD parsing:** Without Taskmaster, the orchestrator decomposes work conversationally and records tasks directly using the same schema fields.
+4. **Complexity assessment:** The orchestrator estimates task complexity using judgment rather than Taskmaster's `analyze_project_complexity`. Tasks the orchestrator judges as complex still route through the planner.
+5. **Upgrade path:** When Taskmaster becomes available, the orchestrator can backfill the task graph from session state and resume with full Taskmaster integration. Because fallback tasks use the same schema, migration is a direct import — no reformatting required.
+
+The lightweight mode preserves all other governance guarantees: delegation boundaries, reviewer checks, session state, journal logging, and build candidates. Only persistent task graph management degrades.
+
 When the human changes direction mid-flight, the orchestrator updates affected tasks, adds/removes tasks, and confirms the revised plan — all through Taskmaster's MCP tools.
 
 **Recommended:** Commit `.taskmaster/tasks/` to version control. This provides persistence across sessions and rollback safety via build candidate tags.
-
-### 6.9 Taskmaster Fallback Protocol
-
-When the Taskmaster MCP server is unavailable (not installed, MCP connection fails, or tools do not respond), the orchestrator decomposes and tracks tasks inline using the same structural schema.
-
-**Fallback task schema:**
-
-```yaml
-- id: {integer}
-  title: "{task title}"
-  description: "{task description}"
-  dependencies: [{list of task IDs}]
-  status: pending | in_progress | done | blocked | escalated
-  scope: "{agents.md path}"
-  complexity: {1-10}
-```
-
-**Fallback behavior:**
-- The orchestrator writes the task graph to `.armature/session/state.md` under a `## Task Graph (Inline)` section
-- Dependency resolution, status tracking, and complexity assessment are performed by the orchestrator directly
-- The same delegation, review, and acceptance protocols apply — only the storage backend changes
-- When Taskmaster becomes available again, the orchestrator migrates inline tasks to Taskmaster via `add_task`
-
-**Purpose:** This ensures Armature functions as a self-contained governance system without hard external tooling dependencies. Taskmaster is the preferred backend, but its absence must not block work.
 
 ---
 
@@ -914,6 +1030,25 @@ More specific `agents.md` files take precedence on implementation details. Invar
 
 **No silent relaxation.** An agent cannot ignore an invariant because a local `agents.md` doesn't mention it. Invariants apply globally unless explicitly excepted.
 
+**Definition — Cross-cutting changes:**
+A change is cross-cutting when it modifies files governed by more than one scoped `agents.md` boundary. Examples: shared utility functions imported by multiple components, database schema changes affecting multiple consumers, API contract changes requiring coordinated updates across producer and consumer scopes. A shared utility that lives in its own scope is not cross-cutting if only that scope's files are modified — the scope boundary, not the import graph, is the governing line. Cross-cutting changes must not be delegated to a single implementer; the orchestrator must decompose them into per-scope tasks or coordinate parallel implementers with explicit dependency ordering.
+
+**Invariant lifecycle management:**
+Invariants are not permanent. They may be loosened, split, deprecated, or reclassified as the project evolves. All lifecycle transitions require:
+1. An ADR documenting the rationale, using the "Supersedes Invariants" section of the ADR template
+2. Orchestrator proposal and human approval
+3. Registry update: set `status: deprecated` and `superseded-by: {new-ID}` on the old entry (or `superseded-by: null` if deprecated without replacement)
+4. Update all `agents.md` files that reference the affected invariant
+5. Reviewer notification — the reviewer must be aware that the old invariant is no longer enforced
+
+**Four lifecycle operations:**
+- **Loosen:** Create a new invariant with the relaxed rule. Deprecate the old entry and point `superseded-by` to the new ID. Both IDs appear in the governing ADR.
+- **Split:** Deprecate the original invariant. Create two or more finer-grained entries. All new IDs trace back to the original via the ADR.
+- **Deprecate:** No replacement. Set `status: deprecated`, `superseded-by: null`. ADR explains why the constraint is no longer needed.
+- **Reclassify:** Change severity level. Update the registry directly. An ADR is required only when downgrading from critical (because critical invariants have special enforcement requirements).
+
+Deprecated invariants remain in the registry for traceability but are not enforced by the reviewer.
+
 ### 7.5 Token Budget and Session Discipline
 
 Encoded in persona definitions, not enforced mechanically:
@@ -942,6 +1077,76 @@ Encoded in persona definitions, not enforced mechanically:
 - Extended sessions accumulate invisible state that degrades performance. Prefer fresh sessions at milestone boundaries: checkpoint, compact, and resume.
 - Do not run a single orchestrator session through an entire project. Milestone boundaries are natural session boundaries.
 
+### 7.6 Delegation Sizing Discipline
+
+Review cost scales at least linearly with changeset size. A 5,000 LOC changeset can require 30–40 review cycles. The methodology addresses this through a changeset budget — a set of configurable LOC thresholds that govern how aggressively the orchestrator decomposes work before delegating.
+
+**Changeset budget thresholds** (configured in `governance.changeset-budget` in `config.yaml`):
+
+| Threshold | Default | Meaning |
+|---|---|---|
+| `target-loc` | 300 | Ideal maximum LOC per single implementer delegation. The orchestrator decomposes until each task is at or below this target. |
+| `warn-loc` | 500 | Hard ceiling. If a task's estimated LOC exceeds this, the orchestrator **must** decompose further before delegating — no exceptions. |
+| `planner-trigger-loc` | 400 | If estimated LOC exceeds this, the planner is invoked regardless of complexity score. |
+
+**These are soft governance guidelines**, not mechanical blocks. The orchestrator enforces them through estimation and decomposition decisions. There is no hook that rejects a commit for being too large — the goal is to prevent large changesets from being produced in the first place.
+
+**Pre-flight estimation protocol:**
+Before every implementer delegation, the orchestrator estimates:
+1. Files to be touched (count and paths)
+2. Expected net LOC (new + modified lines)
+3. Invariants at risk
+4. Cross-scope dependencies
+
+If estimated LOC > `target-loc`: decompose into smaller subtasks or invoke the planner.
+If estimated LOC > `warn-loc`: this is a hard stop — decompose before delegating.
+If estimated LOC > `planner-trigger-loc` and the planner was not already invoked: invoke the planner.
+
+The estimate is logged in session state under the active delegation entry.
+
+**Post-implementation LOC comparison:**
+After each implementer reports, the orchestrator compares actual LOC against the pre-flight estimate logged in session state. This is diagnostic, not a gate — the review proceeds regardless of variance. Three rules:
+1. If actual LOC exceeds `warn-loc`, log the variance in the governance journal.
+2. If actual LOC consistently exceeds estimates for a scope (> 2x actual vs. estimated across 3+ tasks), recalibrate future estimates for that scope.
+3. Persistent underestimation should trigger a planner review of scope decomposition strategy for that component.
+
+**Why estimation over measurement:** Measuring LOC after the fact (post-implementation) is too late — the context has been spent, the large changeset exists, and review cost is already locked in. Estimation before delegation prevents the problem rather than detecting it.
+
+### 7.7 Specification Update — `/armature-update`
+
+ARMATURE.md is a living document. The orchestrator has authority to propose and apply specification changes through a structured protocol defined in `.claude/commands/armature-update.md`.
+
+**When to use:** Adding new operational protocols, amending existing sections to fix ambiguities or gaps, adding schema fields, deprecating obsolete guidance.
+
+**Key constraints:**
+- Orchestrator-only action — implementers and reviewers cannot modify the specification
+- Human approval is required before any change is applied
+- Impact analysis identifying all downstream files (personas, config, templates, commands) is required
+- All specification changes are logged in the governance journal
+- After applying changes, section numbering and all cross-references must be verified
+
+See `/armature-update` for the full step-by-step protocol.
+
+### 7.8 Framework Backport — `/armature-backport`
+
+When the canonical Armature repository evolves, projects using Armature need a way to pull in framework improvements without overwriting project-specific content. The `/armature-backport` command handles this.
+
+**What gets updated (framework-generic):** ARMATURE.md, core personas (orchestrator, reviewer, reviewer-redteam, planner), templates, hooks, all commands (including backport itself), and core subagent wiring (reviewer, planner, redteam).
+
+**What is preserved (project-specific):** config.yaml, invariant registry, invariants.md, implementer personas, CLAUDE.md, root and scoped agents.md files, ADRs, journal, session state, reviews, implementer subagent wiring.
+
+**Protocol summary:**
+1. Compare `armature-version` between project and canonical source
+2. Diff all framework-generic files and present changes to the human
+3. Warn if any framework files have local modifications that will be lost
+4. Apply updates with human confirmation
+5. Check for schema migrations (new config/frontmatter/registry fields)
+6. Update `armature-version` in project config
+7. Run `post-stop.sh` to verify governance integrity
+8. Log the backport in the governance journal
+
+See `/armature-backport` for the full step-by-step protocol.
+
 ---
 
 ## 8. Schemas
@@ -949,6 +1154,8 @@ Encoded in persona definitions, not enforced mechanically:
 ### 8.1 .armature/config.yaml
 
 ```yaml
+armature-version: "1.0.0"       # Armature methodology version
+
 project:
   name: ""
   description: ""
@@ -975,6 +1182,10 @@ governance:
   build-candidate-prefix: "bc"
   circuit-breaker-threshold: 3
   reviewer-required: true
+  changeset-budget:
+    target-loc: 300           # Ideal max LOC per implementer delegation
+    warn-loc: 500             # Hard stop — must decompose before delegating
+    planner-trigger-loc: 400  # Invoke planner if estimated LOC exceeds this
 ```
 
 ### 8.2 AGENTS.md Frontmatter
@@ -999,6 +1210,8 @@ restricted: []               # Prohibited actions
 {CATEGORY}-{NNN}:
   name: ""
   severity: critical | high | standard
+  status: active                 # active | deprecated
+  superseded-by: null            # Invariant ID of replacement, or null
   description: ""
   defined-in: ""             # ADR path
   enforced-by:
@@ -1025,7 +1238,35 @@ No governance mechanism depends exclusively on agent tooling. Every file is huma
 
 ---
 
-## 10. Future Considerations (Deferred)
+## 10. Scaling Guidance and Future Considerations
+
+### 10.1 Scaling Guidance
+
+Armature is designed for single-developer agentic workflows, but projects vary in size. These guidelines help adapt the scaffold:
+
+**Component count:**
+- Up to ~10 components: flat structure in `personas/implementers/` works well
+- 10–25 components: group related implementers under subdirectories; consider source-level agents.md files to reduce routing table noise
+- Beyond 25: consider multi-repo architecture with per-repo scaffolds sharing a common invariant registry
+
+**Invariant registry:**
+- Up to ~50 invariants: single `registry.yaml` file
+- 50–200 invariants: split into per-category files (e.g., `registry-schema.yaml`, `registry-runtime.yaml`) with a root index file; invariant IDs must remain globally unique regardless of partitioning
+- Beyond 200: re-evaluate whether invariants are at the right abstraction level — many may be redundant or over-specified
+
+**Changeset budget calibration:**
+- Small repos (< 10k LOC): defaults work well (target: 300, warn: 500)
+- Medium repos (10k–50k LOC): consider reducing target-loc to 200 and warn-loc to 350
+- Large repos (> 50k LOC): per-scope budget overrides may be needed; repos with many cross-cutting concerns should increase circuit-breaker-threshold to 4–5
+
+**CLAUDE.md routing table:**
+- Beyond ~15 entries: group by subsystem with section headings
+- Beyond ~30 entries: extract to a separate `routing.yaml` file referenced by CLAUDE.md
+- Always keep the critical invariants section in CLAUDE.md regardless of routing table size
+
+**ADR numbering:** Use 4-digit IDs from the start (ADR-0001). Add `docs/adr/index.md` when count exceeds ~30.
+
+### 10.2 Future Considerations (Deferred)
 
 The following are explicitly deferred under the YAGNI principle:
 

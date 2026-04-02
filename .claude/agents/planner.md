@@ -1,9 +1,10 @@
 ---
 name: planner
 description: >
-  Planning specialist for complex tasks within a single scope.
-  Produces structured implementation plans with invariant checkpoints.
-  Never writes code.
+  Planning agent for complex or large tasks within a single scope.
+  Activated when complexity > 7 OR estimated LOC exceeds changeset
+  budget. Produces implementation plans with LOC estimates and
+  review checkpoints for incremental review. Never writes code.
 tools: Read, Glob, Grep
 model: sonnet
 ---

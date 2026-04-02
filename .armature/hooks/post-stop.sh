@@ -34,7 +34,7 @@ if [ -f "${REPO_ROOT}/CLAUDE.md" ]; then
   done < <(grep -oP '`[^`]*agents\.md`' "${REPO_ROOT}/CLAUDE.md" | tr -d '`' | sort -u)
 fi
 
-# 2. Check that the invariant registry is valid YAML (if yq or python is available)
+# 2. Check that the invariant registry is valid YAML (if python is available)
 if [ -f "$REGISTRY" ]; then
   if [ -n "$PYTHON" ]; then
     $PYTHON -c "
