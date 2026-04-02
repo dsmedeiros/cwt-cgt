@@ -682,6 +682,6 @@ def phase14_report(output_root: Path, payload: dict) -> dict[str, Path]:
     lines.append('- Benchmark F remains an exclusion / R4 benchmark with no trusted local-field cells.')
     lines.append('')
     lines.append(f"Suite plot: `{plot_paths['suite_valid_field_cells']}`")
-    report_path.write_text('\n'.join(lines) + '\n')
+    report_path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
     plot_paths['phase14_report'] = report_path
     return plot_paths

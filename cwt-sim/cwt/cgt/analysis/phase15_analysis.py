@@ -604,7 +604,7 @@ def _benchmark_phase15_payload(
     benchmark_dir.mkdir(parents=True, exist_ok=True)
     out_path = benchmark_dir / f'{benchmark_id}_phase15_tangent_field.json'
     benchmark_payload = _sanitize_for_json(benchmark_payload)
-    out_path.write_text(json.dumps(benchmark_payload, indent=2))
+    out_path.write_text(json.dumps(benchmark_payload, indent=2), encoding='utf-8')
     return benchmark_payload
 
 
@@ -679,7 +679,7 @@ def phase15_payload(
     )
     suite_reports_dir.mkdir(parents=True, exist_ok=True)
     (suite_reports_dir / 'phase15_summary.json').write_text(
-        json.dumps(_sanitize_for_json(suite), indent=2)
+        json.dumps(_sanitize_for_json(suite), indent=2), encoding='utf-8'
     )
     return suite
 
@@ -948,6 +948,6 @@ def phase15_report(
     lines.append('- Benchmark F remains excluded by R4 and is not interpreted through the tangent field.')
     lines.append('')
     lines.append(f"Suite plot: `{plot_paths['suite_structural_amplitude']}`")
-    report_path.write_text('\n'.join(lines) + '\n')
+    report_path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
     plot_paths['phase15_report'] = report_path
     return plot_paths

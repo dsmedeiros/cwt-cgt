@@ -15,6 +15,8 @@ import numpy as np
 def normalize_probabilities(values: np.ndarray, floor: float = 1e-12) -> np.ndarray:
     """Return a normalised probability vector, clamping entries above *floor*."""
     arr = np.asarray(values, dtype=float)
+    if arr.size == 0:
+        return arr
     arr = np.maximum(arr, floor)
     total = float(arr.sum())
     if total <= 0.0:

@@ -705,7 +705,7 @@ def phase13_report(output_root: Path, payload: dict) -> dict[str, Path]:
         ]
     )
     report_path = reports_dir / 'CWT-CGT_Phase_13_Report.md'
-    report_path.write_text('\n'.join(md_lines))
+    report_path.write_text('\n'.join(md_lines), encoding='utf-8')
 
     acceptance_lines = [
         '# CWT-CGT benchmark acceptance report v8',
@@ -724,7 +724,7 @@ def phase13_report(output_root: Path, payload: dict) -> dict[str, Path]:
         acceptance_lines.append(f"- Trusted / excluded pairs: {row['trusted_pair_count']} / {row['excluded_pair_count']}")
         acceptance_lines.append('')
     acceptance_path = reports_dir / 'CWT-CGT_Benchmark_Acceptance_Report_v8.md'
-    acceptance_path.write_text('\n'.join(acceptance_lines))
+    acceptance_path.write_text('\n'.join(acceptance_lines), encoding='utf-8')
     plot_paths['phase13_report'] = report_path
     plot_paths['acceptance_report_v8'] = acceptance_path
     return plot_paths

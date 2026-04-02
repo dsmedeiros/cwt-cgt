@@ -621,7 +621,7 @@ def phase11_report(output_root: Path, payload: dict) -> dict[str, Path]:
             "",
         ]
     )
-    md_path.write_text("\n".join(lines))
+    md_path.write_text("\n".join(lines), encoding='utf-8')
     return {
         "phase11_report": md_path,
         "benchmark_c_scatter": scatter_path,

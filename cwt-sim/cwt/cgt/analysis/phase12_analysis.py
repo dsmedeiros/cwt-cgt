@@ -819,7 +819,7 @@ def phase12_report(output_root: Path, payload: dict) -> dict[str, Path]:
         ]
     )
     md_path = reports_dir / "CWT-CGT_Phase_12_Report.md"
-    md_path.write_text("\n".join(md_lines))
+    md_path.write_text("\n".join(md_lines), encoding='utf-8')
     return {
         "phase12_report": md_path,
         "benchmark_c_slope_plot": slope_path,
