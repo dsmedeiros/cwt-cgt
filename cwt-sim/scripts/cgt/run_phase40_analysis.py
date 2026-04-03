@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from cwt.cgt.analysis._utils import nan_to_none
 from cwt.cgt.analysis.phase40_analysis import run_phase40_analysis
 
 
@@ -12,7 +13,7 @@ def main() -> None:
         project_root=project_root,
         output_root=project_root,
     )
-    print(json.dumps(payload["switch_metrics"], indent=2))
+    print(json.dumps(nan_to_none(payload["switch_metrics"]), indent=2))
 
 
 if __name__ == "__main__":

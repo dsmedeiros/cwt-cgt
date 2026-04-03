@@ -42,28 +42,7 @@ from typing import Iterable
 import matplotlib.pyplot as plt
 import numpy as np
 
-
-def _safe_pow(base: float, exponent: float, max_log: float = 700.0) -> float:
-    """Compute base**exponent clamped to prevent float overflow."""
-    if base <= 0.0:
-        return 0.0
-    log_result = math.log(base) * exponent
-    return math.exp(min(log_result, max_log))
-
-
-def _safe_float(v: object) -> float:
-    return float('nan') if v is None else float(v)  # type: ignore[arg-type]
-
-
-def _nan_to_none(obj: object) -> object:
-    """Recursively replace float('nan') or float('inf') with None for JSON-safe serialization."""
-    if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
-        return None
-    if isinstance(obj, dict):
-        return {k: _nan_to_none(v) for k, v in obj.items()}
-    if isinstance(obj, list):
-        return [_nan_to_none(v) for v in obj]
-    return obj
+from cwt.cgt.analysis._utils import nan_to_none, safe_float, safe_pow
 
 
 @dataclass(frozen=True)
@@ -108,7 +87,7 @@ def _compute_phase39_channels(row: dict, mean_variance_alignment: float, mean_ra
     local_compactness_normalizer = math.sqrt(max(local_tensor_share * local_covariance_share, eps)) / math.sqrt(max(local_area_share, eps))
     local_geometry_compactness_ratio = raw_geometry_compactness_share / max(local_compactness_normalizer, eps)
     local_compactness_exponent = exponent_scale * local_geometry_compactness_ratio
-    raw_compactness_ratio = _safe_pow(mean_variance_alignment / max(variance_alignment, eps), local_compactness_exponent)
+    raw_compactness_ratio = safe_pow(mean_variance_alignment / max(variance_alignment, eps), local_compactness_exponent)
     local_compactness_ratio = raw_compactness_ratio / max(mean_raw_compactness_ratio, eps)
     local_compactness_area_channel = local_area_channel * local_compactness_ratio
     return {
@@ -317,10 +296,10 @@ def run_phase41_analysis(project_root: Path, output_root: Path | None = None, co
         both_comb_fit = _prediction_summary(both_comb_rows, 'pooled_positive_noisy_scaffold_predictor')
         both_new_fit = _prediction_summary(both_new_rows, 'pooled_positive_noisy_scaffold_predictor')
 
-        c_combined_r2.append(_safe_float(c_comb_fit['r2']))
-        g_combined_r2.append(_safe_float(g_comb_fit['r2']))
-        both_combined_r2.append(_safe_float(both_comb_fit['r2']))
-        both_new_r2.append(_safe_float(both_new_fit['r2']))
+        c_combined_r2.append(safe_float(c_comb_fit['r2']))
+        g_combined_r2.append(safe_float(g_comb_fit['r2']))
+        both_combined_r2.append(safe_float(both_comb_fit['r2']))
+        both_new_r2.append(safe_float(both_new_fit['r2']))
 
         levels.append(
             {
@@ -402,11 +381,11 @@ def run_phase41_analysis(project_root: Path, output_root: Path | None = None, co
 
     output_path = output_root / 'cgt_benchmarks' / 'results' / 'benchmark_scaffold_family' / 'benchmark_scaffold_phase41_pooled_positive_noisy.json'
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(_nan_to_none(payload), indent=2))
+    output_path.write_text(json.dumps(nan_to_none(payload), indent=2))
     return payload
 
 
 if __name__ == '__main__':
     project_root = Path(__file__).resolve().parents[3]
     payload = run_phase41_analysis(project_root=project_root, output_root=project_root)
-    print(json.dumps(payload['switch_metrics'], indent=2))
+    print(json.dumps(nan_to_none(payload['switch_metrics']), indent=2))
