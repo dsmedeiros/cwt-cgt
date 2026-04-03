@@ -1,14 +1,20 @@
 # Theory / Implementation Alignment v31
 
-The implementation now includes a second positive noisy scaffold benchmark, benchmark G.
+## New alignment point
+The implementation now includes a **Phase 41 pooled positive noisy scaffold rule**.
 
-## Alignment
-- The theory now explicitly distinguishes:
-  - validated coherent/passive scaffold behavior,
-  - explicit R4 exclusion behavior,
-  - auxiliary topology behavior,
-  - noisy scaffold transfer behavior.
-- Benchmark G is treated as a **designed scaffold benchmark**. The theory text does not present it as an empirical or external validation benchmark.
+## What is implemented
+- load benchmark C Phase 39 scaffold rows,
+- load benchmark G Phase 40 scaffold rows,
+- pool the square/circle train rows,
+- derive one shared compactness-normalizer rule per dephasing level,
+- evaluate held-out base/new families on both benchmarks without benchmark-specific refit.
 
-## Remaining mismatch
-The current noisy rule still reuses coefficients learned or accepted from benchmark C and transfers them into benchmark G. That is enough to strengthen scaffold-level confidence, but it is not yet a benchmark-family-free microscopic derivation.
+## What is *not* claimed
+- no external validation,
+- no claim that the pooled rule is benchmark-independent in the wild,
+- no claim that the noisy microscopic generator is final.
+
+## Practical meaning
+The code now supports a stronger scaffold-level statement:
+there is a shared noisy positive scaffold rule across at least two designed positive scaffold benchmarks.

@@ -1,124 +1,129 @@
-# PRD: Phase 40 — Benchmark G (Second Positive Noisy Scaffold Benchmark)
+# PRD: Phase 41 — Pooled Positive Noisy Scaffold Rule Integration
 
 ## Overview
 
-Integrate Phase 40 analysis from the CWT-CGT facelift package (v5.1) into the cwt-sim repository. Phase 40 adds **Benchmark G**, a four-node skew-ring scaffold benchmark that tests whether the accepted Phase 39 noisy loop-side rule transfers beyond benchmark C without refitting. This is the first multi-benchmark generalization test for the noisy lane.
+Integrate Phase 41 analysis from the CWT-CGT facelift package (v5.2) into the cwt-sim repository. Phase 41 derives a **single pooled positive-noisy scaffold rule** from the combined train rows of benchmarks C and G, then evaluates held-out families on both benchmarks without benchmark-specific refit. This is the first cross-benchmark pooled rule, strengthening the noisy scaffold from one-way transfer to a shared rule.
 
 ## Motivation
 
-The current repo has phases 16-39 fully integrated. The noisy loop-side rule has only been validated on benchmark C. Phase 40 tests rule transfer to a second distinct benchmark topology (Benchmark G), strengthening scaffold-level confidence that the rule is not a single-benchmark artifact.
+The repo has phases 16-40 integrated. Phase 40 proved one-way transfer from C to G. Phase 41 goes further: pooling train rows from both benchmarks to derive one shared rule, then evaluating held-out families from both benchmarks under that shared rule. This strengthens scaffold-level generalization.
 
 ## Scope
 
 ### In Scope
-1. New Phase 40 analysis module adapted to repo conventions
-2. Benchmark G result artifact and results directory
-3. Phase 40 runner script
-4. Phase 40 smoke tests
-5. Updated theory/status/alignment/acceptance report documents
-6. Updated existing smoke test file to cover Phase 40
+1. New Phase 41 analysis module adapted to repo conventions
+2. Benchmark scaffold_family result artifact and directory
+3. Phase 41 runner script
+4. Phase 41 smoke tests
+5. New theory/status/alignment/acceptance report documents (5 new, 1 update)
 
 ### Out of Scope
-- Changes to the existing Phase 39 or earlier analysis modules
-- Changes to the core cwt/ dynamics or geometry modules
+- Changes to existing Phase 39 or Phase 40 analysis modules
+- Changes to core cwt/ dynamics or geometry modules
 - Changes to cwt_lab (Electron/React desktop app)
 - Changes to baselines or experiments
 
 ## Requirements
 
-### R1: Phase 40 Analysis Module
-**File:** `cwt-sim/cwt/cgt/analysis/phase40_analysis.py`
+### R1: Phase 41 Analysis Module
+**File:** `cwt-sim/cwt/cgt/analysis/phase41_analysis.py`
+**Source:** `project-facelift/phase41_analysis.py`
 
-Adapt the standalone `phase40_analysis.py` from the facelift to follow repo conventions:
-- Import paths use `cwt.cgt.analysis.phase40_analysis` (not flat `cwt_cgt`)
-- Source artifact path resolves relative to `cwt-sim/cgt_benchmarks/results/benchmark_C_ring/`
-- Output paths resolve relative to `cwt-sim/cgt_benchmarks/results/benchmark_G_skew_ring/`
-- Plot output paths resolve relative to `cwt-sim/cgt_benchmarks/reports/plots/`
-- Must include the `_safe_pow` overflow guard from phase39 pattern
-- Must include `_safe_float` helper from phase39 pattern
-- The `_prediction_summary` function should filter on `trusted_pair` (matching phase39 convention)
-- Config dataclass `Phase40Config` with all parameters from facelift source
-- Shape geometry constants: `SHAPE_AREA`, `SHAPE_SCALE`, `SHAPE_CURVATURE`
-- Core `_generate_rows_for_gamma()` function computing local shares, compactness chain, predictor, orientation gap
-- Plotting functions: `_plot_switch_scatter()`, `_plot_r2_lines()`
-- Main `run_phase40_analysis()` orchestrator:
-  - Loads Phase 39 benchmark C artifact as source
-  - Generates rows for each dephasing level (0.0, 0.1, 0.2, 0.3)
-  - Computes fit metrics per family group
-  - Determines verdict: "scaffold_supported" if held-out new R2 >= 0.85 AND combined R2 >= 0.90
+Adapt the standalone module to follow repo conventions:
+- Import paths use `cwt.cgt.analysis.phase41_analysis` (not flat `cwt_cgt`)
+- Source artifact paths resolve relative to `cwt-sim/cgt_benchmarks/results/` (not `03_benchmarks/results/`)
+- Output paths resolve to `cwt-sim/cgt_benchmarks/results/benchmark_scaffold_family/`
+- Plot output paths resolve to `cwt-sim/cgt_benchmarks/reports/plots/phase41_pooled_positive_scaffold/`
+- Config dataclass `Phase41Config` with parameters: default_switch_gamma=0.30, benchmark slugs, filenames
+- Core functions: `_prediction_summary()`, `_compute_phase39_channels()`, `_derive_pooled_rule()`, `_augment_rows()`, `_group()`, `_plot_switch_scatter()`, `_plot_r2_lines()`
+- Main `run_phase41_analysis()` orchestrator:
+  - Loads Phase 39 benchmark C artifact and Phase 40 benchmark G artifact
+  - Pools train rows from both benchmarks at each dephasing level
+  - Derives one shared compactness-normalizer rule per level
+  - Evaluates held-out families on both benchmarks under pooled rule
   - Generates scatter and R2-vs-dephasing plots
-  - Writes output JSON to benchmark_G_skew_ring directory
-  - Returns payload with switch_metrics and suite_verdicts
+  - Writes output JSON to benchmark_scaffold_family directory
+  - Returns payload with switch_metrics and verdict
+- Must include module-level docstring explaining this is a DESIGNED SCAFFOLD benchmark
+- Follow the exact pattern of phase40_analysis.py for `parents[]` resolution in `__main__`
 
-### R2: Benchmark G Result Artifact
-**File:** `cwt-sim/cgt_benchmarks/results/benchmark_G_skew_ring/benchmark_g_phase40_second_positive_noisy.json`
+### R2: Benchmark Scaffold Family Result Artifact
+**File:** `cwt-sim/cgt_benchmarks/results/benchmark_scaffold_family/benchmark_scaffold_phase41_pooled_positive_noisy.json`
+**Source:** `project-facelift/benchmark_scaffold_phase41_pooled_positive_noisy.json`
 
-Copy the pre-generated Benchmark G result JSON from the facelift package. This artifact contains:
-- Phase 40 metadata, benchmark kind, shape splits
-- Per-dephasing-level rows with all intermediate quantities
-- Switch-level fit metrics
-- Suite verdicts including benchmark_g verdict
+Copy the pre-generated result JSON. This artifact contains:
+- Phase 41 metadata and description
+- Per-dephasing-level pooled rule derivation, fit metrics for both benchmarks
+- Switch-level metrics: benchmark_c_heldout_combined_r2, benchmark_g_heldout_combined_r2, pooled_heldout_combined_r2, sign_agreement
+- Verdict: `pooled_positive_noisy_scaffold_supported`
 
-### R3: Phase 40 Runner Script
-**File:** `cwt-sim/scripts/cgt/run_phase40_analysis.py`
+### R3: Phase 41 Runner Script
+**File:** `cwt-sim/scripts/cgt/run_phase41_analysis.py`
+**Source:** `project-facelift/run_phase41_analysis.py`
 
-Follow the pattern of `run_phase39_analysis.py`:
-- Import from `cwt.cgt.analysis.phase40_analysis`
-- `main()` function that resolves project_root, calls `run_phase40_analysis()`, prints switch_metrics as JSON
+Follow the pattern of `run_phase40_analysis.py`:
+- Import from `cwt.cgt.analysis.phase41_analysis`
+- `main()` function wrapper that resolves project_root via `parents[2]`
+- Calls `run_phase41_analysis()`, prints switch_metrics as JSON
 - `if __name__ == '__main__'` guard
 
-### R4: Smoke Tests
-**File:** `cwt-sim/tests/unit/test_cgt_phase16_to_39_smoke.py` (extend existing, or new file)
+### R4: Phase 41 Smoke Tests
+**File:** `cwt-sim/tests/unit/test_cgt_phase41_smoke.py`
+**Source:** `project-facelift/test_smoke.py` (phase41 portion) + `test_cgt_phase40_smoke.py` (conventions)
 
-Add tests for Phase 40:
-- Verify benchmark_G_skew_ring result directory exists and contains valid JSON
-- Verify phase40 analysis module is importable
-- Verify structural integrity of the Phase 40 artifact (switch_metrics keys present)
-- Verify held-out new R2 > 0.85 and held-out combined R2 > 0.90 at switch gamma
+Follow test_cgt_phase40_smoke.py conventions exactly:
+- a) Verify benchmark_scaffold_family result artifact exists and parses as valid JSON with required keys
+- b) Verify phase41_analysis module is importable and exposes `run_phase41_analysis` and `Phase41Config`
+- c) Verify artifact structural integrity (switch_metrics keys and thresholds)
+- d) Verify `run_phase41_analysis()` executes and produces conforming output with correct switch_metrics
+- e) Verify pooled rule provenance: coefficients differ from single-benchmark Phase 39 rule (proving pooling occurred)
+- Thresholds: benchmark_c_heldout_combined_r2 > 0.90, benchmark_g_heldout_combined_r2 > 0.90, pooled_heldout_combined_r2 > 0.93
+- Verdict must be `pooled_positive_noisy_scaffold_supported`
 
 ### R5: Theory Documents
-Add the following reports to `cwt-sim/cgt_benchmarks/reports/`:
+Add/update the following in `cwt-sim/cgt_benchmarks/reports/`:
 
-1. **CWT-CGT_Theory_Hardened_v39.md** — Theory revision adding Benchmark G, confidence update, completion estimates
-2. **CWT-CGT_Current_Theory_Status_v39.md** — Status snapshot with two positive noisy scaffold benchmarks
-3. **CWT-CGT_Theory_Implementation_Alignment_v31.md** — Alignment update noting Benchmark G integration
-4. **CWT-CGT_Phase_40_Second_Positive_Noisy_Benchmark.md** — Phase 40 design spec
-5. **CWT-CGT_Benchmark_G_Extension.md** — Benchmark G design intent document
-6. **CWT-CGT_Phase_40_Report.md** — Phase 40 results report
-7. **CWT-CGT_Benchmark_Acceptance_Report_v34.md** — Updated suite-wide acceptance report (A-G)
+**New files (5):**
+1. `CWT-CGT_Phase_41_Report.md` — Phase 41 results report with switch-slice metrics
+2. `CWT-CGT_Benchmark_Acceptance_Report_v35.md` — Updated suite-wide acceptance (A-G + scaffold_CG)
+3. `CWT-CGT_Theory_Hardened_v40.md` — Theory revision adding pooled scaffold rule, confidence update
+4. `CWT-CGT_Current_Theory_Status_v40.md` — Status snapshot with pooled scaffold result
+5. `CWT-CGT_Phase_41_Pooled_Positive_Noisy_Scaffold.md` — Phase 41 design spec
 
-### R6: Benchmark G Results Directory
-**Directory:** `cwt-sim/cgt_benchmarks/results/benchmark_G_skew_ring/`
-
-Create the directory structure and place the Phase 40 result JSON within it.
+**Update (1):**
+6. `CWT-CGT_Theory_Implementation_Alignment_v31.md` — Add Phase 41 alignment point (pooled scaffold rule)
 
 ## Technical Constraints
 
-1. **GEOM-001**: The phase40 analysis module lives under `cwt/cgt/analysis/` and must not import from `layers/`, `orchestrator/`, `experiments/`, or `baselines/`.
-2. **BASE-003**: No imports from `cwt/` in baseline code (not applicable here but must not be violated).
-3. The Phase 39 benchmark C artifact (`benchmark_c_phase39_local_superoperator_compactness_normalizer.json`) is the required input dependency and already exists in the repo.
-4. Follow the existing naming convention: `phase{N}_analysis.py` for modules, `run_phase{N}_analysis.py` for runners.
+1. **GEOM-001**: phase41_analysis.py must not import from `layers/`, `orchestrator/`, `experiments/`, or `baselines/`.
+2. **BASE-003**: No imports from `cwt/` in baseline code (not applicable but must not be violated).
+3. Phase 39 artifact (`benchmark_c_phase39_local_superoperator_compactness_normalizer.json`) and Phase 40 artifact (`benchmark_g_phase40_second_positive_noisy.json`) are required input dependencies and already exist.
+4. Follow naming convention: `phase{N}_analysis.py` for modules, `run_phase{N}_analysis.py` for runners.
 5. Python 3.11+ compatibility. Dependencies: numpy, matplotlib (already in requirements).
 
 ## Acceptance Criteria
 
-1. `python -c "from cwt.cgt.analysis.phase40_analysis import run_phase40_analysis"` succeeds
-2. `python cwt-sim/scripts/cgt/run_phase40_analysis.py` produces valid JSON output with switch_metrics
-3. All existing tests pass (`python -m pytest cwt-sim/tests/unit/ -x`)
-4. New Phase 40 smoke test passes
-5. Benchmark G result JSON exists and is valid
-6. All 7 report/theory documents are placed correctly
+1. `python -c "from cwt.cgt.analysis.phase41_analysis import run_phase41_analysis"` succeeds
+2. `python cwt-sim/scripts/cgt/run_phase41_analysis.py` produces valid JSON output with switch_metrics
+3. All existing tests pass (`cd cwt-sim && python -m pytest tests/unit/ -x`)
+4. New Phase 41 smoke test passes (`cd cwt-sim && python -m pytest tests/unit/test_cgt_phase41_smoke.py -v`)
+5. Benchmark scaffold_family result JSON exists and is valid
+6. All 5 new report documents are placed correctly, 1 existing updated
 7. No invariant violations (GEOM-001, BASE-003, LAYER-001, LAYER-002)
-8. Switch metrics at gamma=0.30: train R2 > 0.99, held-out new R2 > 0.85, held-out combined R2 > 0.90
+8. Switch metrics at gamma=0.30: benchmark_c_heldout_combined_r2 > 0.90, benchmark_g_heldout_combined_r2 > 0.90, pooled_heldout_combined_r2 > 0.93
 
-## Parallelization Notes
+## Parallelization Plan
 
-The following task groups are independent and can execute concurrently:
-- **Group A (Reports)**: All 7 theory/report documents can be written in parallel (R5)
-- **Group B (Code)**: Phase 40 analysis module (R1) — depends on nothing new
-- **Group C (Artifact)**: Benchmark G result JSON (R2) — depends on nothing new
-- **Group D (Runner)**: Phase 40 runner script (R3) — depends on R1 completion
-- **Group E (Tests)**: Smoke tests (R4) — depends on R1, R2, R3 completion
-- **Group F (Directory)**: Benchmark G results directory (R6) — depends on nothing, needed by R2
+```
+         ┌── Task 4 (R2: artifact copy) ──────────────────────┐
+         ├── Task 5 (R5: reports + theory docs) ──────────────┤
+Start ───┤                                                     ├──► Review ──► Commit
+         └── Task 1 (R1: analysis module) ──┬── Task 2 (R3) ──┤
+                                             └── Task 3 (R4) ──┘
+```
 
-Maximally parallel execution: Groups A, B, C, F simultaneously, then D, then E.
+**Parallel wave 1:** Tasks 1, 4, 5 (independent: analysis module, artifact copy, reports)
+**Parallel wave 2:** Tasks 2, 3 (depend on Task 1; Task 3 also depends on Task 4)
+**All tasks are cwt-core-impl scope** — single implementer processes waves sequentially within scope.
+
+Maximally parallel execution across waves. Tasks 4 and 5 are pure file operations. Tasks 1-3 require Python adaptation.
