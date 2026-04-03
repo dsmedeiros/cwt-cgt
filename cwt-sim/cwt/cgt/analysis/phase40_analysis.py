@@ -39,35 +39,13 @@ from __future__ import annotations
 
 import copy
 import json
-import math
 from dataclasses import dataclass
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-
-def _safe_pow(base: float, exponent: float, max_log: float = 700.0) -> float:
-    """Compute base**exponent clamped to prevent float overflow."""
-    if base <= 0.0:
-        return 0.0
-    log_result = math.log(base) * exponent
-    return math.exp(min(log_result, max_log))
-
-
-def _safe_float(v: object) -> float:
-    return float('nan') if v is None else float(v)  # type: ignore[arg-type]
-
-
-def _nan_to_none(obj: object) -> object:
-    """Recursively replace float('nan') with None for JSON-safe serialization."""
-    if isinstance(obj, float) and math.isnan(obj):
-        return None
-    if isinstance(obj, dict):
-        return {k: _nan_to_none(v) for k, v in obj.items()}
-    if isinstance(obj, list):
-        return [_nan_to_none(v) for v in obj]
-    return obj
+from cwt.cgt.analysis._utils import nan_to_none, safe_float, safe_pow
 
 
 @dataclass(frozen=True)
@@ -175,7 +153,7 @@ def _generate_rows_for_gamma(gamma: float, derivation: dict, cfg: Phase40Config)
                 local_geometry_compactness_ratio = float(raw_geometry_compactness_share / max(local_compactness_normalizer, eps))
                 local_compactness_exponent = float(params['exponent_scale'] * local_geometry_compactness_ratio)
                 base_ratio = float(params['mean_variance_alignment']) / max(variance_alignment, eps)
-                raw_compactness_ratio = _safe_pow(base_ratio, local_compactness_exponent)
+                raw_compactness_ratio = safe_pow(base_ratio, local_compactness_exponent)
                 local_compactness_ratio = float(raw_compactness_ratio / max(float(params['mean_raw_compactness_ratio']), eps))
                 local_compactness_area_channel = float(local_area_channel * local_compactness_ratio)
 
@@ -322,10 +300,10 @@ def run_phase40_analysis(project_root: Path, output_root: Path | None = None, co
         }
         levels.append(level)
         gammas.append(gamma)
-        train_r2.append(_safe_float(level['train_fit']['r2']))
-        base_r2.append(_safe_float(level['heldout_base_fit']['r2']))
-        new_r2.append(_safe_float(level['heldout_new_fit']['r2']))
-        combined_r2.append(_safe_float(level['heldout_combined_fit']['r2']))
+        train_r2.append(safe_float(level['train_fit']['r2']))
+        base_r2.append(safe_float(level['heldout_base_fit']['r2']))
+        new_r2.append(safe_float(level['heldout_new_fit']['r2']))
+        combined_r2.append(safe_float(level['heldout_combined_fit']['r2']))
 
     switch_level = min(levels, key=lambda row: abs(float(row['dephasing']) - cfg.default_switch_gamma))
     switch_gamma = float(switch_level['dephasing'])
@@ -377,22 +355,22 @@ def run_phase40_analysis(project_root: Path, output_root: Path | None = None, co
             'This is an internal scaffold generalization test, not an external empirical validation benchmark.',
         ],
         'switch_metrics': {
-            'train_r2': _safe_float(switch_level['train_fit']['r2']),
-            'heldout_base_r2': _safe_float(switch_level['heldout_base_fit']['r2']),
-            'heldout_new_r2': _safe_float(switch_level['heldout_new_fit']['r2']),
-            'heldout_combined_r2': _safe_float(switch_level['heldout_combined_fit']['r2']),
-            'heldout_combined_corr': _safe_float(switch_level['heldout_combined_fit']['corr']),
-            'heldout_combined_sign_agreement': _safe_float(switch_level['heldout_combined_fit']['sign_agreement']),
+            'train_r2': safe_float(switch_level['train_fit']['r2']),
+            'heldout_base_r2': safe_float(switch_level['heldout_base_fit']['r2']),
+            'heldout_new_r2': safe_float(switch_level['heldout_new_fit']['r2']),
+            'heldout_combined_r2': safe_float(switch_level['heldout_combined_fit']['r2']),
+            'heldout_combined_corr': safe_float(switch_level['heldout_combined_fit']['corr']),
+            'heldout_combined_sign_agreement': safe_float(switch_level['heldout_combined_fit']['sign_agreement']),
         },
     }
 
     out_path = output_root / 'cgt_benchmarks' / 'results' / cfg.slug / 'benchmark_g_phase40_second_positive_noisy.json'
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(_nan_to_none(payload), indent=2))
+    out_path.write_text(json.dumps(nan_to_none(payload), indent=2))
     return payload
 
 
 if __name__ == '__main__':
     project_root = Path(__file__).resolve().parents[3]
     payload = run_phase40_analysis(project_root=project_root, output_root=project_root)
-    print(json.dumps(payload['switch_metrics'], indent=2))
+    print(json.dumps(nan_to_none(payload['switch_metrics']), indent=2))

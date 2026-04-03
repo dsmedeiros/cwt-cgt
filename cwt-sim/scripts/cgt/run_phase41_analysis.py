@@ -4,12 +4,12 @@ import json
 from pathlib import Path
 
 from cwt.cgt.analysis._utils import nan_to_none
-from cwt.cgt.analysis.phase40_analysis import run_phase40_analysis
+from cwt.cgt.analysis.phase41_analysis import run_phase41_analysis
 
 
 def main() -> None:
     project_root = Path(__file__).resolve().parents[2]
-    payload = run_phase40_analysis(
+    payload = run_phase41_analysis(
         project_root=project_root,
         output_root=project_root,
     )
