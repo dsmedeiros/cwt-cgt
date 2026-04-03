@@ -105,6 +105,11 @@ def _derive_pooled_rule(train_rows: list[dict], exponent_scale: float = 0.8) -> 
     trusted = [row for row in train_rows if row.get('trusted_pair')]
     if not trusted:
         raise ValueError('No trusted train rows available for pooled rule derivation.')
+    if len(trusted) < 6:
+        raise ValueError(
+            f'Pooled rule derivation requires at least 6 trusted rows (one per feature), '
+            f'got {len(trusted)}.'
+        )
 
     mean_variance_alignment = float(np.mean([float(row['variance_alignment']) for row in trusted]))
     raw_ratios: list[float] = []
@@ -354,8 +359,8 @@ def run_phase41_analysis(project_root: Path, output_root: Path | None = None, co
         'phase': 'phase41_pooled_positive_noisy_scaffold_rule',
         'description': cfg.description,
         'source_artifacts': {
-            'benchmark_c': str(c_path),
-            'benchmark_g': str(g_path),
+            'benchmark_c': str(c_path.relative_to(project_root)),
+            'benchmark_g': str(g_path.relative_to(project_root)),
         },
         'dephasing_values': [float(g) for g in gammas],
         'switch_gamma': switch_gamma,

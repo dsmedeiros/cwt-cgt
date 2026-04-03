@@ -12,17 +12,19 @@ import math
 
 
 def safe_pow(base: float, exponent: float, max_log: float = 700.0) -> float:
-    """Compute base**exponent clamped to prevent float overflow.
+    """Compute base**exponent clamped to prevent float overflow or underflow.
 
     Returns 0.0 for non-positive bases.  The exponent is applied via
-    ``exp(log(base) * exponent)`` with the log-result clamped to *max_log*
-    (default 700, well inside the ``math.exp`` safe range) so the return value
-    is always a finite float.
+    ``exp(log(base) * exponent)`` with the log-result clamped symmetrically to
+    ``[-max_log, max_log]`` (default 700, well inside the ``math.exp`` safe
+    range) so the return value is always a finite float in both the overflow
+    and underflow directions.
     """
     if base <= 0.0:
         return 0.0
     log_result = math.log(base) * exponent
-    return math.exp(min(log_result, max_log))
+    clamped = min(max(log_result, -max_log), max_log)
+    return math.exp(clamped)
 
 
 def safe_float(v: object) -> float:
@@ -39,11 +41,20 @@ def nan_to_none(obj: object) -> object:
     """Recursively replace non-finite floats with None for JSON-safe serialization.
 
     Handles both ``float('nan')`` and ``float('inf')`` / ``float('-inf')``,
-    both of which are illegal in JSON per RFC 8259.  Works recursively on
-    dicts and lists; all other types are returned unchanged.
+    both of which are illegal in JSON per RFC 8259.  Also handles numpy scalar
+    types (e.g. ``np.float64``) and any other object that exposes ``__float__``
+    but is not an ``int`` or ``bool``.  Works recursively on dicts and lists;
+    all other types are returned unchanged.
     """
     if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
         return None
+    if not isinstance(obj, (int, bool)) and hasattr(obj, '__float__'):
+        try:
+            f = float(obj)
+            if math.isnan(f) or math.isinf(f):
+                return None
+        except (TypeError, ValueError, OverflowError):
+            pass
     if isinstance(obj, dict):
         return {k: nan_to_none(v) for k, v in obj.items()}
     if isinstance(obj, list):
