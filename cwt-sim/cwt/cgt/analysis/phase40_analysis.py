@@ -60,8 +60,8 @@ def _safe_float(v: object) -> float:
 
 
 def _nan_to_none(obj: object) -> object:
-    """Recursively replace float('nan') with None for JSON-safe serialization."""
-    if isinstance(obj, float) and math.isnan(obj):
+    """Recursively replace float('nan') or float('inf') with None for JSON-safe serialization."""
+    if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
         return None
     if isinstance(obj, dict):
         return {k: _nan_to_none(v) for k, v in obj.items()}

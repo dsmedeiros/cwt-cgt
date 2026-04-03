@@ -56,8 +56,8 @@ def _safe_float(v: object) -> float:
 
 
 def _nan_to_none(obj: object) -> object:
-    """Recursively replace float('nan') with None for JSON-safe serialization."""
-    if isinstance(obj, float) and math.isnan(obj):
+    """Recursively replace float('nan') or float('inf') with None for JSON-safe serialization."""
+    if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
         return None
     if isinstance(obj, dict):
         return {k: _nan_to_none(v) for k, v in obj.items()}
@@ -347,6 +347,8 @@ def run_phase41_analysis(project_root: Path, output_root: Path | None = None, co
             }
         )
 
+    if not levels:
+        raise ValueError('No common dephasing levels between benchmarks C and G')
     switch_gamma = float(cfg.default_switch_gamma)
     switch_level = min(levels, key=lambda level: abs(float(level['dephasing']) - switch_gamma))
 
