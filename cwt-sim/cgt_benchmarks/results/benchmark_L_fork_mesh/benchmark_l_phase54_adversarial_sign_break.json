@@ -1,0 +1,1031 @@
+{
+  "phase": 54,
+  "benchmark_focus": "benchmark_l",
+  "description": "Adversarial perturbation family on benchmark L designed to test sign robustness under the unchanged pooled-five positive noisy scaffold rule.",
+  "accepted_pooled_rule": "pooled_five_positive_noisy_rule",
+  "dephasing_values": [
+    0.0,
+    0.1,
+    0.2,
+    0.3
+  ],
+  "rows_switch": [
+    {
+      "dephasing": 0.3,
+      "family_group": "train",
+      "center": [
+        -0.16,
+        0.1
+      ],
+      "shape": "square",
+      "pooled_five_positive_noisy_predictor": -8.8e-05,
+      "orientation_gap": -9.085569588388964e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.16,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "train",
+      "center": [
+        -0.05,
+        0.14
+      ],
+      "shape": "circle",
+      "pooled_five_positive_noisy_predictor": -8.511687132184282e-05,
+      "orientation_gap": -8.434439097115822e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.05,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "train",
+      "center": [
+        0.11,
+        -0.08
+      ],
+      "shape": "diamond",
+      "pooled_five_positive_noisy_predictor": -7.382314776462633e-05,
+      "orientation_gap": -7.357110756394932e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.11,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "train",
+      "center": [
+        0.18,
+        0.03
+      ],
+      "shape": "rounded_square",
+      "pooled_five_positive_noisy_predictor": -6.702390620985252e-05,
+      "orientation_gap": -7.05232804620243e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.18,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "train",
+      "center": [
+        -0.16,
+        0.1
+      ],
+      "shape": "ellipse",
+      "pooled_five_positive_noisy_predictor": -6.23756180579411e-05,
+      "orientation_gap": -6.143705458038634e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.16,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "train",
+      "center": [
+        -0.05,
+        0.14
+      ],
+      "shape": "stadium",
+      "pooled_five_positive_noisy_predictor": -5.4611548801425294e-05,
+      "orientation_gap": -4.891764361082046e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.05,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "train",
+      "center": [
+        0.11,
+        -0.08
+      ],
+      "shape": "square",
+      "pooled_five_positive_noisy_predictor": -4.564856300261296e-05,
+      "orientation_gap": -4.568794828791102e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.11,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "train",
+      "center": [
+        0.18,
+        0.03
+      ],
+      "shape": "circle",
+      "pooled_five_positive_noisy_predictor": -4.0272382069699714e-05,
+      "orientation_gap": -4.284822378103186e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.18,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "train",
+      "center": [
+        -0.16,
+        0.1
+      ],
+      "shape": "diamond",
+      "pooled_five_positive_noisy_predictor": -3.43626133989127e-05,
+      "orientation_gap": -3.393031154275246e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.16,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "train",
+      "center": [
+        -0.05,
+        0.14
+      ],
+      "shape": "rounded_square",
+      "pooled_five_positive_noisy_predictor": -2.7852960191599286e-05,
+      "orientation_gap": -2.4904912901564534e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.05,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "train",
+      "center": [
+        0.11,
+        -0.08
+      ],
+      "shape": "ellipse",
+      "pooled_five_positive_noisy_predictor": -2.4099875962208782e-05,
+      "orientation_gap": -2.3076867719143534e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.11,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "train",
+      "center": [
+        0.18,
+        0.03
+      ],
+      "shape": "stadium",
+      "pooled_five_positive_noisy_predictor": -1.6e-05,
+      "orientation_gap": -1.5687464006096882e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.18,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_base",
+      "center": [
+        -0.16,
+        0.1
+      ],
+      "shape": "square",
+      "pooled_five_positive_noisy_predictor": -8.093626002296285e-05,
+      "orientation_gap": -8.242634945050037e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.16,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_base",
+      "center": [
+        -0.05,
+        0.14
+      ],
+      "shape": "circle",
+      "pooled_five_positive_noisy_predictor": -7.213882870796228e-05,
+      "orientation_gap": -7.424853516863319e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.05,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_base",
+      "center": [
+        0.11,
+        -0.08
+      ],
+      "shape": "diamond",
+      "pooled_five_positive_noisy_predictor": -6.801194468658094e-05,
+      "orientation_gap": -6.954075031700268e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.11,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_base",
+      "center": [
+        0.18,
+        0.03
+      ],
+      "shape": "rounded_square",
+      "pooled_five_positive_noisy_predictor": -6.529094057368736e-05,
+      "orientation_gap": -6.365342297485829e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.18,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_base",
+      "center": [
+        -0.16,
+        0.1
+      ],
+      "shape": "ellipse",
+      "pooled_five_positive_noisy_predictor": -5.8281974989265836e-05,
+      "orientation_gap": -5.998340911609582e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.16,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_base",
+      "center": [
+        -0.05,
+        0.14
+      ],
+      "shape": "stadium",
+      "pooled_five_positive_noisy_predictor": -4.9626836696271676e-05,
+      "orientation_gap": -5.216790467948163e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.05,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_base",
+      "center": [
+        0.11,
+        -0.08
+      ],
+      "shape": "square",
+      "pooled_five_positive_noisy_predictor": -4.498377942888559e-05,
+      "orientation_gap": -4.3692456111470486e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.11,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_base",
+      "center": [
+        0.18,
+        0.03
+      ],
+      "shape": "circle",
+      "pooled_five_positive_noisy_predictor": -3.6700045726433075e-05,
+      "orientation_gap": -3.383273117737604e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.18,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_base",
+      "center": [
+        -0.16,
+        0.1
+      ],
+      "shape": "diamond",
+      "pooled_five_positive_noisy_predictor": -3.584725040638577e-05,
+      "orientation_gap": -3.7098466251979946e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.16,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_base",
+      "center": [
+        -0.05,
+        0.14
+      ],
+      "shape": "rounded_square",
+      "pooled_five_positive_noisy_predictor": -2.2771672092684958e-05,
+      "orientation_gap": -2.2170721565768893e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.05,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_base",
+      "center": [
+        0.11,
+        -0.08
+      ],
+      "shape": "ellipse",
+      "pooled_five_positive_noisy_predictor": -1.6977347749564456e-05,
+      "orientation_gap": -2.0342596632509486e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.11,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_base",
+      "center": [
+        0.18,
+        0.03
+      ],
+      "shape": "stadium",
+      "pooled_five_positive_noisy_predictor": -1.6461938881004287e-05,
+      "orientation_gap": -1.414410745295191e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.18,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_new",
+      "center": [
+        -0.16,
+        0.1
+      ],
+      "shape": "square",
+      "pooled_five_positive_noisy_predictor": -9.284847134312454e-05,
+      "orientation_gap": -8.742988011052667e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.16,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_new",
+      "center": [
+        -0.05,
+        0.14
+      ],
+      "shape": "circle",
+      "pooled_five_positive_noisy_predictor": -9.290734374763383e-05,
+      "orientation_gap": -8.968949208129367e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.05,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_new",
+      "center": [
+        0.11,
+        -0.08
+      ],
+      "shape": "diamond",
+      "pooled_five_positive_noisy_predictor": -8.45596321420456e-05,
+      "orientation_gap": -8.519652046117179e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.11,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_new",
+      "center": [
+        0.18,
+        0.03
+      ],
+      "shape": "rounded_square",
+      "pooled_five_positive_noisy_predictor": -8.357447598089925e-05,
+      "orientation_gap": -8.232100065086387e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.18,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_new",
+      "center": [
+        -0.16,
+        0.1
+      ],
+      "shape": "ellipse",
+      "pooled_five_positive_noisy_predictor": -7.455704746220403e-05,
+      "orientation_gap": -7.094112368535815e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.16,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_new",
+      "center": [
+        -0.05,
+        0.14
+      ],
+      "shape": "stadium",
+      "pooled_five_positive_noisy_predictor": -7.509316302248799e-05,
+      "orientation_gap": -6.609700260228564e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.05,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_new",
+      "center": [
+        0.11,
+        -0.08
+      ],
+      "shape": "square",
+      "pooled_five_positive_noisy_predictor": -6.885612361321072e-05,
+      "orientation_gap": -6.510078438877149e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.11,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_new",
+      "center": [
+        0.18,
+        0.03
+      ],
+      "shape": "circle",
+      "pooled_five_positive_noisy_predictor": -6.406534162456226e-05,
+      "orientation_gap": -5.969566885625658e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.18,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_new",
+      "center": [
+        -0.16,
+        0.1
+      ],
+      "shape": "diamond",
+      "pooled_five_positive_noisy_predictor": -6.239949666649166e-05,
+      "orientation_gap": -6.840620658985903e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.16,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_new",
+      "center": [
+        -0.05,
+        0.14
+      ],
+      "shape": "rounded_square",
+      "pooled_five_positive_noisy_predictor": -5.204297357499002e-05,
+      "orientation_gap": -5.0978742398094564e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.05,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_new",
+      "center": [
+        0.11,
+        -0.08
+      ],
+      "shape": "ellipse",
+      "pooled_five_positive_noisy_predictor": -5.214285094782304e-05,
+      "orientation_gap": -5.016323870319361e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.11,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_new",
+      "center": [
+        0.18,
+        0.03
+      ],
+      "shape": "stadium",
+      "pooled_five_positive_noisy_predictor": -4.7078571128463084e-05,
+      "orientation_gap": -3.850853417938398e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.18,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_new",
+      "center": [
+        -0.16,
+        0.1
+      ],
+      "shape": "square",
+      "pooled_five_positive_noisy_predictor": -4.104233438522996e-05,
+      "orientation_gap": -3.3343986384819305e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.16,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_new",
+      "center": [
+        -0.05,
+        0.14
+      ],
+      "shape": "circle",
+      "pooled_five_positive_noisy_predictor": -3.3901678154564635e-05,
+      "orientation_gap": -3.209500539042643e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.05,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_new",
+      "center": [
+        0.11,
+        -0.08
+      ],
+      "shape": "diamond",
+      "pooled_five_positive_noisy_predictor": -3.235073295577167e-05,
+      "orientation_gap": -2.90501597088254e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.11,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_new",
+      "center": [
+        0.18,
+        0.03
+      ],
+      "shape": "rounded_square",
+      "pooled_five_positive_noisy_predictor": -2.229834323896173e-05,
+      "orientation_gap": -2.1670695213835604e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.18,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_new",
+      "center": [
+        -0.16,
+        0.1
+      ],
+      "shape": "ellipse",
+      "pooled_five_positive_noisy_predictor": -2.163685268355495e-05,
+      "orientation_gap": -2.3547583270166906e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.16,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_new",
+      "center": [
+        -0.05,
+        0.14
+      ],
+      "shape": "stadium",
+      "pooled_five_positive_noisy_predictor": -1.756365219519976e-05,
+      "orientation_gap": -1.6800228434613217e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.05,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        -0.22,
+        0.16
+      ],
+      "shape": "square",
+      "pooled_five_positive_noisy_predictor": -9.880550210878775e-05,
+      "orientation_gap": -5.873197831326926e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.22,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        -0.14,
+        -0.04
+      ],
+      "shape": "circle",
+      "pooled_five_positive_noisy_predictor": -9.511392172220578e-05,
+      "orientation_gap": -6.664499267873775e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.14,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        0.07,
+        0.18
+      ],
+      "shape": "diamond",
+      "pooled_five_positive_noisy_predictor": -9.393141619358392e-05,
+      "orientation_gap": 5.891283552278968e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.07,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        0.21,
+        -0.12
+      ],
+      "shape": "rounded_square",
+      "pooled_five_positive_noisy_predictor": -8.89339004477446e-05,
+      "orientation_gap": -5.045468426929316e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.21,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        -0.22,
+        0.16
+      ],
+      "shape": "ellipse",
+      "pooled_five_positive_noisy_predictor": -8.521624819927948e-05,
+      "orientation_gap": -7.018044242443163e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.22,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        -0.14,
+        -0.04
+      ],
+      "shape": "stadium",
+      "pooled_five_positive_noisy_predictor": -8.139970583043556e-05,
+      "orientation_gap": -4.6507733871407695e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.14,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        0.07,
+        0.18
+      ],
+      "shape": "square",
+      "pooled_five_positive_noisy_predictor": -7.318777441231061e-05,
+      "orientation_gap": -4.254681591914879e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.07,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        0.21,
+        -0.12
+      ],
+      "shape": "circle",
+      "pooled_five_positive_noisy_predictor": -7.473360877597538e-05,
+      "orientation_gap": 5.585514889547956e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.21,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        -0.22,
+        0.16
+      ],
+      "shape": "diamond",
+      "pooled_five_positive_noisy_predictor": -7.105494574687726e-05,
+      "orientation_gap": -5.0003721926532066e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.22,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        -0.14,
+        -0.04
+      ],
+      "shape": "rounded_square",
+      "pooled_five_positive_noisy_predictor": -6.771256484704314e-05,
+      "orientation_gap": -5.0787465826794984e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.14,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        0.07,
+        0.18
+      ],
+      "shape": "ellipse",
+      "pooled_five_positive_noisy_predictor": -6.084196031354185e-05,
+      "orientation_gap": -3.623567642532668e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.07,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        0.21,
+        -0.12
+      ],
+      "shape": "stadium",
+      "pooled_five_positive_noisy_predictor": -6.0225143397205324e-05,
+      "orientation_gap": -4.6668065032733384e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.21,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        -0.22,
+        0.16
+      ],
+      "shape": "square",
+      "pooled_five_positive_noisy_predictor": -5.5839680952019536e-05,
+      "orientation_gap": -3.407592754161104e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.22,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        -0.14,
+        -0.04
+      ],
+      "shape": "circle",
+      "pooled_five_positive_noisy_predictor": -5.008531622797757e-05,
+      "orientation_gap": 2.4444052933906483e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.14,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        0.07,
+        0.18
+      ],
+      "shape": "diamond",
+      "pooled_five_positive_noisy_predictor": -4.6642883808413226e-05,
+      "orientation_gap": -4.5645358413108194e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.07,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        0.21,
+        -0.12
+      ],
+      "shape": "rounded_square",
+      "pooled_five_positive_noisy_predictor": -4.663610366801239e-05,
+      "orientation_gap": -2.922640281757907e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.21,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        -0.22,
+        0.16
+      ],
+      "shape": "ellipse",
+      "pooled_five_positive_noisy_predictor": -3.7012818103924744e-05,
+      "orientation_gap": -2.6286037862292398e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.22,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        -0.14,
+        -0.04
+      ],
+      "shape": "stadium",
+      "pooled_five_positive_noisy_predictor": -3.6584295102817556e-05,
+      "orientation_gap": -2.9147442694339486e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.14,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        0.07,
+        0.18
+      ],
+      "shape": "square",
+      "pooled_five_positive_noisy_predictor": -3.1457743237418415e-05,
+      "orientation_gap": 1.8508041639116583e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.07,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        0.21,
+        -0.12
+      ],
+      "shape": "circle",
+      "pooled_five_positive_noisy_predictor": -2.9079246171984162e-05,
+      "orientation_gap": -2.1144106143189947e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.21,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        -0.22,
+        0.16
+      ],
+      "shape": "diamond",
+      "pooled_five_positive_noisy_predictor": -2.2440925771278595e-05,
+      "orientation_gap": -2.719320239645651e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.22,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        -0.14,
+        -0.04
+      ],
+      "shape": "rounded_square",
+      "pooled_five_positive_noisy_predictor": -2.3129778183581987e-05,
+      "orientation_gap": 2.0568577880543246e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": -0.14,
+      "side_length": 0.09,
+      "area_magnitude": 0.0081
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        0.07,
+        0.18
+      ],
+      "shape": "ellipse",
+      "pooled_five_positive_noisy_predictor": -2.0017679848706487e-05,
+      "orientation_gap": -1.4051623069057579e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.07,
+      "side_length": 0.11,
+      "area_magnitude": 0.0121
+    },
+    {
+      "dephasing": 0.3,
+      "family_group": "heldout_adversarial",
+      "center": [
+        0.21,
+        -0.12
+      ],
+      "shape": "stadium",
+      "pooled_five_positive_noisy_predictor": -1.5e-05,
+      "orientation_gap": -1.6010088399778743e-05,
+      "trusted_pair": true,
+      "boundary_distance_u": 0.21,
+      "side_length": 0.13,
+      "area_magnitude": 0.016900000000000002
+    }
+  ],
+  "switch_metrics": {
+    "heldout_base": {
+      "r2": 0.9912446993402205,
+      "corr": 0.9961088496980877,
+      "sign_agreement": 1.0,
+      "count": 12
+    },
+    "heldout_new": {
+      "r2": 0.9642491480594527,
+      "corr": 0.9887396529125998,
+      "sign_agreement": 1.0,
+      "count": 18
+    },
+    "heldout_adversarial": {
+      "r2": -1.0453804336673214,
+      "corr": 0.2579940205192778,
+      "sign_agreement": 0.7916666666666666,
+      "count": 24
+    },
+    "heldout_combined": {
+      "r2": -0.08744315655986545,
+      "corr": 0.47708527744456947,
+      "sign_agreement": 0.9074074074074074,
+      "count": 54
+    }
+  },
+  "verdict": "adversarial_sign_boundary_exposed"
+}
