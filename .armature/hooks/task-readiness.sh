@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Armature PreToolUse + SubagentStart hook — task-readiness
-# Event(s): PreToolUse(Task) and SubagentStart (dual-mode per R1)
+# Event(s): PreToolUse(Agent) and SubagentStart (dual-mode per R1)
 # Invariant: TASK-001
 #
 # Purpose:
@@ -10,10 +10,12 @@
 #   NUL-byte payloads (defense-in-depth, not primary guard).
 #
 # Dual-mode event handling (R1):
-#   Claude Code may fire this hook via PreToolUse(Task) or SubagentStart.
-#   - PreToolUse(Task): outer payload has tool_name == "Task";
-#     prompt is in tool_input.prompt (fallback: tool_input.description,
-#     tool_input.task, bare prompt).
+#   Claude Code may fire this hook via PreToolUse(Agent) or SubagentStart.
+#   - PreToolUse(Agent): outer payload has tool_name == "Agent" (or the
+#     legacy "Task" alias on older installs); prompt is in tool_input.prompt
+#     (fallback: tool_input.description, tool_input.task, bare prompt).
+#     Per https://code.claude.com/docs/en/hooks.md the Agent tool's
+#     tool_input fields are: prompt, description, subagent_type, model.
 #   - SubagentStart: outer payload has no tool_name but has a scope field;
 #     prompt is in prompt or subagent_prompt field.
 #   - If neither shape applies -> fail-open, exit 0.
@@ -64,7 +66,7 @@
 #   - Python unavailable
 #   - stdin payload is invalid JSON
 #   - NUL bytes in payload (WARN + exit 0 — defense-in-depth)
-#   - tool_name is neither "Task" nor absent-with-scope
+#   - tool_name is neither "Agent"/"Task" nor absent-with-scope
 #   - Phase is "Hotfix"
 #   - .armature/session/active-delegations/ not writable (WARN + exit 0)
 #
@@ -125,12 +127,17 @@ except Exception:
     sys.exit(0)
 
 # ---- 4. Determine event mode and extract prompt ----
+# Per Claude Code hook docs (https://code.claude.com/docs/en/hooks.md),
+# subagent delegation surfaces as PreToolUse with tool_name == "Agent",
+# tool_input fields: prompt, description, subagent_type, model. "Task" is
+# kept as a legacy fallback for older Claude Code installs and for the
+# (pre-cycle-16) test factories.
 tool_name = data.get("tool_name")
 scope = data.get("scope")
 
 prompt = None
 event_tool_name = None
-if tool_name == "Task":
+if tool_name in ("Agent", "Task"):
     ti = data.get("tool_input", {})
     prompt = (
         ti.get("prompt")
@@ -138,7 +145,7 @@ if tool_name == "Task":
         or ti.get("task")
         or data.get("prompt")
     )
-    event_tool_name = "Task"
+    event_tool_name = tool_name
 elif tool_name is None and scope is not None:
     prompt = data.get("prompt") or data.get("subagent_prompt")
     event_tool_name = "SubagentStart"

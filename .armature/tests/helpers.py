@@ -93,18 +93,67 @@ def task_event(
     scope: str | None = None,
 ) -> str:
     """
-    JSON payload for PreToolUse(Task) or SubagentStart (task-readiness.sh).
+    JSON payload for PreToolUse(Agent|Task) or SubagentStart (task-readiness.sh).
 
-    When tool_name="Task" (default): produces a PreToolUse(Task) payload with
-      {"tool_name": "Task", "tool_input": {"prompt": <prompt>}}
+    When tool_name in ("Agent", "Task"): produces a PreToolUse payload with
+      {"tool_name": <tool_name>, "tool_input": {"prompt": <prompt>}}
 
     When tool_name=None and scope is provided: produces a SubagentStart-shaped
       payload {"scope": <scope>, "prompt": <prompt>}  (R1 dual-mode).
 
+    Per https://code.claude.com/docs/en/hooks.md, Claude Code's current
+    subagent-delegation tool is named "Agent" with tool_input fields
+    {prompt, description, subagent_type, model}. "Task" is the legacy alias
+    accepted by task-readiness.sh and retained here for backwards-compat
+    test coverage.
+
     task-readiness.sh reads:
-      PreToolUse: data['tool_name'] == "Task", data['tool_input']['prompt']
+      PreToolUse: data['tool_name'] in ("Agent","Task"), data['tool_input']['prompt']
       SubagentStart: data['scope'] present, data['prompt']
     """
     if tool_name is None and scope is not None:
         return json.dumps({"scope": scope, "prompt": prompt})
     return json.dumps({"tool_name": tool_name, "tool_input": {"prompt": prompt}})
+
+
+def posttooluse_agent_event(
+    response_text: str,
+    *,
+    prompt: str | None = None,
+    subagent_type: str | None = None,
+    severity: str | None = None,
+    extra: dict | None = None,
+) -> str:
+    """Build a PostToolUse(Agent) hook payload JSON string.
+
+    Shape per https://code.claude.com/docs/en/hooks.md:
+      {
+        "hook_event_name": "PostToolUse",
+        "tool_name": "Agent",
+        "tool_input": {"prompt": ..., "subagent_type": ...},
+        "tool_response": {"type": "text", "text": <response_text>}
+      }
+
+    This is the documented channel for surfacing a subagent's final response
+    text back into the parent (orchestrator) session. task-completion.sh and
+    auto-reviewer.sh both probe `tool_response.text` first and emit advisories
+    wrapped in the `hookSpecificOutput.additionalContext` JSON envelope.
+    """
+    payload: dict = {
+        "hook_event_name": "PostToolUse",
+        "tool_name": "Agent",
+        "tool_input": {},
+        "tool_response": {"type": "text", "text": response_text},
+    }
+    if prompt is not None:
+        payload["tool_input"]["prompt"] = prompt
+    if subagent_type is not None:
+        payload["tool_input"]["subagent_type"] = subagent_type
+        # Many Armature hooks also expect top-level subagent_type for
+        # implementer extraction; mirror it for compatibility.
+        payload["subagent_type"] = subagent_type
+    if severity is not None:
+        payload["severity"] = severity
+    if extra:
+        payload.update(extra)
+    return json.dumps(payload)

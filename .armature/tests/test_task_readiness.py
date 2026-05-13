@@ -597,3 +597,28 @@ def test_should_28_subagent_start_shape_blocks_without_criteria(tmp_armature, ru
     result = run_hook("task-readiness.sh", payload, cwd=str(tmp_armature))
     assert result.returncode == 2, f"SubagentStart shape without criteria must block"
     assert "TASK-001" in result.stderr
+
+
+# ---------------------------------------------------------------------------
+# Cycle-16: PreToolUse(Agent) — current canonical Claude Code tool name
+# ---------------------------------------------------------------------------
+
+def test_pretooluse_agent_tool_name_passes_with_criteria(tmp_armature, run_hook):
+    """tool_name == 'Agent' is the documented Claude Code matcher; a payload
+    with acceptance criteria must pass and write the correlation file."""
+    prompt = "## Acceptance Criteria\n- Must implement X\n- Must add tests\n"
+    payload = task_event(prompt, tool_name="Agent")
+    result = run_hook("task-readiness.sh", payload, cwd=str(tmp_armature))
+    assert result.returncode == 0, (
+        f"PreToolUse(Agent) with criteria must pass: stderr={result.stderr}"
+    )
+    delegations_dir = tmp_armature / ".armature" / "session" / "active-delegations"
+    assert any(delegations_dir.glob("*.json"))
+
+
+def test_pretooluse_agent_tool_name_blocks_without_criteria(tmp_armature, run_hook):
+    """tool_name == 'Agent' without acceptance criteria must block (exit 2)."""
+    payload = task_event("just do the thing", tool_name="Agent")
+    result = run_hook("task-readiness.sh", payload, cwd=str(tmp_armature))
+    assert result.returncode == 2, "PreToolUse(Agent) without criteria must block"
+    assert "TASK-001" in result.stderr

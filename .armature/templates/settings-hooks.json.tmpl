@@ -13,7 +13,7 @@
         ]
       },
       {
-        "matcher": "Task",
+        "matcher": "Agent",
         "hooks": [
           {
             "type": "command",
@@ -58,6 +58,22 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "_comment": "Per Claude Code hooks docs, SubagentStop is non-blocking and its stdout does NOT reach the parent (orchestrator) session. To inject task-completion (TASK-002) and auto-reviewer (TASK-003) advisories back into the orchestrator's context, the documented channel is PostToolUse matched to the Agent tool, which fires in the parent's execution context and supports additionalContext injection via the hookSpecificOutput envelope.",
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PROJECT_DIR}/.armature/hooks/task-completion.sh",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PROJECT_DIR}/.armature/hooks/auto-reviewer.sh",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "Stop": [
@@ -83,21 +99,12 @@
     ],
     "SubagentStop": [
       {
+        "_comment": "SubagentStop is non-blocking and cannot inject context into the parent session, so task-completion.sh and auto-reviewer.sh are wired under PostToolUse(Agent) above. post-stop.sh remains here because it performs governance validation (invariants, registry/config schema) whose result is communicated to the user via the exit code and stderr ADVISORY/FAIL messages, not via parent-session context injection.",
         "hooks": [
           {
             "type": "command",
             "command": "bash ${CLAUDE_PROJECT_DIR}/.armature/hooks/post-stop.sh",
             "timeout": 120
-          },
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.armature/hooks/task-completion.sh",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.armature/hooks/auto-reviewer.sh",
-            "timeout": 5
           }
         ]
       }

@@ -1,7 +1,17 @@
 #!/usr/bin/env bash
-# Armature SubagentStop hook — task-completion
-# Event: SubagentStop
+# Armature PostToolUse(Agent) hook — task-completion
+# Event: PostToolUse with matcher "Agent" (primary, per Claude Code hooks docs)
+#        SubagentStop (legacy fallback; cannot inject context into parent session)
 # Invariant: TASK-002
+#
+# Wiring rationale (PR #297 cycle-16):
+#   Claude Code's SubagentStop hooks are non-blocking and their stdout is
+#   not captured into the parent (orchestrator) session, so an advisory
+#   emitted there reaches no consumer. The documented channel for injecting
+#   text into the parent session at subagent completion is PostToolUse
+#   matched to the "Agent" tool, which fires in the parent's execution
+#   context and supports {"hookSpecificOutput": {"hookEventName":
+#   "PostToolUse", "additionalContext": "..."}} stdout envelopes.
 #
 # Purpose:
 #   Advisory-only heuristic verification that the subagent deliverable
@@ -74,23 +84,54 @@ REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo "")"
 # Always exits 0.
 # ---------------------------------------------------------------------------
 _PYTHON_MAIN='
-import json, os, re, sys
+import io, json, os, re, sys
 from pathlib import Path
 
 REPO_ROOT = os.environ.get("_TC_REPO_ROOT", "")
 PHASE_FILE = os.path.join(REPO_ROOT, ".armature", "session", "phase")
+
+# Redirect stdout to an in-memory buffer so we can wrap the advisory in the
+# Claude Code PostToolUse JSON envelope when the hook is fired on that
+# event. Plain stdout under SubagentStop is unreachable from the parent
+# session, but is still useful for local debugging; under PostToolUse it
+# would be ignored unless wrapped in hookSpecificOutput.additionalContext.
+_REAL_STDOUT = sys.stdout
+_BUF = io.StringIO()
+sys.stdout = _BUF
+_DATA_FOR_EXIT = {"data": None}
+
+def _drain_and_exit(rc=0):
+    """Flush buffered advisory to stdout in the right envelope, then exit."""
+    sys.stdout = _REAL_STDOUT
+    advisory = _BUF.getvalue()
+    parsed = _DATA_FOR_EXIT.get("data")
+    hook_event = None
+    if isinstance(parsed, dict):
+        hook_event = parsed.get("hook_event_name") or parsed.get("event")
+    if hook_event == "PostToolUse" and advisory.strip():
+        print(json.dumps({
+            "hookSpecificOutput": {
+                "hookEventName": "PostToolUse",
+                "additionalContext": advisory.rstrip(),
+            }
+        }))
+    elif advisory:
+        sys.stdout.write(advisory)
+        if not advisory.endswith("\n"):
+            sys.stdout.write("\n")
+    sys.exit(rc)
 
 # ---- 1. Read stdin bytes (preserve NUL for detection) ----
 try:
     raw = sys.stdin.buffer.read()
 except Exception:
     print("ADVISORY: TASK-002 — could not read stdin, skipping evaluation")
-    sys.exit(0)
+    _drain_and_exit(0)
 
 # ---- 2. NUL-byte rejection (defense-in-depth) ----
 if b"\x00" in raw:
     sys.stderr.write("WARN [TASK-002]: stdin payload contains NUL byte — skipping.\n")
-    sys.exit(0)
+    _drain_and_exit(0)
 
 # ---- 3. Decode and parse JSON (fail-open on invalid JSON) ----
 data = None
@@ -99,7 +140,10 @@ try:
     data = json.loads(payload_str)
 except Exception:
     print("ADVISORY: TASK-002 — invalid JSON payload, skipping criteria evaluation")
-    sys.exit(0)
+    _drain_and_exit(0)
+
+# Record parsed payload so _drain_and_exit can detect PostToolUse envelope.
+_DATA_FOR_EXIT["data"] = data
 
 # ---- 4. Hotfix bypass ----
 # ASCII-only strip (M3 CP3 lesson: Unicode whitespace bypass via .strip() without
@@ -114,24 +158,49 @@ if os.path.isfile(PHASE_FILE):
                 sys.stderr.write(
                     "ADVISORY: Hotfix phase active — TASK-002 bypass per TASK-002\n"
                 )
-                sys.exit(0)
+                _drain_and_exit(0)
     except Exception:
         pass
 
 # ---- 5. Deliverable extraction (D2) — ordered field search ----
-# Order matters: `last_assistant_message` is the documented Claude Code
-# SubagentStop payload field (per hooks.md / Agent SDK docs). The other
-# fields are defensive fallbacks for older payload shapes, alternative
-# runtimes (Codex), or future Claude Code versions. PR #297 cycle-12
-# correction.
+# Order matters per the documented payload shapes:
+#   PostToolUse(Agent) (primary, per https://code.claude.com/docs/en/hooks.md):
+#     {tool_name: "Agent", tool_input: {prompt, ...}, tool_response: {type, text}}
+#     Subagent final response is in tool_response.text.
+#   SubagentStop (legacy):
+#     {last_assistant_message: "..."}
+# Other fields are defensive fallbacks for older payload shapes or alternative
+# runtimes (Codex).
 deliverable_text = None
 
-# 5a. last_assistant_message (Claude Code SubagentStop primary field)
-v = data.get("last_assistant_message")
-if isinstance(v, str):
-    deliverable_text = v
+# 5a. tool_response.text — PostToolUse(Agent) primary field (cycle-16)
+tr_resp = data.get("tool_response")
+if isinstance(tr_resp, dict):
+    txt = tr_resp.get("text")
+    if isinstance(txt, str):
+        deliverable_text = txt
+    elif isinstance(tr_resp.get("content"), str):
+        deliverable_text = tr_resp["content"]
+    elif isinstance(tr_resp.get("content"), list):
+        # PostToolUse may surface a content-blocks list
+        parts = []
+        for block in tr_resp["content"]:
+            if isinstance(block, dict) and block.get("type") == "text":
+                t = block.get("text", "")
+                if isinstance(t, str):
+                    parts.append(t)
+            elif isinstance(block, str):
+                parts.append(block)
+        if parts:
+            deliverable_text = " ".join(parts)
 
-# 5b. tool_result.content (may be string or list of content blocks)
+# 5b. last_assistant_message (SubagentStop legacy field)
+if deliverable_text is None:
+    v = data.get("last_assistant_message")
+    if isinstance(v, str):
+        deliverable_text = v
+
+# 5c. tool_result.content (may be string or list of content blocks)
 if deliverable_text is None:
     tr = data.get("tool_result")
     if isinstance(tr, dict):
@@ -152,25 +221,25 @@ if deliverable_text is None:
             if parts:
                 deliverable_text = " ".join(parts)
 
-# 5b. output
+# 5d. output
 if deliverable_text is None:
     v = data.get("output")
     if isinstance(v, str):
         deliverable_text = v
 
-# 5c. result
+# 5e. result
 if deliverable_text is None:
     v = data.get("result")
     if isinstance(v, str):
         deliverable_text = v
 
-# 5d. subagent_output
+# 5f. subagent_output
 if deliverable_text is None:
     v = data.get("subagent_output")
     if isinstance(v, str):
         deliverable_text = v
 
-# 5e. message
+# 5g. message
 if deliverable_text is None:
     v = data.get("message")
     if isinstance(v, str):
@@ -178,13 +247,13 @@ if deliverable_text is None:
 
 if deliverable_text is None:
     print("ADVISORY: TASK-002 — deliverable text not found in payload")
-    sys.exit(0)
+    _drain_and_exit(0)
 
 # ---- 6. Correlation file lookup (D3) — most-recently-modified .json ----
 delegations_dir = os.path.join(REPO_ROOT, ".armature", "session", "active-delegations")
 if not os.path.isdir(delegations_dir):
     print("ADVISORY: TASK-002 — no active delegation found (active-delegations/ absent)")
-    sys.exit(0)
+    _drain_and_exit(0)
 
 json_files = [
     os.path.join(delegations_dir, f)
@@ -193,7 +262,7 @@ json_files = [
 ]
 if not json_files:
     print("ADVISORY: TASK-002 — no active delegation found (active-delegations/ empty)")
-    sys.exit(0)
+    _drain_and_exit(0)
 
 # Pick most recently modified
 corr_file = max(json_files, key=os.path.getmtime)
@@ -209,7 +278,7 @@ except Exception as exc:
         os.remove(corr_file)
     except Exception:
         pass
-    sys.exit(0)
+    _drain_and_exit(0)
 
 criteria_items = corr_data.get("criteria_items", [])
 if not isinstance(criteria_items, list):
@@ -273,7 +342,8 @@ try:
 except Exception as exc:
     sys.stderr.write("WARN [TASK-002]: Could not delete correlation file: " + str(exc) + "\n")
 
-sys.exit(0)
+# ---- 11. Drain buffer in the appropriate envelope and exit ----
+_drain_and_exit(0)
 '
 
 export _TC_REPO_ROOT="$REPO_ROOT"

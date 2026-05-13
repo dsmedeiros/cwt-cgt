@@ -25,7 +25,9 @@ from pathlib import Path
 
 import pytest
 
-from .helpers import subagent_stop_event
+import json as _json
+
+from .helpers import posttooluse_agent_event, subagent_stop_event
 
 
 # ---------------------------------------------------------------------------
@@ -326,4 +328,75 @@ def test_should_16_comment_parseable_by_regex(run_hook, tmp_armature):
     match = re.search(r"<!--\s*AUTO-REVIEW-REQUIRED[\s\S]*?-->", result.stdout)
     assert match is not None, (
         f"stdout did not match AUTO-REVIEW-REQUIRED regex. stdout={result.stdout!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Cycle-16: PostToolUse(Agent) payload — JSON envelope on stdout
+# ---------------------------------------------------------------------------
+
+def _additional_context_from(stdout: str) -> str:
+    """Parse stdout as JSON and return hookSpecificOutput.additionalContext."""
+    envelope = _json.loads(stdout)
+    return envelope["hookSpecificOutput"]["additionalContext"]
+
+
+def test_posttooluse_agent_emits_json_envelope(run_hook, tmp_armature):
+    """When fired on PostToolUse(Agent), stdout is a JSON envelope with
+    hookSpecificOutput.hookEventName == 'PostToolUse' and the AUTO-REVIEW-
+    REQUIRED HTML comment carried in additionalContext."""
+    result = run_hook(
+        "auto-reviewer.sh",
+        posttooluse_agent_event(
+            response_text="Implementation complete.",
+            prompt="Add the foo feature.",
+            subagent_type="specification-impl",
+        ),
+        cwd=str(tmp_armature),
+    )
+    assert result.returncode == 0
+    envelope = _json.loads(result.stdout)
+    assert envelope["hookSpecificOutput"]["hookEventName"] == "PostToolUse"
+    ctx = envelope["hookSpecificOutput"]["additionalContext"]
+    assert "<!-- AUTO-REVIEW-REQUIRED" in ctx
+    assert "implementer=specification-impl" in ctx
+    assert "red-team=false" in ctx
+
+
+def test_posttooluse_agent_probes_tool_response_text_for_red_team(
+    run_hook, tmp_armature
+):
+    """Red-team keywords found in tool_response.text trigger red-team=true.
+    Verifies the new probe order picks up the PostToolUse(Agent) primary
+    field instead of falling through to legacy fallbacks."""
+    result = run_hook(
+        "auto-reviewer.sh",
+        posttooluse_agent_event(
+            response_text="Introduced a CRITICAL invariant change.",
+            subagent_type="specification-impl",
+        ),
+        cwd=str(tmp_armature),
+    )
+    assert result.returncode == 0
+    ctx = _additional_context_from(result.stdout)
+    assert "red-team=true" in ctx
+
+
+def test_legacy_subagent_stop_still_emits_plain_html_comment(
+    run_hook, tmp_armature
+):
+    """SubagentStop payload (no hook_event_name field) drains the buffer
+    plain — no JSON envelope wrapping. Preserves backwards-compat for
+    older installs and direct test invocation."""
+    result = run_hook(
+        "auto-reviewer.sh",
+        subagent_stop_event(output="Done.", subagent_type="specification-impl"),
+        cwd=str(tmp_armature),
+    )
+    assert result.returncode == 0
+    assert "<!-- AUTO-REVIEW-REQUIRED" in result.stdout
+    # Should NOT be a JSON envelope
+    stripped = result.stdout.strip()
+    assert not stripped.startswith("{"), (
+        f"SubagentStop output should be plain, not JSON-wrapped. stdout={stripped!r}"
     )

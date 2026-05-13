@@ -1,7 +1,18 @@
 #!/usr/bin/env bash
-# Armature SubagentStop hook — auto-reviewer
-# Event: SubagentStop
+# Armature PostToolUse(Agent) hook — auto-reviewer
+# Event: PostToolUse with matcher "Agent" (primary, per Claude Code hooks docs)
+#        SubagentStop (legacy fallback; cannot inject context into parent session)
 # Invariant: TASK-003
+#
+# Wiring rationale (PR #297 cycle-16):
+#   Claude Code's SubagentStop hooks are non-blocking and their stdout is
+#   not captured into the parent (orchestrator) session, so the
+#   AUTO-REVIEW-REQUIRED marker emitted there reaches no consumer. The
+#   documented channel for injecting text into the parent session at
+#   subagent completion is PostToolUse matched to the "Agent" tool, which
+#   fires in the parent's execution context and supports
+#   {"hookSpecificOutput": {"hookEventName": "PostToolUse",
+#   "additionalContext": "..."}} stdout envelopes.
 #
 # Purpose:
 #   Emit a structured HTML comment advisory directing the orchestrator to
@@ -60,6 +71,9 @@ elif command -v python >/dev/null 2>&1; then
 fi
 
 if [ -z "$PY" ]; then
+    # Cannot construct a JSON envelope without Python; emit the bare HTML
+    # comment as a best-effort fallback. PostToolUse will ignore unwrapped
+    # stdout, but local debugging and ad-hoc test invocation still see it.
     printf '<!-- AUTO-REVIEW-REQUIRED\nimplementer=unknown\nscope=unknown\nred-team=false\nreason=no-python\n-->\n'
     exit 0
 fi
@@ -77,10 +91,39 @@ REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 # Always exits 0.
 # ---------------------------------------------------------------------------
 _PYTHON_MAIN='
-import json, os, re, sys
+import io, json, os, re, sys
 
 REPO_ROOT = os.environ.get("_AR_REPO_ROOT", "")
 PHASE_FILE = os.path.join(REPO_ROOT, ".armature", "session", "phase")
+
+# Buffer stdout so the eventual emission can be wrapped in the documented
+# PostToolUse(Agent) JSON envelope when fired from Claude Code. On
+# SubagentStop/legacy invocations we drain the buffer plain.
+_REAL_STDOUT = sys.stdout
+_BUF = io.StringIO()
+sys.stdout = _BUF
+_DATA_FOR_EXIT = {"data": None}
+
+def _drain_and_exit(rc=0):
+    """Flush buffered advisory to stdout in the right envelope, then exit."""
+    sys.stdout = _REAL_STDOUT
+    advisory = _BUF.getvalue()
+    parsed = _DATA_FOR_EXIT.get("data")
+    hook_event = None
+    if isinstance(parsed, dict):
+        hook_event = parsed.get("hook_event_name") or parsed.get("event")
+    if hook_event == "PostToolUse" and advisory.strip():
+        print(json.dumps({
+            "hookSpecificOutput": {
+                "hookEventName": "PostToolUse",
+                "additionalContext": advisory.rstrip(),
+            }
+        }))
+    elif advisory:
+        sys.stdout.write(advisory)
+        if not advisory.endswith("\n"):
+            sys.stdout.write("\n")
+    sys.exit(rc)
 
 # ---- Sanitize helper ----
 def _sanitize(val, max_len=200):
@@ -104,13 +147,13 @@ try:
     raw = sys.stdin.buffer.read()
 except Exception:
     _emit("unknown", "unknown", False, "stdin-read-error")
-    sys.exit(0)
+    _drain_and_exit(0)
 
 # ---- 2. NUL-byte rejection ----
 if b"\x00" in raw:
     sys.stderr.write("WARN [TASK-003]: stdin payload contains NUL byte — emitting fallback advisory.\n")
     _emit("unknown", "unknown", False, "nul-byte-payload")
-    sys.exit(0)
+    _drain_and_exit(0)
 
 # ---- 3. Decode and parse JSON (fail-open: emit fallback advisory) ----
 data = None
@@ -119,7 +162,10 @@ try:
     data = json.loads(payload_str)
 except Exception:
     _emit("unknown", "unknown", False, "invalid-payload")
-    sys.exit(0)
+    _drain_and_exit(0)
+
+# Record parsed payload so _drain_and_exit can detect PostToolUse envelope.
+_DATA_FOR_EXIT["data"] = data
 
 # ---- 4. Hotfix bypass — emit ADVISORY but STILL emit HTML comment ----
 hotfix_active = False
@@ -166,15 +212,38 @@ if not isinstance(severity, str):
     severity = None
 
 # deliverable_text — same ordered field search as task-completion.sh (D2).
-# Order matters: `last_assistant_message` is the documented Claude Code
-# SubagentStop payload field (per hooks.md / Agent SDK docs); the other
-# fields are defensive fallbacks. PR #297 cycle-12 correction.
+# Order matters per the documented payload shapes:
+#   PostToolUse(Agent) (primary, per https://code.claude.com/docs/en/hooks.md):
+#     tool_response.text contains the subagent final response.
+#   SubagentStop (legacy): last_assistant_message contains the response.
+# Other fields are defensive fallbacks for older payload shapes or Codex.
 deliverable_text = None
 
-# last_assistant_message (Claude Code SubagentStop primary field)
-v = data.get("last_assistant_message")
-if isinstance(v, str):
-    deliverable_text = v
+# tool_response.text — PostToolUse(Agent) primary field (cycle-16)
+tr_resp = data.get("tool_response")
+if isinstance(tr_resp, dict):
+    txt = tr_resp.get("text")
+    if isinstance(txt, str):
+        deliverable_text = txt
+    elif isinstance(tr_resp.get("content"), str):
+        deliverable_text = tr_resp["content"]
+    elif isinstance(tr_resp.get("content"), list):
+        parts = []
+        for block in tr_resp["content"]:
+            if isinstance(block, dict) and block.get("type") == "text":
+                t = block.get("text", "")
+                if isinstance(t, str):
+                    parts.append(t)
+            elif isinstance(block, str):
+                parts.append(block)
+        if parts:
+            deliverable_text = " ".join(parts)
+
+# last_assistant_message (SubagentStop legacy field)
+if deliverable_text is None:
+    v = data.get("last_assistant_message")
+    if isinstance(v, str):
+        deliverable_text = v
 
 # tool_result.content (legacy/fallback)
 if deliverable_text is None:
@@ -252,7 +321,7 @@ else:
 
 # ---- 7. Emit ----
 _emit(implementer, scope, red_team, reason)
-sys.exit(0)
+_drain_and_exit(0)
 '
 
 export _AR_REPO_ROOT="$REPO_ROOT"

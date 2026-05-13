@@ -29,7 +29,7 @@ from pathlib import Path
 
 import pytest
 
-from .helpers import subagent_stop_event
+from .helpers import posttooluse_agent_event, subagent_stop_event
 
 
 # ---------------------------------------------------------------------------
@@ -559,3 +559,70 @@ def test_should_20_unicode_in_deliverable_no_crash(run_hook, tmp_armature):
         cwd=str(tmp_armature),
     )
     assert result.returncode == 0
+
+
+# ---------------------------------------------------------------------------
+# Cycle-16: PostToolUse(Agent) payload — JSON envelope on stdout
+# ---------------------------------------------------------------------------
+
+def test_posttooluse_agent_emits_json_envelope_for_pass(run_hook, tmp_armature):
+    """When fired on PostToolUse(Agent) with a passing deliverable, stdout
+    is the documented hookSpecificOutput envelope carrying the PASS advisory."""
+    criteria = ["Must verify authentication flow", "Must check serialization"]
+    _write_correlation(tmp_armature, criteria)
+
+    deliverable = (
+        "Authentication flow verified end-to-end. Serialization checked "
+        "across all schema variants."
+    )
+    result = run_hook(
+        "task-completion.sh",
+        posttooluse_agent_event(
+            response_text=deliverable,
+            prompt="Implement feature X",
+            subagent_type="specification-impl",
+        ),
+        cwd=str(tmp_armature),
+    )
+    assert result.returncode == 0
+    envelope = json.loads(result.stdout)
+    assert envelope["hookSpecificOutput"]["hookEventName"] == "PostToolUse"
+    ctx = envelope["hookSpecificOutput"]["additionalContext"]
+    assert "PASS: TASK-002 criteria coverage" in ctx
+
+
+def test_posttooluse_agent_envelope_on_missing_deliverable(run_hook, tmp_armature):
+    """A PostToolUse(Agent) payload with no recoverable deliverable text
+    still wraps the ADVISORY in the JSON envelope rather than emitting
+    plain stdout that the parent session would ignore."""
+    # tool_response present but no text — drains as advisory
+    payload = json.dumps({
+        "hook_event_name": "PostToolUse",
+        "tool_name": "Agent",
+        "tool_input": {"prompt": "do thing"},
+        "tool_response": {"type": "text"},  # text key missing
+    })
+    result = run_hook("task-completion.sh", payload, cwd=str(tmp_armature))
+    assert result.returncode == 0
+    envelope = json.loads(result.stdout)
+    assert envelope["hookSpecificOutput"]["hookEventName"] == "PostToolUse"
+    assert "ADVISORY: TASK-002" in envelope["hookSpecificOutput"]["additionalContext"]
+
+
+def test_legacy_subagent_stop_payload_emits_plain_stdout(run_hook, tmp_armature):
+    """A legacy SubagentStop-shaped payload (no hook_event_name field)
+    drains the buffer as plain text, not a JSON envelope. Preserves
+    backwards-compat for older Claude Code installs and ad-hoc invocation."""
+    criteria = ["Must verify schema"]
+    _write_correlation(tmp_armature, criteria)
+    result = run_hook(
+        "task-completion.sh",
+        subagent_stop_event(output="Schema verified successfully."),
+        cwd=str(tmp_armature),
+    )
+    assert result.returncode == 0
+    stripped = result.stdout.strip()
+    assert not stripped.startswith("{"), (
+        f"SubagentStop payload should produce plain output, got: {stripped!r}"
+    )
+    assert "PASS: TASK-002 criteria coverage" in result.stdout
