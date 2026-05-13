@@ -353,16 +353,25 @@ class TestSafeRmBoundary:
     # S1: basename-at-root safe-target semantics
     # -----------------------------------------------------------------------
 
-    def test_allow_rm_rf_root_node_modules(self, run_hook):
-        """rm -rf /node_modules is allowed because basename is a safe target.
+    def test_block_rm_rf_root_node_modules(self, run_hook):
+        """rm -rf /node_modules is BLOCKED (cycle-20 hardening).
 
-        The is_safe_rm_target function strips path components and checks the
-        basename.  /node_modules has basename node_modules and satisfies the
-        absolute-path-at-root check (path == /basename).  This is consistent
-        with the hook's design for sandboxed dev machines.
-        Note: /home/user/node_modules is still blocked (subdirectory path).
+        Previously allowed via basename allow-listing on top-level absolute
+        paths; this gap let `rm -rf /build`, `/dist`, `/node_modules`, etc.
+        wipe filesystem-root directories outside the repo. The safe-name
+        allowlist is for REPO-LOCAL caches; absolute targets are never safe.
+        Repo-local equivalents (`rm -rf node_modules`, `rm -rf ./node_modules`)
+        remain allowed.
         """
-        _allow(run_hook, "rm -rf /node_modules")
+        _block(run_hook, "rm -rf /node_modules", expected_reason="rm -rf")
+
+    def test_block_rm_rf_root_build(self, run_hook):
+        """rm -rf /build is BLOCKED (absolute path, even with safe basename)."""
+        _block(run_hook, "rm -rf /build", expected_reason="rm -rf")
+
+    def test_block_rm_rf_root_dist(self, run_hook):
+        """rm -rf /dist is BLOCKED (absolute path, even with safe basename)."""
+        _block(run_hook, "rm -rf /dist", expected_reason="rm -rf")
 
     def test_block_rm_rf_root_etc(self, run_hook):
         """rm -rf /etc must be blocked (/etc basename is not a safe target)."""

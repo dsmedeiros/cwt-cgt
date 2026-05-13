@@ -1,0 +1,50 @@
+name: Armature Governance Tests
+
+# Cycle-20 fix: .armature/ paths are deliberately excluded by mark-dirty.sh
+# (governance classification, not application code), so run-ci.sh's local
+# Stop hook never runs them. The other workflow path filters in this repo
+# (cwt-sim/**, cwt_lab/**) also don't cover .armature/**, which means
+# changes to governance hooks or their test suite could merge without CI
+# coverage. This workflow closes that gap: it runs the framework hook
+# test suite on any change under .armature/ or .claude/.
+
+on:
+  push:
+    branches: ["main", "master", "work"]
+    paths:
+      - ".armature/**"
+      - ".claude/**"
+      - ".github/workflows/armature-tests.yml"
+  pull_request:
+    paths:
+      - ".armature/**"
+      - ".claude/**"
+      - ".github/workflows/armature-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  governance-tests:
+    name: .armature/tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pyyaml
+
+      - name: Run framework hook test suite
+        run: python -m pytest .armature/tests/ -q
+
+      - name: Validate governance via post-stop.sh
+        run: bash .armature/hooks/post-stop.sh

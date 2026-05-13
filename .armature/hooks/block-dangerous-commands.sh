@@ -148,8 +148,17 @@ is_safe_rm_target() {
 
   # Reject path traversal
   if [[ "$raw_target" == *".."* ]]; then return 1; fi
-  # Reject absolute paths with sub-directories (e.g. /home/user/node_modules)
-  if [[ "$raw_target" == /* ]] && [[ "$raw_target" != "/${b}" ]]; then return 1; fi
+  # Cycle-20 fix: reject ALL absolute paths. The safe-name allowlist is
+  # for repo-local cache/build directories (node_modules, dist, .venv,
+  # __pycache__, etc.); absolute paths whose basename happens to collide
+  # with a safe name (e.g. `/build`, `/dist`, `/node_modules`) point at
+  # filesystem-root directories outside the repo and must never be
+  # rm-rf'd by a governed agent. Previously this check accepted any
+  # absolute path of the form `/<basename>` because the inequality
+  # `$raw_target != /${b}` failed for single-segment absolute targets.
+  # If a user genuinely needs to wipe a repo-local cache, the relative
+  # form (`rm -rf node_modules` or `rm -rf ./node_modules`) works.
+  if [[ "$raw_target" == /* ]]; then return 1; fi
 
   for safe in "${SAFE_RM_TARGETS[@]}"; do
     if [[ "$b" == "$safe" ]] || [[ "$t" == "$safe" ]]; then return 0; fi
