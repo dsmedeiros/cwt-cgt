@@ -521,6 +521,19 @@ class TestBlockCommands:
     def test_block_git_add_bare_dot(self, run_hook):
         _block(run_hook, "git add .")
 
+    # Cycle-19: git add -- . — `--` is option terminator, `.` is the
+    # pathspec; same broad-stage risk as bare `git add .`.
+    def test_block_git_add_dashdash_dot(self, run_hook):
+        _block(run_hook, "git add -- .")
+
+    def test_block_git_add_dashdash_dot_chained(self, run_hook):
+        """git add -- . && git commit -- chained form must still block."""
+        _block(run_hook, "git add -- . && git commit -m 'wip'")
+
+    def test_block_git_add_dashdash_dot_extra_space(self, run_hook):
+        """git add  --  .  with extra whitespace must still block."""
+        _block(run_hook, "git add  --  .")
+
     # -----------------------------------------------------------------------
     # Rule: git checkout -- . (bare dot)
     # -----------------------------------------------------------------------
@@ -544,6 +557,13 @@ class TestBlockCommands:
 
     def test_block_git_restore_worktree_dot(self, run_hook):
         _block(run_hook, "git restore --worktree .")
+
+    # Cycle-19 sibling extension: `--` option terminator before bare dot
+    def test_block_git_restore_dashdash_dot(self, run_hook):
+        _block(run_hook, "git restore -- .")
+
+    def test_block_git_restore_staged_dashdash_dot(self, run_hook):
+        _block(run_hook, "git restore --staged -- .")
 
     # -----------------------------------------------------------------------
     # Rule: git branch -D (uppercase, force-delete)

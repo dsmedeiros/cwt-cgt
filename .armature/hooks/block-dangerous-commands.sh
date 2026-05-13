@@ -404,12 +404,19 @@ fi
 # by end-of-string OR a shell separator (;, &, |). Without this, an
 # end-anchored guard silently allows the broad-staging form when the
 # user chains a follow-up command.
+#
+# Cycle-19: also block `git add -- .` — git treats `--` as the option
+# terminator and the following `.` is the same broad pathspec as a bare
+# `.`. Without the optional `(--[[:space:]]+)?` group, an attacker could
+# bypass the bare-dot guard by inserting the option terminator. Same
+# treatment for any whitespace before the dot. See `git add -h`:
+#   usage: git add [<options>] [--] <pathspec>...
 if [[ "$COMMAND" =~ git[[:space:]].*add.*([[:space:]]+-A[[:space:]]|[[:space:]]+-A$) ]] || \
    [[ "$COMMAND" =~ git[[:space:]].*add.*--all ]] || \
    [[ "$COMMAND" =~ git[[:space:]].*add.*([[:space:]]+-u[[:space:]]|[[:space:]]+-u$) ]] || \
    [[ "$COMMAND" =~ git[[:space:]].*add.*--update ]] || \
-   [[ "$COMMAND" =~ git[[:space:]].*add[[:space:]]+\.[[:space:]]*($|[;&|]) ]]; then
-  block "git add -A / --all / -u / --update / git add ." "staging all changes risks committing unintended files (secrets, binaries); stage files explicitly by name"
+   [[ "$COMMAND" =~ git[[:space:]].*add[[:space:]]+(--[[:space:]]+)?\.[[:space:]]*($|[;&|]) ]]; then
+  block "git add -A / --all / -u / --update / git add [--] ." "staging all changes risks committing unintended files (secrets, binaries); stage files explicitly by name"
 fi
 
 # ---------------------------------------------------------------------------
@@ -428,8 +435,13 @@ fi
 # Block only when the sole path argument is a bare dot.
 # Terminator handles chained commands per the note above.
 # ---------------------------------------------------------------------------
-if [[ "$COMMAND" =~ git[[:space:]].*restore([[:space:]]+(--staged|--worktree|--source=[^[:space:]]*))*[[:space:]]+\.[[:space:]]*($|[;&|]) ]]; then
-  block "git restore ." "discards all changes (staged or unstaged) and cannot be undone; specify individual files instead"
+# Cycle-19 sibling extension: also accept an explicit `--` option terminator
+# before the bare dot (e.g. `git restore -- .`, `git restore --staged -- .`).
+# Per `git restore -h`, usage is `git restore [<options>] [--] <pathspec>...`
+# so omitting the `--` cover-all-with-option-terminator form would replicate
+# the cycle-19 `git add -- .` bypass class on this command too.
+if [[ "$COMMAND" =~ git[[:space:]].*restore([[:space:]]+(--staged|--worktree|--source=[^[:space:]]*))*[[:space:]]+(--[[:space:]]+)?\.[[:space:]]*($|[;&|]) ]]; then
+  block "git restore [--] ." "discards all changes (staged or unstaged) and cannot be undone; specify individual files instead"
 fi
 
 # ---------------------------------------------------------------------------
