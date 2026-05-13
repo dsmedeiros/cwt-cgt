@@ -39,10 +39,13 @@ Write the exact text to be added, modified, or removed. Include:
 Identify every downstream file affected by the change:
 - **Persona files** — Does the change affect orchestrator, planner, reviewer, or implementer behavior?
 - **Config schema** — Does it add or modify fields in config.yaml?
-- **Templates** — Does it change the agents.md, ADR, or persona templates?
+- **Templates** — Does it change the governance file (`agents.md`/`AGENTS.md`), ADR, or persona templates?
 - **Commands** — Does it affect armature-init, armature-extend, or checkpoint protocols?
 - **Subagent wiring** — Does it change .claude/agents/ definitions?
 - **Invariant registry** — Does it add or modify registry schema fields?
+- **Hook scripts** — Does it add or modify mechanical enforcement hooks (§5.2)? Are hook scripts in `.armature/hooks/` affected? Does `.armature/templates/settings-hooks.json.tmpl` need updating?
+
+- **Tool adapters** — Does it change `CLAUDE.md`, `CODEX.md`, or `.armature/templates/CODEX.md.tmpl` expectations?
 
 List each affected file and what must change in it.
 

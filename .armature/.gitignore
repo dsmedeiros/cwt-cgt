@@ -1,3 +1,6 @@
 # Armature ephemeral working state (do not commit)
-.armature/session/
-.armature/escalations/
+session/
+escalations/
+.code-dirty
+session/active-delegations/
+session/skip-ci

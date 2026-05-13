@@ -1,0 +1,140 @@
+{
+  "_comment": "Armature hook wiring template for Claude Code settings.json. Copy relevant entries into your project's .claude/settings.json under the 'hooks' key. Adjust paths if your .armature directory is in a non-standard location.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .armature/hooks/block-dangerous-commands.sh",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .armature/hooks/task-readiness.sh",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .armature/hooks/check-required-reading.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "bash .armature/hooks/tier0-preflight.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "bash .armature/hooks/tdd-gate.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "bash .armature/hooks/phase-gate.sh",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .armature/hooks/mark-dirty.sh",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .armature/hooks/post-stop.sh",
+            "timeout": 120000
+          },
+          {
+            "type": "command",
+            "command": "bash .armature/hooks/run-ci.sh",
+            "timeout": 1200000
+          },
+          {
+            "type": "command",
+            "command": "bash .armature/hooks/harness-feedback.sh",
+            "timeout": 10000
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .armature/hooks/post-stop.sh",
+            "timeout": 120000
+          },
+          {
+            "type": "command",
+            "command": "bash .armature/hooks/task-completion.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "bash .armature/hooks/auto-reviewer.sh",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .armature/hooks/inject-context.sh",
+            "timeout": 10000
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .armature/hooks/reinject-context.sh",
+            "timeout": 10000
+          }
+        ]
+      }
+    ],
+    "ConfigChange": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .armature/hooks/block-config-changes.sh",
+            "timeout": 5000
+          }
+        ]
+      }
+    ]
+  }
+}
