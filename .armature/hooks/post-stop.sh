@@ -83,7 +83,7 @@ TRIGGERS_YAML="${ARMATURE_DIR}/disciplines/triggers.yaml"
 if [ -f "$TRIGGERS_YAML" ] && [ -n "$PYTHON" ]; then
   export _POSTSTOP_TRIGGERS_YAML="$TRIGGERS_YAML"
   export _POSTSTOP_DISCIPLINES_DIR="${ARMATURE_DIR}/disciplines"
-  $PYTHON - <<'PYEOF' || EXIT_CODE=2
+  $PYTHON - <<'PYEOF' || EXIT_CODE=1
 import yaml, sys, os, re
 
 triggers_path = os.environ["_POSTSTOP_TRIGGERS_YAML"]

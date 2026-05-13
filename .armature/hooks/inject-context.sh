@@ -9,7 +9,7 @@
 #   ## Session State      — extracted sections from session/state.md
 #   ## Scope Context      — frontmatter of nearest agents.md for the scope
 
-set -uo pipefail
+set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 ARMATURE_DIR="${REPO_ROOT}/.armature"

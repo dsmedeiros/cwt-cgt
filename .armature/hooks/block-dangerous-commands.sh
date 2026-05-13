@@ -13,7 +13,14 @@ REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
 # ---------------------------------------------------------------------------
 # Parse the command string from stdin JSON.
-# Try python first; fall back to a grep/sed approach.
+#
+# Security: NUL bytes (0x00) MUST be rejected before any decode. Bash command
+# substitution (`$(cat)`) silently strips NUL bytes, allowing an attacker to
+# pad command tokens with embedded nulls that disappear before pattern
+# matching. This is lesson L001 in .armature/lessons.yaml. Newer framework
+# hooks (tdd-gate.sh, tier0-preflight.sh, task-readiness.sh) all read stdin
+# via Python's sys.stdin.buffer.read() and check for b"\x00" before decoding.
+# This is a fail-closed security gate, so NUL byte detection triggers BLOCK.
 #
 # N-3 pre-processing: literal LF (0x0A) characters inside a JSON string
 # value are not valid JSON, but they can appear when a multi-line command
@@ -21,30 +28,40 @@ REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 # raw JSON text before parsing so that the JSON parser can still extract the
 # full command value across lines.
 # ---------------------------------------------------------------------------
-STDIN_CONTENT="$(cat | tr '\012' ' ')"
+PYTHON=""
+if command -v python3 &>/dev/null; then PYTHON="python3"; elif command -v python &>/dev/null; then PYTHON="python"; fi
 
-COMMAND=""
-if command -v python3 &>/dev/null; then
-  COMMAND="$(printf '%s' "$STDIN_CONTENT" | python3 -c "
+if [ -n "$PYTHON" ]; then
+  COMMAND="$("$PYTHON" -c "$(cat <<'PYEOF'
 import json, sys
+raw = sys.stdin.buffer.read()
+# L001: reject NUL bytes before any decode — bash strips them, masking bypass.
+# This is a fail-closed security gate, so NUL-byte payloads BLOCK.
+if b'\x00' in raw:
+    sys.stderr.write('BLOCK: NUL bytes in command payload (potential bypass attempt per L001)\n')
+    sys.exit(2)
+text = raw.decode('utf-8', errors='replace')
+# N-3: normalise literal LFs inside JSON string values to spaces so JSON parses.
+text = text.replace('\n', ' ').replace('\r', ' ')
 try:
-    data = json.load(sys.stdin)
+    data = json.loads(text)
     print(data.get('tool_input', {}).get('command', ''))
 except Exception:
     pass
-")"
-elif command -v python &>/dev/null; then
-  COMMAND="$(printf '%s' "$STDIN_CONTENT" | python -c "
-import json, sys
-try:
-    data = json.load(sys.stdin)
-    print(data.get('tool_input', {}).get('command', ''))
-except Exception:
-    pass
-")"
+PYEOF
+)")"
+  py_rc=$?
+  if [ "$py_rc" -eq 2 ]; then
+    # Python raised the NUL-byte BLOCK; propagate exit 2.
+    exit 2
+  fi
 else
-  # Fallback: extract value of "command" key with sed
-  COMMAND="$(printf '%s' "$STDIN_CONTENT" | sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\(.*\)".*/\1/p' | head -1)"
+  # Python unavailable. Fail-CLOSED: refuse to evaluate without the NUL-byte
+  # guard active; emit ADVISORY and allow (no Python = no parser; cannot
+  # reliably detect dangerous commands without it). The dirty marker from
+  # mark-dirty.sh and post-stop.sh's later validations remain as the backstop.
+  echo "ADVISORY: block-dangerous-commands.sh requires python3 or python; allowing without check" >&2
+  exit 0
 fi
 
 # Nothing to check if we couldn't extract a command

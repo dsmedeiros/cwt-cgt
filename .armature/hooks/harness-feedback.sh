@@ -210,11 +210,39 @@ try:
 except Exception:
     pass
 
-# ---- 6. Selection: highest id (lexicographic max) from filtered set ----
+# ---- 6. Selection: round-robin via .armature/session/.last-feedback ----
+# Sort filtered candidates by id (lexicographic). Read the last-shown id from
+# the rotation state file. Pick the next id > last_shown; wrap to first if
+# none. This guarantees every applicable lesson is surfaced over time
+# (Greptile finding #4 / former "lexicographic max" strategy never rotated
+# unless a higher-id lesson was added).
+ROT_FILE = os.path.join(REPO_ROOT, ".armature", "session", ".last-feedback")
 if filtered:
-    selected = max(filtered, key=lambda l: str(l.get("id", "")))
+    sorted_filtered = sorted(filtered, key=lambda l: str(l.get("id", "")))
+    last_shown = ""
+    try:
+        with open(ROT_FILE, "r", encoding="utf-8") as rf:
+            last_shown = rf.read().strip()
+    except (OSError, UnicodeDecodeError):
+        last_shown = ""
+    # Find first lesson whose id > last_shown; wrap to the first if all <= last_shown.
+    selected = None
+    for lesson in sorted_filtered:
+        if str(lesson.get("id", "")) > last_shown:
+            selected = lesson
+            break
+    if selected is None:
+        selected = sorted_filtered[0]
+    # Update rotation state (best-effort; failure is advisory-only).
+    try:
+        os.makedirs(os.path.dirname(ROT_FILE), exist_ok=True)
+        with open(ROT_FILE, "w", encoding="utf-8") as rf:
+            rf.write(str(selected.get("id", "")))
+    except OSError:
+        sys.stderr.write("harness-feedback: could not persist rotation state to {}\n".format(ROT_FILE))
 elif lessons:
-    # Random fallback from full corpus
+    # No filtered candidates — random fallback from full corpus (does not
+    # touch rotation state, so the next session resumes the regular cycle).
     selected = random.choice(lessons)
 else:
     sys.stderr.write("harness-feedback: no applicable lessons\n")
