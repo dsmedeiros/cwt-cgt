@@ -83,7 +83,14 @@ TRIGGERS_YAML="${ARMATURE_DIR}/disciplines/triggers.yaml"
 if [ -f "$TRIGGERS_YAML" ] && [ -n "$PYTHON" ]; then
   export _POSTSTOP_TRIGGERS_YAML="$TRIGGERS_YAML"
   export _POSTSTOP_DISCIPLINES_DIR="${ARMATURE_DIR}/disciplines"
-  $PYTHON - <<'PYEOF' || EXIT_CODE=1
+  # Note: this block intentionally uses EXIT_CODE=2 (not 1) to signal a
+  # blocking governance error distinct from ordinary validator failures
+  # (which use EXIT_CODE=1). The disciplines validator's Python explicitly
+  # uses sys.exit(2) to preserve the distinction. Callers that want a
+  # uniform non-zero check should test `[ $? -ne 0 ]`; callers that want
+  # to distinguish blocking from warning failures can test for the exact
+  # exit code. See PR dsmedeiros/cwt-cgt#297 cycle-3 review for context.
+  $PYTHON - <<'PYEOF' || EXIT_CODE=2
 import yaml, sys, os, re
 
 triggers_path = os.environ["_POSTSTOP_TRIGGERS_YAML"]

@@ -4,8 +4,12 @@
 # Schema: see .armature/session/m7-plan.md §D6.
 #
 # Fields:
-#   id:     L<NNN> — must sort lexicographically so highest-id selection
-#           rotates naturally as corpus grows.
+#   id:     L<NNN> — must sort lexicographically. The hook DETERMINISTICALLY
+#           selects the highest-id applicable lesson for the current SDLC
+#           phase (the same lesson surfaces on repeated runs until corpus
+#           grows or filtering changes). New high-id lessons supersede prior
+#           ones for any given phase; earlier lessons surface only by
+#           changing phase or filtering.
 #   title:  ≤80 chars, concise problem statement.
 #   phases: list of phase names; empty list [] = universal (any phase).
 #           Valid values: Discovery, Design, Implementation, Review, Release, Hotfix
