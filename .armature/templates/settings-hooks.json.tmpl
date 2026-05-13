@@ -1,5 +1,5 @@
 {
-  "_comment": "Armature hook wiring template for Claude Code settings.json. Copy relevant entries into your project's .claude/settings.json under the 'hooks' key. Path resolution: commands use ${CLAUDE_PROJECT_DIR} (Claude Code env var, expanded by the shell at hook-invocation time) so they resolve against the project root regardless of the agent's current working directory. Timeouts: integer SECONDS per the Claude Code hook docs (NOT milliseconds — 5000 here would be 83 minutes, not 5 seconds).",
+  "_comment": "Armature hook wiring template for Claude Code settings.json. Copy relevant entries into your project's .claude/settings.json under the 'hooks' key. Path resolution: commands use \"${CLAUDE_PROJECT_DIR}\" (Claude Code env var, expanded by the shell at hook-invocation time) so they resolve against the project root regardless of the agent's current working directory. The env var is WRAPPED IN DOUBLE QUOTES per the Claude Code hook reference (https://code.claude.com/docs/en/hooks#reference-scripts-by-path) so paths containing spaces or shell metacharacters survive bash word-splitting (e.g. /Users/me/CWT Lab/.armature/...). Timeouts: integer SECONDS per the Claude Code hook docs (NOT milliseconds — 5000 here would be 83 minutes, not 5 seconds).",
   "hooks": {
     "PreToolUse": [
       {
@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.armature/hooks/block-dangerous-commands.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.armature/hooks/block-dangerous-commands.sh",
             "timeout": 5
           }
         ]
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.armature/hooks/task-readiness.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.armature/hooks/task-readiness.sh",
             "timeout": 5
           }
         ]
@@ -27,22 +27,22 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.armature/hooks/check-required-reading.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.armature/hooks/check-required-reading.sh",
             "timeout": 5
           },
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.armature/hooks/tier0-preflight.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.armature/hooks/tier0-preflight.sh",
             "timeout": 5
           },
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.armature/hooks/tdd-gate.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.armature/hooks/tdd-gate.sh",
             "timeout": 5
           },
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.armature/hooks/phase-gate.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.armature/hooks/phase-gate.sh",
             "timeout": 5
           }
         ]
@@ -54,7 +54,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.armature/hooks/mark-dirty.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.armature/hooks/mark-dirty.sh",
             "timeout": 5
           }
         ]
@@ -65,12 +65,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.armature/hooks/task-completion.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.armature/hooks/task-completion.sh",
             "timeout": 5
           },
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.armature/hooks/auto-reviewer.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.armature/hooks/auto-reviewer.sh",
             "timeout": 5
           }
         ]
@@ -81,17 +81,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.armature/hooks/post-stop.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.armature/hooks/post-stop.sh",
             "timeout": 120
           },
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.armature/hooks/run-ci.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.armature/hooks/run-ci.sh",
             "timeout": 1200
           },
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.armature/hooks/harness-feedback.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.armature/hooks/harness-feedback.sh",
             "timeout": 10
           }
         ]
@@ -103,7 +103,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.armature/hooks/post-stop.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.armature/hooks/post-stop.sh",
             "timeout": 120
           }
         ]
@@ -114,7 +114,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.armature/hooks/inject-context.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.armature/hooks/inject-context.sh",
             "timeout": 10
           }
         ]
@@ -126,7 +126,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.armature/hooks/reinject-context.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.armature/hooks/reinject-context.sh",
             "timeout": 10
           }
         ]
@@ -137,7 +137,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.armature/hooks/block-config-changes.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}\"/.armature/hooks/block-config-changes.sh",
             "timeout": 5
           }
         ]
