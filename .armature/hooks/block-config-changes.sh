@@ -17,32 +17,47 @@ REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
 # ---------------------------------------------------------------------------
 # Parse the source field from stdin JSON.
-# Try python first; fall back to sed/grep.
+#
+# Security: NUL bytes (0x00) MUST be rejected before any decode. Bash command
+# substitution silently strips NUL bytes, so a payload where NUL corrupts the
+# JSON causes SOURCE to be empty, and the empty branch fails open (allowing
+# the change). This is lesson L001 in .armature/lessons.yaml — same bypass
+# class fixed in block-dangerous-commands.sh.
+#
+# This is a fail-closed security gate, so NUL byte detection triggers BLOCK
+# (exit 2), not fail-open with WARN.
 # ---------------------------------------------------------------------------
-STDIN_CONTENT="$(cat)"
+PYTHON=""
+if command -v python3 &>/dev/null; then PYTHON="python3"; elif command -v python &>/dev/null; then PYTHON="python"; fi
 
 SOURCE=""
-if command -v python3 &>/dev/null; then
-  SOURCE="$(printf '%s' "$STDIN_CONTENT" | python3 -c "
+if [ -n "$PYTHON" ]; then
+  SOURCE="$("$PYTHON" -c "$(cat <<'PYEOF'
 import json, sys
+raw = sys.stdin.buffer.read()
+# L001: reject NUL bytes before any decode — bash strips them, masking bypass.
+# This is a fail-closed security gate, so NUL-byte payloads BLOCK.
+if b'\x00' in raw:
+    sys.stderr.write('BLOCK: NUL bytes in ConfigChange payload (potential bypass attempt per L001)\n')
+    sys.exit(2)
+text = raw.decode('utf-8', errors='replace')
 try:
-    data = json.load(sys.stdin)
+    data = json.loads(text)
     print(data.get('source', ''))
 except Exception:
     pass
-")"
-elif command -v python &>/dev/null; then
-  SOURCE="$(printf '%s' "$STDIN_CONTENT" | python -c "
-import json, sys
-try:
-    data = json.load(sys.stdin)
-    print(data.get('source', ''))
-except Exception:
-    pass
-")"
+PYEOF
+)")"
+  py_rc=$?
+  if [ "$py_rc" -eq 2 ]; then
+    # Python raised the NUL-byte BLOCK; propagate exit 2.
+    exit 2
+  fi
 else
-  # Fallback: extract value of "source" key with sed
-  SOURCE="$(printf '%s' "$STDIN_CONTENT" | sed -n 's/.*"source"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)"
+  # Python unavailable. Fail-CLOSED: refuse to evaluate without the NUL-byte
+  # guard active; emit ADVISORY and allow.
+  echo "ADVISORY: block-config-changes.sh requires python3 or python; allowing without check" >&2
+  exit 0
 fi
 
 # ---------------------------------------------------------------------------

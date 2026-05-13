@@ -292,22 +292,80 @@ esac
 # Check 5: Python source convention
 #   <dir>/<stem>.py → tests/test_<stem>.py  OR  tests/<dir>/test_<stem>.py
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Helper: walk ancestors of PARENT_DIR including PARENT_DIR itself and
+# repo-root (""), emitting each on its own line. Used by package-local
+# test-path resolution below.
+# ---------------------------------------------------------------------------
+ancestors_of() {
+    local d="$1"
+    if [ -z "$d" ]; then
+        echo ""
+        return
+    fi
+    while [ -n "$d" ]; do
+        echo "$d"
+        case "$d" in
+            */*) d="${d%/*}" ;;
+            *)   d="" ;;
+        esac
+    done
+    echo ""   # finally emit "" for repo root
+}
+
 case "$EXT" in
     py)
+        # Original conventions (preserve for back-compat):
         EXPECTED1="tests/test_${STEM}.py"
         if [ -n "$PARENT_DIR" ]; then
             EXPECTED2="tests/${PARENT_DIR}/test_${STEM}.py"
         else
             EXPECTED2="tests/test_${STEM}.py"
         fi
-        if [ -f "$REPO_ROOT/$EXPECTED1" ] || [ -f "$REPO_ROOT/$EXPECTED2" ]; then
+        # Sibling test alongside source:
+        if [ -n "$PARENT_DIR" ]; then
+            EXPECTED3="${PARENT_DIR}/test_${STEM}.py"
+        else
+            EXPECTED3="test_${STEM}.py"
+        fi
+        if [ -f "$REPO_ROOT/$EXPECTED1" ] || [ -f "$REPO_ROOT/$EXPECTED2" ] || [ -f "$REPO_ROOT/$EXPECTED3" ]; then
             exit 0
         fi
-        if [ "$EXPECTED1" = "$EXPECTED2" ]; then
-            EXPECTED_LIST="$EXPECTED1"
-        else
-            EXPECTED_LIST="$EXPECTED1 or $EXPECTED2"
+
+        # Package-local conventions: walk up ancestors of PARENT_DIR and look
+        # for <ancestor>/tests/test_<stem>.py and <ancestor>/tests/<any-one-subdir>/test_<stem>.py
+        # (e.g. cwt-sim/tests/unit/test_<stem>.py).
+        FOUND=""
+        while IFS= read -r ANCESTOR; do
+            if [ -z "$ANCESTOR" ]; then
+                CAND="tests/test_${STEM}.py"
+            else
+                CAND="${ANCESTOR}/tests/test_${STEM}.py"
+            fi
+            if [ -f "$REPO_ROOT/$CAND" ]; then
+                FOUND="$CAND"
+                break
+            fi
+            # Subdirectory variant: <ancestor>/tests/*/test_<stem>.py (any one level deep)
+            if [ -z "$ANCESTOR" ]; then
+                BASE_TESTS_DIR="$REPO_ROOT/tests"
+            else
+                BASE_TESTS_DIR="$REPO_ROOT/${ANCESTOR}/tests"
+            fi
+            if [ -d "$BASE_TESTS_DIR" ]; then
+                for sub in "$BASE_TESTS_DIR"/*/test_${STEM}.py; do
+                    if [ -f "$sub" ]; then
+                        FOUND="${sub#$REPO_ROOT/}"
+                        break 2
+                    fi
+                done
+            fi
+        done < <(ancestors_of "$PARENT_DIR")
+        if [ -n "$FOUND" ]; then
+            exit 0
         fi
+
+        EXPECTED_LIST="$EXPECTED1 / $EXPECTED2 / $EXPECTED3 / <pkg>/tests/test_${STEM}.py / <pkg>/tests/<sub>/test_${STEM}.py"
         cat >&2 <<EOF
 BLOCK [TDD-001]: No test file found for '$REL_PATH'.
 Expected one of: $EXPECTED_LIST
@@ -321,7 +379,9 @@ esac
 # ---------------------------------------------------------------------------
 # Check 6: JS/TS source convention
 #   <dir>/<stem>.{ts,js,tsx,jsx,mts,cts,mjs,cjs} →
-#     sibling .test.<ext>, .spec.<ext>, or __tests__/<stem>.test.<ext>
+#     - sibling .test.<ext> / .spec.<ext>
+#     - sibling __tests__/<stem>.test.<ext> / __tests__/<stem>.spec.<ext>
+#     - repo-root __tests__/<stem>.test.<ext>
 #
 #   Extensions mts/cts/mjs/cjs are ESM/CJS TypeScript and JavaScript module
 #   variants that follow the same test-file naming conventions.
@@ -332,19 +392,25 @@ case "$EXT" in
             EXPECTED1="${PARENT_DIR}/${STEM}.test.${EXT}"
             EXPECTED2="${PARENT_DIR}/${STEM}.spec.${EXT}"
             EXPECTED3="__tests__/${STEM}.test.${EXT}"
+            EXPECTED4="${PARENT_DIR}/__tests__/${STEM}.test.${EXT}"
+            EXPECTED5="${PARENT_DIR}/__tests__/${STEM}.spec.${EXT}"
         else
             EXPECTED1="${STEM}.test.${EXT}"
             EXPECTED2="${STEM}.spec.${EXT}"
             EXPECTED3="__tests__/${STEM}.test.${EXT}"
+            EXPECTED4="__tests__/${STEM}.test.${EXT}"
+            EXPECTED5="__tests__/${STEM}.spec.${EXT}"
         fi
         if [ -f "$REPO_ROOT/$EXPECTED1" ] || \
            [ -f "$REPO_ROOT/$EXPECTED2" ] || \
-           [ -f "$REPO_ROOT/$EXPECTED3" ]; then
+           [ -f "$REPO_ROOT/$EXPECTED3" ] || \
+           [ -f "$REPO_ROOT/$EXPECTED4" ] || \
+           [ -f "$REPO_ROOT/$EXPECTED5" ]; then
             exit 0
         fi
         cat >&2 <<EOF
 BLOCK [TDD-001]: No test file found for '$REL_PATH'.
-Expected one of: $EXPECTED1 or $EXPECTED2 or $EXPECTED3
+Expected one of: $EXPECTED1 / $EXPECTED2 / $EXPECTED3 / $EXPECTED4 / $EXPECTED5
 Write the failing test first, then edit the source.
 See .armature/ARMATURE.md §5.7 (GATE-TDD-001).
 EOF
