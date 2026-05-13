@@ -156,14 +156,21 @@ is_safe_rm_target() {
 #   rm -rf node_modules && rm -rf /     → BLOCK (second rm has unsafe target)
 #   rm -rf node_modules&&npm ci         → PASS (no-space variant)
 all_rm_targets_safe() {
-  # Strip quote characters before parsing — they are token-delimiters in
-  # the shell but our parser uses whitespace boundaries. Without this step,
-  # an `rm` token immediately after a quote (e.g. `echo "rm -rf /"`)
-  # wouldn't be flagged by the " rm " pattern. Replacing quotes with
-  # spaces preserves rm-token visibility for pipe-into-shell attacks like
-  # `echo "rm -rf /" | ksh` while keeping the rest of the parsing
-  # whitespace-clean.
-  local cmd_unquoted="${1//\"/ }"
+  # Normalize whitespace: convert TAB characters to spaces so that the
+  # " rm " boundary detection works on tab-separated invocations like
+  # `rm\t-rf /` or `sudo\trm\t-rf /`. Shells treat tabs as whitespace,
+  # so the outer rm-rf regex (which uses [[:space:]]) matches both
+  # forms; the operand validator must too. Without this step a real
+  # rm-rf invocation with tab separators would silently pass the
+  # safe-target check. (L001-class bypass.)
+  local cmd_norm="${1//	/ }"   # literal TAB → space (the char between // and / is a TAB)
+  # Strip quote characters — they are token-delimiters in the shell but
+  # our parser uses whitespace boundaries. Without this step an `rm`
+  # token immediately after a quote (e.g. `echo "rm -rf /"`) wouldn't be
+  # flagged by the " rm " pattern. Replacing quotes with spaces preserves
+  # rm-token visibility for pipe-into-shell attacks like
+  # `echo "rm -rf /" | ksh`.
+  local cmd_unquoted="${cmd_norm//\"/ }"
   cmd_unquoted="${cmd_unquoted//\'/ }"
   # Prepend a space so " rm " (space-rm-space) matches an rm at the very
   # start of the command as well as in the middle (e.g. after "sudo " or

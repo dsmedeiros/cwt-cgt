@@ -290,10 +290,17 @@ if not os.path.isdir(search_dir):
 
 agents_file = None
 current = os.path.abspath(search_dir)
+# Probe both lowercase and uppercase forms (parallels the Scope Context
+# lookup earlier). Without this, projects using uppercase AGENTS.md at
+# project root get empty scope_invariants/scope_discipline_tags, so
+# invariant- and explicit-trigger disciplines silently fail to inject.
 while True:
-    probe = os.path.join(current, "agents.md")
-    if os.path.isfile(probe):
-        agents_file = probe
+    for name in ("agents.md", "AGENTS.md"):
+        probe = os.path.join(current, name)
+        if os.path.isfile(probe):
+            agents_file = probe
+            break
+    if agents_file:
         break
     parent = os.path.dirname(current)
     if parent == current:
