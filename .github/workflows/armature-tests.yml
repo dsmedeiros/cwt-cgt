@@ -14,11 +14,23 @@ on:
     paths:
       - ".armature/**"
       - ".claude/**"
+      # Cycle-21: root governance adapter files. post-stop.sh validates
+      # routing tables in CLAUDE.md / CODEX.md / AGENTS.md; a PR that
+      # only edits one of these adapter files (and therefore only changes
+      # a routing table) must still run the governance tests.
+      - "CLAUDE.md"
+      - "CODEX.md"
+      - "AGENTS.md"
+      - "ARMATURE.md"
       - ".github/workflows/armature-tests.yml"
   pull_request:
     paths:
       - ".armature/**"
       - ".claude/**"
+      - "CLAUDE.md"
+      - "CODEX.md"
+      - "AGENTS.md"
+      - "ARMATURE.md"
       - ".github/workflows/armature-tests.yml"
 
 permissions:

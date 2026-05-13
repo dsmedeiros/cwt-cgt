@@ -320,8 +320,27 @@ if failed > 0 and ARMATURE_CI_BLOCK == "1":
 sys.exit(0)
 PYEOF
 
-# Propagate block mode exit code; advisory mode always exits 0
-if [ "$MAIN_RC" -eq 2 ]; then
-    exit 2
+# Propagate block mode exit code; advisory mode always exits 0.
+#
+# Cycle-21 hardening: in block mode (ARMATURE_CI_BLOCK=1), treat ANY
+# nonzero MAIN_RC as blocking, not just the explicit exit 2 from the
+# Python driver. Infrastructure failures (e.g. `import yaml` raising
+# ModuleNotFoundError -> exit 1, or any unhandled exception before the
+# explicit sys.exit(2) is reached) otherwise fall through to exit 0 and
+# let Stop proceed even though CI did not actually run successfully —
+# which violates the fail-closed contract. Per Claude Code's hook docs,
+# exit 2 is the documented blocking signal, so we normalize to 2.
+if [ "$MAIN_RC" -ne 0 ]; then
+    if [ "${ARMATURE_CI_BLOCK:-0}" = "1" ]; then
+        exit 2
+    fi
+    # Advisory mode preserves prior behavior: surface in stderr but exit 0.
+    if [ "$MAIN_RC" -eq 2 ]; then
+        # Driver explicitly chose to block — propagate even in advisory mode
+        # since the driver only emits 2 when ARMATURE_CI_BLOCK was set when
+        # Python made the decision. This path keeps block-mode parity.
+        exit 2
+    fi
+    echo "ADVISORY: run-ci.sh inner driver exited ${MAIN_RC} (infrastructure failure?); CI-001 advisory only" >&2
 fi
 exit 0
