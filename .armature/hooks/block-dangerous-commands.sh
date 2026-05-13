@@ -142,24 +142,98 @@ is_safe_rm_target() {
   return 1
 }
 
-# Returns 0 (safe) only when every non-flag argument to an rm command is a
-# recognised safe target; returns 1 (unsafe) as soon as any argument is not.
+# Returns 0 (safe) only when EVERY rm invocation in the command has
+# operands that are recognised safe targets. Returns 1 (unsafe) on the
+# first unsafe operand or bare rm-rf.
+#
+# Handles chained commands by iterating over each ` rm ` occurrence and
+# validating its operands separately. Shell separators (&&, ||, ;, |, &)
+# bound each rm invocation; tokens after a separator belong to a
+# different command and are not rm operands.
+#
+# Examples:
+#   rm -rf node_modules && npm ci       → PASS (only one rm, safe target)
+#   rm -rf node_modules && rm -rf /     → BLOCK (second rm has unsafe target)
+#   rm -rf node_modules&&npm ci         → PASS (no-space variant)
 all_rm_targets_safe() {
-  local cmd="$1"
-  # Extract the portion of the command starting at the first "rm " token.
-  # This handles prefixes like "sudo rm", "env rm", "xargs rm", etc.
-  local rm_onwards="${cmd#*rm }"
-  # Split into an array
-  read -ra tokens <<< "$rm_onwards"
-  local found_target=0
-  for token in "${tokens[@]}"; do
-    # Skip flag tokens (start with -)
-    if [[ "$token" == -* ]]; then continue; fi
-    found_target=1
-    if ! is_safe_rm_target "$token"; then return 1; fi
+  # Strip quote characters before parsing — they are token-delimiters in
+  # the shell but our parser uses whitespace boundaries. Without this step,
+  # an `rm` token immediately after a quote (e.g. `echo "rm -rf /"`)
+  # wouldn't be flagged by the " rm " pattern. Replacing quotes with
+  # spaces preserves rm-token visibility for pipe-into-shell attacks like
+  # `echo "rm -rf /" | ksh` while keeping the rest of the parsing
+  # whitespace-clean.
+  local cmd_unquoted="${1//\"/ }"
+  cmd_unquoted="${cmd_unquoted//\'/ }"
+  # Prepend a space so " rm " (space-rm-space) matches an rm at the very
+  # start of the command as well as in the middle (e.g. after "sudo " or
+  # after a separator).
+  local remaining=" $cmd_unquoted"
+
+  while [[ "$remaining" == *" rm "* ]]; do
+    # Advance past the next " rm " to the operand region.
+    remaining="${remaining#* rm }"
+
+    # Slice operand region at the first shell separator. Each %% is a
+    # no-op if its pattern is absent, so the chain safely peels the
+    # longest non-separator prefix.
+    local chunk="$remaining"
+    chunk="${chunk%%&&*}"
+    chunk="${chunk%%||*}"
+    chunk="${chunk%%;*}"
+    chunk="${chunk%%|*}"
+    chunk="${chunk%%&*}"
+
+    # Only validate when THIS rm has both -r and -f. Individual rms in a
+    # chain may not all be rm-rf (the outer caller only confirms the
+    # whole command contains rm-rf somewhere).
+    local has_r=0
+    local has_f=0
+    if [[ "$chunk" =~ (^|[[:space:]])-[a-zA-Z]*[rR][a-zA-Z]*([[:space:]]|$) ]] || \
+       [[ "$chunk" =~ (^|[[:space:]])--recursive([[:space:]]|$) ]]; then
+      has_r=1
+    fi
+    if [[ "$chunk" =~ (^|[[:space:]])-[a-zA-Z]*[fF][a-zA-Z]*([[:space:]]|$) ]] || \
+       [[ "$chunk" =~ (^|[[:space:]])--force([[:space:]]|$) ]]; then
+      has_f=1
+    fi
+    if [[ $has_r -eq 0 || $has_f -eq 0 ]]; then
+      continue   # this rm isn't rm-rf; skip it
+    fi
+
+    # Validate operands of this rm chunk.
+    read -ra tokens <<< "$chunk"
+    local found_target=0
+    local stop_chunk=0
+    for token in "${tokens[@]}"; do
+      # Skip flag tokens (start with -)
+      if [[ "$token" == -* ]]; then continue; fi
+      # Handle no-space separator embedded in a token (e.g. "foo&&bar"):
+      # slice the prefix before the separator, evaluate it, then stop —
+      # the outer while loop will pick up any remaining rm invocations.
+      case "$token" in
+        *"&&"*|*"||"*|*";"*|*"|"*|*"&"*)
+          local prefix="$token"
+          prefix="${prefix%%&&*}"
+          prefix="${prefix%%||*}"
+          prefix="${prefix%%;*}"
+          prefix="${prefix%%|*}"
+          prefix="${prefix%%&*}"
+          if [[ -n "$prefix" && "$prefix" != -* ]]; then
+            found_target=1
+            if ! is_safe_rm_target "$prefix"; then return 1; fi
+          fi
+          stop_chunk=1
+          break
+          ;;
+      esac
+      found_target=1
+      if ! is_safe_rm_target "$token"; then return 1; fi
+    done
+    # Bare `rm -rf` with no operands is unsafe.
+    if [[ $found_target -eq 0 ]]; then return 1; fi
   done
-  # If no non-flag arguments were found, treat as unsafe (e.g. bare "rm -rf")
-  if [[ $found_target -eq 0 ]]; then return 1; fi
+
   return 0
 }
 
