@@ -163,10 +163,18 @@ if not os.path.isdir(search_dir):
 
 agents_file = None
 current = os.path.abspath(search_dir)
+# Probe both lowercase and uppercase forms. Per ARMATURE.md §3, scoped
+# governance files use lowercase agents.md by convention; the project-root
+# directives file uses uppercase AGENTS.md (the agnostic alias for projects
+# that follow that convention). Both forms are equivalent for governance
+# lookup; the first one found wins.
 while True:
-    probe = os.path.join(current, "agents.md")
-    if os.path.isfile(probe):
-        agents_file = probe
+    for name in ("agents.md", "AGENTS.md"):
+        probe = os.path.join(current, name)
+        if os.path.isfile(probe):
+            agents_file = probe
+            break
+    if agents_file:
         break
     parent = os.path.dirname(current)
     if parent == current:
@@ -174,7 +182,7 @@ while True:
     current = parent
 
 if not agents_file:
-    print("<!-- no agents.md found in scope path hierarchy, skipping -->")
+    print("<!-- no agents.md / AGENTS.md found in scope path hierarchy, skipping -->")
     sys.exit(0)
 
 try:

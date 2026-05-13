@@ -273,8 +273,11 @@ def test_no_scope_key_emits_no_agents_found_comment(run_hook, tmp_armature):
     # An empty object payload won't find agents.md at repo root
     result = run_hook("inject-context.sh", "{}", cwd=str(tmp_armature))
     assert result.returncode == 0
-    # Hook emits HTML comment when no agents.md found
-    assert "no agents.md found" in result.stdout
+    # Hook emits HTML comment when no agents.md / AGENTS.md found in scope
+    # (the hook probes both casings; updated in PR #297 cycle-4 for the
+    # AGENTS.md uppercase-root convention used by some projects).
+    assert "no agents.md" in result.stdout
+    assert "AGENTS.md" in result.stdout
 
 
 # ---------------------------------------------------------------------------

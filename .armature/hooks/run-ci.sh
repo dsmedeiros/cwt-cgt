@@ -151,6 +151,9 @@ if hasattr(sys.stderr, "buffer"):
 CI_YAML_PATH = os.environ.get("CI_YAML_PATH", "")
 CI_DIRTY_MARKER = os.environ.get("CI_DIRTY_MARKER", "")
 ARMATURE_CI_BLOCK = os.environ.get("ARMATURE_CI_BLOCK", "")
+# Repo root for subprocess cwd — ensures CI commands resolve against the
+# repository root regardless of which subdirectory invoked the Stop hook.
+repo_root = os.environ.get("CI_REPO_ROOT") or os.path.dirname(os.path.dirname(CI_YAML_PATH)) or "."
 
 # Default timeouts per step (seconds)
 DEFAULTS = {
@@ -235,11 +238,18 @@ for step_name in STEP_ORDER:
         timeout_val = DEFAULTS.get(step_name, 120)
 
     # Execute via bash -c (trust model: command from YAML, no secondary sanitization)
+    # cwd=repo_root: commands in ci.yaml are written relative to repo root
+    # (e.g. "python -m pytest .armature/tests/", "npm test", "test -f
+    # pyproject.toml"). The Stop hook may be invoked from any subdirectory,
+    # so pinning cwd to repo root is required for commands to resolve
+    # correctly. Without this, configured pytest/npm/test commands would
+    # run against whichever subtree the agent happened to be in.
     try:
         proc = subprocess.run(
             ["bash", "-c", command],
             capture_output=True,
             timeout=timeout_val,
+            cwd=repo_root,
         )
         # Decode bytes manually with errors="replace" — see m7-plan.md A5b
         # (subprocess text=True uses locale codec; cp1252 on Windows, ascii on
