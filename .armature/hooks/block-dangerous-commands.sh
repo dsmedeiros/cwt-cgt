@@ -172,10 +172,23 @@ all_rm_targets_safe() {
   # `echo "rm -rf /" | ksh`.
   local cmd_unquoted="${cmd_norm//\"/ }"
   cmd_unquoted="${cmd_unquoted//\'/ }"
+  # Normalize shell separators by padding with spaces. This ensures that
+  # an rm immediately following a separator without whitespace (e.g.
+  # `rm -rf safe&&rm -rf /` or `rm -rf safe;rm -rf /`) is still seen
+  # by the " rm " (space-rm-space) boundary detection. Multi-char
+  # separators must be padded BEFORE single-char ones so we don't break
+  # `&&` apart prematurely; the subsequent single-char pass adds extra
+  # spaces inside already-padded multi-char separators (harmless — bash
+  # word-splitting absorbs multiple consecutive spaces).
+  local cmd_sep="${cmd_unquoted//&&/ && }"
+  cmd_sep="${cmd_sep//||/ || }"
+  cmd_sep="${cmd_sep//;/ ; }"
+  cmd_sep="${cmd_sep//&/ & }"
+  cmd_sep="${cmd_sep//|/ | }"
   # Prepend a space so " rm " (space-rm-space) matches an rm at the very
   # start of the command as well as in the middle (e.g. after "sudo " or
   # after a separator).
-  local remaining=" $cmd_unquoted"
+  local remaining=" $cmd_sep"
 
   while [[ "$remaining" == *" rm "* ]]; do
     # Advance past the next " rm " to the operand region.
