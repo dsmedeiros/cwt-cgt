@@ -37,6 +37,16 @@ Full registry: `.armature/invariants/registry.yaml`
 | Electron / IPC | `cwt_lab/electron/` | `cwt_lab/electron/agents.md` | ADR-0002, ADR-0006 | electron-impl |
 | React UI | `cwt_lab/renderer/` | `cwt_lab/renderer/agents.md` | ADR-0002, ADR-0006 | renderer-impl |
 | Shared schemas | `cwt_lab/shared/` | `cwt_lab/shared/agents.md` | ADR-0002, ADR-0006 | shared-impl |
+| **Armature specification** | `.armature/` | `.armature/agents.md` | ADR-0001 | (framework governance) |
+| **Agent wiring** | `.claude/agents/` | `.claude/agents/agents.md` | ADR-0001 | (framework governance) |
+| **Slash commands** | `.claude/commands/` | `.claude/commands/agents.md` | ADR-0001 | (framework governance) |
+
+> Framework-governance scopes are governed by Armature itself (the canonical
+> repo via `/armature-backport`). To enable agent-driven changes on these
+> scopes locally, copy `specification-impl.md`, `agent-wiring-impl.md`, and
+> `commands-impl.md` from the canonical Armature repo's `.claude/agents/`
+> into this project's `.claude/agents/` directory and replace the
+> "(framework governance)" placeholders above.
 
 ## Agent Workflow
 

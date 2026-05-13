@@ -12,6 +12,40 @@ Hard rules extracted from ADRs. Violations block commits via reviewer gate.
 | SPEC-002 | high | Framework-generic files must stay in sync with canonical Armature repo | Prevents governance drift across backports | `post-stop.sh` |
 | SCHEMA-001 | high | config.yaml must conform to schema in ARMATURE.md | Ensures machine-readable governance metadata is complete | `post-stop.sh` |
 | SCHEMA-002 | high | Registry entries must have all required fields (id, name, severity, description, rule, defined-in, enforced-by, referenced-in, status) | Enables automated invariant verification | `post-stop.sh` |
+| ADAPTER-001 | high | Tool-specific adapter files (e.g. CLAUDE.md, CODEX.md) must route to the same governance sources and must not redefine or contradict root/scoped governance, ADRs, or the invariant registry | Keeps multiple agent tools aligned on a single governance truth | Manual review |
+| REF-001 | high | All `agents.md` paths referenced in `CLAUDE.md` routing table must resolve to files on disk | Prevents stale routing that silently bypasses scoped governance | `post-stop.sh` |
+| REF-002 | high | All ADR references in `agents.md` frontmatter must resolve to files in `docs/adr/` | Keeps invariant provenance auditable | `post-stop.sh` |
+| REF-003 | high | All `agents.md` paths referenced in `CODEX.md` routing table must resolve to files on disk | Same as REF-001 for the Codex adapter | `post-stop.sh` |
+| DISCIPLINE-001 | high | Persona discipline tags declared in `agents.md` frontmatter must be defined in the standards corpus | Discipline references must be resolvable for reviewer to load the correct rules | Orchestrator protocol (no script) |
+
+## Armature Hooks
+
+| ID | Severity | Rule | Rationale | Enforcement |
+|---|---|---|---|---|
+| HOOK-001 | critical | The `block-dangerous-commands.sh` hook must block destructive shell commands on PreToolUse(Bash) events | Fail-closed guard against accidental data loss | `block-dangerous-commands.sh` |
+| HOOK-002 | critical | The `block-config-changes.sh` hook must block agent-initiated configuration changes on ConfigChange events | Fail-closed guard against silent governance drift | `block-config-changes.sh` |
+| HOOK-003 | high | Application code changes must be tracked for conditional test verification | Lets CI-001 skip cleanly when no app code is dirty | `mark-dirty.sh`, `post-stop.sh` |
+| HOOK-004 | high | Subagents must receive governance context at spawn time | Subagents inherit invariants and routing rules from the orchestrator | `inject-context.sh` |
+| HOOK-005 | high | Session state must be re-injected after context compaction | Preserves orchestrator identity across `/compact` | `reinject-context.sh` |
+| HOOK-006 | medium | Agents should be advised of required reading before editing governed files | Prevents accidental edits to invariant-bearing files | `check-required-reading.sh` |
+
+## SDLC Gates
+
+| ID | Severity | Rule | Rationale | Enforcement |
+|---|---|---|---|---|
+| TDD-001 | high | Source file edits require a matching test file to exist | Test-first discipline at the edit boundary | `tdd-gate.sh` |
+| PHASE-001 | high | Edits must be permitted by the current SDLC phase | Phase declares allowed file scope | `phase-gate.sh` |
+| TIER0-001 | high | `DOMAIN.md` and `PROJECT.md` must exist at repo root | Tier-0 onboarding prerequisites for orchestrator routing | `tier0-preflight.sh` |
+| HOTFIX-001 | critical | Hotfix bypass must produce an audit record and block subsequent normal-phase work until postmortem lands | Hotfix is a privileged escape valve; every use is logged | `hotfix-audit.sh` (planned) |
+| CI-001 | high | Full CI pipeline (tests + types + lint + invariants) must run on Stop when code is dirty | Prevents ungated code from closing a session | `run-ci.sh` |
+
+## Task Lifecycle
+
+| ID | Severity | Rule | Rationale | Enforcement |
+|---|---|---|---|---|
+| TASK-001 | high | Tasks must have acceptance criteria before delegation | Reviewer needs concrete criteria to evaluate against | `task-readiness.sh` |
+| TASK-002 | high | Deliverables must be auto-verified against acceptance criteria on SubagentStop | Catches silent under-delivery before orchestrator accepts | `task-completion.sh` |
+| TASK-003 | high | Reviewer and (when triggered) red team must auto-fire on SubagentStop | Ensures every delegated change passes governance review | `auto-reviewer.sh` |
 
 ## Layer Dynamics
 

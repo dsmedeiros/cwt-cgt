@@ -15,6 +15,9 @@ invariants:
     referenced-in:
       - .armature/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
 
   SPEC-002:
     name: "Framework-generic file integrity"
@@ -27,8 +30,12 @@ invariants:
         - .armature/hooks/post-stop.sh
     referenced-in:
       - .armature/agents.md
+      - .claude/agents/agents.md
       - .claude/commands/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
 
   SCHEMA-001:
     name: "Config.yaml schema compliance"
@@ -42,6 +49,9 @@ invariants:
     referenced-in:
       - .armature/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
 
   SCHEMA-002:
     name: "Registry.yaml schema compliance"
@@ -55,6 +65,331 @@ invariants:
     referenced-in:
       - .armature/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
+
+  ADAPTER-001:
+    name: Tool adapter consistency
+    severity: high
+    description: Tool-specific adapter files must route to the shared governance sources and must not redefine or contradict them.
+    rule: "Tool-specific adapter files must route to the same governance sources and must not redefine or contradict root/scoped governance, ADRs, or the invariant registry."
+    status: active
+    superseded-by: null
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      ci: []
+    referenced-in:
+      - .armature/agents.md
+      - .claude/agents/agents.md
+    exceptions: []
+
+  CI-001:
+    name: CI pipeline gate
+    severity: high
+    description: "Full CI pipeline (tests, types, lint, invariants) must run on Stop when code is dirty to prevent ungated code from closing a session."
+    rule: Full CI pipeline (tests + types + lint + invariants) must run on Stop when code is dirty.
+    status: active
+    superseded-by: null
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      ci: []
+      hooks:
+        - .armature/hooks/run-ci.sh
+      startup: []
+      runtime: []
+    planned-enforcement: []
+    referenced-in:
+      - .armature/agents.md
+    exceptions: []
+
+  DISCIPLINE-001:
+    name: Discipline tag definition
+    severity: standard
+    description: Persona discipline tags declared in agents.md frontmatter must be defined in the standards corpus to prevent references to undefined disciplines.
+    rule: Persona discipline tags declared in agents.md frontmatter must be defined in the standards corpus.
+    status: active
+    superseded-by: null
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      ci: []
+      hooks: []
+      startup: []
+      runtime: []
+    planned-enforcement: []
+    referenced-in:
+      - .armature/agents.md
+    exceptions: []
+
+  HOOK-001:
+    name: Destructive command prevention
+    severity: high
+    description: "Destructive shell commands (rm -rf, force push, hard reset, DROP TABLE, --no-verify) must be blocked to prevent irreversible damage."
+    rule: The block-dangerous-commands.sh hook must block destructive shell commands on PreToolUse(Bash) events.
+    status: active
+    superseded-by: null
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      hooks:
+        - .armature/hooks/block-dangerous-commands.sh
+    referenced-in:
+      - .armature/agents.md
+    exceptions: []
+
+  HOOK-002:
+    name: Agent self-governance prevention
+    severity: critical
+    description: Agents must not modify their own governance configuration to prevent self-modification undermining enforcement.
+    rule: The block-config-changes.sh hook must block agent-initiated configuration changes on ConfigChange events.
+    status: active
+    superseded-by: null
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      hooks:
+        - .armature/hooks/block-config-changes.sh
+    referenced-in:
+      - .armature/agents.md
+    exceptions: []
+
+  HOOK-003:
+    name: Application code change tracking
+    severity: standard
+    description: Application code changes must be tracked to enable conditional test verification on session stop.
+    rule: The mark-dirty.sh hook must create a dirty marker when non-governance files are modified.
+    status: active
+    superseded-by: null
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      hooks:
+        - .armature/hooks/mark-dirty.sh
+        - .armature/hooks/post-stop.sh
+    referenced-in:
+      - .armature/agents.md
+    exceptions: []
+
+  HOOK-004:
+    name: Subagent governance context injection
+    severity: high
+    description: "Subagents must receive governance context (active invariants, session state, scope directives) at spawn time."
+    rule: The inject-context.sh hook must inject governance context into subagent system prompts on SubagentStart events.
+    status: active
+    superseded-by: null
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      hooks:
+        - .armature/hooks/inject-context.sh
+    referenced-in:
+      - .armature/agents.md
+    exceptions: []
+
+  HOOK-005:
+    name: Post-compaction context recovery
+    severity: high
+    description: Session state must be mechanically re-injected after context compaction to prevent governance amnesia.
+    rule: The reinject-context.sh hook must restore session state on SessionStart(compact) events.
+    status: active
+    superseded-by: null
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      hooks:
+        - .armature/hooks/reinject-context.sh
+    referenced-in:
+      - .armature/agents.md
+    exceptions: []
+
+  HOOK-006:
+    name: Required reading advisory
+    severity: standard
+    description: Agents editing governed files should be advised of required reading (governing agents.md and referenced ADRs).
+    rule: "The check-required-reading.sh hook must advise agents of required reading on PreToolUse(Edit|Write) events."
+    status: active
+    superseded-by: null
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      hooks:
+        - .armature/hooks/check-required-reading.sh
+    referenced-in:
+      - .armature/agents.md
+    exceptions: []
+
+  HOTFIX-001:
+    name: Hotfix audit trail
+    severity: high
+    description: Hotfix bypass must produce an audit record and block subsequent normal-phase work until postmortem lands.
+    rule: Hotfix bypass must produce an audit record and block subsequent normal-phase work until postmortem lands.
+    status: active
+    superseded-by: null
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      ci: []
+      hooks: []
+      startup: []
+      runtime: []
+    planned-enforcement:
+      - .armature/hooks/hotfix-audit.sh
+    referenced-in:
+      - .armature/agents.md
+    exceptions: []
+
+  PHASE-001:
+    name: SDLC phase gate
+    severity: high
+    description: Edits must be permitted by the current SDLC phase to enforce phase discipline across the development lifecycle.
+    rule: Edits must be permitted by the current SDLC phase.
+    status: active
+    superseded-by: null
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      ci: []
+      hooks:
+        - .armature/hooks/phase-gate.sh
+      startup: []
+      runtime: []
+    referenced-in:
+      - .armature/agents.md
+    exceptions: []
+
+  REF-001:
+    name: CLAUDE.md routing table integrity
+    severity: critical
+    description: All governance file (agents.md/AGENTS.md) paths in CLAUDE.md routing table must exist as files to prevent dead references.
+    rule: All governance file paths referenced in CLAUDE.md routing table must exist as files.
+    status: active
+    superseded-by: null
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      ci:
+        - .armature/hooks/post-stop.sh
+        - .github/workflows/governance.yml
+    referenced-in:
+      - .armature/agents.md
+    exceptions: []
+
+  REF-002:
+    name: ADR reference resolution
+    severity: high
+    description: All ADR references in governance file (agents.md/AGENTS.md) frontmatter must resolve to prevent governance gaps.
+    rule: All ADR references in governance file frontmatter must resolve to files in docs/adr/.
+    status: active
+    superseded-by: null
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      ci:
+        - .armature/hooks/post-stop.sh
+        - .github/workflows/governance.yml
+    referenced-in:
+      - .armature/agents.md
+    exceptions: []
+
+  REF-003:
+    name: CODEX.md routing table integrity
+    severity: critical
+    description: All governance file (agents.md/AGENTS.md) paths in CODEX.md routing tables must exist as files to prevent dead references.
+    rule: All governance file paths referenced in CODEX.md routing tables must exist as files.
+    status: active
+    superseded-by: null
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      ci:
+        - .armature/hooks/post-stop.sh
+        - .github/workflows/governance.yml
+    referenced-in:
+      - .armature/agents.md
+    exceptions: []
+
+  TASK-001:
+    name: Task readiness gate
+    severity: standard
+    description: Tasks must have acceptance criteria before delegation to prevent ambiguous or incomplete work assignments.
+    rule: Tasks must have acceptance criteria before delegation.
+    status: active
+    superseded-by: null
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      ci: []
+      hooks:
+        - .armature/hooks/task-readiness.sh
+      startup: []
+      runtime: []
+    planned-enforcement: []
+    referenced-in:
+      - .armature/agents.md
+    exceptions: []
+
+  TASK-002:
+    name: Task completion gate
+    severity: standard
+    description: Deliverables must be auto-verified against acceptance criteria to prevent incomplete or incorrect work from being accepted.
+    rule: Deliverables must be auto-verified against acceptance criteria.
+    status: active
+    superseded-by: null
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      ci: []
+      hooks:
+        - .armature/hooks/task-completion.sh
+      startup: []
+      runtime: []
+    planned-enforcement: []
+    referenced-in:
+      - .armature/agents.md
+    exceptions: []
+
+  TASK-003:
+    name: Auto-reviewer gate
+    severity: standard
+    description: Reviewer and (when triggered) red team must auto-fire on SubagentStop to ensure all deliverables receive governance review.
+    rule: Reviewer and (when triggered) red team must auto-fire on SubagentStop.
+    status: active
+    superseded-by: null
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      ci: []
+      hooks:
+        - .armature/hooks/auto-reviewer.sh
+      startup: []
+      runtime: []
+    planned-enforcement: []
+    referenced-in:
+      - .armature/agents.md
+    exceptions: []
+
+  TDD-001:
+    name: Test-driven development gate
+    severity: high
+    description: Source file edits require a matching test file to exist to prevent untested code from entering the codebase.
+    rule: Source file edits require a matching test file to exist.
+    status: active
+    superseded-by: null
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      ci: []
+      hooks:
+        - .armature/hooks/tdd-gate.sh
+      startup: []
+      runtime: []
+    referenced-in:
+      - .armature/agents.md
+    exceptions: []
+
+  TIER0-001:
+    name: Tier-0 preflight
+    severity: high
+    description: DOMAIN.md and PROJECT.md must exist at repo root so the orchestrator has required context before any delegation.
+    rule: DOMAIN.md and PROJECT.md must exist at repo root.
+    status: active
+    superseded-by: null
+    defined-in: .armature/ARMATURE.md
+    enforced-by:
+      ci: []
+      hooks:
+        - .armature/hooks/tier0-preflight.sh
+      startup: []
+      runtime: []
+    referenced-in:
+      - .armature/agents.md
+    exceptions: []
+
 
   # === Layer Dynamics (ADR-0001) ===
   LAYER-001:
@@ -67,8 +402,12 @@ invariants:
       ci:
         - cwt-sim/tests/unit/test_layer_updates.py
     referenced-in:
+      - AGENTS.md
       - cwt-sim/cwt/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
 
   LAYER-002:
     name: "Layer module isolation"
@@ -80,8 +419,12 @@ invariants:
       ci:
         - .armature/hooks/post-stop.sh  # TODO: add import check
     referenced-in:
+      - AGENTS.md
       - cwt-sim/cwt/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
 
   LAYER-003:
     name: "Explicit geometric corrections"
@@ -95,6 +438,9 @@ invariants:
     referenced-in:
       - cwt-sim/cwt/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
 
   # === IPC Bridge (ADR-0002) ===
   IPC-001:
@@ -107,9 +453,13 @@ invariants:
       ci:
         - .github/workflows/cwt-lab-tests.yml  # TODO: add import boundary lint
     referenced-in:
+      - AGENTS.md
       - cwt_lab/electron/agents.md
       - cwt_lab/renderer/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
 
   IPC-002:
     name: "IPC input validation"
@@ -124,6 +474,9 @@ invariants:
       - cwt_lab/electron/agents.md
       - cwt_lab/shared/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
 
   IPC-003:
     name: "Python environment fallback chain"
@@ -137,6 +490,9 @@ invariants:
     referenced-in:
       - cwt_lab/electron/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
 
   IPC-004:
     name: "Python invocation timeout"
@@ -150,6 +506,9 @@ invariants:
     referenced-in:
       - cwt_lab/electron/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
 
   # === Geometric Estimators (ADR-0003) ===
   GEOM-001:
@@ -162,8 +521,12 @@ invariants:
       ci:
         - .armature/hooks/post-stop.sh  # TODO: add import check
     referenced-in:
+      - AGENTS.md
       - cwt-sim/cwt/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
 
   GEOM-002:
     name: "Explicit geometry inputs"
@@ -178,6 +541,9 @@ invariants:
     referenced-in:
       - cwt-sim/cwt/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
 
   GEOM-003:
     name: "Degenerate graph robustness"
@@ -191,6 +557,9 @@ invariants:
     referenced-in:
       - cwt-sim/cwt/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
 
   # === Baselines (ADR-0004) ===
   BASE-001:
@@ -206,6 +575,9 @@ invariants:
     referenced-in:
       - cwt-sim/baselines/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
 
   BASE-002:
     name: "Fixture data immutability"
@@ -217,6 +589,9 @@ invariants:
     referenced-in:
       - cwt-sim/baselines/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
 
   BASE-003:
     name: "Baseline independence from CWT"
@@ -228,8 +603,12 @@ invariants:
       ci:
         - .armature/hooks/post-stop.sh  # TODO: add import check
     referenced-in:
+      - AGENTS.md
       - cwt-sim/baselines/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
 
   # === Gate Progression (ADR-0005) ===
   GATE-001:
@@ -244,6 +623,9 @@ invariants:
     referenced-in:
       - cwt-sim/experiments/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
 
   GATE-002:
     name: "Experiment artifact isolation"
@@ -255,6 +637,9 @@ invariants:
     referenced-in:
       - cwt-sim/experiments/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
 
   GATE-003:
     name: "Standalone experiment CLI"
@@ -268,6 +653,9 @@ invariants:
     referenced-in:
       - cwt-sim/experiments/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
 
   # === Desktop Lab (ADR-0006) ===
   LAB-001:
@@ -283,6 +671,9 @@ invariants:
       - cwt_lab/renderer/agents.md
       - cwt_lab/shared/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
 
   LAB-002:
     name: "Zustand state management"
@@ -294,6 +685,9 @@ invariants:
     referenced-in:
       - cwt_lab/renderer/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
 
   LAB-003:
     name: "Demo mode independence"
@@ -307,3 +701,6 @@ invariants:
     referenced-in:
       - cwt_lab/renderer/agents.md
     status: active
+    exceptions: []
+    planned-enforcement: []
+    superseded-by: null
