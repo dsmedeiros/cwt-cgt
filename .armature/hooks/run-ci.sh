@@ -296,11 +296,22 @@ for step_name in STEP_ORDER:
 print("Summary: passed={} skipped={} failed={}".format(passed, skipped, failed))
 
 # ---- Dirty marker management ----
-if failed == 0 and CI_DIRTY_MARKER:
+# Only clear the marker when at least one step ACTUALLY ran (passed > 0)
+# AND no step failed. If every step was skipped (null/empty/non-string
+# command, or no steps configured), the marker stays so the next Stop
+# event re-tries — clearing it after an all-skip run would silently
+# bypass CI-001 for the underlying dirty edit.
+if passed > 0 and failed == 0 and CI_DIRTY_MARKER:
     try:
         os.remove(CI_DIRTY_MARKER)
     except OSError:
         pass  # Marker already gone; not an error
+elif failed == 0 and passed == 0 and skipped > 0:
+    sys.stderr.write(
+        "WARN: all ci.yaml steps skipped (null/empty/non-string); "
+        "dirty marker preserved so CI-001 retries on next Stop. "
+        "Configure at least one step in .armature/ci.yaml to clear the marker.\n"
+    )
 
 # ---- Fail-closed mode ----
 if failed > 0 and ARMATURE_CI_BLOCK == "1":
