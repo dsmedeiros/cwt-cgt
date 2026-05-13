@@ -358,11 +358,17 @@ fi
 # files without requiring explicit file names, posing the same broad-staging
 # risk as -A / --all.
 # ---------------------------------------------------------------------------
+# Note on terminators: each pattern ends with (.[[:space:]]*($|[;&|]))
+# instead of `\.[[:space:]]*$` so chained commands like
+# `git add . && git commit -m ...` are caught — the dot can be followed
+# by end-of-string OR a shell separator (;, &, |). Without this, an
+# end-anchored guard silently allows the broad-staging form when the
+# user chains a follow-up command.
 if [[ "$COMMAND" =~ git[[:space:]].*add.*([[:space:]]+-A[[:space:]]|[[:space:]]+-A$) ]] || \
    [[ "$COMMAND" =~ git[[:space:]].*add.*--all ]] || \
    [[ "$COMMAND" =~ git[[:space:]].*add.*([[:space:]]+-u[[:space:]]|[[:space:]]+-u$) ]] || \
    [[ "$COMMAND" =~ git[[:space:]].*add.*--update ]] || \
-   [[ "$COMMAND" =~ git[[:space:]].*add[[:space:]]+\.[[:space:]]*$ ]]; then
+   [[ "$COMMAND" =~ git[[:space:]].*add[[:space:]]+\.[[:space:]]*($|[;&|]) ]]; then
   block "git add -A / --all / -u / --update / git add ." "staging all changes risks committing unintended files (secrets, binaries); stage files explicitly by name"
 fi
 
@@ -370,8 +376,9 @@ fi
 # Rule: git checkout -- . (discard all unstaged changes in working tree)
 # Allow: git checkout -- specific-file  and  git checkout branch-name
 # The dangerous form is exactly "git checkout -- ." (dot as sole path arg).
+# Terminator handles chained commands per the note above.
 # ---------------------------------------------------------------------------
-if [[ "$COMMAND" =~ git[[:space:]].*checkout[[:space:]].*--[[:space:]]+\.[[:space:]]*$ ]]; then
+if [[ "$COMMAND" =~ git[[:space:]].*checkout[[:space:]].*--[[:space:]]+\.[[:space:]]*($|[;&|]) ]]; then
   block "git checkout -- ." "discards all unstaged working-tree changes and cannot be undone; specify individual files instead"
 fi
 
@@ -379,8 +386,9 @@ fi
 # Rule: git restore . / git restore --staged .
 # Allow: git restore <specific-file>
 # Block only when the sole path argument is a bare dot.
+# Terminator handles chained commands per the note above.
 # ---------------------------------------------------------------------------
-if [[ "$COMMAND" =~ git[[:space:]].*restore([[:space:]]+(--staged|--worktree|--source=[^[:space:]]*))*[[:space:]]+\.[[:space:]]*$ ]]; then
+if [[ "$COMMAND" =~ git[[:space:]].*restore([[:space:]]+(--staged|--worktree|--source=[^[:space:]]*))*[[:space:]]+\.[[:space:]]*($|[;&|]) ]]; then
   block "git restore ." "discards all changes (staged or unstaged) and cannot be undone; specify individual files instead"
 fi
 
