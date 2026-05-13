@@ -335,8 +335,10 @@ if [ -f "$DIRTY_MARKER" ]; then
   # validate the Python tree. .armature/tests/ is deliberately not matched
   # — it is governance, not application.
   PY_TESTS_FOUND=""
+  PY_TESTS_PATH=""
   if [ -d "${REPO_ROOT}/tests" ]; then
     PY_TESTS_FOUND="repo-root"
+    PY_TESTS_PATH="tests"
   else
     for top_dir in "${REPO_ROOT}"/*/; do
       # Skip framework directories that hold governance tests, not app
@@ -345,17 +347,28 @@ if [ -f "$DIRTY_MARKER" ]; then
       esac
       if [ -d "${top_dir}tests" ]; then
         PY_TESTS_FOUND="package-local"
+        # Strip the REPO_ROOT prefix and the trailing slash from top_dir,
+        # then append "tests". This produces e.g. "cwt-sim/tests" so pytest
+        # is scoped to the detected package and does NOT collect unrelated
+        # sibling test trees (which may have collection errors or use a
+        # different test framework, e.g. jest's __tests__).
+        pkg_rel="${top_dir#${REPO_ROOT}/}"
+        pkg_rel="${pkg_rel%/}"
+        PY_TESTS_PATH="${pkg_rel}/tests"
         break
       fi
     done
   fi
 
+  # Scope pytest to the detected tree (PY_TESTS_PATH) so we don't accidentally
+  # collect unrelated trees (e.g. baselines/__tests__/ jest files) that fail
+  # collection when invoked from repo root.
   if [ -n "$PY_TESTS_FOUND" ] && command -v python3 &>/dev/null; then
     TEST_RUNNER="pytest"
-    TEST_CMD="python3 -m pytest -x --tb=short -q"
+    TEST_CMD="python3 -m pytest ${PY_TESTS_PATH} -x --tb=short -q"
   elif [ -n "$PY_TESTS_FOUND" ] && command -v python &>/dev/null; then
     TEST_RUNNER="pytest"
-    TEST_CMD="python -m pytest -x --tb=short -q"
+    TEST_CMD="python -m pytest ${PY_TESTS_PATH} -x --tb=short -q"
   elif [ -f "${REPO_ROOT}/package.json" ] && command -v npm &>/dev/null; then
     if _POSTSTOP_PKG="${REPO_ROOT}/package.json" $PYTHON - <<'PYEOF' 2>/dev/null
 import json, os, sys
