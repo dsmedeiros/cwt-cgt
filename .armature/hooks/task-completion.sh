@@ -119,27 +119,38 @@ if os.path.isfile(PHASE_FILE):
         pass
 
 # ---- 5. Deliverable extraction (D2) — ordered field search ----
+# Order matters: `last_assistant_message` is the documented Claude Code
+# SubagentStop payload field (per hooks.md / Agent SDK docs). The other
+# fields are defensive fallbacks for older payload shapes, alternative
+# runtimes (Codex), or future Claude Code versions. PR #297 cycle-12
+# correction.
 deliverable_text = None
 
-# 5a. tool_result.content (may be string or list of content blocks)
-tr = data.get("tool_result")
-if isinstance(tr, dict):
-    content = tr.get("content")
-    if isinstance(content, str):
-        deliverable_text = content
-    elif isinstance(content, list):
-        # Join text-type blocks
-        parts = []
-        for block in content:
-            if isinstance(block, dict):
-                if block.get("type") == "text":
-                    text_val = block.get("text", "")
-                    if isinstance(text_val, str):
-                        parts.append(text_val)
-            elif isinstance(block, str):
-                parts.append(block)
-        if parts:
-            deliverable_text = " ".join(parts)
+# 5a. last_assistant_message (Claude Code SubagentStop primary field)
+v = data.get("last_assistant_message")
+if isinstance(v, str):
+    deliverable_text = v
+
+# 5b. tool_result.content (may be string or list of content blocks)
+if deliverable_text is None:
+    tr = data.get("tool_result")
+    if isinstance(tr, dict):
+        content = tr.get("content")
+        if isinstance(content, str):
+            deliverable_text = content
+        elif isinstance(content, list):
+            # Join text-type blocks
+            parts = []
+            for block in content:
+                if isinstance(block, dict):
+                    if block.get("type") == "text":
+                        text_val = block.get("text", "")
+                        if isinstance(text_val, str):
+                            parts.append(text_val)
+                elif isinstance(block, str):
+                    parts.append(block)
+            if parts:
+                deliverable_text = " ".join(parts)
 
 # 5b. output
 if deliverable_text is None:

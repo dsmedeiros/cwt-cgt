@@ -165,26 +165,36 @@ severity = data.get("severity")
 if not isinstance(severity, str):
     severity = None
 
-# deliverable_text — same ordered field search as task-completion.sh (D2)
+# deliverable_text — same ordered field search as task-completion.sh (D2).
+# Order matters: `last_assistant_message` is the documented Claude Code
+# SubagentStop payload field (per hooks.md / Agent SDK docs); the other
+# fields are defensive fallbacks. PR #297 cycle-12 correction.
 deliverable_text = None
 
-tr = data.get("tool_result")
-if isinstance(tr, dict):
-    content = tr.get("content")
-    if isinstance(content, str):
-        deliverable_text = content
-    elif isinstance(content, list):
-        parts = []
-        for block in content:
-            if isinstance(block, dict):
-                if block.get("type") == "text":
-                    text_val = block.get("text", "")
-                    if isinstance(text_val, str):
-                        parts.append(text_val)
-            elif isinstance(block, str):
-                parts.append(block)
-        if parts:
-            deliverable_text = " ".join(parts)
+# last_assistant_message (Claude Code SubagentStop primary field)
+v = data.get("last_assistant_message")
+if isinstance(v, str):
+    deliverable_text = v
+
+# tool_result.content (legacy/fallback)
+if deliverable_text is None:
+    tr = data.get("tool_result")
+    if isinstance(tr, dict):
+        content = tr.get("content")
+        if isinstance(content, str):
+            deliverable_text = content
+        elif isinstance(content, list):
+            parts = []
+            for block in content:
+                if isinstance(block, dict):
+                    if block.get("type") == "text":
+                        text_val = block.get("text", "")
+                        if isinstance(text_val, str):
+                            parts.append(text_val)
+                elif isinstance(block, str):
+                    parts.append(block)
+            if parts:
+                deliverable_text = " ".join(parts)
 
 if deliverable_text is None:
     v = data.get("output")

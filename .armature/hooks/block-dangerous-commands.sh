@@ -180,11 +180,19 @@ all_rm_targets_safe() {
   # `&&` apart prematurely; the subsequent single-char pass adds extra
   # spaces inside already-padded multi-char separators (harmless — bash
   # word-splitting absorbs multiple consecutive spaces).
+  #
+  # Also normalize command-substitution delimiters (`$(`, backtick, `)`)
+  # to spaces. Without this, `$(rm -rf /)` or `` `rm -rf /` `` would
+  # have rm preceded by `$(` / backtick (not space), and the validator
+  # would miss the rm entirely. PR #297 cycle-12 finding #26.
   local cmd_sep="${cmd_unquoted//&&/ && }"
   cmd_sep="${cmd_sep//||/ || }"
   cmd_sep="${cmd_sep//;/ ; }"
   cmd_sep="${cmd_sep//&/ & }"
   cmd_sep="${cmd_sep//|/ | }"
+  cmd_sep="${cmd_sep//\$(/ \$( }"     # `$(` (command substitution start) → space-padded
+  cmd_sep="${cmd_sep//)/ ) }"          # `)` (command substitution end) → space-padded
+  cmd_sep="${cmd_sep//\`/ }"           # backtick → space (legacy command substitution)
   # Prepend a space so " rm " (space-rm-space) matches an rm at the very
   # start of the command as well as in the middle (e.g. after "sudo " or
   # after a separator).

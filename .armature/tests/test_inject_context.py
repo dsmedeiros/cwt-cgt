@@ -30,6 +30,30 @@ import pytest
 from .helpers import subagent_start_event
 
 
+def _context(stdout: str) -> str:
+    """Extract additionalContext from the SubagentStart JSON envelope.
+
+    The hook emits a JSON object per Claude Code's hooks.md contract:
+      {"hookSpecificOutput": {
+          "hookEventName": "SubagentStart",
+          "additionalContext": "<text content>"
+      }}
+
+    Most tests assert substring presence via `in result.stdout` and those
+    still work because the substring is preserved inside the JSON-encoded
+    string. Tests that need REAL newlines (line-anchored regex or
+    `.splitlines()`-style checks) should call this helper to decode the
+    envelope and operate on the inner text. PR #297 cycle-12 fix #23.
+    """
+    try:
+        d = json.loads(stdout)
+        return d.get("hookSpecificOutput", {}).get("additionalContext", "")
+    except json.JSONDecodeError:
+        # Fallback: if Python was unavailable at hook time, the hook emits
+        # raw text directly; return as-is.
+        return stdout
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -511,11 +535,14 @@ class TestActiveDisciplines:
         payload = subagent_start_event(scope=scope_dir.as_posix())
         result = run_hook("inject-context.sh", payload, cwd=str(tmp_armature))
         assert result.returncode == 0
-        # Count ### subsection headers for disciplines
-        subsection_count = result.stdout.count("\n### disc-")
+        # Count ### subsection headers for disciplines. Decode the JSON
+        # envelope first so the literal "\n### disc-" patterns match real
+        # newlines rather than the JSON-escaped \\n sequences.
+        ctx = _context(result.stdout)
+        subsection_count = ctx.count("\n### disc-")
         assert subsection_count == 4, (
             f"Expected exactly 4 discipline subsections, got {subsection_count}. "
-            f"Output:\n{result.stdout}"
+            f"Context:\n{ctx}"
         )
 
     def test_composition_cap_priority(self, run_hook, tmp_armature):
@@ -570,9 +597,11 @@ class TestActiveDisciplines:
         payload = subagent_start_event(scope=scope_dir.as_posix())
         result = run_hook("inject-context.sh", payload, cwd=str(tmp_armature))
         assert result.returncode == 0
-        # Extract the truncated line
+        # Extract the truncated line. Decode the JSON envelope so
+        # .splitlines() sees real newlines (not JSON-escaped \\n).
+        ctx = _context(result.stdout)
         truncated_line = [
-            line for line in result.stdout.splitlines()
+            line for line in ctx.splitlines()
             if line.strip().startswith("truncated:")
         ]
         assert truncated_line, "No 'truncated:' line found in output"

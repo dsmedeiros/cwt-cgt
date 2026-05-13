@@ -25,6 +25,30 @@ elif command -v python &>/dev/null; then
 fi
 
 # ---------------------------------------------------------------------------
+# Output protocol (PR #297 cycle-12 finding #23):
+#
+# Claude Code's SubagentStart hook does NOT capture plain stdout. Per the
+# hooks.md spec, context must be returned via JSON output:
+#
+#   {"hookSpecificOutput": {
+#       "hookEventName": "SubagentStart",
+#       "additionalContext": "<text content>"
+#   }}
+#
+# We collect all section emissions into a buffer file, then JSON-encode
+# the buffer's contents at the end and emit the envelope as the sole
+# stdout output. fd 9 is reserved for the real stdout; fd 1 redirects to
+# the buffer during the body.
+#
+# If python is unavailable for the final JSON encoding, fall back to
+# plain-text emission on real stdout (best-effort; Claude Code will not
+# inject the context but the content is at least visible for debug).
+# ---------------------------------------------------------------------------
+_INJECT_BUFFER="$(mktemp 2>/dev/null || echo "${TMPDIR:-/tmp}/inject-context-buffer-$$")"
+trap 'rm -f "$_INJECT_BUFFER"' EXIT INT TERM
+exec 9>&1 1>"$_INJECT_BUFFER"
+
+# ---------------------------------------------------------------------------
 # Section 1: Active Invariants
 # ---------------------------------------------------------------------------
 echo "## Active Invariants"
@@ -488,5 +512,33 @@ PYEOF
 fi
 
 echo ""
+
+# ---------------------------------------------------------------------------
+# Restore real stdout and emit the JSON envelope (see top-of-file comment).
+# ---------------------------------------------------------------------------
+exec 1>&9 9>&-
+
+if [ -n "$PYTHON" ]; then
+  export _INJECT_BUFFER_PATH="$_INJECT_BUFFER"
+  "$PYTHON" - <<'PYEOF'
+import json, os, sys
+buf_path = os.environ["_INJECT_BUFFER_PATH"]
+try:
+    with open(buf_path, "r", encoding="utf-8") as f:
+        content = f.read()
+except Exception:
+    content = ""
+print(json.dumps({
+    "hookSpecificOutput": {
+        "hookEventName": "SubagentStart",
+        "additionalContext": content,
+    }
+}))
+PYEOF
+else
+  # Python unavailable: emit raw content (best-effort fallback; Claude
+  # Code will not inject this but the content is at least visible).
+  cat "$_INJECT_BUFFER"
+fi
 
 exit 0
