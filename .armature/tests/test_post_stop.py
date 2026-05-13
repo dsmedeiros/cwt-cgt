@@ -170,14 +170,22 @@ def test_code_dirty_no_test_runner_emits_skip(run_hook, setup_post_stop_repo):
     assert "No test runner detected" in result.stdout
 
 
-def test_code_dirty_no_test_runner_removes_marker(run_hook, setup_post_stop_repo):
-    """.code-dirty marker must be removed after SKIP (no test runner)."""
+def test_code_dirty_no_test_runner_preserves_marker(run_hook, setup_post_stop_repo):
+    """.code-dirty marker must be preserved when post-stop finds no test runner.
+
+    Contract: marker clearance is the responsibility of run-ci.sh (CI-001),
+    which runs the configured full pipeline. post-stop.sh is a fast-feedback
+    smoke pass and must not pre-empt run-ci.sh's marker lifecycle.
+    """
     repo = setup_post_stop_repo()
     marker = repo / ".armature" / ".code-dirty"
     marker.touch()
     assert marker.exists()
     run_hook("post-stop.sh", "", cwd=str(repo))
-    assert not marker.exists(), ".code-dirty should be removed after SKIP"
+    assert marker.exists(), (
+        ".code-dirty must be preserved by post-stop.sh so run-ci.sh "
+        "can execute the configured full pipeline before clearing it"
+    )
 
 
 def test_code_dirty_no_test_runner_marker_absent_before_run_stays_absent(

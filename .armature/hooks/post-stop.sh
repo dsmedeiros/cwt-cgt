@@ -374,18 +374,24 @@ PYEOF
     fi
   fi
 
+  # NOTE on marker lifecycle: post-stop.sh runs a single best-effort stack
+  # (the first runner it detects) as a fast-feedback smoke test, but it does
+  # NOT clear $DIRTY_MARKER. Marker clearance is the responsibility of
+  # run-ci.sh, which executes the configured full pipeline (test + types +
+  # lint + invariants) defined in .armature/ci.yaml. In multi-stack repos
+  # (e.g., Python + TypeScript), post-stop.sh only exercises one stack and
+  # would otherwise prematurely clear the marker, causing run-ci.sh to skip
+  # the other stacks. Leaving the marker intact preserves CI-001 coverage.
   if [ -n "$TEST_RUNNER" ]; then
-    echo "INFO: Running application tests via ${TEST_RUNNER}..."
+    echo "INFO: Running application tests via ${TEST_RUNNER} (smoke; full pipeline runs in run-ci.sh)..."
     if (cd "${REPO_ROOT}" && $TEST_CMD 2>&1); then
-      rm -f "$DIRTY_MARKER"
-      echo "PASS: Application tests passed"
+      echo "PASS: Application smoke tests passed (run-ci.sh will execute the full pipeline)"
     else
-      echo "FAIL: Application tests failed"
+      echo "FAIL: Application smoke tests failed"
       EXIT_CODE=1
     fi
   else
-    echo "SKIP: No test runner detected, removing dirty marker"
-    rm -f "$DIRTY_MARKER"
+    echo "SKIP: No test runner detected; deferring to run-ci.sh for marker clearance"
   fi
 else
   echo "SKIP: No application code changes detected"
