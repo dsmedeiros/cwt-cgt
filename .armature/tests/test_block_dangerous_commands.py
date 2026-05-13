@@ -856,6 +856,27 @@ class TestCycle3Fixes:
         _block(run_hook, 'echo "rm -rf /"\t|\tbash', expected_reason="rm -rf")
 
     # -----------------------------------------------------------------------
+    # Cycle-17: shell-expanded whitespace bypass (${IFS} / $IFS)
+    # -----------------------------------------------------------------------
+
+    def test_block_rm_ifs_braced_substitution(self, run_hook):
+        """rm${IFS}-rf / — braced $IFS expands to whitespace at runtime;
+        validator must normalize it before checking."""
+        _block(run_hook, "rm${IFS}-rf /", expected_reason="rm -rf")
+
+    def test_block_rm_ifs_bare_substitution(self, run_hook):
+        """rm$IFS-rf$IFS/ — bare $IFS form must also be normalized."""
+        _block(run_hook, "rm$IFS-rf$IFS/", expected_reason="rm -rf")
+
+    def test_block_rm_ifs_multiple_segments(self, run_hook):
+        """${IFS}rm${IFS}-rf${IFS}/ — leading IFS plus multiple separators."""
+        _block(run_hook, "${IFS}rm${IFS}-rf${IFS}/", expected_reason="rm -rf")
+
+    def test_block_rm_ifs_inside_chained_command(self, run_hook):
+        """git status && rm${IFS}-rf / — chained command with IFS bypass."""
+        _block(run_hook, "git status && rm${IFS}-rf /", expected_reason="rm -rf")
+
+    # -----------------------------------------------------------------------
     # H1 fix: fork bomb extra-whitespace variant
     # -----------------------------------------------------------------------
 

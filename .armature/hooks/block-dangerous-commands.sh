@@ -96,6 +96,21 @@ COMMAND="$(printf '%s' "$COMMAND" | tr -d '\134')"
 COMMAND="$(printf '%s' "$COMMAND" | tr '\015' 'r')"
 
 # ---------------------------------------------------------------------------
+# Cycle-17 fix (shell-expanded-whitespace bypass): normalize ${IFS} / $IFS
+# to a space. Bash expands both to space-tab-newline by default, so a
+# command like `rm${IFS}-rf /` runs as `rm -rf /` but appears to the
+# validator with the literal `${IFS}` between `rm` and `-rf`. The outer
+# rm-rf substring detection and the per-rm operand walker both anchor on
+# whitespace, so this substitution restores their visibility into
+# variable-whitespace bypass patterns. Performed AFTER backslash/CR
+# normalization so escape forms are decoded first.
+# Multi-char `${IFS}` substituted BEFORE bare `$IFS` to avoid leaving a
+# stray `{IFS}` token after partial substitution. PR #297 cycle-17.
+# ---------------------------------------------------------------------------
+COMMAND="${COMMAND//\$\{IFS\}/ }"
+COMMAND="${COMMAND//\$IFS/ }"
+
+# ---------------------------------------------------------------------------
 # Helper: emit block message and exit 2
 # ---------------------------------------------------------------------------
 block() {
@@ -163,6 +178,10 @@ all_rm_targets_safe() {
   # forms; the operand validator must too. Without this step a real
   # rm-rf invocation with tab separators would silently pass the
   # safe-target check. (L001-class bypass.)
+  # Whitespace-variable expansion (`${IFS}` / `$IFS`) is normalized at
+  # the top-level COMMAND processing step BEFORE this function is called,
+  # so by the time we get here those substrings have already been replaced
+  # with literal spaces. See COMMAND normalization in the parent script.
   local cmd_norm="${1//	/ }"   # literal TAB → space (the char between // and / is a TAB)
   # Strip quote characters — they are token-delimiters in the shell but
   # our parser uses whitespace boundaries. Without this step an `rm`
