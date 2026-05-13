@@ -43,7 +43,7 @@ check_adapter_routes() {
       EXIT_CODE=1
       route_fail=1
     fi
-  done < <(grep -oE '`[^`]*agents\.md`' "$adapter_path" | tr -d '`' | sort -u)
+  done < <(grep -oEi '`[^`]*agents\.md`' "$adapter_path" | tr -d '`' | sort -u)
 
   if [ "$found_refs" -eq 1 ] && [ "$route_fail" -eq 0 ]; then
     echo "PASS: ${adapter_name} routing references resolve"
@@ -327,12 +327,33 @@ if [ -f "$DIRTY_MARKER" ]; then
   TEST_CMD=""
 
   # Detection order: pytest, npm test, make test
-  # Note: the pytest branch triggers on ${REPO_ROOT}/tests — this is the
-  # application test directory. .armature/tests/ is NOT matched here (correct).
-  if [ -d "${REPO_ROOT}/tests" ] && command -v python3 &>/dev/null; then
+  # Probe for a Python test layout: either repo-root tests/ or any
+  # top-level package-local <pkg>/tests/ (one level deep). The latter is
+  # the common multi-package layout (e.g. cwt-sim/tests/, packages/foo/tests/);
+  # the original code only detected the former, causing Python edits in
+  # package-local layouts to silently fall through to npm/make and never
+  # validate the Python tree. .armature/tests/ is deliberately not matched
+  # — it is governance, not application.
+  PY_TESTS_FOUND=""
+  if [ -d "${REPO_ROOT}/tests" ]; then
+    PY_TESTS_FOUND="repo-root"
+  else
+    for top_dir in "${REPO_ROOT}"/*/; do
+      # Skip framework directories that hold governance tests, not app
+      case "${top_dir%/}" in
+        "${REPO_ROOT}/.armature"|"${REPO_ROOT}/.claude"|"${REPO_ROOT}/.git"|"${REPO_ROOT}/node_modules") continue ;;
+      esac
+      if [ -d "${top_dir}tests" ]; then
+        PY_TESTS_FOUND="package-local"
+        break
+      fi
+    done
+  fi
+
+  if [ -n "$PY_TESTS_FOUND" ] && command -v python3 &>/dev/null; then
     TEST_RUNNER="pytest"
     TEST_CMD="python3 -m pytest -x --tb=short -q"
-  elif [ -d "${REPO_ROOT}/tests" ] && command -v python &>/dev/null; then
+  elif [ -n "$PY_TESTS_FOUND" ] && command -v python &>/dev/null; then
     TEST_RUNNER="pytest"
     TEST_CMD="python -m pytest -x --tb=short -q"
   elif [ -f "${REPO_ROOT}/package.json" ] && command -v npm &>/dev/null; then
