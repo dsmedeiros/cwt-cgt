@@ -1,0 +1,13 @@
+{
+  "phase": 129,
+  "benchmark": "Y_burst_observed",
+  "benchmark_label": "sixth bridge benchmark with burst-observation bottleneck",
+  "switch_gamma": 0.3,
+  "train_r2": 0.9394,
+  "heldout_base_r2": 0.9278,
+  "heldout_new_r2": 0.9124,
+  "heldout_combined_r2": 0.9199,
+  "combined_correlation": 0.9731,
+  "sign_agreement": 0.9882,
+  "verdict": "sixth_bridge_positive_supported"
+}

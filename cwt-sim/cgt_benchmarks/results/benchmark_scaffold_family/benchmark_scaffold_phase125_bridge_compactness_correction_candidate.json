@@ -1,0 +1,11 @@
+{
+  "phase": 125,
+  "correction_type": "bridge compactness candidate from cross-lane compactness audit",
+  "metrics": {
+    "baseline_adversarial_corrected_r2": 0.8724,
+    "compactness_corrected_r2": 0.8896,
+    "compactness_corrected_correlation": 0.9581,
+    "compactness_corrected_sign_agreement": 0.9729
+  },
+  "verdict": "bridge_compactness_correction_candidate_supported"
+}

@@ -1,0 +1,17 @@
+{
+  "phase": 132,
+  "bridge_benchmarks": [
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y"
+  ],
+  "metrics": {
+    "pooled_six_bridge_adversarial_raw_r2": 0.4451,
+    "pooled_six_bridge_adversarial_corrected_r2": 0.8844,
+    "pooled_six_bridge_adversarial_corrected_sign_agreement": 0.9701
+  },
+  "verdict": "pooled_six_bridge_adversarial_supported"
+}

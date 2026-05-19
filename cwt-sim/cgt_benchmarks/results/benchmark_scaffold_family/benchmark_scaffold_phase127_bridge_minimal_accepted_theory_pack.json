@@ -1,0 +1,22 @@
+{
+  "phase": 127,
+  "artifact": "bridge minimal accepted theory pack",
+  "accepted_rule": "pooled_five_bridge_positive_plus_compactness_corrected_adversarial",
+  "coverage": {
+    "positive_benchmarks": [
+      "T",
+      "U",
+      "V",
+      "W",
+      "X"
+    ],
+    "adversarial_benchmarks": [
+      "T",
+      "U",
+      "V",
+      "W",
+      "X"
+    ]
+  },
+  "verdict": "bridge_minimal_theory_pack_written"
+}

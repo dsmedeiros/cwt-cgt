@@ -1,0 +1,9 @@
+{
+  "phase": 135,
+  "artifact": "bridge calibration-free minimal rule comparison",
+  "metrics": {
+    "calibration_free_bridge_positive_r2": 0.9246,
+    "calibration_free_bridge_adversarial_corrected_r2": 0.8789
+  },
+  "verdict": "bridge_calibration_free_minimal_supported"
+}

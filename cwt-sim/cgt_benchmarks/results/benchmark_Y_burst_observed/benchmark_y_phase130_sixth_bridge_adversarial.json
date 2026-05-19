@@ -1,0 +1,12 @@
+{
+  "phase": 130,
+  "benchmark": "Y_burst_observed",
+  "switch_gamma": 0.3,
+  "audit_type": "sixth bridge adversarial transfer",
+  "raw_combined_r2": 0.4517,
+  "corrected_combined_r2": 0.8812,
+  "corrected_correlation": 0.9551,
+  "raw_sign_agreement": 0.8125,
+  "corrected_sign_agreement": 0.9653,
+  "verdict": "sixth_bridge_adversarial_corrected_supported"
+}

@@ -1,0 +1,18 @@
+{
+  "phase": 126,
+  "audit_type": "bridge leave-one-benchmark-out",
+  "bridge_benchmarks": [
+    "T_semisynthetic_observed",
+    "U_partial_delay",
+    "V_semisynthetic_twisted",
+    "W_censored_snapshots",
+    "X_event_thinned"
+  ],
+  "metrics": {
+    "mean_heldout_combined_r2": 0.8867,
+    "min_heldout_combined_r2": 0.8489,
+    "max_heldout_combined_r2": 0.9183,
+    "weakest_benchmark": "T_semisynthetic_observed"
+  },
+  "verdict": "bridge_leave_one_benchmark_out_supported"
+}

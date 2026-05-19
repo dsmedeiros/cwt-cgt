@@ -1,0 +1,17 @@
+{
+  "phase": 131,
+  "bridge_benchmarks": [
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y"
+  ],
+  "metrics": {
+    "pooled_six_bridge_positive_combined_r2": 0.9312,
+    "pooled_six_bridge_positive_correlation": 0.9728,
+    "pooled_six_bridge_positive_sign_agreement": 0.9896
+  },
+  "verdict": "pooled_six_bridge_positive_supported"
+}

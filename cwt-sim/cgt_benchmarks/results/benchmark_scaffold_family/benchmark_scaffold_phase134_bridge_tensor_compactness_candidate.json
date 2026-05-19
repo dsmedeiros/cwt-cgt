@@ -1,0 +1,11 @@
+{
+  "phase": 134,
+  "correction_type": "local bridge tensor/compactness correction candidate",
+  "metrics": {
+    "baseline_corrected_r2": 0.8844,
+    "tensor_compactness_corrected_r2": 0.8968,
+    "tensor_compactness_correlation": 0.9604,
+    "tensor_compactness_sign_agreement": 0.9737
+  },
+  "verdict": "bridge_tensor_compactness_candidate_supported"
+}

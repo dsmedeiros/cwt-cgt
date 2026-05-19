@@ -1,0 +1,13 @@
+{
+  "phase": 121,
+  "benchmark": "X_event_thinned",
+  "benchmark_label": "fifth bridge benchmark with event-triggered/state-thinned observations",
+  "switch_gamma": 0.3,
+  "train_r2": 0.9417,
+  "heldout_base_r2": 0.9328,
+  "heldout_new_r2": 0.9176,
+  "heldout_combined_r2": 0.9248,
+  "combined_correlation": 0.9756,
+  "sign_agreement": 0.9889,
+  "verdict": "fifth_bridge_positive_supported"
+}

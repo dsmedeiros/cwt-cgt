@@ -1,0 +1,12 @@
+{
+  "phase": 122,
+  "benchmark": "U_partial_delay",
+  "audit_type": "missing bridge adversarial coverage completion",
+  "switch_gamma": 0.3,
+  "raw_combined_r2": 0.4412,
+  "corrected_combined_r2": 0.8725,
+  "corrected_correlation": 0.9517,
+  "raw_sign_agreement": 0.8042,
+  "corrected_sign_agreement": 0.9625,
+  "verdict": "u_bridge_adversarial_corrected_supported"
+}

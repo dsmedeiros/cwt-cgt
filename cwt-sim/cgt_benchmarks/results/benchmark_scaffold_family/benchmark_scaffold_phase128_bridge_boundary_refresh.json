@@ -1,0 +1,27 @@
+{
+  "phase": 128,
+  "bands": {
+    "positive_transfer_band": [
+      0.9098,
+      0.9368
+    ],
+    "adversarial_raw_band": [
+      0.3926,
+      0.4877
+    ],
+    "adversarial_corrected_band": [
+      0.8382,
+      0.8896
+    ],
+    "bridge_positive_band": [
+      0.9098,
+      0.9248
+    ],
+    "bridge_adversarial_corrected_band": [
+      0.8382,
+      0.8896
+    ],
+    "weakest_bridge_benchmark": "T_semisynthetic_observed"
+  },
+  "summary": "bridge lane now spans five semisynthetic cases with full adversarial coverage; compactness-based correction improves pooled bridge adversarial transfer and defines the current bridge minimal accepted rule"
+}

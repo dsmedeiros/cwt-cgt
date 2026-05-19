@@ -1,0 +1,16 @@
+{
+  "phase": 124,
+  "bridge_benchmarks": [
+    "T_semisynthetic_observed",
+    "U_partial_delay",
+    "V_semisynthetic_twisted",
+    "W_censored_snapshots",
+    "X_event_thinned"
+  ],
+  "metrics": {
+    "pooled_bridge_adversarial_raw_r2": 0.4386,
+    "pooled_bridge_adversarial_corrected_r2": 0.8724,
+    "pooled_bridge_adversarial_corrected_sign_agreement": 0.9688
+  },
+  "verdict": "pooled_five_bridge_adversarial_corrected_supported"
+}
