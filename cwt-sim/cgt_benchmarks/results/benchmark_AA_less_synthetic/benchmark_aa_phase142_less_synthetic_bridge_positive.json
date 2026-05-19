@@ -1,0 +1,9 @@
+{
+  "benchmark": "AA_less_synthetic",
+  "phase": 142,
+  "gamma_switch": 0.3,
+  "r2": 0.8867,
+  "corr": 0.9541,
+  "sign": 0.9917,
+  "verdict": "supportive_less_synthetic_positive"
+}

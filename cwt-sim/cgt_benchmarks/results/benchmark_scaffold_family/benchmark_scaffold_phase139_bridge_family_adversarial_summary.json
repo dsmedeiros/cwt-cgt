@@ -1,0 +1,35 @@
+{
+  "phase": 139,
+  "gamma_switch": 0.3,
+  "families": {
+    "observed": {
+      "raw": 0.4912,
+      "corr": 0.8588,
+      "sign": 0.8472
+    },
+    "partial_delay": {
+      "raw": 0.5486,
+      "corr": 0.8924,
+      "sign": 0.9028
+    },
+    "topology_like": {
+      "raw": 0.5669,
+      "corr": 0.9037,
+      "sign": 0.9167
+    },
+    "censored": {
+      "raw": 0.5934,
+      "corr": 0.9148,
+      "sign": 0.9306
+    },
+    "event_burst": {
+      "raw": 0.5762,
+      "corr": 0.9031,
+      "sign": 0.9583
+    }
+  },
+  "aggregate_raw": 0.5529,
+  "aggregate_corr": 0.8928,
+  "aggregate_sign": 0.9208,
+  "verdict": "family_grouping_supportive_after_correction"
+}

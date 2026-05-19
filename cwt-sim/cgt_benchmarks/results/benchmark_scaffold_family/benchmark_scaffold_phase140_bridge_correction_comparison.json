@@ -1,0 +1,8 @@
+{
+  "phase": 140,
+  "gamma_switch": 0.3,
+  "compactness_corr": 0.8715,
+  "tensor_compactness_corr": 0.8928,
+  "gain": 0.0213,
+  "verdict": "tensor_compactness_preferred"
+}

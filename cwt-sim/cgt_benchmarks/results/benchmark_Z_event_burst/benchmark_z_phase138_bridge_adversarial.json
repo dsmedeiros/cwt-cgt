@@ -1,0 +1,15 @@
+{
+  "benchmark": "Z_event_burst",
+  "phase": 138,
+  "gamma_switch": 0.3,
+  "raw": {
+    "r2": 0.5762,
+    "sign": 0.875
+  },
+  "corrected": {
+    "r2": 0.9031,
+    "sign": 0.9583,
+    "corr": 0.9729
+  },
+  "verdict": "supportive_after_tensor_compactness_correction"
+}

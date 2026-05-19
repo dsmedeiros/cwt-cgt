@@ -1,0 +1,15 @@
+{
+  "benchmark": "AA_less_synthetic",
+  "phase": 143,
+  "gamma_switch": 0.3,
+  "raw": {
+    "r2": 0.3715,
+    "sign": 0.7917
+  },
+  "corrected": {
+    "r2": 0.8124,
+    "sign": 0.9444,
+    "corr": 0.9528
+  },
+  "verdict": "less_synthetic_adversarial_supportive_after_correction"
+}

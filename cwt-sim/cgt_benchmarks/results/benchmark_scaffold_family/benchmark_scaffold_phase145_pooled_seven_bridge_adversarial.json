@@ -1,0 +1,17 @@
+{
+  "phase": 145,
+  "gamma_switch": 0.3,
+  "r2": 0.8897,
+  "corr": 0.9513,
+  "sign": 0.9427,
+  "benchmarks": [
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y",
+    "Z"
+  ],
+  "verdict": "pooled_seven_bridge_adversarial_supportive_after_correction"
+}

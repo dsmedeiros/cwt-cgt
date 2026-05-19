@@ -1,0 +1,9 @@
+{
+  "phase": 146,
+  "gamma_switch": 0.3,
+  "bridge_pooled_pos": 0.9335,
+  "pilot_pos": 0.8867,
+  "pilot_adv_corr": 0.8124,
+  "combined_bridge_plus_pilot": 0.9056,
+  "verdict": "bridge_to_less_synthetic_transfer_supportive_but_weaker"
+}

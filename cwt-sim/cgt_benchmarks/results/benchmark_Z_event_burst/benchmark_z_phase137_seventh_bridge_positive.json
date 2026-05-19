@@ -1,0 +1,11 @@
+{
+  "benchmark": "Z_event_burst",
+  "phase": 137,
+  "gamma_switch": 0.3,
+  "r2": 0.9285,
+  "corr": 0.9827,
+  "sign": 1.0,
+  "train_r2": 0.9458,
+  "verdict": "supportive_bridge_positive",
+  "notes": "seventh bridge benchmark outside previous observation motifs"
+}
