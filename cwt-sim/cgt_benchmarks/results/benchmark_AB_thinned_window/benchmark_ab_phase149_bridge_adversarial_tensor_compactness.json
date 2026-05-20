@@ -1,0 +1,15 @@
+{
+  "benchmark": "AB_thinned_window",
+  "phase": 149,
+  "slice_gamma": 0.3,
+  "rule": "tensor_compactness_bridge_correction",
+  "raw": {
+    "combined_r2": 0.5224,
+    "sign_agreement": 0.8333
+  },
+  "corrected": {
+    "combined_r2": 0.8871,
+    "sign_agreement": 0.9722
+  },
+  "verdict": "eighth_bridge_adversarial_corrected_supported"
+}

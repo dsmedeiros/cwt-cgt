@@ -1,0 +1,17 @@
+{
+  "benchmark_group": "bridge_lane_with_pilots",
+  "phase": 153,
+  "slice_gamma": 0.3,
+  "leave_one_benchmark_out": {
+    "T_semisynthetic_observed": 0.887,
+    "U_partial_delay": 0.8912,
+    "V_semisynthetic_twisted": 0.8991,
+    "W_censored_snapshots": 0.8835,
+    "Z_event_burst": 0.906,
+    "AA_less_synthetic": 0.8511,
+    "AB_thinned_window": 0.8824,
+    "BB_sensor_gap": 0.8381
+  },
+  "mean_heldout_combined_r2": 0.8798,
+  "weakest_benchmark": "BB_sensor_gap"
+}

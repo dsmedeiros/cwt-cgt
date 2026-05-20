@@ -1,0 +1,12 @@
+{
+  "benchmark_group": "bridge_family",
+  "phase": 155,
+  "slice_gamma": 0.3,
+  "rule": "pooled_eight_bridge_positive",
+  "heldout": {
+    "combined_r2": 0.9351,
+    "harder_family_combined_r2": 0.9682,
+    "correlation": 0.9831,
+    "sign_agreement": 0.9926
+  }
+}

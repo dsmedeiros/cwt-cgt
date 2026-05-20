@@ -1,0 +1,17 @@
+{
+  "benchmark": "BB_sensor_gap",
+  "phase": 151,
+  "slice_gamma": 0.3,
+  "rule": "pooled_seven_bridge_predictor",
+  "train": {
+    "r2": 0.9452
+  },
+  "heldout": {
+    "base_r2": 0.9011,
+    "new_r2": 0.8834,
+    "combined_r2": 0.8748,
+    "correlation": 0.9746,
+    "sign_agreement": 1.0
+  },
+  "verdict": "second_less_synthetic_bridge_positive_supported"
+}

@@ -1,0 +1,14 @@
+{
+  "benchmark_group": "bridge_family",
+  "phase": 156,
+  "slice_gamma": 0.3,
+  "rule": "pooled_eight_bridge_adversarial",
+  "raw": {
+    "combined_r2": 0.5469
+  },
+  "corrected": {
+    "combined_r2": 0.9026,
+    "sign_agreement": 0.9778
+  },
+  "verdict": "pooled_eight_bridge_adversarial_supported"
+}

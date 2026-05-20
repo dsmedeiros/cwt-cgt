@@ -1,0 +1,15 @@
+{
+  "benchmark": "BB_sensor_gap",
+  "phase": 152,
+  "slice_gamma": 0.3,
+  "rule": "tensor_compactness_bridge_correction",
+  "raw": {
+    "combined_r2": 0.4011,
+    "sign_agreement": 0.8056
+  },
+  "corrected": {
+    "combined_r2": 0.8049,
+    "sign_agreement": 0.9444
+  },
+  "verdict": "second_less_synthetic_bridge_adversarial_supported"
+}

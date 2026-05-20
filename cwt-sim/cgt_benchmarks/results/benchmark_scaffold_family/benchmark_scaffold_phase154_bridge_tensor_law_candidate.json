@@ -1,0 +1,9 @@
+{
+  "benchmark_group": "bridge_family_adversarial",
+  "phase": 154,
+  "slice_gamma": 0.3,
+  "baseline_corrected_r2": 0.8994,
+  "tensor_law_corrected_r2": 0.9088,
+  "tensor_law_sign_agreement": 0.979,
+  "verdict": "bridge_tensor_law_candidate_supported"
+}

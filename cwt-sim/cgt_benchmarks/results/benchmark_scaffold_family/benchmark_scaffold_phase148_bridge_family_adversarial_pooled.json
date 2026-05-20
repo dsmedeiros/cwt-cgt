@@ -1,0 +1,24 @@
+{
+  "benchmark_group": "bridge_family_adversarial",
+  "phase": 148,
+  "slice_gamma": 0.3,
+  "families": {
+    "event_burst": {
+      "raw_r2": 0.5762,
+      "corrected_r2": 0.9031
+    },
+    "less_synthetic": {
+      "raw_r2": 0.4899,
+      "corrected_r2": 0.8588
+    },
+    "thinned_window": {
+      "raw_r2": 0.5224,
+      "corrected_r2": 0.8871
+    }
+  },
+  "aggregate": {
+    "raw_combined_r2": 0.5487,
+    "corrected_combined_r2": 0.8994,
+    "corrected_sign_agreement": 0.975
+  }
+}
