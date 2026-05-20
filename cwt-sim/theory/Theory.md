@@ -13,3 +13,12 @@ The full derivations and conceptual background live in the top-level [theory.md]
 - **§7 Observables / readouts** → `cwt.layers.readouts`, `cwt.metrics.eval_curves`
 
 Refer back to the main theory document for equations, derivations, and the motivations behind each component.
+
+## Current empirical status
+
+- CWT-CGT separates a passive diagnostic layer (`g`, `Omega`) from an active geometric-control layer that applies connection/curvature-derived loop terms.
+- The active phase-kick branch is the validated external path today: OEDI and Chicago real-data-derived substrates support the `R_kuramoto` loop law with orientation reversal.
+- Passive `tr(g)` transition-ridge claims are regime-dependent Gate B claims, not universal claims. They are confirmed on OEDI and null on overlap-safe Chicago.
+- QP-1 calibration fixes magnitude and orientation reversal while requiring an explicit sign map: `Omega_analytic = -Omega_impl`.
+- Noise robustness uses the OEDI phase-noise result: sign flips appear around `s_bar ~= 0.88`; high-noise runs are non-adiabatic and excluded from the leading-order active-loop claim.
+- Direct `Omega`-bias coupling remains unvalidated pending high-coupling tests; current scramble evidence validates the phase-kick/connection branch.

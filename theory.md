@@ -8,6 +8,15 @@ Causal Web Theory (CWT) posits that observed dynamics emerge from strictly local
 
 We “bake in” a geometry on the **space of control parameters** that govern the substrate and layer couplings. This geometry is encoded by a **CWT Geometric Tensor (CGT)**, directly analogous to the Quantum Geometric Tensor (QGT): its **real** part is a sensitivity **metric** and its **imaginary** part is a **Berry-like curvature** that imparts path-dependent biases. The CGT lets CWT formalize criticality, adiabatic pumping, and topological sectors of causal propagation—without introducing extra hidden variables outside the model’s state.
 
+### 1.1 Current empirical layer split
+
+CWT-CGT now has at least two empirically distinct layers:
+
+* **Passive CGT diagnostic layer:** `g` and `Omega` describe branch geometry, sensitivity, and transition structure without applying geometric forcing.
+* **Active geometric control layer:** the scheduler applies connection/curvature-derived terms around loops and predicts orientation-sensitive response.
+
+The current external evidence strongly validates the active phase-kick/connection branch on OEDI and Chicago real-data-derived substrates. Passive transition-ridge detection is only partly validated, and external runs should be described as real-data-derived substrate validation unless an experiment directly establishes full external causal validation.
+
 ---
 
 ## 2. Substrate, State, and Layers
@@ -33,13 +42,13 @@ At discrete simulation step $s$:
 
 ### 2.3 Complex State for Geometry
 
-For a chosen analysis time/window and **control parameters** $\lambda\in\mathcal{M}$, define the normalized complex field
+For a fixed branch label $b$ and **control parameters** $\lambda\in\mathcal{M}$, or for a declared operational state map produced by an external runner, define the normalized branch state
 
 $$
-\Psi_n(\lambda)=\sqrt{p^{(Q)}_n(\lambda)}\,e^{\,i\,\theta^{(\Theta)}_n(\lambda)},\qquad \sum_n |\Psi_n|^2=1.
+\Psi_{*,n}(\lambda,b)=\sqrt{p^{(Q)}_n(\lambda,b)}\,e^{\,i\,\theta^{(\Theta)}_n(\lambda,b)},\qquad \sum_n |\Psi_{*,n}|^2=1.
 $$
 
-Gauge freedom: $\Psi\to e^{i\phi(\lambda)}\Psi$ leaves observables below invariant.
+When branch labels are not explicit, $\Psi(\lambda)$ means this declared branch-resolved or operationally fixed state map. Gauge freedom: $\Psi\to e^{i\phi(\lambda)}\Psi$ leaves observables below invariant.
 
 ### 2.4 Control/Parameter Manifold
 
@@ -110,6 +119,12 @@ $$
 
 Both are gauge-invariant; reduce steps if overlaps become tiny.
 
+**Sign convention.** Repository outputs use the implementation Wilson convention above. QP-1 calibration confirms the Wilson curvature magnitude and orientation reversal, but the original analytic derivation used the opposite sign. Convert older analytic statements by
+
+$$
+\Omega_{\mathrm{analytic}}=-\Omega_{\mathrm{impl}},\qquad \Phi_{\mathrm{analytic}}=-\Phi_{\mathrm{impl}}.
+$$
+
 ---
 
 ## 5. Dynamics with Geometric Corrections
@@ -168,6 +183,8 @@ $$
 
 $\alpha$ sets the amplitude of geometric bias.
 
+The validated active mechanism is currently the phase-kick/connection branch in (a): scramble ablations with `A_zero` collapse antisymmetric response and `A_signflip` flips its sign. The direct `Omega`-bias branch in (b) did not move under the tested coupling and should be treated as unvalidated pending high-coupling tests.
+
 ### 5.4 Conservation & Stability
 
 * Ensure $\sum_n p^{(Q)}_n=1$ each step.
@@ -221,11 +238,17 @@ $$
 \mathcal{R}_\gamma = \sum_X w_X\Big(P_X^{\,\circlearrowleft}-P_X^{\,\circlearrowright}\Big),
 $$
 
-with weights $w_X$ to target specific outcomes. Expect $\mathcal{R}_\gamma\propto \Phi_\gamma$ for small loops.
+with weights $w_X$ to target specific outcomes. In the active adiabatic small-loop regime,
+
+$$
+\mathcal{R}_\gamma = \kappa_1\Phi_\gamma + O(\Phi_\gamma^2,\epsilon_{\mathrm{nonad}},\sigma_\theta).
+$$
+
+This law is now supported on OEDI and Chicago real-data-derived substrates for the `R_kuramoto` readout, with high $R^2$ and orientation reversal. Treat `R_phase_weighted` as higher-order or superlinear until explicitly modeled.
 
 ### 7.3 Phase Structure
 
-* **Critical frontiers:** ridges in $\mathrm{tr}\,g$ and peaks in $|\Omega|$.
+* **Critical frontiers:** in overlap-safe regimes where branch response is transition-localized, ridges in $\mathrm{tr}\,g$ can co-locate with independently defined transition gradients; this is substrate/regime-dependent.
 * **Topological plateaus:** integral curvature invariant to small noise in $\lambda$-loops.
 * **Order ↔ disorder regions:** inferred from long-time variance of $p^{(Q)}$ and phase locking of $\theta^{(\Theta)}$.
 
@@ -235,9 +258,9 @@ with weights $w_X$ to target specific outcomes. Expect $\mathcal{R}_\gamma\propt
 
 **Gate A — Density–Delay Loop.** Drive a rectangular loop in $(\rho,\tau)$. Measure $\Phi_\gamma$ and $\mathcal{R}_\gamma$. Verify proportionality and orientation reversal.
 
-**Gate B — Critical Ridge Finder.** Grid-scan $(\rho,\tau)$; compute $\mathrm{tr}\,g$ and $|\Omega|$. Promote tiles with large scores for high-fidelity runs.
+**Gate B — Critical Ridge Finder.** Grid-scan $(\rho,\tau)$; compute $\mathrm{tr}\,g$ and $|\Omega|$. In overlap-safe regimes where branch response is transition-localized, $\mathrm{tr}\,g$ can co-locate with independently defined transition gradients. This is confirmed on OEDI, null on overlap-safe Chicago, and therefore substrate/regime-dependent.
 
-**Gate C — Topology Robustness.** Add noise to $\lambda$ during loops. Check that $\Phi_\gamma$ and $\mathcal{R}_\gamma$ persist up to a threshold, indicating topological protection.
+**Gate C — Topology Robustness.** Add noise to $\lambda$ during loops. Check whether $\Phi_\gamma$ and $\mathcal{R}_\gamma$ persist within the stated pure-state or mixed-state regime; do not claim topological protection when high-noise runs are non-adiabatic.
 
 **Gate D — Bell/CHSH Modulation (optional).** If a CHSH gate exists, correlate deviations in correlators with $|\Omega|$ along small loops.
 
@@ -324,7 +347,7 @@ Integrate into the orchestrator; on each step, compute $\mathcal{A}_i\Delta\lamb
 ## 13. Minimal Working Example (conceptual)
 
 1. Choose $\mathcal{M}=(\rho,\tau)$. Define a rectangular loop (center, widths, steps).
-2. Run the system; at each step, build $\Psi$, apply $\mathcal{A}\Delta\lambda$ to phases and $\Gamma$ to amplitudes.
+2. Run the system; at each step, build $\Psi$ and apply $\mathcal{A}\Delta\lambda$ to phases. Treat any direct $\Gamma$ amplitude bias as an explicit unvalidated branch unless the run is a high-coupling validation study.
 3. After the loop, compute $\Phi_\gamma$ via Wilson loop and measure $\mathcal{R}_\gamma$ from C-layer outcomes.
 4. Reverse loop orientation; confirm sign flip in $\Phi_\gamma$ and $\mathcal{R}_\gamma$.
 
@@ -332,9 +355,9 @@ Integrate into the orchestrator; on each step, compute $\mathcal{A}_i\Delta\lamb
 
 ## 14. Falsifiable Predictions
 
-* Small parameter loops produce linear pumped biases $\mathcal{R}_\gamma\propto\Phi_\gamma$ with orientation reversal.
-* Ridges of $\mathrm{tr}\,g$ co-locate with previously observed critical transitions in Q/Θ behavior.
-* On a toroidal $\mathcal{M}$, integrated curvature attains integer-like plateaus under disorder up to a threshold.
+* Small, adiabatic parameter loops produce $\mathcal{R}_\gamma = \kappa_1\Phi_\gamma + O(\Phi_\gamma^2,\epsilon_{\mathrm{nonad}},\sigma_\theta)$ with orientation reversal for validated readouts.
+* Ridges of $\mathrm{tr}\,g$ can co-locate with independently defined transition gradients only in overlap-safe regimes where branch response is transition-localized.
+* On a toroidal $\mathcal{M}$, integrated curvature can attain integer-like plateaus only while the relevant gap and overlap conditions remain intact.
 
 ---
 
@@ -548,7 +571,7 @@ To make scope and guarantees explicit, we distinguish regimes.
 27.2 Adiabatic small-loop regime
 
 * For parameter loops with small area A in the parameter manifold M and slow traversal (compared to a local spectral gap of the step operator L), the pumped bias obeys:
-  R_gamma = kappa_1 * Phi_gamma + O(A^2) and flips sign under loop reversal. This is the regime in which curvature serves as the leading-order predictor.
+  R_gamma = kappa_1 * Phi_gamma + O(Phi_gamma^2, epsilon_nonad, sigma_theta) and flips sign under loop reversal. This is the regime in which curvature serves as the leading-order predictor for validated readouts such as R_kuramoto.
 
 27.3 Non-adiabatic regime
 
@@ -657,7 +680,7 @@ We refine the cost discussion to reflect adaptive meshing realities.
 
 34.3 Pure vs mixed-state geometry: switching rule
 
-* Use pure-state CGT when (i) average two-point overlap |⟨Psi(lambda)|Psi(lambda+delta)⟩| >= 0.9 along the path and (ii) phase-coherence order parameter s_bar >= 0.5. Otherwise adopt the CPTP/Uhlmann geometry. Report which regime is used.
+* Use pure-state CGT when (i) average two-point overlap |⟨Psi(lambda)|Psi(lambda+delta)⟩| >= 0.9 along the path and (ii) the phase-noise model remains in the empirically mild regime. OEDI noise robustness shows sign flips around s_bar ~= 0.88 under the tested phase-noise model; kappa_eff proportional to s_bar holds only for very mild noise. High-noise runs are non-adiabatic and should be excluded from the leading-order claim or routed to CPTP/Uhlmann geometry. Report which regime is used.
 
 34.4 Physical interpretation of Psi
 
@@ -825,7 +848,7 @@ Noise models
 
 Effects and rules of thumb
 
-* Coherence factor s_bar multiplies the leading-order pumped bias; orientation reversal still flips the sign until s_bar falls below a threshold.
+* Under the tested OEDI phase-noise model, sign flips occur around s_bar ~= 0.88. The leading-order kappa_eff proportional to s_bar rule holds only for very mild noise; high-noise runs are non-adiabatic and excluded from the leading-order active-loop claim.
 * Mixed-state (CPTP) geometry remains well defined and gives robust, if non-quantized, flux until dephasing erases loop memory.
 * The thermometer remains an early-warning signal under moderate noise; refine meshes only where it persists.
 
@@ -833,7 +856,7 @@ Effects and rules of thumb
 
 Mapping
 
-* Synchronization transition: rapid rise in Kuramoto order r and a co-located ridge in tr(g); small loops develop measurable R_gamma that vanishes deep in either dephased or fully locked regimes.
+* Synchronization transition: rapid rise in Kuramoto order r can co-locate with a ridge in tr(g) only in overlap-safe, transition-localized regimes; OEDI confirms this while overlap-safe Chicago is null. Small loops can develop measurable R_gamma that vanishes deep in either dephased or fully locked regimes.
 * Pattern selection and fronts: persistent sign structure in Omega across tiles biases front motion and selects one of several symmetry-related patterns under cyclical drives.
 * Rectified transport: nonzero Omega plus anisotropy creates directional flows under cyclic control even when instantaneous kernels are symmetric.
 
