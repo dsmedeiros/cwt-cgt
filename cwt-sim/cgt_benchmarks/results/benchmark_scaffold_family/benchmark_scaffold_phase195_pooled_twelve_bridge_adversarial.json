@@ -1,0 +1,15 @@
+{
+  "benchmark_count": 12,
+  "raw": {
+    "combined_r2": 0.5584,
+    "sign_agreement": 0.8711
+  },
+  "corrected": {
+    "combined_r2": 0.9146,
+    "sign_agreement": 0.9739
+  },
+  "correction": "bridge_tensor_geometry_law_v4",
+  "phase": 195,
+  "rule": "pooled_twelve_bridge_adversarial",
+  "switch_gamma": 0.3
+}

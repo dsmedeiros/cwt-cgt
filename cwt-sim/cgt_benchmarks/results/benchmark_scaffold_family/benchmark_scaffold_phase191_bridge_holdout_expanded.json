@@ -1,0 +1,8 @@
+{
+  "bridge_count": 12,
+  "pilot_count": 6,
+  "mean_heldout_combined_r2": 0.8859,
+  "phase": 191,
+  "switch_gamma": 0.3,
+  "weakest_benchmark": "FF_mixed_release_delay"
+}

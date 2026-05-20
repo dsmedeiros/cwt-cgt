@@ -1,0 +1,15 @@
+{
+  "candidate": "bridge_tensor_geometry_law_v4",
+  "phase": 193,
+  "switch_gamma": 0.3,
+  "raw": {
+    "combined_r2": 0.5572
+  },
+  "prior_corrected": {
+    "combined_r2": 0.9189
+  },
+  "corrected": {
+    "combined_r2": 0.9217,
+    "sign_agreement": 0.9778
+  }
+}

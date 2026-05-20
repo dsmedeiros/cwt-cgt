@@ -1,0 +1,12 @@
+{
+  "benchmark": "FF_mixed_release_delay",
+  "metrics": {
+    "corr": 0.9648,
+    "r2": 0.8942,
+    "sign": 1.0
+  },
+  "observation_mode": "mixed_release_windows_delayed_event_thinning",
+  "phase": 189,
+  "rule": "pooled_eleven_bridge_positive",
+  "switch_gamma": 0.3
+}

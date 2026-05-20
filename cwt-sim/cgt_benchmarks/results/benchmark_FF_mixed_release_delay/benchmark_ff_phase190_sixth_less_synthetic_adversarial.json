@@ -1,0 +1,14 @@
+{
+  "benchmark": "FF_mixed_release_delay",
+  "raw": {
+    "combined_r2": 0.4214,
+    "sign_agreement": 0.7569
+  },
+  "corrected": {
+    "combined_r2": 0.8317,
+    "sign_agreement": 0.9342
+  },
+  "correction": "bridge_tensor_geometry_law_v3",
+  "phase": 190,
+  "switch_gamma": 0.3
+}

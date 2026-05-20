@@ -1,0 +1,17 @@
+{
+  "phase": 196,
+  "switch_gamma": 0.3,
+  "positive_band": [
+    0.8748,
+    0.9409
+  ],
+  "adversarial_corrected_band": [
+    0.8197,
+    0.9217
+  ],
+  "weakest_positive": "BB_sensor_gap",
+  "weakest_adversarial_corrected": "EE_sparse_release",
+  "bridge_count": 12,
+  "pilot_count": 6,
+  "recommendation": "shift toward externalization and less synthetic evidence after limited further bridge compression"
+}

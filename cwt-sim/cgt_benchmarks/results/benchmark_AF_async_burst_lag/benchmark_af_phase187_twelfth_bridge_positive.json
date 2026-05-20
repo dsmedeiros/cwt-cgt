@@ -1,0 +1,12 @@
+{
+  "benchmark": "AF_async_burst_lag",
+  "metrics": {
+    "corr": 0.9856,
+    "r2": 0.9271,
+    "sign": 1.0
+  },
+  "observation_mode": "asynchronous_burst_censoring_hidden_state_lag",
+  "phase": 187,
+  "rule": "pooled_eleven_bridge_positive",
+  "switch_gamma": 0.3
+}
