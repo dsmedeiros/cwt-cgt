@@ -1,0 +1,78 @@
+{
+  "oedi_graph_nodes": 214,
+  "oedi_graph_edges": 126,
+  "oedi_sensor_nodes": 85,
+  "oedi_sensor_coverage_mean_hops": 0.4153846153846154,
+  "oedi_sensor_coverage_median_hops": 0.0,
+  "oedi_sensor_coverage_max_hops": 2.0,
+  "sensor_degree_mean": 1.6705882352941177,
+  "nonsensor_degree_mean": 0.8527131782945736,
+  "sensor_betweenness_mean": 0.0055947226086820595,
+  "nonsensor_betweenness_mean": 0.005207442794350815,
+  "load_profile_pair_count": 10,
+  "distance_corr_spearman": -0.309090909090909,
+  "distance_corr_pearson": -0.35341357646028815,
+  "pv_load_midday_sign_boundary_alpha": 1.1572718540076374,
+  "pairwise": [
+    {
+      "a": "1a",
+      "b": "47",
+      "distance": 10,
+      "corr": 0.9970752033172623
+    },
+    {
+      "a": "1a",
+      "b": "49a",
+      "distance": 11,
+      "corr": 0.996191391254565
+    },
+    {
+      "a": "1a",
+      "b": "65a",
+      "distance": 13,
+      "corr": 0.9790644656576625
+    },
+    {
+      "a": "19a",
+      "b": "1a",
+      "distance": 5,
+      "corr": 0.9890685652059709
+    },
+    {
+      "a": "19a",
+      "b": "47",
+      "distance": 7,
+      "corr": 0.9960315020060878
+    },
+    {
+      "a": "19a",
+      "b": "49a",
+      "distance": 8,
+      "corr": 0.9968965661130416
+    },
+    {
+      "a": "19a",
+      "b": "65a",
+      "distance": 12,
+      "corr": 0.9983420838906524
+    },
+    {
+      "a": "47",
+      "b": "49a",
+      "distance": 1,
+      "corr": 0.9971370667481078
+    },
+    {
+      "a": "47",
+      "b": "65a",
+      "distance": 17,
+      "corr": 0.9901523705077347
+    },
+    {
+      "a": "49a",
+      "b": "65a",
+      "distance": 18,
+      "corr": 0.9909548317482904
+    }
+  ]
+}
