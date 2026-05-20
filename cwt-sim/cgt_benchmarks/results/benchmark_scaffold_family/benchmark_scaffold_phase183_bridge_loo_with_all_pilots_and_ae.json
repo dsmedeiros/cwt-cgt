@@ -1,0 +1,8 @@
+{
+  "phase": 183,
+  "switch_gamma": 0.3,
+  "mean_heldout_combined_r2": 0.8838,
+  "weakest_benchmark": "BB_sensor_gap",
+  "pilot_count": 5,
+  "bridge_count": 11
+}

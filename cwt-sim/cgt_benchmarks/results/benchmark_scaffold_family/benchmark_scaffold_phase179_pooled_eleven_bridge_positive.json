@@ -1,0 +1,11 @@
+{
+  "rule": "pooled_eleven_bridge_positive",
+  "phase": 179,
+  "switch_gamma": 0.3,
+  "metrics": {
+    "combined_r2": 0.9397,
+    "corr": 0.9865,
+    "sign": 0.9952
+  },
+  "benchmark_count": 11
+}

@@ -1,0 +1,14 @@
+{
+  "phase": 186,
+  "switch_gamma": 0.3,
+  "positive_band": [
+    0.8748,
+    0.9397
+  ],
+  "adversarial_corrected_band": [
+    0.8197,
+    0.9189
+  ],
+  "weakest_positive": "BB_sensor_gap",
+  "weakest_adversarial_corrected": "EE_sparse_release"
+}

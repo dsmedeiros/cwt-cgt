@@ -1,0 +1,14 @@
+{
+  "benchmark": "EE_sparse_release",
+  "phase": 182,
+  "switch_gamma": 0.3,
+  "raw": {
+    "combined_r2": 0.4098,
+    "sign_agreement": 0.8333
+  },
+  "corrected": {
+    "combined_r2": 0.8197,
+    "sign_agreement": 0.9431
+  },
+  "correction": "bridge_tensor_geometry_law_v2"
+}

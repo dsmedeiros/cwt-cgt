@@ -1,0 +1,11 @@
+{
+  "phase": 184,
+  "switch_gamma": 0.3,
+  "minimal_rule": {
+    "combined_r2": 0.8802
+  },
+  "tensor_law_v2": {
+    "combined_r2": 0.8934
+  },
+  "improvement": 0.0132
+}
