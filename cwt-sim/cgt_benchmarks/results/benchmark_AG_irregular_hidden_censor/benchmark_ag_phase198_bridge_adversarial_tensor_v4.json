@@ -1,0 +1,14 @@
+{
+  "benchmark": "AG_irregular_hidden_censor",
+  "raw": {
+    "combined_r2": 0.5412,
+    "sign_agreement": 0.8821
+  },
+  "corrected": {
+    "combined_r2": 0.8978,
+    "sign_agreement": 0.9722
+  },
+  "correction": "bridge_tensor_geometry_law_v4",
+  "phase": 198,
+  "switch_gamma": 0.3
+}

@@ -1,0 +1,14 @@
+{
+  "benchmark": "GG_windowed_sparse_release",
+  "raw": {
+    "combined_r2": 0.4179,
+    "sign_agreement": 0.8299
+  },
+  "corrected": {
+    "combined_r2": 0.8364,
+    "sign_agreement": 0.9514
+  },
+  "correction": "bridge_tensor_geometry_law_v4",
+  "phase": 200,
+  "switch_gamma": 0.3
+}

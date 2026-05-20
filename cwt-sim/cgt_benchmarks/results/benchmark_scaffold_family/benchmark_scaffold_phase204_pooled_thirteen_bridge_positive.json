@@ -1,0 +1,11 @@
+{
+  "benchmark_count": 13,
+  "metrics": {
+    "combined_r2": 0.9417,
+    "corr": 0.9877,
+    "sign": 0.9959
+  },
+  "phase": 204,
+  "rule": "pooled_thirteen_bridge_positive",
+  "switch_gamma": 0.3
+}

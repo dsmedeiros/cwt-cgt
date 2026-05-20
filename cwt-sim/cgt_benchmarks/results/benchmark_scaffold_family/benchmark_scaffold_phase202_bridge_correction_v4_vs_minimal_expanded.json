@@ -1,0 +1,13 @@
+{
+  "phase": 202,
+  "switch_gamma": 0.3,
+  "minimal_rule": {
+    "combined_r2": 0.8832,
+    "sign_agreement": 0.9574
+  },
+  "tensor_geometry_v4": {
+    "combined_r2": 0.8964,
+    "sign_agreement": 0.9731
+  },
+  "winner": "tensor_geometry_v4"
+}

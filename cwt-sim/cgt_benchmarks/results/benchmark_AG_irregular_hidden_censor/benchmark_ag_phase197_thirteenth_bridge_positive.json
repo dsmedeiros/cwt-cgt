@@ -1,0 +1,12 @@
+{
+  "benchmark": "AG_irregular_hidden_censor",
+  "metrics": {
+    "corr": 0.9861,
+    "r2": 0.9264,
+    "sign": 1.0
+  },
+  "observation_mode": "irregular_hidden_state_lag_plus_async_censoring",
+  "phase": 197,
+  "rule": "pooled_twelve_bridge_positive",
+  "switch_gamma": 0.3
+}

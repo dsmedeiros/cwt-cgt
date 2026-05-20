@@ -1,0 +1,12 @@
+{
+  "benchmark": "GG_windowed_sparse_release",
+  "metrics": {
+    "corr": 0.9732,
+    "r2": 0.8987,
+    "sign": 0.9861
+  },
+  "observation_mode": "mixed_release_windows_with_delayed_event_thinning",
+  "phase": 199,
+  "rule": "pooled_twelve_bridge_positive",
+  "switch_gamma": 0.3
+}

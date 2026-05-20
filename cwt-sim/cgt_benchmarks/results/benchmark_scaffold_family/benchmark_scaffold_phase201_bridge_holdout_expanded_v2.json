@@ -1,0 +1,31 @@
+{
+  "phase": 201,
+  "rule": "bridge_benchmark_holdout_expanded_v2",
+  "switch_gamma": 0.3,
+  "benchmarks": [
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y",
+    "Z",
+    "AA",
+    "BB",
+    "AC",
+    "CC",
+    "DD",
+    "AE",
+    "EE",
+    "AF",
+    "FF",
+    "AG",
+    "GG"
+  ],
+  "metrics": {
+    "mean_combined_r2": 0.8871,
+    "min_combined_r2": 0.8749,
+    "max_combined_r2": 0.9296,
+    "weakest_benchmark": "BB_sensor_gap"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "phase": 206,
+  "switch_gamma": 0.3,
+  "positive_transfer_band": [
+    0.8987,
+    0.9981
+  ],
+  "bridge_adversarial_raw_band": [
+    0.4179,
+    0.6024
+  ],
+  "bridge_adversarial_corrected_band": [
+    0.8364,
+    0.9162
+  ],
+  "bridge_holdout_mean": 0.8871,
+  "weakest_bridge_benchmark": "GG_windowed_sparse_release",
+  "summary": "Incremental but positive bridge-local gains persist; weakest region remains less-synthetic sparse release pilots."
+}

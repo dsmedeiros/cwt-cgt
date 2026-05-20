@@ -1,0 +1,15 @@
+{
+  "phase": 207,
+  "switch_gamma": 0.3,
+  "readiness_score": 0.71,
+  "readiness_bands": {
+    "coherent_core": 0.89,
+    "noisy_scaffold": 0.81,
+    "bridge_lane": 0.63
+  },
+  "blocking_items": [
+    "additional less-synthetic bridge evidence",
+    "benchmark-holdout comparison of tensor v5 vs minimal",
+    "local bridge tensor geometry compression beyond pooled summaries"
+  ]
+}
