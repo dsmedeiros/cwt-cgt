@@ -5,6 +5,7 @@ from __future__ import annotations
 import numpy as np
 
 from cwt.geometry.metric import metric_tile
+from cwt.operator.L_map import qp1_state, qp1_state_derivatives
 
 
 def _random_state(rng: np.random.Generator, size: int) -> np.ndarray:
@@ -13,6 +14,40 @@ def _random_state(rng: np.random.Generator, size: int) -> np.ndarray:
     if norm == 0:
         raise RuntimeError("Random draw produced the zero vector, cannot normalize.")
     return vec / norm
+
+
+def _metric_component(u: np.ndarray, du_a: np.ndarray, du_b: np.ndarray) -> float:
+    overlap_a = np.vdot(u, du_a)
+    overlap_b = np.vdot(u, du_b)
+    inner = np.vdot(du_a, du_b)
+    return float(np.real(inner - overlap_a.conjugate() * overlap_b))
+
+
+def test_metric_tile_converges_on_qp1_state() -> None:
+    lam = {"x": 0.23, "y": 0.37}
+    psi0 = qp1_state(lam)
+    d_x, _ = qp1_state_derivatives(lam)
+    expected_gxx = _metric_component(psi0, d_x, d_x)
+
+    coarse = 1.0e-2
+    fine = 5.0e-3
+    coarse_gxx = metric_tile(
+        psi0,
+        qp1_state({"x": lam["x"] + coarse, "y": lam["y"]}),
+        qp1_state({"x": lam["x"] + coarse, "y": lam["y"]}),
+        coarse,
+        coarse,
+    )
+    fine_gxx = metric_tile(
+        psi0,
+        qp1_state({"x": lam["x"] + fine, "y": lam["y"]}),
+        qp1_state({"x": lam["x"] + fine, "y": lam["y"]}),
+        fine,
+        fine,
+    )
+
+    assert abs(fine_gxx - expected_gxx) < abs(coarse_gxx - expected_gxx)
+    assert np.isclose(fine_gxx, expected_gxx, rtol=1.0e-3)
 
 
 def test_metric_invariant_under_global_phase() -> None:

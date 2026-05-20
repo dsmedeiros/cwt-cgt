@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
+from cwt.geometry.curvature import curvature_tile
 from cwt.operator.biorth_geom import biorth_connection, biorth_curvature
 from cwt.operator.L_map import (
     qp1_eigenvalues,
@@ -74,6 +75,28 @@ def test_qp1_curvature_integrates_to_quantized_value() -> None:
         total_curvature += omega_density * dx * dy
 
     assert np.isclose(total_curvature, 2.0 * np.pi, atol=5e-3)
+
+
+def test_qp1_wilson_sign_map_and_orientation_reversal() -> None:
+    x = 0.17
+    y = 0.31
+    delta_x = 1.0e-3
+    delta_y = 1.0e-3
+
+    psi0 = qp1_state({"x": x, "y": y})
+    psi_i = qp1_state({"x": x + delta_x, "y": y})
+    psi_ij = qp1_state({"x": x + delta_x, "y": y + delta_y})
+    psi_j = qp1_state({"x": x, "y": y + delta_y})
+
+    omega_impl, stats = curvature_tile(psi0, psi_i, psi_ij, psi_j, delta_x, delta_y)
+    omega_reversed, _ = curvature_tile(psi0, psi_j, psi_ij, psi_i, delta_y, delta_x)
+
+    omega_analytic = np.pi**2 * np.sin(np.pi * y)
+
+    assert stats["min_overlap"] > 0.99
+    assert np.isclose(abs(omega_impl), omega_analytic, rtol=2.0e-3)
+    assert np.sign(omega_impl) == -np.sign(omega_analytic)
+    assert np.isclose(omega_reversed, -omega_impl, rtol=1.0e-8, atol=1.0e-8)
 
 
 def test_trace_metric_spikes_where_gap_shrinks() -> None:
