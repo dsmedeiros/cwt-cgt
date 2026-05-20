@@ -1,0 +1,11 @@
+{
+  "bridge_count": 13,
+  "pilot_count": 9,
+  "switch_gamma": 0.3,
+  "bridge_positive_mean_r2": 0.9341,
+  "pilot_positive_mean_r2": 0.8963,
+  "pooled_bridge_pilot_positive_r2": 0.9298,
+  "bridge_pilot_gap": 0.0378,
+  "phase": 224,
+  "rule": "bridge_pilot_positive_summary_v1"
+}

@@ -1,0 +1,14 @@
+{
+  "benchmark": "II_partial_obs_spike",
+  "raw": {
+    "combined_r2": 0.4387,
+    "sign_agreement": 0.8465
+  },
+  "corrected": {
+    "combined_r2": 0.8539,
+    "sign_agreement": 0.9597
+  },
+  "correction": "bridge_tensor_geometry_law_v6",
+  "phase": 220,
+  "switch_gamma": 0.3
+}

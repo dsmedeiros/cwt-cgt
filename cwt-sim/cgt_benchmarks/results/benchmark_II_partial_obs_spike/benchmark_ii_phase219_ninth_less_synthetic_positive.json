@@ -1,0 +1,12 @@
+{
+  "benchmark": "II_partial_obs_spike",
+  "metrics": {
+    "r2": 0.9056,
+    "corr": 0.9764,
+    "sign": 0.9896
+  },
+  "observation_mode": "partial_obs_spike_release_with_irregular_mask",
+  "phase": 219,
+  "rule": "pooled_thirteen_bridge_positive",
+  "switch_gamma": 0.3
+}

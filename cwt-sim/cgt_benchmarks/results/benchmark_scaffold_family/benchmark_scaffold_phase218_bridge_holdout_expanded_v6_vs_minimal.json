@@ -1,0 +1,13 @@
+{
+  "rule": "bridge_holdout_expanded_v6_vs_minimal",
+  "bridge_count": 13,
+  "pilot_count": 8,
+  "switch_gamma": 0.3,
+  "minimal_mean_r2": 0.8804,
+  "tensor_v6_mean_r2": 0.9006,
+  "mean_gain": 0.0202,
+  "weakest_benchmark": "GG_windowed_sparse_release",
+  "weakest_minimal": 0.8445,
+  "weakest_v6": 0.861,
+  "phase": 218
+}

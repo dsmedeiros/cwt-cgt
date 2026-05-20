@@ -1,0 +1,18 @@
+{
+  "bridge_count": 13,
+  "pilot_count": 9,
+  "switch_gamma": 0.3,
+  "raw": {
+    "combined_r2": 0.5142,
+    "sign_agreement": 0.8511
+  },
+  "corrected": {
+    "combined_r2": 0.8907,
+    "sign_agreement": 0.9691
+  },
+  "bridge_corrected_mean_r2": 0.9212,
+  "pilot_corrected_mean_r2": 0.8503,
+  "bridge_pilot_gap": 0.0709,
+  "phase": 225,
+  "rule": "bridge_pilot_adversarial_summary_v1"
+}
