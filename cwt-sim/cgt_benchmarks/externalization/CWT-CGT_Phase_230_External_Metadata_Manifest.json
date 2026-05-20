@@ -1,0 +1,53 @@
+{
+  "generated_on": "2026-04-05",
+  "purpose": "externalization candidate manifest",
+  "candidates": [
+    {
+      "name": "Citi Bike NYC",
+      "domain": "mobility_events",
+      "official_source": "https://citibikenyc.com/system-data",
+      "historical_access": "downloadable trip data",
+      "realtime_access": "GBFS feed",
+      "gbfs_root": "https://gbfs.lyft.com/gbfs/2.3/bkn/gbfs.json",
+      "priority": "P1"
+    },
+    {
+      "name": "Divvy Chicago",
+      "domain": "mobility_events",
+      "official_source": "https://divvybikes.com/system-data",
+      "historical_access": "monthly trip history",
+      "realtime_access": "GBFS feed",
+      "gbfs_root": "https://gbfs.lyft.com/gbfs/2.3/chi/gbfs.json",
+      "priority": "P1"
+    },
+    {
+      "name": "Chicago Traffic Tracker \u2014 Historical Congestion Estimates by Segment",
+      "domain": "road_segments",
+      "official_source": "https://data.cityofchicago.org/Transportation/Chicago-Traffic-Tracker-Historical-Congestion-Esti/sxs8-h27x",
+      "historical_access": "segment congestion history",
+      "priority": "P1"
+    },
+    {
+      "name": "NYC DOT Traffic Speeds",
+      "domain": "road_segments",
+      "official_source": "https://data.cityofnewyork.us/Transportation/DOT-Traffic-Speeds/i4gi-tjb9",
+      "historical_access": "average speeds between endpoints",
+      "priority": "P2"
+    },
+    {
+      "name": "TfL Unified API / Open Data",
+      "domain": "multimodal_transport",
+      "official_source": "https://tfl.gov.uk/info-for/open-data-users/our-open-data",
+      "api_docs": "https://tfl.gov.uk/info-for/open-data-users/api-documentation",
+      "note": "live feeds require registration",
+      "priority": "P2"
+    },
+    {
+      "name": "OEDI IEEE123",
+      "domain": "power_grid",
+      "official_source": "https://data.openei.org/submissions/5773",
+      "historical_access": "time series load and PV data with measurement locations",
+      "priority": "P1"
+    }
+  ]
+}
