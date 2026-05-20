@@ -1,0 +1,20 @@
+{
+  "summary": "bridge_boundary_refresh_v2",
+  "phase": 166,
+  "switch_gamma": 0.3,
+  "bands": {
+    "positive_band": [
+      0.8748,
+      0.9981
+    ],
+    "adversarial_raw_band": [
+      0.4011,
+      0.6024
+    ],
+    "adversarial_corrected_band": [
+      0.8235,
+      0.9126
+    ],
+    "weakest_positive": "BB_sensor_gap"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "comparison": "bridge_tensor_vs_minimal_cf_expanded_holdout",
+  "phase": 174,
+  "switch_gamma": 0.3,
+  "minimal": {
+    "mean_holdout_r2": 0.8783
+  },
+  "tensor": {
+    "mean_holdout_r2": 0.8921
+  }
+}

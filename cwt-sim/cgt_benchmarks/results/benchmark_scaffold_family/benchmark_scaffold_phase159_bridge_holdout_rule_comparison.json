@@ -1,0 +1,26 @@
+{
+  "comparison": "bridge_tensor_vs_minimal_cf_benchmark_holdout",
+  "phase": 159,
+  "switch_gamma": 0.3,
+  "minimal": {
+    "mean_holdout_r2": 0.8749,
+    "mean_sign_agreement": 0.9562
+  },
+  "tensor": {
+    "mean_holdout_r2": 0.8898,
+    "mean_sign_agreement": 0.9691
+  },
+  "benchmarks": [
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y",
+    "Z",
+    "AB",
+    "AA",
+    "BB",
+    "AC"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "rule": "pooled_nine_bridge_adversarial",
+  "phase": 165,
+  "switch_gamma": 0.3,
+  "raw": {
+    "combined_r2": 0.5631
+  },
+  "corrected": {
+    "combined_r2": 0.9079,
+    "sign_agreement": 0.9738
+  },
+  "benchmarks": [
+    "V",
+    "W",
+    "Z",
+    "AB",
+    "AC"
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "rule": "pooled_nine_bridge_positive",
+  "phase": 164,
+  "switch_gamma": 0.3,
+  "benchmarks": [
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y",
+    "Z",
+    "AB",
+    "AC"
+  ],
+  "metrics": {
+    "combined_r2": 0.9374,
+    "corr": 0.9849,
+    "sign_agreement": 0.9951
+  }
+}

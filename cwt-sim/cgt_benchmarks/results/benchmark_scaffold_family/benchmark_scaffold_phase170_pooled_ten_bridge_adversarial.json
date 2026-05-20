@@ -1,0 +1,12 @@
+{
+  "rule": "pooled_ten_bridge_adversarial",
+  "phase": 170,
+  "switch_gamma": 0.3,
+  "raw": {
+    "combined_r2": 0.5667
+  },
+  "corrected": {
+    "combined_r2": 0.9104,
+    "sign_agreement": 0.9742
+  }
+}

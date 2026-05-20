@@ -1,0 +1,14 @@
+{
+  "audit": "bridge_loo_all_pilots_expanded",
+  "phase": 173,
+  "switch_gamma": 0.3,
+  "mean_holdout_r2": 0.8879,
+  "weakest_benchmark": "BB_sensor_gap",
+  "weakest_r2": 0.8748,
+  "included_pilots": [
+    "AA_less_synthetic",
+    "BB_sensor_gap",
+    "CC_delayed_release",
+    "DD_async_masked"
+  ]
+}

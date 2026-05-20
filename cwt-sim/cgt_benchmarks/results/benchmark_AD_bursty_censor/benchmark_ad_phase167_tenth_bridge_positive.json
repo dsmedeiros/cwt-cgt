@@ -1,0 +1,12 @@
+{
+  "benchmark": "AD_bursty_censor",
+  "phase": 167,
+  "switch_gamma": 0.3,
+  "rule": "pooled_nine_bridge_positive",
+  "metrics": {
+    "r2": 0.9226,
+    "corr": 0.9812,
+    "sign": 1.0
+  },
+  "observation_mode": "hidden_dropout_bursty_censor_windows"
+}

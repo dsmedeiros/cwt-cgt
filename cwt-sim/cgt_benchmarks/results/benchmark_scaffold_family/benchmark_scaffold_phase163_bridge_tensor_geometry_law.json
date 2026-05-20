@@ -1,0 +1,16 @@
+{
+  "candidate": "bridge_tensor_geometry_law",
+  "phase": 163,
+  "switch_gamma": 0.3,
+  "raw": {
+    "combined_r2": 0.5588
+  },
+  "prior_corrected": {
+    "combined_r2": 0.9047
+  },
+  "corrected": {
+    "combined_r2": 0.9126,
+    "sign_agreement": 0.9732
+  },
+  "note": "more local tensor-geometry compression of bridge correction"
+}

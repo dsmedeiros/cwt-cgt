@@ -1,0 +1,13 @@
+{
+  "benchmark": "DD_async_masked",
+  "phase": 172,
+  "switch_gamma": 0.3,
+  "raw": {
+    "combined_r2": 0.4308
+  },
+  "corrected": {
+    "combined_r2": 0.8297,
+    "sign_agreement": 0.9604
+  },
+  "family": "async_masked_adversarial"
+}

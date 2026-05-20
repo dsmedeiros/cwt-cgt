@@ -1,0 +1,12 @@
+{
+  "benchmark": "DD_async_masked",
+  "phase": 171,
+  "switch_gamma": 0.3,
+  "rule": "pooled_ten_bridge_positive",
+  "metrics": {
+    "r2": 0.8875,
+    "corr": 0.9581,
+    "sign": 1.0
+  },
+  "observation_mode": "async_delayed_release_partial_state_mask"
+}

@@ -1,0 +1,22 @@
+{
+  "rule": "pooled_ten_bridge_positive",
+  "phase": 169,
+  "switch_gamma": 0.3,
+  "benchmarks": [
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y",
+    "Z",
+    "AB",
+    "AC",
+    "AD"
+  ],
+  "metrics": {
+    "r2": 0.9386,
+    "corr": 0.9856,
+    "sign": 0.9956
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "benchmark": "AC_hidden_dropout_batching",
+  "phase": 157,
+  "switch_gamma": 0.3,
+  "rule": "pooled_eight_bridge_positive",
+  "metrics": {
+    "heldout_combined_r2": 0.9238,
+    "corr": 0.9824,
+    "sign_agreement": 1.0
+  },
+  "observation_mode": "hidden_state_dropout_irregular_event_batching"
+}

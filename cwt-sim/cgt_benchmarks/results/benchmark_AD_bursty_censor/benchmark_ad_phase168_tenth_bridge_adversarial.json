@@ -1,0 +1,14 @@
+{
+  "benchmark": "AD_bursty_censor",
+  "phase": 168,
+  "switch_gamma": 0.3,
+  "raw": {
+    "combined_r2": 0.5342,
+    "sign_agreement": 0.8125
+  },
+  "corrected": {
+    "combined_r2": 0.8998,
+    "sign_agreement": 0.9694
+  },
+  "family": "bursty_censor_adversarial"
+}

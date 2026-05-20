@@ -1,0 +1,14 @@
+{
+  "benchmark": "CC_delayed_release",
+  "phase": 161,
+  "switch_gamma": 0.3,
+  "raw": {
+    "combined_r2": 0.4176,
+    "sign_agreement": 0.75
+  },
+  "corrected": {
+    "combined_r2": 0.8235,
+    "sign_agreement": 0.9583
+  },
+  "family": "delayed_release_adversarial"
+}

@@ -1,0 +1,12 @@
+{
+  "benchmark": "CC_delayed_release",
+  "phase": 160,
+  "switch_gamma": 0.3,
+  "rule": "pooled_eight_bridge_positive",
+  "metrics": {
+    "heldout_combined_r2": 0.8819,
+    "corr": 0.9548,
+    "sign_agreement": 1.0
+  },
+  "observation_mode": "state_thinning_delayed_release"
+}

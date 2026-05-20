@@ -1,0 +1,20 @@
+{
+  "summary": "bridge_boundary_refresh_v3",
+  "phase": 176,
+  "switch_gamma": 0.3,
+  "bands": {
+    "positive": [
+      0.8748,
+      0.9981
+    ],
+    "raw": [
+      0.4011,
+      0.6024
+    ],
+    "corr": [
+      0.8235,
+      0.9152
+    ],
+    "weakest": "BB_sensor_gap"
+  }
+}
