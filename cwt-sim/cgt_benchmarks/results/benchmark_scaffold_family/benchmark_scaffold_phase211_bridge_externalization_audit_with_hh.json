@@ -1,0 +1,10 @@
+{
+  "rule": "bridge_externalization_audit_with_HH",
+  "switch_gamma": 0.3,
+  "positive_mean_r2": 0.8896,
+  "adversarial_mean_r2": 0.8478,
+  "pilot_count": 8,
+  "bridge_count": 13,
+  "pilot_weakest": "GG_windowed_sparse_release",
+  "bridge_weakest": "BB_sensor_gap"
+}

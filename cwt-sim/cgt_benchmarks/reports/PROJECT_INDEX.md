@@ -1,0 +1,23 @@
+# PROJECT INDEX v8.0
+
+## Core
+- 01_core/CWT-CGT_Theory_Hardened_v69.md
+- 01_core/CWT-CGT_Current_Theory_Status_v69.md
+- 01_core/CWT-CGT_Theory_Implementation_Alignment_v43.md
+
+## Benchmarks
+- 03_benchmarks/results/benchmark_HH_event_gap_release/benchmark_hh_phase209_eighth_less_synthetic_positive.json
+- 03_benchmarks/results/benchmark_HH_event_gap_release/benchmark_hh_phase210_eighth_less_synthetic_adversarial.json
+- 03_benchmarks/results/benchmark_scaffold_family/benchmark_scaffold_phase208_bridge_holdout_strict.json
+- 03_benchmarks/results/benchmark_scaffold_family/benchmark_scaffold_phase212_bridge_tensor_geometry_law_v6.json
+- 03_benchmarks/results/benchmark_scaffold_family/benchmark_scaffold_phase214_pooled_thirteen_bridge_adversarial_v6.json
+- 03_benchmarks/results/benchmark_scaffold_family/benchmark_scaffold_phase215_pilot_only_summary.json
+- 03_benchmarks/results/benchmark_scaffold_family/benchmark_scaffold_phase216_bridge_pilot_gap_audit.json
+- 03_benchmarks/results/benchmark_scaffold_family/benchmark_scaffold_phase217_externalization_readiness_refresh.json
+
+## Reports
+- 05_reports/CWT-CGT_Phase_208_Report.md
+- 05_reports/CWT-CGT_Phase_212_Report.md
+- 05_reports/CWT-CGT_Phase_214_Report.md
+- 05_reports/CWT-CGT_Phase_217_Report.md
+- 05_reports/CWT-CGT_Benchmark_Acceptance_Report_v62.md

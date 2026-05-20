@@ -1,0 +1,12 @@
+{
+  "benchmark": "HH_event_gap_release",
+  "metrics": {
+    "r2": 0.9018,
+    "corr": 0.9739,
+    "sign": 0.9875
+  },
+  "observation_mode": "event_gap_release_with_delayed_partial_snapshots",
+  "phase": 209,
+  "rule": "pooled_thirteen_bridge_positive",
+  "switch_gamma": 0.3
+}

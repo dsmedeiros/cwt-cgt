@@ -1,0 +1,10 @@
+{
+  "phase": 216,
+  "switch_gamma": 0.3,
+  "bridge_positive_r2": 0.9397,
+  "pilot_positive_r2": 0.8927,
+  "bridge_adversarial_r2": 0.9194,
+  "pilot_adversarial_r2": 0.8461,
+  "positive_gap": 0.047,
+  "adversarial_gap": 0.0733
+}

@@ -1,0 +1,14 @@
+{
+  "phase": 217,
+  "switch_gamma": 0.3,
+  "externalization_readiness": "improving_but_not_ready",
+  "bridge_tensor_law": "v6_current_best",
+  "recommendation": "freeze_bridge_catalog_and_prioritize_externalization",
+  "support": {
+    "bridge_holdout_mean_r2": 0.8934,
+    "pilot_positive_r2": 0.8927,
+    "pilot_adversarial_r2": 0.8461,
+    "bridge_pilot_positive_gap": 0.047,
+    "bridge_pilot_adversarial_gap": 0.0733
+  }
+}

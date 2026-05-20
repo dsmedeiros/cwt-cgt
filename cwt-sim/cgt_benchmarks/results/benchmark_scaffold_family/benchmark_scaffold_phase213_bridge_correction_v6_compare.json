@@ -1,0 +1,16 @@
+{
+  "phase": 213,
+  "switch_gamma": 0.3,
+  "minimal": {
+    "combined_r2": 0.8821,
+    "sign_agreement": 0.9483
+  },
+  "tensor_v5": {
+    "combined_r2": 0.9231,
+    "sign_agreement": 0.979
+  },
+  "tensor_v6": {
+    "combined_r2": 0.9262,
+    "sign_agreement": 0.9798
+  }
+}

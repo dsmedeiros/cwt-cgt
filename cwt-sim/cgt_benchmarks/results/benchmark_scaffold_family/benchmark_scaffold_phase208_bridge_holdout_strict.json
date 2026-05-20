@@ -1,0 +1,10 @@
+{
+  "rule": "bridge_holdout_strict_v5_vs_minimal",
+  "switch_gamma": 0.3,
+  "minimal_mean_r2": 0.8792,
+  "tensor_v5_mean_r2": 0.8934,
+  "mean_gain": 0.0142,
+  "weakest_benchmark": "GG_windowed_sparse_release",
+  "weakest_minimal": 0.8427,
+  "weakest_v5": 0.8579
+}

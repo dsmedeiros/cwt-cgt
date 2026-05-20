@@ -1,0 +1,17 @@
+{
+  "phase": 215,
+  "switch_gamma": 0.3,
+  "pilot_count": 8,
+  "positive": {
+    "combined_r2": 0.8927,
+    "corr": 0.9712,
+    "sign": 0.9858
+  },
+  "adversarial_corrected": {
+    "combined_r2": 0.8461,
+    "corr": 0.9484,
+    "sign": 0.9572
+  },
+  "weakest_pilot": "GG_windowed_sparse_release",
+  "strongest_pilot": "AA_less_synthetic"
+}

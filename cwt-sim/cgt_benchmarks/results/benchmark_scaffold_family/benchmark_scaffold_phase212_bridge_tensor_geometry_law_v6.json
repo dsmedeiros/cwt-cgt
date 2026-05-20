@@ -1,0 +1,13 @@
+{
+  "candidate": "bridge_tensor_geometry_law_v6",
+  "phase": 212,
+  "switch_gamma": 0.3,
+  "construction": "benchmark_holdout_tensor_localization",
+  "raw": {
+    "combined_r2": 0.5611
+  },
+  "corrected": {
+    "combined_r2": 0.9262,
+    "sign_agreement": 0.9798
+  }
+}

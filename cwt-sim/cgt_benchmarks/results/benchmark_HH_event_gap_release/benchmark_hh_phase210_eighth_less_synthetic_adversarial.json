@@ -1,0 +1,14 @@
+{
+  "benchmark": "HH_event_gap_release",
+  "raw": {
+    "combined_r2": 0.4351,
+    "sign_agreement": 0.8417
+  },
+  "corrected": {
+    "combined_r2": 0.8446,
+    "sign_agreement": 0.9569
+  },
+  "correction": "bridge_tensor_geometry_law_v5",
+  "phase": 210,
+  "switch_gamma": 0.3
+}
