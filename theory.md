@@ -8,14 +8,23 @@ Causal Web Theory (CWT) posits that observed dynamics emerge from strictly local
 
 We “bake in” a geometry on the **space of control parameters** that govern the substrate and layer couplings. This geometry is encoded by a **CWT Geometric Tensor (CGT)**, directly analogous to the Quantum Geometric Tensor (QGT): its **real** part is a sensitivity **metric** and its **imaginary** part is a **Berry-like curvature** that imparts path-dependent biases. The CGT lets CWT formalize criticality, adiabatic pumping, and topological sectors of causal propagation—without introducing extra hidden variables outside the model’s state.
 
-### 1.1 Current empirical layer split
+### 1.1 Empirical status and layer separation
 
-CWT-CGT now has at least two empirically distinct layers:
+The present theory has two empirically distinct layers.
 
-* **Passive CGT diagnostic layer:** `g` and `Omega` describe branch geometry, sensitivity, and transition structure without applying geometric forcing.
-* **Active geometric control layer:** the scheduler applies connection/curvature-derived terms around loops and predicts orientation-sensitive response.
+**Passive CGT diagnostic layer.** Given a substrate, a branch state \(\Psi_*(\lambda,b)\), and a control manifold \(\mathcal M\), the CGT
+\[
+\mathcal C_{ij}=\langle \partial_i\Psi|\Pi_\perp|\partial_j\Psi\rangle
+\]
+describes local sensitivity, curvature, and possible transition structure of the branch. In this passive mode, \(g=\mathrm{Re}\,\mathcal C\) and \(\Omega\) are diagnostic fields. They do not, by themselves, imply that every substrate has a \(\mathrm{tr}(g)\) ridge at every independently defined transition. The passive transition-ridge claim is regime-dependent.
 
-The current external evidence strongly validates the active phase-kick/connection branch on OEDI and Chicago real-data-derived substrates. Passive transition-ridge detection is only partly validated, and external runs should be described as real-data-derived substrate validation unless an experiment directly establishes full external causal validation.
+**Active geometric-control layer.** When the dynamics is explicitly driven around a closed loop in control space and the scheduler applies the geometric connection/phase-kick term along the path, the leading adiabatic prediction is an orientation-sensitive loop response
+\[
+\Delta R_\gamma = \kappa_1\Phi_\gamma + O(\Phi_\gamma^2,\varepsilon_{\rm nonad},\sigma_\theta),
+\]
+where \(\Phi_\gamma=\iint_{S_\gamma}\Omega\) is the Wilson/Berry flux through the loop. This active layer is separate from passive transition diagnosis. External-substrate tests currently support the leading active shape law more strongly than they support universal passive criticality detection.
+
+Accordingly, "validated on real data" should be read as **real-data-derived substrate validation under model-driven control loops**, not direct experimental causal control of the physical city, traffic network, or power grid.
 
 ---
 
@@ -71,11 +80,13 @@ $$
 
 **A2 (Dual Fields & Normalization).** Each analysis slice induces a unique $\Psi=\sqrt{p^{(Q)}}e^{i\theta^{(\Theta)}}$ up to gauge, with $\|\Psi\|=1$.
 
-**A3 (Geometric Control).** Geometry of $\Psi(\lambda)$ on $\mathcal{M}$ constrains evolution: the CGT’s real part measures sensitivity; its imaginary part generates anholonomy that persists into C-layer readouts.
+**A3 (Passive geometric diagnostics).** For a stable branch \(\Psi_*(\lambda,b)\), the CGT defines a metric and curvature on the control manifold. The metric identifies parameter sensitivity; the curvature identifies oriented loop structure. Passive transition-ridge predictions require an overlap-safe, transition-localized regime and are not assumed universal across all substrates.
 
-**A4 (Topological Sectors).** Nontrivial curvature flux over closed 2-surfaces in $\mathcal{M}$ defines topological phases of causal propagation with loop-invariant macroscopic signatures.
+**A4 (Active geometric control).** When the model is actively driven around a closed control loop, the geometric connection can enter the \(\Theta\)-layer as a phase-kick term and produce an orientation-sensitive response. In the adiabatic small-loop regime, the leading active prediction is \(\Delta R_\gamma\propto\Phi_\gamma\). Direct curvature-bias source terms are optional exploratory actuation channels unless independently validated.
 
-**A5 (Classicalization).** Readout maps $F$ from $(p^{(Q)},\theta^{(\Theta)})$ to outcomes are allowed to depend on the **path** taken in $\mathcal{M}$ via geometric quantities.
+**A5 (Topological sectors).** Integer topological claims require a periodic two-dimensional control manifold, a smooth gauge, and an isolated/gapped band or invariant subspace. Outside that setting, curvature flux should be interpreted as geometric response, not topological quantization.
+
+**A6 (Classicalization and readout discipline).** Readout maps from \((p^{(Q)},\theta^{(\Theta)})\) to outcomes must be declared before fitting. For primary validation, readouts should not contain \(\Phi_\gamma\), \(\Omega\), or loop orientation explicitly; geometric quantities are predictors of response, not definitions of the response.
 
 ---
 
@@ -155,35 +166,32 @@ $$
 
 $\omega_n$ encodes delay-to-phase clocking; $J_{nm}$ encodes coherence coupling strength.
 
-### 5.3 Geometric Couplings
+### 5.3 Active geometric coupling channels
 
-**(a) Geometric phase kick along parameter path)**
-For a small parameter step $\Delta\lambda$:
+In active-control experiments, the scheduler may apply geometric terms during a closed loop \(\gamma\subset\mathcal M\). Two channels are distinguished.
 
-$$
-\theta^{(\Theta)}_n \;\mathrel{+}=\; \mathcal{A}_i(\lambda)_n\,\Delta\lambda^i.
-$$
+#### 5.3a Connection / phase-kick channel
 
-**(b) Curvature-induced transverse bias in Q)**
-Treat curvature as a magnetic-like 2-form on $\mathcal{M}$ that deflects probability flow when $\lambda$ moves:
+The validated active channel is the connection-driven \(\Theta\)-layer kick
+\[
+\theta_n \leftarrow \theta_n + a_{i,n}(\lambda)\Delta\lambda^i,
+\]
+where \(a_{i,n}\) is a gauge-fixed local connection or local phase-response field. Only relative phases and edge phase differences are physically relevant. A global Berry phase by itself is not an observable nodewise force.
 
-$$
-\boxed{\; \Gamma_n = \beta\,\sum_{i<j}\Omega_{ij}(\lambda)\,\epsilon^{ij}\,\Xi_n\;}
-$$
+For small adiabatic loops, the accumulated connection produces a Wilson-flux response
+\[
+\oint_\gamma a_i\,d\lambda^i \sim \iint_{S_\gamma}\Omega = \Phi_\gamma,
+\]
+and therefore the leading active readout law
+\[
+\Delta R_\gamma = \kappa_1\Phi_\gamma + O(\Phi_\gamma^2,\varepsilon_{\rm nonad},\sigma_\theta).
+\]
 
-* $\epsilon^{ij}\,$ contracts with the oriented area swept by the parameter step (or $\dot\lambda^i$ in continuous time),
-* $\Xi_n$ is a nodewise susceptibility (e.g., degree-normalized centrality, or learned from metrics),
-* $\beta$ is a coupling coefficient.
+External-substrate tests currently support this phase-kick mechanism: disabling the connection collapses the antisymmetric response, sign-flipping the connection reverses the response, shuffling the connection suppresses the response, and degenerate-area loops suppress the response.
 
-Apply to the Q update as an additive pre-normalization term:
+#### 5.3b Direct curvature-bias channel
 
-$$
-\tilde p^{(Q)}_n(s+1) \;\mathrel{+}=\; \alpha\,\Gamma_n,\quad \text{then renormalize.}
-$$
-
-$\alpha$ sets the amplitude of geometric bias.
-
-The validated active mechanism is currently the phase-kick/connection branch in (a): scramble ablations with `A_zero` collapse antisymmetric response and `A_signflip` flips its sign. The direct `Omega`-bias branch in (b) did not move under the tested coupling and should be treated as unvalidated pending high-coupling tests.
+A direct curvature-bias term may be included as an exploratory actuator, for example as a conservative edge-current correction rather than a node source term. However, the direct \(\Omega\)-bias pathway is not presently validated as an independent leading mechanism. In current adiabatic external-substrate tests, \(\Omega\)-pathway scrambles produce negligible change even at larger tested coupling, while the connection/phase-kick channel carries the observed orientation-sensitive response. Claims about direct curvature-bias actuation should therefore be marked exploratory until a coupling/regime is found where \(\Omega\)-specific scrambles measurably bite.
 
 ### 5.4 Conservation & Stability
 
@@ -353,11 +361,45 @@ Integrate into the orchestrator; on each step, compute $\mathcal{A}_i\Delta\lamb
 
 ---
 
-## 14. Falsifiable Predictions
+## 14. Predictions and regime conditions
 
-* Small, adiabatic parameter loops produce $\mathcal{R}_\gamma = \kappa_1\Phi_\gamma + O(\Phi_\gamma^2,\epsilon_{\mathrm{nonad}},\sigma_\theta)$ with orientation reversal for validated readouts.
-* Ridges of $\mathrm{tr}\,g$ can co-locate with independently defined transition gradients only in overlap-safe regimes where branch response is transition-localized.
-* On a toroidal $\mathcal{M}$, integrated curvature can attain integer-like plateaus only while the relevant gap and overlap conditions remain intact.
+The theory makes two distinct classes of prediction.
+
+### 14.1 Active loop-response prediction
+
+For an actively driven, overlap-safe, adiabatic closed loop \(\gamma\) in control space, the orientation-antisymmetric readout
+\[
+\Delta R_\gamma = R_{\rm CCW}-R_{\rm CW}
+\]
+has the leading form
+\[
+\Delta R_\gamma = \kappa_1\Phi_\gamma + O(\Phi_\gamma^2,\varepsilon_{\rm nonad},\sigma_\theta),
+\]
+where \(\Phi_\gamma\) is computed independently from a Wilson plaquette or equivalent curvature integral. Reversing loop orientation reverses \(\Phi_\gamma\) and therefore the leading response. Metric-only models predict no such orientation-antisymmetric response.
+
+This prediction is currently the strongest externally supported part of the theory. It has been confirmed on real-data-derived OEDI IEEE-123 and Chicago Traffic Tracker substrates in the adiabatic regime, with the Kuramoto readout scaling linearly with \(\Phi_\gamma\), and with metric-only orientation-null models rejected.
+
+### 14.2 Passive transition-ridge prediction
+
+In passive diagnostic mode, \(\mathrm{tr}(g)\) can co-locate with independently defined transition gradients such as \(\|\nabla r\|\), where \(r\) is a Kuramoto order parameter. This is a regime-dependent diagnostic, not a universal theorem.
+
+A defensible passive claim is:
+
+\[
+\mathrm{tr}(g)\text{ ridges co-locate with transition gradients when the branch response is overlap-safe, transition-localized, and the delay/coupling configuration lies in a positive co-location regime.}
+\]
+
+The sign and magnitude of
+\[
+\mathrm{Spearman}(\mathrm{tr}(g),\|\nabla r\|)
+\]
+depend jointly on delay-distribution shape and coupling regime. Constant or degenerate delays can collapse the passive signal. Changing delay-distribution shape can weaken or flip the signal. Cross-substrate comparison must therefore report topology, delay distribution, coupling parameters, valid-tile fraction, Fubini-Study safety, and the range of the independent transition marker.
+
+Empirically, OEDI confirms the passive ridge diagnostic, while Chicago is null in the overlap-safe configuration. Watts-Strogatz controls show that topology variation alone does not explain the difference, and delay-shuffle tests show that delay-topology spatial correlation is not the dominant cause. The remaining object is a Section 14 regime map, not a universal ridge claim.
+
+### 14.3 Negative controls
+
+Not every readout is expected to be holonomy-driven. Readouts dominated by path length, perimeter drift, or non-geometric relaxation can scale as \(\Phi_\gamma^{1/2}\) or exhibit higher-order behavior. A readout supports the active law only when orientation reversal, adiabaticity, and leading \(\Phi_\gamma\)-scaling hold simultaneously.
 
 ---
 
@@ -742,17 +784,46 @@ Curvature and integral
 * Integrating over the torus (x,y in [0,1)) gives ∫_{T^2} Omega = 2π (winding number = 1).
 * Conclusion: the integrated (biorthogonal) curvature equals 2π while the spectral gap remains open; small non-normal perturbations that do not close the gap leave the integer unchanged.
 
-## 36. Coupling strength from phase holonomy to Q-bias
+### 35.x Sign convention for Wilson curvature
 
-Mechanism chain: geometric phase (A_i dλ^i) → phase-difference shifts on edges → current shifts J_nm ∝ sqrt(p_n p_m) sin(θ_m − θ_n) → transverse amplitude bias in the Q update.
+The implementation convention for Wilson plaquette curvature may differ by an overall sign from the analytic convention used in the two-level QP-1 derivation. The invariant checks are therefore:
 
-Linear-response scaling (adiabatic small-loop regime)
+1. magnitude of the integrated curvature, \(|\iint\Omega|=2\pi |C|\),
+2. orientation reversal, \(\Phi_{\gamma^{-1}}=-\Phi_\gamma\),
+3. convergence of the metric tensor with mesh refinement.
 
-* Let s_bar be the average local coherence (0..1). Let G_theta be a typical magnitude of phase gradients across edges. For a loop with flux Phi_gamma, the leading-order pumped-bias magnitude scales as
-  |R_gamma| ≈ η * s_bar * G_theta * kappa_loc * |Phi_gamma|,
-  where η is the C-layer sensitivity parameter and kappa_loc aggregates local susceptibilities (e.g., mean Xi_n on the active region). Orientation reversal flips the sign.
-  Breakdown indicators
-* s_bar → 0 (strong dephasing), G_theta ≈ 0 (flat phases), or large FS distance per step (> 0.1 rad) that invalidates linear response. Near-exceptional points, nonlinearity can dominate.
+In the current implementation, the QP-1 Wilson integral returns \(-2\pi\) for the convention where the analytic derivation gives \(+2\pi\). This is a sign-convention difference, not a failure of the estimator, because the magnitude, orientation reversal, and metric convergence agree with analytic ground truth.
+
+## 36. Active loop-response law and coefficient status
+
+The leading active prediction is the small-loop, adiabatic shape law
+\[
+\Delta R_\gamma = \kappa_1\Phi_\gamma + O(\Phi_\gamma^2,\varepsilon_{\rm nonad},\sigma_\theta).
+\]
+Here \(\Phi_\gamma\) is computed independently from the CGT curvature, while \(\Delta R_\gamma\) is measured from end-state readouts that do not contain \(\Phi_\gamma\) by definition.
+
+### 36.1 Supported shape law
+
+External-substrate tests support the shape law on OEDI IEEE-123 and Chicago Traffic Tracker substrates. The sign of \(\kappa_1\) is stable under OEDI seed ensembles, but the seed-aware uncertainty is wider than a single-seed fit-residual interval. Reported confidence intervals for \(\kappa_1\) should therefore include seed or initialization variability whenever possible.
+
+### 36.2 Current coefficient decomposition is approximate
+
+The earlier scalar decomposition
+\[
+\kappa_1 \approx \eta\,\bar{s}\,G_\theta\,\kappa_{\rm loc}
+\]
+should be interpreted as a heuristic scaling ansatz, not a coefficient-complete prediction. Empirically, the product \(\bar{s}G_\theta\kappa_{\rm loc}\) is orders of magnitude below measured \(\kappa_1\), and the implied effective \(\eta\) varies across substrates. Thus the current decomposition predicts the leading shape \(R_\gamma\propto\Phi_\gamma\), but not the absolute coefficient.
+
+### 36.3 Coefficient-complete direction
+
+A coefficient-complete theory should derive \(\kappa_1\) from branch-local tangent or adjoint response. Let \(x_t=(p_t,\theta_t)\) and let \(U(T,t+1)\) be the tangent propagator from step \(t+1\) to the final time. If \(B_i(x_t,\lambda_t)\Delta\lambda_t^i\) is the infinitesimal phase-kick/control perturbation at step \(t\), then
+\[
+\delta x_T = \sum_t U(T,t+1)B_i(x_t,\lambda_t)\Delta\lambda_t^i,
+\]
+\[
+\delta R = \nabla R(x_T)\cdot \delta x_T.
+\]
+The coefficient \(\kappa_1\) should be the coefficient of \(\Phi_\gamma\) in this adjoint response. This formulation naturally includes graph size, edge normalization, path length, readout sensitivity, phase-field amplitude, and substrate-specific transport amplification.
 
 ## 37. Complexity classes for feasibility
 
@@ -788,17 +859,23 @@ Graph
 * Regime: non-adiabatic driving (large FS jumps) invalidates linear scaling; heavy disorder that closes gaps breaks topological plateaus.
 * Interpretive: using CGT to both define and detect “criticality” is circular; rely on independent criteria (Section 34.10).
 
-## 40. Benchmarks against simpler predictors
+## 40. Baselines and ablations
 
-Baselines
+The active loop-response layer must be compared against models that do not use oriented curvature. A metric-only model predicts no orientation-antisymmetric response:
+\[
+R_{\rm anti}=\frac{R_{\rm CCW}-R_{\rm CW}}{2}=0.
+\]
+External-substrate tests reject this null on OEDI and Chicago.
 
-* Metric-only predictor: use tr(g) and sqrt(det g) to flag critical tiles.
-* Spectral-gap predictor: use gap of P(lambda) or of the projective map to flag transitions.
-  Curvature-aware predictor
-* Use Phi_gamma to predict the sign and magnitude of pumped bias; combine with metric for ranked search (metric finds hotspots; curvature predicts directional effects).
-  Evaluation
-* Metrics: AUC for hotspot detection, R^2 and slope for R_gamma vs Phi_gamma, calibration error for kappa1, stability rate (% of tiles meeting CI tolerance without maxing refinement).
-* Ablations: compare default Xi vs dynamic/learned, and memory variants A/B/C.
+The passive transition-ridge layer should be compared against Q-only baselines such as non-degenerate spectral gap, mixing time, and second singular value of the transport kernel. Current results are substrate-dependent: OEDI shows \(\mathrm{tr}(g)\) beating the non-degenerate-gap baseline for the Kuramoto transition gradient, while Chicago is null for both CGT and gap-based predictors in the overlap-safe configuration.
+
+Ablation reports must distinguish:
+
+1. active orientation-null baselines,
+2. passive transition-ridge baselines,
+3. estimator sign/gauge checks,
+4. seed/init variability,
+5. geometry scrambles of the connection and curvature channels.
 
 ## 41. Geometric universality classes (GUC)
 
@@ -838,19 +915,23 @@ Design program
 3. Sensitivities: use gradients of readout with respect to memory terms and local currents, and use tr(g) as a control cost proxy.
 4. Guarantees: nonzero loop flux in a gapped sector implies a nonzero achievable bias at small loop areas; sign controlled by orientation.
 
-## 43. Noise resilience
+## 43. Noise and coherence robustness
 
-Noise models
+The leading active law is coherence-sensitive:
+\[
+\Delta R_\gamma = \kappa_1\Phi_\gamma + O(\Phi_\gamma^2,\varepsilon_{\rm nonad},\sigma_\theta).
+\]
+Small phase noise can preserve the orientation-sensitive response, but the usable coherence threshold is stricter than the earlier estimate.
 
-* Phase noise: additive phase jitter per step with given variance.
-* Amplitude noise: small random mass transfers between neighbors.
-* Delay jitter: random modulation of delays that feeds Theta clocking.
+Empirically, on the OEDI Gate A noise sweep, the response sign flipped when the final coherence measure was still about
+\[
+\bar{s}\approx 0.88,
+\]
+not near \(0.5\). The prior claim that sign reversal remains reliable until \(\bar{s}\sim0.5\) should therefore be removed. A conservative current statement is:
 
-Effects and rules of thumb
+> The active loop-response signature is robust only under mild phase noise in the tested OEDI regime. Quantitative linear scaling of \(\kappa_{\rm eff}\) with \(\bar{s}\) holds only near the low-noise limit; beyond that, \(\kappa_{\rm eff}\) can decay faster than \(\bar{s}\) and may change sign before coherence has collapsed.
 
-* Under the tested OEDI phase-noise model, sign flips occur around s_bar ~= 0.88. The leading-order kappa_eff proportional to s_bar rule holds only for very mild noise; high-noise runs are non-adiabatic and excluded from the leading-order active-loop claim.
-* Mixed-state (CPTP) geometry remains well defined and gives robust, if non-quantized, flux until dephasing erases loop memory.
-* The thermometer remains an early-warning signal under moderate noise; refine meshes only where it persists.
+Noise-robustness claims should report phase-noise scale, final coherence, maximum Fubini-Study step, adiabatic validity, and whether the readout used to measure response is independent of the coherence measure.
 
 ## 44. Linking CGT to emergent phenomena
 
@@ -899,3 +980,15 @@ Two representations that yield the same nodewise amplitudes and all phase differ
 * Validate QP-1 and the 3 node ring. Then scale to a small real dataset in one domain above.
 * Show advantage over metric-only and spectral-only baselines on hotspot prediction and directional bias calibration.
 * Publish full auditing tuple (N, T, f, r_max, s_min, CI rules) and preregistered hypotheses.
+
+## Current empirical status
+
+Current external and analytic tests support the following ranking.
+
+**Strongly supported:** Wilson/metric estimator correctness; QP-1 curvature magnitude and orientation reversal; active loop-response shape law \(\Delta R_\gamma\propto\Phi_\gamma\); phase-kick mechanism; metric-only orientation-null rejection.
+
+**Supported but regime-dependent:** passive \(\mathrm{tr}(g)\)-transition co-location; Q-only baseline superiority claims; phase-weighted readouts with higher-order scaling.
+
+**Weakened or open:** universal passive criticality detection; the old \(\bar{s}\sim0.5\) noise threshold; direct \(\Omega\)-bias actuation; absolute \(\kappa_1\) coefficient prediction from the scalar \(\eta\bar{s}G_\theta\kappa_{\rm loc}\) decomposition.
+
+The theory is therefore best described as a layered geometric-response framework with a strongly supported active shape law and a still-developing coefficient/robustness theory.
