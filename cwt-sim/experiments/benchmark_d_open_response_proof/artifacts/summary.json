@@ -1,0 +1,196 @@
+{
+  "all_gates_pass": true,
+  "case_dispositions": {
+    "C1": "CORE_DIAGONAL_EQUIVALENCE_PASS",
+    "C10": "PHASE10_BENCHMARK_C_TWO_STEP_SURROGATE_NOT_FIXED",
+    "C2": "EXACT_CONTRACTION_CERTIFIED",
+    "C3": "NONZERO_RESPONSE_CURVATURE_PASS",
+    "C4": "FIXED_LOOP_ASYMPTOTIC_PASS",
+    "C5": "SHRINKING_LOOP_LIMIT_PASS",
+    "C6": "IDENTITY_READOUT_ZERO_PASS",
+    "C7": "CONSTANT_BRANCH_ZERO_PASS",
+    "C8": "DEPOLARIZING_ZERO_REFUSES_CERTIFICATE",
+    "C9": "BENCHMARK_C_UNITAL_ZERO_PASS"
+  },
+  "central_empirical_external_claim_status": "PROOF_INCOMPLETE",
+  "claim_ceiling": "Internal synthetic authored five-state fixed-tick Benchmark D D0 channel/readout only; not the full scheduler, physical time, CGT alignment, empirical evidence, external validation, topology, or a universal response law.",
+  "contract": {
+    "benchmark_id": "benchmark_d",
+    "box": {
+      "bias_max": {
+        "float": 0.05,
+        "fraction": "1/20"
+      },
+      "bias_min": {
+        "float": 0.01,
+        "fraction": "1/100"
+      },
+      "diffusion_max": {
+        "float": 0.245,
+        "fraction": "49/200"
+      },
+      "diffusion_min": {
+        "float": 0.205,
+        "fraction": "41/200"
+      }
+    },
+    "branch_id": "D0",
+    "center_bias": {
+      "float": 0.03,
+      "fraction": "3/100"
+    },
+    "center_diffusion": {
+      "float": 0.225,
+      "fraction": "9/40"
+    },
+    "coherent_scale": {
+      "float": 0.0,
+      "fraction": "0/1"
+    },
+    "control_names": [
+      "b",
+      "d"
+    ],
+    "dephasing": {
+      "float": 0.3,
+      "fraction": "3/10"
+    },
+    "depolarizing": {
+      "float": 0.008,
+      "fraction": "1/125"
+    },
+    "disposition": "PASS_INTERNAL_ANALYTIC",
+    "dt": {
+      "float": 0.18,
+      "fraction": "9/50"
+    },
+    "edge_jump_scale": {
+      "float": 0.2,
+      "fraction": "1/5"
+    },
+    "endpoint_convention": "skip_duplicate_initial_and_process_closing_endpoint_once",
+    "evidence_status": "NO_EMPIRICAL_EVIDENCE",
+    "experiment_id": "benchmark_d_open_response_proof",
+    "node_count": 5,
+    "observable_name": "mean_position",
+    "reversal_convention": "cw_is_exact_reverse_of_stored_ccw_sequence",
+    "site_potential_scale": {
+      "float": 0.0,
+      "fraction": "0/1"
+    },
+    "update_convention": "right_endpoint_update_then_sample"
+  },
+  "disposition": "PASS_INTERNAL_ANALYTIC",
+  "evidence_status": "NO_EMPIRICAL_EVIDENCE",
+  "experiment_id": "benchmark_d_open_response_proof",
+  "failed_gates": [],
+  "gates": [
+    {
+      "name": "named_core_binding",
+      "requirement": "D0 analytic kernel and diagonal affine trace agree with core APIs",
+      "status": "pass"
+    },
+    {
+      "name": "named_core_readout_binding",
+      "requirement": "executed response path obtains core mean_position=diag(1,2,3,4,5)",
+      "status": "pass"
+    },
+    {
+      "name": "exact_kraus_and_margin_certificate",
+      "requirement": "clip/support/rescale/square-root margins are strictly positive and TP is exact",
+      "status": "pass"
+    },
+    {
+      "name": "global_contraction_certificate",
+      "requirement": "global trace/L1 factor is exactly 124/125",
+      "status": "pass"
+    },
+    {
+      "name": "true_full_rank_fixed_branch",
+      "requirement": "exact depolarizing floor gives full rank; sampled branch varies and residual is certified",
+      "status": "pass"
+    },
+    {
+      "name": "exact_fraction_oracle",
+      "requirement": "Fraction-valued differentiation reproduces the independent formal F_bd fraction",
+      "status": "pass"
+    },
+    {
+      "name": "nonzero_response_curvature",
+      "requirement": "analytic and independent numerical curls match the exact negative nonzero F_bd",
+      "status": "pass"
+    },
+    {
+      "name": "constant_projective_reference_zero",
+      "requirement": "separate channel-equivalent constant normalized state has exact Omega_bd=0",
+      "status": "pass"
+    },
+    {
+      "name": "fixed_loop_one_over_n",
+      "requirement": "Q_anti approaches the finite-loop line integral with O(1/N) endpoint error",
+      "status": "pass"
+    },
+    {
+      "name": "registered_loop_domain_containment",
+      "requirement": "every registered loop point is inside the certified closed D0 control box",
+      "status": "pass"
+    },
+    {
+      "name": "shrinking_loop_area_limit",
+      "requirement": "development-selected in-box regression: growing N*s drives Q_anti/s^2 toward F_bd",
+      "status": "pass"
+    },
+    {
+      "name": "fixed_solver_centering_budget",
+      "requirement": "conservative fixed-solver centering budget is negligible versus observed convergence error",
+      "status": "pass"
+    },
+    {
+      "name": "loop_update_reversal_endpoint_contract",
+      "requirement": "CW is stored-sequence reverse; initial duplicate skipped; close updated once",
+      "status": "pass"
+    },
+    {
+      "name": "identity_readout_null",
+      "requirement": "identity readout has zero orientation-odd response",
+      "status": "pass"
+    },
+    {
+      "name": "constant_branch_null",
+      "requirement": "constant fixed branch has zero orientation-odd response",
+      "status": "pass"
+    },
+    {
+      "name": "depolarizing_zero_refusal",
+      "requirement": "depolarizing=0 cannot receive the strict 124/125 contraction certificate",
+      "status": "pass"
+    },
+    {
+      "name": "benchmark_c_true_fixed_unital_null",
+      "requirement": "Benchmark C C0 has true fixed I/3 and zero centered primary response",
+      "status": "pass"
+    },
+    {
+      "name": "phase10_benchmark_c_two_step_surrogate_rejected",
+      "requirement": "tracked Phase10 Benchmark-C branch_steps=2 surrogate is demonstrably not fixed",
+      "status": "pass"
+    }
+  ],
+  "metrics": {
+    "analytic_response_curvature_float": -542.9438039967531,
+    "exact_global_fixed_eigenvalue_floor": 0.0016,
+    "exact_response_curvature_float": -542.9438039967665,
+    "exact_response_curvature_fraction": "-1389405980846240823998759336989273383099794763750000000000/2559023550169319630994375590863181495045970285707766901",
+    "fixed_loop_tail_log_slope": -1.0017501865517968,
+    "fixed_loop_tail_scaled_error_ratio": 1.0016149535334347,
+    "numerical_response_curvature_float": -542.9438060135184,
+    "phase10_two_step_surrogate_fixed_residual_fro": 0.04111010278213111,
+    "sampled_fixed_branch_minimum_eigenvalue": 0.15152911126294286,
+    "sampled_fixed_branch_variation_l2": 0.06593221747512887,
+    "shrinking_finest_relative_density_error": 0.05607102980371757,
+    "shrinking_max_centering_budget_ratio": 0.00011949968237213123
+  },
+  "no_study_pass": true,
+  "numerics_are_not_the_analytic_proof": true,
+  "schema_version": 1
+}
