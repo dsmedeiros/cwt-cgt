@@ -783,7 +783,7 @@ If an adiabatic/tangent-response reduction supplies $B^{(R)}$, the conditional S
 R_{\rm anti}(\gamma)=\oint_\gamma B^{(R)}+r_\gamma
 =\int_{S_\gamma}dB^{(R)}+r_\gamma.
 \]
-Deriving that reduction and a deterministic or stochastic rate for $r_\gamma$ is open for the general CWT update. Section 36.2 records one narrow exception: the explicit benchmark-C fixed-tick phase-relaxation/current fixture admits a local line-response derivation with an $O(1/m)$ discrete-cycle remainder. That fixture does not establish a general, physical-time, or external response law. For a specified shrinking-loop family with nonzero leading flux, the CGT law additionally requires non-degenerate coupling/readout, $r_\gamma=o(\Phi_\gamma)$, and $\int_{S_\gamma}(dB^{(R)}-\kappa_1\Omega)=o(\Phi_\gamma)$. Only then does $R_{\rm anti}=\kappa_1\Phi_\gamma+o(\Phi_\gamma)$, or $\Delta R_\gamma=2\kappa_1\Phi_\gamma+o(\Phi_\gamma)$. An evidentiary test must compute $\Phi_\gamma$ independently and measure a response whose definition contains no $\Phi$, $\Omega$, or loop orientation.
+Deriving that reduction and a deterministic or stochastic rate for $r_\gamma$ remains open for the unconstrained CWT update. Sections 36.2–36.3 now separate two analytic results: the explicit benchmark-C fixed-tick recurrence and a general finite-dimensional uniformly contractive class theorem. Neither establishes that the concrete CWT update satisfies the contraction/branch assumptions, nor a physical or external response law. For a specified shrinking-loop family with nonzero leading flux, the CGT law additionally requires non-degenerate coupling/readout, $r_\gamma=o(\Phi_\gamma)$, and $\int_{S_\gamma}(dB^{(R)}-\kappa_1\Omega)=o(\Phi_\gamma)$. Only then does $R_{\rm anti}=\kappa_1\Phi_\gamma+o(\Phi_\gamma)$, or $\Delta R_\gamma=2\kappa_1\Phi_\gamma+o(\Phi_\gamma)$. An evidentiary test must compute $\Phi_\gamma$ independently and measure a response whose definition contains no $\Phi$, $\Omega$, or loop orientation.
 
 ### 36.1 Evidence status
 
@@ -817,7 +817,40 @@ This quotient comparison has no independent CGT-predictive content. On a two-dim
 
 The estimand and thresholds were selected after an exploratory center-$(0,0)$ square refinement probe; all benchmark-C configurations are discovery/analytic fixtures. The run has no seeds or uncertainty interval and is neither preregistered nor an untouched holdout. Its response calculator receives no $\Phi$, $\Omega$, signed area, or orientation metadata, but the synthetic state/readout family remains authored. See `PROTOCOL_LOCK.md`, strict JSON records/provenance, and the generated report in that experiment. This closes a narrow analytic precursor only; the central empirical/external alignment claim remains proof incomplete.
 
-### 36.3 Current coefficient decomposition is approximate
+### 36.3 Uniform-contraction class theorem and exact alignment no-go
+
+The executable proof program at `cwt-sim/experiments/response_theorem_proof_program/` treats a finite-dimensional right-endpoint update-then-sample system
+\[
+x_n=F_c(x_{n-1},\lambda_n),\qquad Q_c=\sum_{n=1}^N r_c(x_n,\lambda_n).
+\]
+Assume a `C3` compact tube, a smooth fixed branch $\bar x_c$, centered readout, one fixed norm with $\|D_xF_c\|\le\rho<1$ uniformly, a closed piecewise-`C2` exact-reverse path, and equilibrium error $O(1/N)$. With
+\[
+M_c=D_xF_c,\quad H_c=D_xr_c,\quad X_{c,i}=\partial_i\bar x_c,
+\quad B_{c,i}=-H_c(I-M_c)^{-1}M_cX_{c,i},
+\]
+the contraction/summation argument gives
+\[
+Q_c=\oint_\gamma B_c+O(N^{-1}).
+\]
+Consequently the complete on/zero interaction obeys
+\[
+D=Q_{{\rm anti,on}}-Q_{{\rm anti},0}
+=\oint_\gamma(B_{\rm on}-B_0)+O(N^{-1})
+=\int_S d(B_{\rm on}-B_0)+O(N^{-1}),
+\]
+and the ordinary difference-in-differences is $2D$. No $B_0=0$ assumption is made. For a loop of scale $s$, the generic equilibrium-reset bound is $C_1s/N+C_2s^2/N$, so area-relative convergence requires $Ns\to\infty$. The stronger $C'_1s^2/N+C'_2s/N^2$ bound requires a unique driven periodic orbit or matched corrector, endpoint-consistent full-period sampling, a periodic/endpoint-flat `C3` loop and branch, and a proved summation-by-parts cancellation. It cannot be inferred from smoothness alone.
+
+The continuous-time corollary separately requires both (i) uniform frozen-branch hyperbolicity/invertibility, $\sup_{c,\lambda}\|J_c(\lambda)^{-1}\|\le K_J<\infty$, and (ii) a uniform bound $\|U_c(t,u)\|\le M e^{-(t-u)/\tau}$ on the propagator of the branch-linearized equation along every declared slow-$T$ loop family, all in one common norm. Pointwise Hurwitz matrices are insufficient, and the driven-propagator bound alone does not imply the frozen inverse bound: $f(x,\lambda)=(-1+\lambda)(x-\lambda)$ along $\lambda(t)=\sin t$ has $|U(t,u)|\le e^2e^{-(t-u)}$ while $J=0$ at $t=\pi/2$. Here $Q_c=\int_0^T r_c(x(t),\lambda(t))\,dt$; the generic result uses equilibrium initialization, while the stronger result uses a unique driven-periodic orbit or proved matched corrector, exact reversal $\lambda_-(t)=\lambda_+(T-t)$, and one endpoint/quadrature convention. Its generic remainder is $O(s\tau/T)$ and its separately justified periodic improvement is $O(s^2\tau/T+s(\tau/T)^2)$. This is not a derived continuum limit of CWT.
+
+The same program proves an exact realizability/no-go result. For any smooth one-form $\beta$ and $0<\rho<1$,
+\[
+x_n=\rho x_{n-1}+(1-\rho)\lambda_n,
+\qquad
+r=-\frac{1-\rho}{\rho}\,\beta(\lambda)\cdot(x-\lambda)
+\]
+realizes $B=\beta$ exactly. A normalized projective state map, and hence its $\Omega$, can be chosen independently in an augmented contracting state. Therefore contraction, smoothness, a gap, and a branch imply neither $\Omega\ne0\Rightarrow F_R\ne0$ nor $F_R\ne0\Rightarrow\Omega\ne0$, and cannot imply $F_R^D=\kappa\Omega$. Alignment additionally requires zero-set compatibility, collinearity, and $d\kappa\wedge\Omega=0$; a pointwise quotient remains tautological in two dimensions. The computed C1–C8/P1 matrix includes non-implications, sign-changing/readout-dependent coefficients, finite-speed effects, covariance checks, a scoped non-normal warning, and a three-dimensional deliberately aligned oracle/positive implementation control. P1 is not an independently measured response. Its disposition is `PASS_INTERNAL_ANALYTIC` / `NO_EMPIRICAL_EVIDENCE`; numerical fixtures test the implementation rather than prove the theorem or support an external response law. Benchmark C in Section 36.2 is a narrow linear-contracting corollary under its locked assumptions.
+
+### 36.4 Current coefficient decomposition is approximate
 
 The earlier scalar decomposition
 \[
@@ -825,7 +858,7 @@ The earlier scalar decomposition
 \]
 is a heuristic scaling ansatz, not a coefficient-complete prediction. Moreover, every positive scalar multiplier applied uniformly inside the current column-normalized transport construction cancels under normalization; `kappa=0` instead triggers the degenerate identity/self-loop fallback. Neither case implements directional anisotropy. The ansatz therefore neither predicts the leading shape nor the absolute coefficient without a concrete non-cancelling mechanism.
 
-### 36.4 Coefficient-complete direction
+### 36.5 Coefficient-complete direction
 
 A coefficient-complete theory should derive \(\kappa_1\) from branch-local tangent or adjoint response. Let \(x_t=(p_t,\theta_t)\) and let \(U(T,t+1)\) be the tangent propagator from step \(t+1\) to the final time. If \(B_i(x_t,\lambda_t)\Delta\lambda_t^i\) is the infinitesimal phase-kick/control perturbation at step \(t\), then
 \[
@@ -985,12 +1018,12 @@ Two representations that yield the same projective state produce identical CGT a
 
 Current tracked evidence supports the following ranking.
 
-**Analytic/executable support:** CGT metric/Wilson estimator identities and sign convention; QP-1 $S^2$ Chern/flux magnitude, sign, quotient-boundary behavior, and open varying gap; a separate synthetic Qi–Wu–Zhang periodic-torus check; the benchmark-C `current_phase_gain=0` nondegeneracy counterexample; and the locked benchmark-C fixed-tick theorem $Q=\oint B^{(R)}+O(1/m)$ with a response calculated independently of its geometric predictors. The last item is a selected internal discovery/analytic fixture, not independent empirical validation, a physical-time result, or external evidence. Its $F_R/\Omega$ comparison is only a tautological 2D quotient/implementation-consistency check, not CGT-predictive support.
+**Analytic/executable support:** CGT metric/Wilson estimator identities and sign convention; QP-1 $S^2$ Chern/flux magnitude, sign, quotient-boundary behavior, and open varying gap; a separate synthetic Qi–Wu–Zhang periodic-torus check; the benchmark-C `current_phase_gain=0` nondegeneracy counterexample; the locked benchmark-C fixed-tick theorem $Q=\oint B^{(R)}+O(1/m)$; and the finite-dimensional uniform-contraction theorem $Q_c=\oint B_c+O(1/N)$ with its exact arbitrary-one-form realizability/no-go result. The contraction theorem supplies a response one-form for its declared class but also proves that smooth contraction alone cannot align response curvature with independently chosen projective $\Omega$. It has authored counterexamples and a three-dimensional deliberately aligned oracle/positive implementation control only: `PASS_INTERNAL_ANALYTIC` / `NO_EMPIRICAL_EVIDENCE`. The benchmark-C item remains a selected internal discovery/analytic corollary, not independent empirical validation, a physical-time result, or external evidence; its $F_R/\Omega$ comparison is only a tautological 2D quotient/implementation-consistency check.
 
 **Internal exploratory support only:** synthetic Gate A construction consistency, synthetic Gate B same-grid co-location behavior, and synthetic Gate C loop/noise robustness. Gate A and Gate C inject flux into memory/readout. Gate B uses post-hoc percentile labels and non-spatial cell bootstrap. Gate C's threshold boolean is not a Chern/topology result. Late summary-JSON "holdouts" are adaptive/pre-baked rather than independently reproducible.
 
 **Provenance-locked OEDI reconstruction and failed auxiliary passive diagnostic, no positive theory evidence:** OEDI's archived vector is reproducible from a pinned official test-system source consistent with it, but original historical provenance is unproven and the corrected analysis refutes the old structural/sign-boundary interpretation. The separately frozen 61-profile same-package confirmation then failed: $T=0.013066368743938832<0.10$, $p=0.39696$ with 99% Clopper-Pearson Monte Carlo interval for the permutation-tail probability $[0.39296862162223856,0.4009491374352013]$, and leave-one/lateral sign stability failed despite 77/77 admitted files passing QC. This fails to reject the conditional bus-bundle random-label null and supplies no support for the prespecified auxiliary locality diagnostic; it does not prove exact absence or validate/falsify CGT/CWT. Chicago remains endpoint/schema metadata only.
 
-**Open:** general or externally validated independent CGT-flux/readout alignment, any universal or externally nonzero \(\kappa_1\), external passive ridge prediction, general orientation-null rejection, noise threshold/robustness, direct \(\Omega\)-bias actuation, coefficient-complete response theory beyond the explicit benchmark recurrence, continuous-time/action derivation with units, and full-stack locality.
+**Open:** proving that a concrete non-toy CWT update satisfies the uniform contraction/smooth-branch hypotheses; any independently predictive or externally validated CGT-flux/readout alignment; any universal or externally nonzero \(\kappa_1\); external passive ridge prediction; general orientation-null rejection; noise threshold/robustness; direct \(\Omega\)-bias actuation; a derived continuous-time CWT limit/action with units; and full-stack locality.
 
 See `cwt-sim/cgt_benchmarks/reports/CWT-CGT_Proof_Status_v1.md` for the claim/evidence/proof-obligation matrix.

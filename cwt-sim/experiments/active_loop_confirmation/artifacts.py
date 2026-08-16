@@ -127,6 +127,16 @@ def _report_text(report: ValidationReport) -> str:
         "physical-time response integral; a complete on/zero by positive/negative quartet;",
         "whole-cluster splitting; tangent/remainder validation; a calibration-only, full-rank",
         "three-dimensional prediction; conjunctive inference; controls; and recovery rules.",
+        "The tangent lock distinguishes the generic equilibrium-reset rate from the stronger",
+        "periodic/endpoint-flat C3 rate through matched initialization/regularity enums, exact",
+        "discrete and continuous scaling limits, and a theory/calibration-only hashed derivation",
+        "certificate that forbids confirmation or outcome-response provenance. All nine tangent,",
+        "norm, domain, and validation definitions are closed hash-bound references with no inline",
+        "proof text. Current validation checks only closed record shape, exact declared ID/path,",
+        "hash syntax, and self-declared flags; it does not resolve files or authenticate content.",
+        "Reference-byte containment, existence, regular-file, raw-hash, and immutable-closure",
+        "checks remain an explicit fail-closed future gate before implementation or response unlock.",
+        "Independent semantic review of resolved records is also required.",
         "",
         "It freezes no source-specific numerical threshold. Those fields remain explicitly null",
         "and cannot be filled without a named qualified substrate and a new reviewed lock.",
@@ -186,6 +196,18 @@ def _provenance_payload(report: ValidationReport) -> dict[str, Any]:
             "no raw-data or outcome path"
         ),
         "source_specific_values_frozen": False,
+        "definition_reference_validation_scope": (
+            "closed record shape, exact declared ID/path, SHA-256 syntax, and self-declarations only; "
+            "no file resolution or content authentication"
+        ),
+        "reference_content_authentication_gate": {
+            "status": "UNIMPLEMENTED_REQUIRED_BEFORE_IMPLEMENTATION_OR_RESPONSE_UNLOCK",
+            "reference_root_frozen": False,
+            "containment_existence_regular_file_verified": False,
+            "raw_sha256_matched": False,
+            "included_in_immutable_closure": False,
+            "implementation_or_response_unlock_allowed": False,
+        },
         "source_specific_nulls": [
             "source identity and qualification",
             "coordinate realization and physical clock",

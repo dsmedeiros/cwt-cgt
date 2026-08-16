@@ -1,0 +1,441 @@
+{
+  "case_dispositions": {
+    "C1": "COUNTEREXAMPLE",
+    "C2": "COUNTEREXAMPLE",
+    "C3": "COUNTEREXAMPLE",
+    "C4": "COUNTEREXAMPLE",
+    "C5": "INELIGIBLE_TAUTOLOGY",
+    "C6": "COUNTEREXAMPLE",
+    "C7": "PASS_LOCAL_INTERNAL",
+    "C8": "OUT_OF_SCOPE",
+    "P1": "PASS_LOCAL_INTERNAL"
+  },
+  "central_empirical_external_claim_status": "PROOF_INCOMPLETE",
+  "claim_scope": "finite-dimensional uniformly contractive analytic class and authored fixtures",
+  "config": {
+    "center": [
+      0.3,
+      -0.2
+    ],
+    "continuous_periods": [
+      8.0,
+      16.0,
+      32.0,
+      64.0,
+      128.0
+    ],
+    "continuous_samples": 32768,
+    "continuous_tau": 0.5,
+    "coupled_ns_constant": 64.0,
+    "fixed_scale": 0.2,
+    "fixed_steps": [
+      64,
+      128,
+      256,
+      512,
+      1024,
+      2048
+    ],
+    "rho": 0.65,
+    "scaled_fixed_steps": 512,
+    "scaled_sides": [
+      0.32,
+      0.16,
+      0.08,
+      0.04,
+      0.02
+    ]
+  },
+  "disposition": "PASS_INTERNAL_ANALYTIC",
+  "evidence_status": "NO_EMPIRICAL_EVIDENCE",
+  "experiment_id": "response_theorem_proof_program",
+  "failed_gates": [],
+  "gates": [
+    {
+      "name": "generic_fixed_loop_inverse_N",
+      "observed": -1.0640429452594162,
+      "requirement": "equilibrium-reset fixed-loop remainder log slope lies in [-1.2,-0.8]",
+      "status": "pass"
+    },
+    {
+      "name": "periodic_fixed_loop_improvement",
+      "observed": -1.9984858190477712,
+      "requirement": "unique-periodic fixed-loop remainder exhibits the fixture's O(N^-2) cancellation",
+      "status": "pass"
+    },
+    {
+      "name": "scaled_generic_bound",
+      "observed": 3.0466087113952454,
+      "requirement": "error/(s/N+s^2/N) <= 4 on the frozen ladder",
+      "status": "pass"
+    },
+    {
+      "name": "scaled_periodic_bound",
+      "observed": 1.2764711400566742,
+      "requirement": "error/(s^2/N+s/N^2) <= 2 on the frozen ladder",
+      "status": "pass"
+    },
+    {
+      "name": "area_relative_regime_separation",
+      "observed": {
+        "Ns": 64.0,
+        "generic_tail_ratio": 0.9355682164817847,
+        "periodic_log_slope": 1.9982955393027453
+      },
+      "requirement": "at fixed Ns the generic error stalls while the periodic relative error decays",
+      "status": "pass"
+    },
+    {
+      "name": "interaction_with_nonzero_B0_and_factor_two",
+      "observed": {
+        "did_factor": 2.0,
+        "qanti_zero": 0.06282861664052958,
+        "relative_error": 4.9940751111909885e-05
+      },
+      "requirement": "D approaches integral(B_on-B_0), B_0 is nonzero, and ordinary DID=2D",
+      "status": "pass"
+    },
+    {
+      "name": "exact_realizability_no_go",
+      "observed": 1.1102230246251565e-16,
+      "requirement": "-H(I-M)^-1 M X reproduces an arbitrary declared beta to machine precision",
+      "status": "pass"
+    },
+    {
+      "name": "non_implication_counterexamples",
+      "observed": {
+        "C1": {
+          "case_id": "C1",
+          "description": "nonzero projective curvature with curl-free response",
+          "disposition": "COUNTEREXAMPLE",
+          "implication_refuted": "Omega_nonzero_implies_response",
+          "omega_uv": 0.4456036800221352,
+          "response_curvature_uv": 5.551115123125783e-12
+        },
+        "C2": {
+          "case_id": "C2",
+          "description": "zero projective curvature with nonzero response curvature",
+          "disposition": "COUNTEREXAMPLE",
+          "implication_refuted": "response_implies_Omega",
+          "omega_uv": 0.0,
+          "response_curvature_uv": 1.0000000000037756
+        }
+      },
+      "requirement": "Omega!=0 does not imply response curvature, and response curvature does not imply Omega",
+      "status": "pass"
+    },
+    {
+      "name": "frozen_case_dispositions",
+      "observed": {
+        "C1": "COUNTEREXAMPLE",
+        "C2": "COUNTEREXAMPLE",
+        "C3": "COUNTEREXAMPLE",
+        "C4": "COUNTEREXAMPLE",
+        "C5": "INELIGIBLE_TAUTOLOGY",
+        "C6": "COUNTEREXAMPLE",
+        "C7": "PASS_LOCAL_INTERNAL",
+        "C8": "OUT_OF_SCOPE",
+        "P1": "PASS_LOCAL_INTERNAL"
+      },
+      "requirement": "complete C1-C8/P1 disposition mapping equals {'C1': 'COUNTEREXAMPLE', 'C2': 'COUNTEREXAMPLE', 'C3': 'COUNTEREXAMPLE', 'C4': 'COUNTEREXAMPLE', 'C5': 'INELIGIBLE_TAUTOLOGY', 'C6': 'COUNTEREXAMPLE', 'C7': 'PASS_LOCAL_INTERNAL', 'C8': 'OUT_OF_SCOPE', 'P1': 'PASS_LOCAL_INTERNAL'}",
+      "status": "pass"
+    },
+    {
+      "name": "computed_counterexample_constructions",
+      "observed": {
+        "C3": {
+          "case_id": "C3",
+          "description": "an aligned coefficient can change sign",
+          "disposition": "COUNTEREXAMPLE",
+          "kappa_index": "fixture/coupling/readout",
+          "kappa_values": [
+            -1.0000000004135778,
+            0.0,
+            1.0000000004172092
+          ],
+          "max_alignment_error": 0.0,
+          "normalized_state_map": "psi=(sqrt(1-q),exp(i*phi)*sqrt(q)); q=0.5+0.2*x; phi=5*y",
+          "omega_xy": [
+            0.9999999995874223,
+            0.9999999995717106,
+            0.999999999583791
+          ],
+          "response_curvature_xy": [
+            -1.000000000001,
+            0.0,
+            1.000000000001
+          ],
+          "sample_coordinates": [
+            -1.0,
+            0.0,
+            1.0
+          ]
+        },
+        "C4": {
+          "case_id": "C4",
+          "description": "one state curvature permits multiple authored readout coefficients",
+          "disposition": "COUNTEREXAMPLE",
+          "kappa_index": "fixture/coupling/readout",
+          "max_coefficient_identity_errors": [
+            8.047398303290265e-10,
+            0.0,
+            1.2126606385720606e-09
+          ],
+          "normalized_state_map": "same CP1 q=0.5+0.2*x, phi=5*y state used for every readout",
+          "projective_vs_analytic_connection_error": 4.0236991516451326e-10,
+          "readout_coefficients": [
+            -2.0,
+            0.0,
+            3.0
+          ],
+          "response_tensors": [
+            [
+              [
+                0.0,
+                -2.000000000002,
+                0.0
+              ],
+              [
+                2.000000000002,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0
+              ]
+            ],
+            [
+              [
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0
+              ]
+            ],
+            [
+              [
+                0.0,
+                3.000000000008551,
+                0.0
+              ],
+              [
+                -3.000000000008551,
+                0.0,
+                0.0
+              ],
+              [
+                0.0,
+                0.0,
+                0.0
+              ]
+            ]
+          ],
+          "same_omega_tensor": [
+            [
+              0.0,
+              0.9999999995986302,
+              0.0
+            ],
+            [
+              -0.9999999995986302,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ]
+        },
+        "C5": {
+          "case_id": "C5",
+          "description": "pointwise division of nonzero two-forms in two dimensions",
+          "disposition": "INELIGIBLE_TAUTOLOGY",
+          "first_two_form": [
+            [
+              0.0,
+              1.250000000001944
+            ],
+            [
+              -1.250000000001944,
+              0.0
+            ]
+          ],
+          "pointwise_quotient": -0.6000000000002219,
+          "quotient_identity_error": 0.0,
+          "reason": "the two-form space is one-dimensional",
+          "second_two_form": [
+            [
+              0.0,
+              -0.7500000000014438
+            ],
+            [
+              0.7500000000014438,
+              0.0
+            ]
+          ]
+        },
+        "C6": {
+          "analytic_circle_line_integral": 0.12566370614359174,
+          "case_id": "C6",
+          "coarse_odd_remainder": 0.06544694438700395,
+          "coarse_orientation_even": -0.007365443754154256,
+          "coarse_orientation_odd": 0.0570117539698248,
+          "coarse_sampled_path_line_integral": 0.12245869835682875,
+          "coarse_to_fine_even_reduction": 559.075214845697,
+          "coarse_to_fine_odd_remainder_reduction": 52.86505813715362,
+          "description": "finite-speed lag contains a dynamic remainder",
+          "disposition": "COUNTEREXAMPLE",
+          "fine_odd_remainder": 0.0012380000456484463,
+          "fine_orientation_even": -1.3174334255162956e-05,
+          "fine_orientation_odd": 0.12442255200012356,
+          "fine_sampled_path_line_integral": 0.125660552045772,
+          "independent_constant_state_omega_uv": 0.0
+        }
+      },
+      "requirement": "C3-C6 are computed forms/dynamics, not declarative dispositions",
+      "status": "pass"
+    },
+    {
+      "name": "gauge_and_coordinate_covariance",
+      "observed": {
+        "case_id": "C7",
+        "coordinate_geometry_max_error": 5.345901499254069e-11,
+        "coordinate_response_max_error": 5.0598192302686584e-11,
+        "description": "gauge invariance and coordinate covariance",
+        "disposition": "PASS_LOCAL_INTERNAL",
+        "gauge_curvature_max_error": 3.4946723292961224e-10
+      },
+      "requirement": "gauge and coordinate covariance errors <= 1e-7",
+      "status": "pass"
+    },
+    {
+      "name": "three_dimensional_aligned_oracle_control",
+      "observed": {
+        "area_rank": 3,
+        "case_id": "P1",
+        "control_role": "deliberately_aligned_oracle_positive_implementation_control",
+        "disposition": "PASS_LOCAL_INTERNAL",
+        "frozen_kappa": 2.0,
+        "heldout_absolute_error": 5.864837504532261e-10,
+        "heldout_cosine_max": 0.5773502691896258,
+        "heldout_prediction": -1.0957930502271347,
+        "heldout_response": -1.0957930508136184,
+        "max_tensor_error": 5.198299568576203e-10,
+        "normalized_area_condition": 2.9999999999999996
+      },
+      "requirement": "deliberately aligned oracle/positive implementation control has F_R=2*Omega on full-rank and held-out directions",
+      "status": "pass"
+    },
+    {
+      "name": "nonnormal_scope_boundary",
+      "observed": {
+        "biorthogonal_curvature": [
+          -2.0,
+          2.0
+        ],
+        "case_id": "C8",
+        "construction_id": "proof_program_similarity_family_v1",
+        "disposition": "OUT_OF_SCOPE",
+        "fixed_eigenvalues": [
+          0.0,
+          1.0,
+          2.0
+        ],
+        "left_right_overlap": [
+          1.0,
+          3.3306690738754695e-18
+        ],
+        "minimum_gap": 1.0,
+        "nonnormal_commutator_norm": 1.833438846530749,
+        "right_only_curvature": 0.0,
+        "same_as_adversarial_projector_example": false
+      },
+      "requirement": "fixed-gap non-normal case is explicitly out of the right-state theorem scope",
+      "status": "pass"
+    },
+    {
+      "name": "continuous_stable_ode_rates",
+      "observed": {
+        "equilibrium_slope": -1.1570752934307682,
+        "periodic_slope": -1.982851487428724
+      },
+      "requirement": "stable-ODE fixture exhibits generic O(tau/T) and stronger periodic cancellation",
+      "status": "pass"
+    },
+    {
+      "name": "continuous_inverse_assumption_is_independent",
+      "observed": {
+        "branch_linearized_propagator": "U(t,u)=exp(-(t-u)+cos(u)-cos(t))",
+        "construction": "f(x,lambda)=(-1+lambda)(x-lambda); lambda(t)=sin(t)",
+        "decay_prefactor_bound": 7.38905609893065,
+        "decay_time_constant": 1.0,
+        "frozen_jacobian_at_pi_over_two": 0.0,
+        "reason": "driven propagator decay alone does not justify J(lambda)^-1",
+        "sampled_max_prefactor_ratio": 7.38905609893065,
+        "uniform_frozen_inverse_exists": false
+      },
+      "requirement": "driven propagator decay does not imply the separately required bounded frozen inverse",
+      "status": "pass"
+    },
+    {
+      "name": "continuous_discrete_alpha_mapping",
+      "observed": {
+        "alpha": 0.048770575499285984,
+        "rho_error": 0.0
+      },
+      "requirement": "alpha(dt)=1-exp(-dt/tau) exactly matches the held-input relaxation map",
+      "status": "pass"
+    },
+    {
+      "name": "alignment_characterization_and_bound",
+      "observed": {
+        "center_kappa_lipschitz": 0.5,
+        "closedness_condition": "d(kappa) wedge Omega = 0",
+        "conditional_bound_example": 0.014000000000000002,
+        "conditional_bound_expected": 0.014,
+        "kappa_index": "experiment/coupling/readout",
+        "omega_comass_sup": 0.4,
+        "pointwise_collinearity_required": true,
+        "surface_diameter": 0.1,
+        "surface_mass_convention": "two_dimensional_Hausdorff_area",
+        "three_dimensional_test": "full-rank areas plus held-out oblique direction",
+        "two_dimensional_test": "INELIGIBLE_TAUTOLOGY",
+        "two_form_norm_convention": "comass_in_the_declared_parameter_norm",
+        "varying_kappa_obstruction_volume_coefficient": 1.0,
+        "zero_set_compatibility_required": true
+      },
+      "requirement": "zero-set/collinearity/closure conditions and the comass center-kappa approximation bound are explicit",
+      "status": "pass"
+    }
+  ],
+  "metrics": {
+    "continuous_decay_counterexample_prefactor": 7.38905609893065,
+    "continuous_generic_slope": -1.1570752934307682,
+    "continuous_periodic_slope": -1.982851487428724,
+    "generic_fixed_Ns_tail_ratio": 0.9355682164817847,
+    "generic_fixed_loop_slope": -1.0640429452594162,
+    "interaction_relative_error": 4.9940751111909885e-05,
+    "max_generic_scaled_bound_ratio": 3.0466087113952454,
+    "max_periodic_scaled_bound_ratio": 1.2764711400566742,
+    "no_go_identity_error": 1.1102230246251565e-16,
+    "periodic_area_relative_slope_at_fixed_Ns": 1.9982955393027453,
+    "periodic_fixed_loop_slope": -1.9984858190477712
+  },
+  "no_observational_or_experimental_data": true,
+  "no_study_pass": true,
+  "numerics_prove_theorem": false,
+  "schema_version": 1
+}

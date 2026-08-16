@@ -131,7 +131,8 @@
     "quadrature_rule": null,
     "scale_ladder": null,
     "timestamp_units": null,
-    "washout_or_periodic_initialization": null,
+    "initialization_mode": null,
+    "path_regularity_mode": null,
     "waveform_family": null
   },
   "prediction_model": {
@@ -268,6 +269,7 @@
     }
   },
   "tangent_remainder_validation": {
+    "asymptotic_regime": null,
     "compare_interaction_not_on_only": true,
     "concatenation_test": null,
     "cyclic_start_test": null,
@@ -278,6 +280,18 @@
     "line_integral_comparison": null,
     "matched_area_shape_test": null,
     "minimum_fit_levels_per_ladder": 4,
+    "reference_content_authentication": {
+      "containment_verified": false,
+      "existence_verified": false,
+      "gate_status": "UNIMPLEMENTED_REQUIRED_BEFORE_IMPLEMENTATION_OR_RESPONSE_UNLOCK",
+      "implementation_or_response_unlock_allowed": false,
+      "included_in_immutable_closure": false,
+      "raw_sha256_matched": false,
+      "reference_content_authenticated": false,
+      "reference_root": null,
+      "regular_file_verified": false,
+      "resolver_implemented": false
+    },
     "reversal_test": null,
     "smooth_reparameterization_test": null,
     "uniform_remainder_bound": null

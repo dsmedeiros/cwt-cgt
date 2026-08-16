@@ -28,6 +28,56 @@ POWER_GATES = [
     "controls",
 ]
 
+GENERIC_ASYMPTOTIC_REGIME = "equilibrium_reset_generic"
+IMPROVED_ASYMPTOTIC_REGIME = "periodic_or_endpoint_flat_improved"
+GENERIC_DISCRETE_BOUND = "|r_discrete| <= C_N1*s/N + C_N2*s^2/N"
+IMPROVED_DISCRETE_BOUND = "|r_discrete| <= C_N1*s^2/N + C_N2*s/N^2"
+GENERIC_CONTINUOUS_BOUND = "|r_continuous| <= C_T1*s*tau/T"
+IMPROVED_CONTINUOUS_BOUND = "|r_continuous| <= C_T1*s^2*tau/T + C_T2*s*(tau/T)^2"
+GENERIC_TOTAL_BOUND = "|r| <= C_N1*s/N + C_N2*s^2/N + C_T1*s*tau/T " "+ C_dt*s*(dt/tau)^p + C_phi*s^3"
+IMPROVED_TOTAL_BOUND = (
+    "|r| <= C_N1*s^2/N + C_N2*s/N^2 + C_T1*s^2*tau/T " "+ C_T2*s*(tau/T)^2 + C_dt*s^2*(dt/tau)^p + C_phi*s^3"
+)
+GENERIC_DISCRETE_AREA_RELATIVE_LIMIT = "N*s->infinity"
+IMPROVED_DISCRETE_AREA_RELATIVE_LIMIT = "N->infinity_and_N^2*s->infinity"
+GENERIC_CONTINUOUS_AREA_RELATIVE_LIMIT = "s*T/tau->infinity"
+IMPROVED_CONTINUOUS_AREA_RELATIVE_LIMIT = "T/tau->infinity_and_s*(T/tau)^2->infinity"
+EQUILIBRIUM_INITIALIZATION = "equilibrium_reset_at_initial_control"
+PERIODIC_INITIALIZATION = "unique_driven_periodic_orbit"
+MATCHED_CORRECTOR_INITIALIZATION = "matched_c3_corrector"
+GENERIC_REGULARITY = "piecewise_c2_closed_exact_reverse"
+PERIODIC_C3_REGULARITY = "periodic_c3_endpoint_consistent_full_period"
+ENDPOINT_FLAT_C3_REGULARITY = "endpoint_flat_c3_matched_corrector"
+CERTIFICATE_PROVENANCE = "theory_or_calibration_only_preconfirmation_v1"
+DEFINITION_PROVENANCE = "hash_bound_preconfirmation_definition_v1"
+DEFINITION_STAGES = ["theory_only", "calibration_only"]
+TANGENT_DEFINITION_IDS = {
+    "derivation_or_memory_kernel_limit": "tangent_reduction_definition_v1",
+    "reversal_test": "reversal_validation_definition_v1",
+    "cyclic_start_test": "cyclic_start_validation_definition_v1",
+    "smooth_reparameterization_test": "reparameterization_validation_definition_v1",
+    "concatenation_test": "concatenation_validation_definition_v1",
+    "matched_area_shape_test": "shape_validation_definition_v1",
+    "line_integral_comparison": "line_integral_validation_definition_v1",
+    "fixed_norm_definition": "fixed_norm_definition_v1",
+    "selected_domain_definition": "remainder_domain_definition_v1",
+}
+TANGENT_DEFINITION_PATHS = {
+    "derivation_or_memory_kernel_limit": "definitions/reference_01.json",
+    "reversal_test": "definitions/reference_02.json",
+    "cyclic_start_test": "definitions/reference_03.json",
+    "smooth_reparameterization_test": "definitions/reference_04.json",
+    "concatenation_test": "definitions/reference_05.json",
+    "matched_area_shape_test": "definitions/reference_06.json",
+    "line_integral_comparison": "definitions/reference_07.json",
+    "fixed_norm_definition": "definitions/reference_08.json",
+    "selected_domain_definition": "definitions/reference_09.json",
+}
+REFERENCE_AUTHENTICATION_GATE_STATUS = "UNIMPLEMENTED_REQUIRED_BEFORE_IMPLEMENTATION_OR_RESPONSE_UNLOCK"
+
+assert TANGENT_DEFINITION_IDS.keys() == TANGENT_DEFINITION_PATHS.keys()
+assert len(set(TANGENT_DEFINITION_PATHS.values())) == len(TANGENT_DEFINITION_PATHS)
+
 
 def _object(properties: dict[str, Any], *, additional: bool | dict[str, Any] = False) -> dict[str, Any]:
     return {
@@ -77,6 +127,22 @@ def _power_gate_schema() -> dict[str, Any]:
             "method": {"type": "string", "minLength": 1},
             "assumptions": {"type": "string", "minLength": 1},
             "seed": {"type": "integer", "minimum": 0},
+        }
+    )
+
+
+def _definition_record_schema(definition_id: str, artifact_path: str) -> dict[str, Any]:
+    """Return a closed hash-bound reference record with no inline proof text."""
+
+    return _object(
+        {
+            "definition_id": {"const": definition_id},
+            "artifact_path": {"const": artifact_path},
+            "sha256": {"type": "string", "pattern": SHA256_PATTERN},
+            "stage": {"enum": DEFINITION_STAGES},
+            "provenance": {"const": DEFINITION_PROVENANCE},
+            "locked_before_confirmation": {"const": True},
+            "uses_any_confirmation_or_outcome": {"const": False},
         }
     )
 
@@ -137,18 +203,83 @@ def protocol_schema() -> dict[str, Any]:
             "content_sha256": nullable_hash_array,
         }
     )
+    asymptotic_regime = _object(
+        {
+            "selected_regime": {"enum": [GENERIC_ASYMPTOTIC_REGIME, IMPROVED_ASYMPTOTIC_REGIME]},
+            "fixed_norm_definition": _definition_record_schema(
+                TANGENT_DEFINITION_IDS["fixed_norm_definition"],
+                TANGENT_DEFINITION_PATHS["fixed_norm_definition"],
+            ),
+            "uniform_contraction_rho_upper": {
+                "type": "number",
+                "exclusiveMinimum": 0.0,
+                "exclusiveMaximum": 1.0,
+            },
+            "initialization_mode": {
+                "enum": [
+                    EQUILIBRIUM_INITIALIZATION,
+                    PERIODIC_INITIALIZATION,
+                    MATCHED_CORRECTOR_INITIALIZATION,
+                ]
+            },
+            "regularity_mode": {
+                "enum": [
+                    GENERIC_REGULARITY,
+                    PERIODIC_C3_REGULARITY,
+                    ENDPOINT_FLAT_C3_REGULARITY,
+                ]
+            },
+            "discrete_remainder_bound": {"enum": [GENERIC_DISCRETE_BOUND, IMPROVED_DISCRETE_BOUND]},
+            "continuous_remainder_bound": {"enum": [GENERIC_CONTINUOUS_BOUND, IMPROVED_CONTINUOUS_BOUND]},
+            "discrete_area_relative_limit": {
+                "enum": [
+                    GENERIC_DISCRETE_AREA_RELATIVE_LIMIT,
+                    IMPROVED_DISCRETE_AREA_RELATIVE_LIMIT,
+                ]
+            },
+            "continuous_area_relative_limit": {
+                "enum": [
+                    GENERIC_CONTINUOUS_AREA_RELATIVE_LIMIT,
+                    IMPROVED_CONTINUOUS_AREA_RELATIVE_LIMIT,
+                ]
+            },
+            "generic_boundary_term_retained": {"type": "boolean"},
+            "derivation_certificate": _object(
+                {
+                    "kind": {
+                        "enum": [
+                            "generic_contraction_bound_v1",
+                            "periodic_summation_by_parts_v1",
+                            "endpoint_flat_matched_corrector_v1",
+                        ]
+                    },
+                    "provenance": {"const": CERTIFICATE_PROVENANCE},
+                    "derivation_sha256": {"type": "string", "pattern": SHA256_PATTERN},
+                    "cancellation_sha256": _nullable("string", pattern=SHA256_PATTERN),
+                    "uses_confirmation_data": {"const": False},
+                    "uses_outcome_response": {"const": False},
+                    "locked_before_confirmation": {"const": True},
+                }
+            ),
+        }
+    )
     remainder = _object(
         {
-            "form": {"const": "|r|/s^2 <= C_s*s + C_T*tau/T + C_dt*(dt/tau)^p + C_phi*s"},
-            "selected_domain": {"type": "string", "minLength": 1},
+            "form": {"enum": [GENERIC_TOTAL_BOUND, IMPROVED_TOTAL_BOUND]},
+            "selected_domain_definition": _definition_record_schema(
+                TANGENT_DEFINITION_IDS["selected_domain_definition"],
+                TANGENT_DEFINITION_PATHS["selected_domain_definition"],
+            ),
             "probability_domain": {"enum": ["deterministic", "high_probability"]},
             "probability_level": _nullable("number", exclusiveMinimum=0.0, maximum=1.0),
             "p": {"type": "number", "exclusiveMinimum": 0.0},
-            "response_units_after_dividing_by_s_squared": {"type": "string", "minLength": 1},
+            "integrated_response_units": {"type": "string", "minLength": 1},
             "constants": _object(
                 {
-                    "C_s": {"type": "number", "minimum": 0.0},
-                    "C_T": {"type": "number", "minimum": 0.0},
+                    "C_N1": {"type": "number", "minimum": 0.0},
+                    "C_N2": {"type": "number", "minimum": 0.0},
+                    "C_T1": {"type": "number", "minimum": 0.0},
+                    "C_T2": {"type": "number", "minimum": 0.0},
                     "C_dt": {"type": "number", "minimum": 0.0},
                     "C_phi": {"type": "number", "minimum": 0.0},
                 }
@@ -251,7 +382,22 @@ def protocol_schema() -> dict[str, Any]:
                 "endpoint_rule": nullable_text,
                 "achieved_path_source": nullable_text,
                 "achieved_path_closure_tolerance": nullable_positive,
-                "washout_or_periodic_initialization": nullable_text,
+                "initialization_mode": {
+                    "enum": [
+                        None,
+                        EQUILIBRIUM_INITIALIZATION,
+                        PERIODIC_INITIALIZATION,
+                        MATCHED_CORRECTOR_INITIALIZATION,
+                    ]
+                },
+                "path_regularity_mode": {
+                    "enum": [
+                        None,
+                        GENERIC_REGULARITY,
+                        PERIODIC_C3_REGULARITY,
+                        ENDPOINT_FLAT_C3_REGULARITY,
+                    ]
+                },
                 "control_dynamics_map": _nullable_object(
                     _object(
                         {
@@ -351,16 +497,66 @@ def protocol_schema() -> dict[str, Any]:
                 "interaction_one_form": {"const": "B^D=B^on-B^0"},
                 "interaction_curvature": {"const": "F_R^D=dB^D"},
                 "compare_interaction_not_on_only": {"const": True},
-                "derivation_or_memory_kernel_limit": nullable_text,
+                "derivation_or_memory_kernel_limit": _nullable_object(
+                    _definition_record_schema(
+                        TANGENT_DEFINITION_IDS["derivation_or_memory_kernel_limit"],
+                        TANGENT_DEFINITION_PATHS["derivation_or_memory_kernel_limit"],
+                    )
+                ),
+                "asymptotic_regime": _nullable_object(asymptotic_regime),
                 "uniform_remainder_bound": _nullable_object(remainder),
+                "reference_content_authentication": _object(
+                    {
+                        "gate_status": {"const": REFERENCE_AUTHENTICATION_GATE_STATUS},
+                        "reference_root": {"type": "null"},
+                        "resolver_implemented": {"const": False},
+                        "containment_verified": {"const": False},
+                        "existence_verified": {"const": False},
+                        "regular_file_verified": {"const": False},
+                        "raw_sha256_matched": {"const": False},
+                        "included_in_immutable_closure": {"const": False},
+                        "reference_content_authenticated": {"const": False},
+                        "implementation_or_response_unlock_allowed": {"const": False},
+                    }
+                ),
                 "minimum_fit_levels_per_ladder": {"const": 4},
                 "heldout_ladder_level_required": {"const": True},
-                "reversal_test": nullable_text,
-                "cyclic_start_test": nullable_text,
-                "smooth_reparameterization_test": nullable_text,
-                "concatenation_test": nullable_text,
-                "matched_area_shape_test": nullable_text,
-                "line_integral_comparison": nullable_text,
+                "reversal_test": _nullable_object(
+                    _definition_record_schema(
+                        TANGENT_DEFINITION_IDS["reversal_test"],
+                        TANGENT_DEFINITION_PATHS["reversal_test"],
+                    )
+                ),
+                "cyclic_start_test": _nullable_object(
+                    _definition_record_schema(
+                        TANGENT_DEFINITION_IDS["cyclic_start_test"],
+                        TANGENT_DEFINITION_PATHS["cyclic_start_test"],
+                    )
+                ),
+                "smooth_reparameterization_test": _nullable_object(
+                    _definition_record_schema(
+                        TANGENT_DEFINITION_IDS["smooth_reparameterization_test"],
+                        TANGENT_DEFINITION_PATHS["smooth_reparameterization_test"],
+                    )
+                ),
+                "concatenation_test": _nullable_object(
+                    _definition_record_schema(
+                        TANGENT_DEFINITION_IDS["concatenation_test"],
+                        TANGENT_DEFINITION_PATHS["concatenation_test"],
+                    )
+                ),
+                "matched_area_shape_test": _nullable_object(
+                    _definition_record_schema(
+                        TANGENT_DEFINITION_IDS["matched_area_shape_test"],
+                        TANGENT_DEFINITION_PATHS["matched_area_shape_test"],
+                    )
+                ),
+                "line_integral_comparison": _nullable_object(
+                    _definition_record_schema(
+                        TANGENT_DEFINITION_IDS["line_integral_comparison"],
+                        TANGENT_DEFINITION_PATHS["line_integral_comparison"],
+                    )
+                ),
             }
         ),
         "prediction_model": _object(

@@ -1,0 +1,32 @@
+{
+  "artifact_kind": "internal_analytic_proof_program",
+  "disposition": "PASS_INTERNAL_ANALYTIC",
+  "evidence_status": "NO_EMPIRICAL_EVIDENCE",
+  "experiment_id": "response_theorem_proof_program",
+  "no_empirical_or_external_data": true,
+  "numerics_are_not_the_proof": true,
+  "payload_sha256": {
+    "REPORT.md": "ad406ae27d3013ca2e0cb89061cf9d1aec884b47efddec8454b104e1d920373b",
+    "records.json": "646294266b40e43d93fe553b41363ee6693a0913507419ac304a4849ed5f36ad",
+    "summary.json": "c064f4f02d7a61de7b53e4e737be5db09e521e176e9e5c3e833575e1d6354022"
+  },
+  "reproduction_command": "cd cwt-sim && .venv/Scripts/python.exe experiments/response_theorem_proof_program/run.py run",
+  "runtime": {
+    "numpy": "2.3.3",
+    "python": "3.11.9"
+  },
+  "schema_version": 1,
+  "source_hash_domain": "sha256_utf8_lf_v1: reject BOM/non-UTF8/bare CR; convert CRLF to LF only",
+  "source_hashes": {
+    "THEOREM.md": "67fdbf7098c64f5d4e3f35d93b0b98a7578ef7e08242a7e7325e785a5a55937a",
+    "__init__.py": "734f0b788e8849caa8b53ffb5d7b1ccf3a9e4609d02ef5b773f0763d4cfacaab",
+    "artifacts.py": "55a0dda1a7c7a7bc7190b8116d8f8c5c21cc881c04289058ab0b08153fb8e4ed",
+    "contracts.py": "6bf7e68193da33d145cea60ade72cbc1d3dfeb67635d14cb96c1ae1c6abe262e",
+    "counterexamples.py": "32964517f88e1ef7fc8c586401306cd192ef20fe5568f41c7b8f33631a62783c",
+    "forms.py": "779ce59632041b30771067012823074f92bcfad6f0e82c8d6f5d1e8a1568080f",
+    "models.py": "f5efb7f530fc9ef0fc9826e2423e68c06c6b224c9a51f740ee9aee5426bb6562",
+    "run.py": "f9c1ab09f061f88b5f0ceb27d252c470fbcdc2245ed3f3e36665fe31b4e38545",
+    "theorem.py": "777feb03d5ab4be7e4af277561e1f489b8a0e7ca82d0a4db7cbedd4cf8bc39f9"
+  },
+  "verification_command": "cd cwt-sim && .venv/Scripts/python.exe experiments/response_theorem_proof_program/run.py verify"
+}

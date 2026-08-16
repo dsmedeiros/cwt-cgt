@@ -30,7 +30,30 @@ from experiments.active_loop_confirmation.artifacts import (  # noqa: E402
 )
 from experiments.active_loop_confirmation.run import app  # noqa: E402
 from experiments.active_loop_confirmation.schema import (  # noqa: E402
+    CERTIFICATE_PROVENANCE,
+    DEFINITION_PROVENANCE,
+    ENDPOINT_FLAT_C3_REGULARITY,
+    EQUILIBRIUM_INITIALIZATION,
+    GENERIC_ASYMPTOTIC_REGIME,
+    GENERIC_CONTINUOUS_AREA_RELATIVE_LIMIT,
+    GENERIC_CONTINUOUS_BOUND,
+    GENERIC_DISCRETE_AREA_RELATIVE_LIMIT,
+    GENERIC_DISCRETE_BOUND,
+    GENERIC_REGULARITY,
+    GENERIC_TOTAL_BOUND,
+    IMPROVED_ASYMPTOTIC_REGIME,
+    IMPROVED_CONTINUOUS_AREA_RELATIVE_LIMIT,
+    IMPROVED_CONTINUOUS_BOUND,
+    IMPROVED_DISCRETE_AREA_RELATIVE_LIMIT,
+    IMPROVED_DISCRETE_BOUND,
+    IMPROVED_TOTAL_BOUND,
+    MATCHED_CORRECTOR_INITIALIZATION,
+    PERIODIC_C3_REGULARITY,
+    PERIODIC_INITIALIZATION,
     POWER_GATES,
+    REFERENCE_AUTHENTICATION_GATE_STATUS,
+    TANGENT_DEFINITION_IDS,
+    TANGENT_DEFINITION_PATHS,
     canonical_schema_bytes,
 )
 from experiments.active_loop_confirmation.template_model import (  # noqa: E402
@@ -46,6 +69,18 @@ from experiments.active_loop_confirmation.template_model import (  # noqa: E402
 
 def _hash(label: str) -> str:
     return hashlib.sha256(label.encode("utf-8")).hexdigest()
+
+
+def _definition(definition_id: str, artifact_path: str, stage: str = "theory_only") -> dict[str, Any]:
+    return {
+        "definition_id": definition_id,
+        "artifact_path": artifact_path,
+        "sha256": _hash(f"definition:{definition_id}:{artifact_path}"),
+        "stage": stage,
+        "provenance": DEFINITION_PROVENANCE,
+        "locked_before_confirmation": True,
+        "uses_any_confirmation_or_outcome": False,
+    }
 
 
 def _partition(prefix: str, count: int) -> dict[str, list[str]]:
@@ -152,14 +187,15 @@ def _complete_metadata_fixture() -> dict[str, Any]:
             "endpoint_rule": "duplicate closing endpoint counted once",
             "achieved_path_source": "three-axis Hall-probe telemetry",
             "achieved_path_closure_tolerance": 0.01,
-            "washout_or_periodic_initialization": "full physical reset and washout",
+            "initialization_mode": EQUILIBRIUM_INITIALIZATION,
+            "path_regularity_mode": GENERIC_REGULARITY,
             "control_dynamics_map": {
                 "kind": "continuous_rate_map",
                 "formula": "alpha(dt)=1-exp(-dt/tau)",
                 "tau_seconds": 0.25,
                 "fixed_alpha_across_dt_ladder": False,
             },
-            "waveform_family": "frozen smooth C2 physical-time loops",
+            "waveform_family": "frozen piecewise-C2 closed exact-reverse physical-time loops",
             "dt_ladder": [0.001, 0.002, 0.004, 0.008, 0.016],
             "duration_ladder": [1.0, 2.0, 4.0, 8.0, 16.0],
             "scale_ladder": [0.05, 0.1, 0.2, 0.3, 0.4],
@@ -209,22 +245,90 @@ def _complete_metadata_fixture() -> dict[str, Any]:
     )
     payload["tangent_remainder_validation"].update(
         {
-            "derivation_or_memory_kernel_limit": "locked physical-time tangent derivation",
+            "derivation_or_memory_kernel_limit": _definition(
+                TANGENT_DEFINITION_IDS["derivation_or_memory_kernel_limit"],
+                TANGENT_DEFINITION_PATHS["derivation_or_memory_kernel_limit"],
+            ),
+            "asymptotic_regime": {
+                "selected_regime": GENERIC_ASYMPTOTIC_REGIME,
+                "fixed_norm_definition": _definition(
+                    TANGENT_DEFINITION_IDS["fixed_norm_definition"],
+                    TANGENT_DEFINITION_PATHS["fixed_norm_definition"],
+                ),
+                "uniform_contraction_rho_upper": 0.8,
+                "initialization_mode": EQUILIBRIUM_INITIALIZATION,
+                "regularity_mode": GENERIC_REGULARITY,
+                "discrete_remainder_bound": GENERIC_DISCRETE_BOUND,
+                "continuous_remainder_bound": GENERIC_CONTINUOUS_BOUND,
+                "discrete_area_relative_limit": GENERIC_DISCRETE_AREA_RELATIVE_LIMIT,
+                "continuous_area_relative_limit": GENERIC_CONTINUOUS_AREA_RELATIVE_LIMIT,
+                "generic_boundary_term_retained": True,
+                "derivation_certificate": {
+                    "kind": "generic_contraction_bound_v1",
+                    "provenance": CERTIFICATE_PROVENANCE,
+                    "derivation_sha256": _hash("generic-contraction-derivation"),
+                    "cancellation_sha256": None,
+                    "uses_confirmation_data": False,
+                    "uses_outcome_response": False,
+                    "locked_before_confirmation": True,
+                },
+            },
             "uniform_remainder_bound": {
-                "form": "|r|/s^2 <= C_s*s + C_T*tau/T + C_dt*(dt/tau)^p + C_phi*s",
-                "selected_domain": "frozen control box and physical-time regime",
+                "form": GENERIC_TOTAL_BOUND,
+                "selected_domain_definition": _definition(
+                    TANGENT_DEFINITION_IDS["selected_domain_definition"],
+                    TANGENT_DEFINITION_PATHS["selected_domain_definition"],
+                    stage="calibration_only",
+                ),
                 "probability_domain": "deterministic",
                 "probability_level": None,
                 "p": 1.0,
-                "response_units_after_dividing_by_s_squared": "newton_metre_second",
-                "constants": {"C_s": 1.0, "C_T": 1.0, "C_dt": 1.0, "C_phi": 1.0},
+                "integrated_response_units": "newton_metre_second",
+                "constants": {
+                    "C_N1": 1.0,
+                    "C_N2": 1.0,
+                    "C_T1": 1.0,
+                    "C_T2": 0.0,
+                    "C_dt": 1.0,
+                    "C_phi": 1.0,
+                },
             },
-            "reversal_test": "frozen reversal tolerance",
-            "cyclic_start_test": "frozen cyclic-start tolerance",
-            "smooth_reparameterization_test": "frozen timing-reparameterization tolerance",
-            "concatenation_test": "frozen concatenation tolerance",
-            "matched_area_shape_test": "frozen matched-area shape tolerance",
-            "line_integral_comparison": "compare D with closed integral of B^D",
+            "reversal_test": _definition(
+                TANGENT_DEFINITION_IDS["reversal_test"],
+                TANGENT_DEFINITION_PATHS["reversal_test"],
+            ),
+            "cyclic_start_test": _definition(
+                TANGENT_DEFINITION_IDS["cyclic_start_test"],
+                TANGENT_DEFINITION_PATHS["cyclic_start_test"],
+            ),
+            "smooth_reparameterization_test": _definition(
+                TANGENT_DEFINITION_IDS["smooth_reparameterization_test"],
+                TANGENT_DEFINITION_PATHS["smooth_reparameterization_test"],
+            ),
+            "concatenation_test": _definition(
+                TANGENT_DEFINITION_IDS["concatenation_test"],
+                TANGENT_DEFINITION_PATHS["concatenation_test"],
+            ),
+            "matched_area_shape_test": _definition(
+                TANGENT_DEFINITION_IDS["matched_area_shape_test"],
+                TANGENT_DEFINITION_PATHS["matched_area_shape_test"],
+            ),
+            "line_integral_comparison": _definition(
+                TANGENT_DEFINITION_IDS["line_integral_comparison"],
+                TANGENT_DEFINITION_PATHS["line_integral_comparison"],
+            ),
+            "reference_content_authentication": {
+                "gate_status": REFERENCE_AUTHENTICATION_GATE_STATUS,
+                "reference_root": None,
+                "resolver_implemented": False,
+                "containment_verified": False,
+                "existence_verified": False,
+                "regular_file_verified": False,
+                "raw_sha256_matched": False,
+                "included_in_immutable_closure": False,
+                "reference_content_authenticated": False,
+                "implementation_or_response_unlock_allowed": False,
+            },
         }
     )
     payload["prediction_model"].update(
@@ -364,6 +468,59 @@ def _complete_metadata_fixture() -> dict[str, Any]:
     }
     payload["claim_ceiling"]["allowed_if_future_pass"] = FUTURE_CLAIM
     return payload
+
+
+def _periodic_improved_fixture() -> dict[str, Any]:
+    payload = _complete_metadata_fixture()
+    regime = payload["tangent_remainder_validation"]["asymptotic_regime"]
+    regime.update(
+        {
+            "selected_regime": IMPROVED_ASYMPTOTIC_REGIME,
+            "initialization_mode": PERIODIC_INITIALIZATION,
+            "regularity_mode": PERIODIC_C3_REGULARITY,
+            "discrete_remainder_bound": IMPROVED_DISCRETE_BOUND,
+            "continuous_remainder_bound": IMPROVED_CONTINUOUS_BOUND,
+            "discrete_area_relative_limit": IMPROVED_DISCRETE_AREA_RELATIVE_LIMIT,
+            "continuous_area_relative_limit": IMPROVED_CONTINUOUS_AREA_RELATIVE_LIMIT,
+            "generic_boundary_term_retained": False,
+            "derivation_certificate": {
+                "kind": "periodic_summation_by_parts_v1",
+                "provenance": CERTIFICATE_PROVENANCE,
+                "derivation_sha256": _hash("periodic-derivation"),
+                "cancellation_sha256": _hash("periodic-cancellation"),
+                "uses_confirmation_data": False,
+                "uses_outcome_response": False,
+                "locked_before_confirmation": True,
+            },
+        }
+    )
+    payload["physical_time_protocol"]["initialization_mode"] = PERIODIC_INITIALIZATION
+    payload["physical_time_protocol"]["path_regularity_mode"] = PERIODIC_C3_REGULARITY
+    payload["tangent_remainder_validation"]["uniform_remainder_bound"]["form"] = IMPROVED_TOTAL_BOUND
+    payload["tangent_remainder_validation"]["uniform_remainder_bound"]["constants"]["C_T2"] = 1.0
+    return payload
+
+
+TANGENT_REFERENCE_NAMES = tuple(TANGENT_DEFINITION_IDS)
+
+
+def _tangent_definition_records(payload: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    tangent = payload["tangent_remainder_validation"]
+    records = {
+        field: tangent[field]
+        for field in (
+            "derivation_or_memory_kernel_limit",
+            "reversal_test",
+            "cyclic_start_test",
+            "smooth_reparameterization_test",
+            "concatenation_test",
+            "matched_area_shape_test",
+            "line_integral_comparison",
+        )
+    }
+    records["fixed_norm_definition"] = tangent["asymptotic_regime"]["fixed_norm_definition"]
+    records["selected_domain_definition"] = tangent["uniform_remainder_bound"]["selected_domain_definition"]
+    return records
 
 
 def _codes(payload: dict[str, Any]) -> set[str]:
@@ -597,6 +754,345 @@ def test_sign_factor_flux_and_interaction_conventions_are_locked() -> None:
     assert "ordinary difference-in-differences contrast is **`2 D_bl`**" in protocol
     assert payload["tangent_remainder_validation"]["interaction_one_form"] == "B^D=B^on-B^0"
     assert payload["tangent_remainder_validation"]["interaction_curvature"] == "F_R^D=dB^D"
+
+
+@pytest.mark.parametrize(
+    ("field", "wrong_value"),
+    [
+        ("discrete_remainder_bound", IMPROVED_DISCRETE_BOUND),
+        ("continuous_remainder_bound", IMPROVED_CONTINUOUS_BOUND),
+        ("discrete_area_relative_limit", IMPROVED_DISCRETE_AREA_RELATIVE_LIMIT),
+        ("continuous_area_relative_limit", IMPROVED_CONTINUOUS_AREA_RELATIVE_LIMIT),
+    ],
+)
+def test_generic_reset_cannot_claim_improved_rate_or_limit(field: str, wrong_value: str) -> None:
+    payload = _complete_metadata_fixture()
+    payload["tangent_remainder_validation"]["asymptotic_regime"][field] = wrong_value
+
+    assert "ASYMPTOTIC_BOUND_MISMATCH" in _codes(payload)
+
+
+def test_generic_reset_cannot_claim_improved_total_remainder() -> None:
+    payload = _complete_metadata_fixture()
+    payload["tangent_remainder_validation"]["uniform_remainder_bound"]["form"] = IMPROVED_TOTAL_BOUND
+
+    assert "TOTAL_REMAINDER_BOUND_MISMATCH" in _codes(payload)
+
+
+def test_periodic_improved_regime_requires_every_stronger_assumption() -> None:
+    payload = _periodic_improved_fixture()
+
+    assert validate_template(payload).metadata_verified
+
+    for field, value in (
+        ("initialization_mode", EQUILIBRIUM_INITIALIZATION),
+        ("regularity_mode", GENERIC_REGULARITY),
+    ):
+        mutation = copy.deepcopy(payload)
+        mutation["tangent_remainder_validation"]["asymptotic_regime"][field] = value
+        assert "IMPROVED_REGIME_UNJUSTIFIED" in _codes(mutation)
+
+    mutation = copy.deepcopy(payload)
+    mutation["tangent_remainder_validation"]["asymptotic_regime"]["derivation_certificate"][
+        "cancellation_sha256"
+    ] = None
+    assert "IMPROVED_REGIME_UNJUSTIFIED" in _codes(mutation)
+
+
+def test_c2_periodic_claim_is_not_an_accepted_c3_assumption() -> None:
+    payload = _complete_metadata_fixture()
+    regime = payload["tangent_remainder_validation"]["asymptotic_regime"]
+    regime["regularity_mode"] = "periodic_c2_endpoint_consistent_full_period"
+
+    codes = _codes(payload)
+    assert "SCHEMA_ENUM" in codes
+
+
+def test_improved_regime_cannot_coexist_with_equilibrium_reset_or_clock_mismatch() -> None:
+    payload = _periodic_improved_fixture()
+    payload["physical_time_protocol"]["initialization_mode"] = EQUILIBRIUM_INITIALIZATION
+    codes = _codes(payload)
+    assert "ASYMPTOTIC_CLOCK_MISMATCH" in codes
+
+
+def test_reviewed_improved_regime_composite_exploit_fails_closed() -> None:
+    payload = _periodic_improved_fixture()
+    payload["physical_time_protocol"]["initialization_mode"] = EQUILIBRIUM_INITIALIZATION
+    payload["physical_time_protocol"]["path_regularity_mode"] = GENERIC_REGULARITY
+    regime = payload["tangent_remainder_validation"]["asymptotic_regime"]
+    regime["initialization_rule"] = "equilibrium reset chosen to minimize heldout response"
+    payload["tangent_remainder_validation"]["derivation_or_memory_kernel_limit"][
+        "description"
+    ] = "fit directly to heldout confirmation response"
+    payload["tangent_remainder_validation"]["uniform_remainder_bound"][
+        "selected_domain"
+    ] = "fit directly to heldout confirmation response"
+    constants = payload["tangent_remainder_validation"]["uniform_remainder_bound"]["constants"]
+    for field in constants:
+        constants[field] = 0.0
+
+    report = validate_template(payload)
+    codes = {issue.code for issue in report.issues}
+    assert not report.metadata_verified
+    assert "SCHEMA_UNKNOWN_FIELD" in codes
+    assert "ASYMPTOTIC_CLOCK_MISMATCH" in codes
+    assert "REMAINDER_CONSTANT_INVALID" in codes
+    assert "LOCAL_FLUX_CONSTANT_INVALID" in codes
+
+    payload = _periodic_improved_fixture()
+    payload["tangent_remainder_validation"]["asymptotic_regime"][
+        "initialization_mode"
+    ] = EQUILIBRIUM_INITIALIZATION
+    codes = _codes(payload)
+    assert "IMPROVED_REGIME_UNJUSTIFIED" in codes
+    assert "ASYMPTOTIC_CLOCK_MISMATCH" in codes
+
+
+def test_matched_corrector_improved_contract_is_structured_and_valid() -> None:
+    payload = _periodic_improved_fixture()
+    payload["physical_time_protocol"]["initialization_mode"] = MATCHED_CORRECTOR_INITIALIZATION
+    payload["physical_time_protocol"]["path_regularity_mode"] = ENDPOINT_FLAT_C3_REGULARITY
+    regime = payload["tangent_remainder_validation"]["asymptotic_regime"]
+    regime["initialization_mode"] = MATCHED_CORRECTOR_INITIALIZATION
+    regime["regularity_mode"] = ENDPOINT_FLAT_C3_REGULARITY
+    regime["derivation_certificate"]["kind"] = "endpoint_flat_matched_corrector_v1"
+
+    assert validate_template(payload).metadata_verified
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("derivation_sha256", "not-a-hash"),
+        ("cancellation_sha256", None),
+        ("uses_confirmation_data", True),
+        ("uses_outcome_response", True),
+        ("locked_before_confirmation", False),
+    ],
+)
+def test_improved_certificate_fails_closed(field: str, value: Any) -> None:
+    payload = _periodic_improved_fixture()
+    payload["tangent_remainder_validation"]["asymptotic_regime"]["derivation_certificate"][field] = value
+
+    codes = _codes(payload)
+    assert {"ASYMPTOTIC_CERTIFICATE_INVALID", "IMPROVED_REGIME_UNJUSTIFIED"}.intersection(codes)
+
+
+@pytest.mark.parametrize("record_name", TANGENT_REFERENCE_NAMES)
+@pytest.mark.parametrize(
+    ("field", "invalid_value"),
+    [
+        ("definition_id", "heldout_response_definition_v1"),
+        ("artifact_path", "../escape.json"),
+        ("sha256", "not-a-sha256"),
+        ("stage", "confirmation_only"),
+        ("provenance", "unreviewed_inline_text_v1"),
+        ("locked_before_confirmation", False),
+        ("uses_any_confirmation_or_outcome", True),
+    ],
+)
+def test_every_tangent_reference_record_field_fails_closed(
+    record_name: str, field: str, invalid_value: Any
+) -> None:
+    payload = _complete_metadata_fixture()
+    _tangent_definition_records(payload)[record_name][field] = invalid_value
+
+    assert not validate_template(payload).metadata_verified
+    assert "TANGENT_REFERENCE_INVALID" in _codes(payload)
+
+
+@pytest.mark.parametrize(
+    "phrase",
+    [
+        "fit to test-set response",
+        "tuned against evaluation-set readout",
+        "selected using blinded test target",
+        "derived from reserved partition measurements",
+        "optimized on unseen evaluation labels",
+    ],
+)
+@pytest.mark.parametrize("record_name", TANGENT_REFERENCE_NAMES)
+def test_inline_bypass_phrases_are_forbidden_unknown_fields(phrase: str, record_name: str) -> None:
+    payload = _complete_metadata_fixture()
+    _tangent_definition_records(payload)[record_name]["description"] = phrase
+
+    report = validate_template(payload)
+    assert not report.metadata_verified
+    assert "SCHEMA_UNKNOWN_FIELD" in {issue.code for issue in report.issues}
+
+
+@pytest.mark.parametrize("record_name", TANGENT_REFERENCE_NAMES)
+@pytest.mark.parametrize(
+    "alias",
+    [
+        "test-set",
+        "test_set",
+        "TestSet",
+        "evaluation-set",
+        "evaluation_set",
+        "EvaluationSet",
+        "reserved-partition",
+        "ReservedPartition",
+        "unseen-labels",
+        "UnseenLabels",
+        "confirmation-response",
+        "ConfirmationResponse",
+        "held-out",
+        "held_out",
+        "HeldOut",
+        "holdout",
+        "response",
+        "orientation",
+        "cw",
+        "ccw",
+        "field_x",
+    ],
+)
+@pytest.mark.parametrize("field", ["definition_id", "artifact_path"])
+def test_partition_proxy_aliases_are_forbidden_in_reference_ids_and_paths(
+    record_name: str, alias: str, field: str
+) -> None:
+    payload = _complete_metadata_fixture()
+    record = _tangent_definition_records(payload)[record_name]
+    record[field] = alias if field == "definition_id" else f"definitions/{alias}.json"
+
+    codes = _codes(payload)
+    assert "TANGENT_REFERENCE_INVALID" in codes
+    assert "TANGENT_REFERENCE_PROXY" in codes
+
+
+@pytest.mark.parametrize("record_name", TANGENT_REFERENCE_NAMES)
+@pytest.mark.parametrize(
+    "alternate_path",
+    [
+        "definitions/evaluationresponses.json",
+        "definitions/testcohort.json",
+        "definitions/confirmatoryresults.json",
+        "definitions/unblindedoutcomes.json",
+        "definitions/responsefitted.json",
+        "definitions/orientations.json",
+        "definitions/controlsignals.json",
+        "definitions/geometries.json",
+        "definitions/omegas.json",
+        "definitions/couplings.json",
+        "definitions/fluxes.json",
+        "definitions/readouts.json",
+        "definitions/targets.json",
+        "definitions/labels.json",
+    ],
+)
+def test_only_exact_neutral_path_is_accepted_for_each_definition(
+    record_name: str, alternate_path: str
+) -> None:
+    payload = _complete_metadata_fixture()
+    _tangent_definition_records(payload)[record_name]["artifact_path"] = alternate_path
+
+    assert not validate_template(payload).metadata_verified
+    assert "TANGENT_REFERENCE_INVALID" in _codes(payload)
+
+
+@pytest.mark.parametrize(
+    "artifact_path",
+    [
+        "/absolute.json",
+        "C:/absolute.json",
+        "../escape.json",
+        "definitions/./record.json",
+        "definitions\\record.json",
+        "definitions//record.json",
+    ],
+)
+def test_tangent_reference_paths_are_canonical_relative_paths(artifact_path: str) -> None:
+    payload = _complete_metadata_fixture()
+    payload["tangent_remainder_validation"]["reversal_test"]["artifact_path"] = artifact_path
+
+    assert "TANGENT_REFERENCE_INVALID" in _codes(payload)
+
+
+def test_tangent_reference_paths_must_be_unique() -> None:
+    payload = _complete_metadata_fixture()
+    records = _tangent_definition_records(payload)
+    records["reversal_test"]["artifact_path"] = records["cyclic_start_test"]["artifact_path"]
+
+    assert "TANGENT_REFERENCE_PATH_DUPLICATE" in _codes(payload)
+
+
+def test_nonexistent_definition_paths_validate_only_as_closed_declarations() -> None:
+    payload = _complete_metadata_fixture()
+    report = validate_template(payload)
+    authentication = payload["tangent_remainder_validation"]["reference_content_authentication"]
+
+    assert report.metadata_verified
+    assert all(not (EXPERIMENT_DIR / path).exists() for path in TANGENT_DEFINITION_PATHS.values())
+    assert authentication == {
+        "gate_status": REFERENCE_AUTHENTICATION_GATE_STATUS,
+        "reference_root": None,
+        "resolver_implemented": False,
+        "containment_verified": False,
+        "existence_verified": False,
+        "regular_file_verified": False,
+        "raw_sha256_matched": False,
+        "included_in_immutable_closure": False,
+        "reference_content_authenticated": False,
+        "implementation_or_response_unlock_allowed": False,
+    }
+
+
+@pytest.mark.parametrize(
+    ("field", "invalid_value"),
+    [
+        ("gate_status", "COMPLETE"),
+        ("reference_root", "definitions"),
+        ("resolver_implemented", True),
+        ("containment_verified", True),
+        ("existence_verified", True),
+        ("regular_file_verified", True),
+        ("raw_sha256_matched", True),
+        ("included_in_immutable_closure", True),
+        ("reference_content_authenticated", True),
+        ("implementation_or_response_unlock_allowed", True),
+    ],
+)
+def test_unimplemented_reference_content_gate_cannot_be_self_asserted(field: str, invalid_value: Any) -> None:
+    payload = _complete_metadata_fixture()
+    payload["tangent_remainder_validation"]["reference_content_authentication"][field] = invalid_value
+
+    report = validate_template(payload)
+    assert not report.metadata_verified
+    assert "REFERENCE_CONTENT_AUTHENTICATION_CLAIM_INVALID" in {issue.code for issue in report.issues}
+
+
+@pytest.mark.parametrize("constant", ["C_N1", "C_N2", "C_T1", "C_dt", "C_phi"])
+def test_generic_regime_requires_every_used_bound_constant_positive(constant: str) -> None:
+    payload = _complete_metadata_fixture()
+    payload["tangent_remainder_validation"]["uniform_remainder_bound"]["constants"][constant] = 0.0
+
+    expected = "LOCAL_FLUX_CONSTANT_INVALID" if constant == "C_phi" else "REMAINDER_CONSTANT_INVALID"
+    assert expected in _codes(payload)
+
+
+def test_generic_unused_ct2_must_be_zero() -> None:
+    payload = _complete_metadata_fixture()
+    payload["tangent_remainder_validation"]["uniform_remainder_bound"]["constants"]["C_T2"] = 1.0
+
+    assert "UNUSED_REMAINDER_CONSTANT_NONZERO" in _codes(payload)
+
+
+def test_exact_integrated_flux_permits_zero_local_approximation_constant() -> None:
+    payload = _complete_metadata_fixture()
+    payload["predictor_geometry"]["local_approximation_in_remainder"] = False
+    payload["tangent_remainder_validation"]["uniform_remainder_bound"]["constants"]["C_phi"] = 0.0
+
+    assert validate_template(payload).metadata_verified
+
+
+@pytest.mark.parametrize("constant", ["C_N1", "C_N2", "C_T1", "C_T2", "C_dt", "C_phi"])
+def test_improved_regime_requires_every_bound_constant_positive(constant: str) -> None:
+    payload = _periodic_improved_fixture()
+    payload["tangent_remainder_validation"]["uniform_remainder_bound"]["constants"][constant] = 0.0
+
+    expected = "LOCAL_FLUX_CONSTANT_INVALID" if constant == "C_phi" else "REMAINDER_CONSTANT_INVALID"
+    assert expected in _codes(payload)
 
 
 def test_response_firewall_rejects_path_fields_and_revealing_proxy_ids() -> None:
@@ -1085,7 +1581,7 @@ def test_all_integrated_response_and_loss_units_are_bound(target: str, expected_
     readiness = payload["source_specific_freeze_readiness"]
     if target == "remainder":
         payload["tangent_remainder_validation"]["uniform_remainder_bound"][
-            "response_units_after_dividing_by_s_squared"
+            "integrated_response_units"
         ] = "metres"
     elif target == "interaction":
         readiness["interaction_nondegeneracy_definition"]["units"] = "metres"
