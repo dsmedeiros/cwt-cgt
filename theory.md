@@ -783,7 +783,7 @@ If an adiabatic/tangent-response reduction supplies $B^{(R)}$, the conditional S
 R_{\rm anti}(\gamma)=\oint_\gamma B^{(R)}+r_\gamma
 =\int_{S_\gamma}dB^{(R)}+r_\gamma.
 \]
-Deriving that reduction and a deterministic or stochastic rate for $r_\gamma$ remains open for the unconstrained CWT update. Sections 36.2–36.3 now separate two analytic results: the explicit benchmark-C fixed-tick recurrence and a general finite-dimensional uniformly contractive class theorem. Neither establishes that the concrete CWT update satisfies the contraction/branch assumptions, nor a physical or external response law. For a specified shrinking-loop family with nonzero leading flux, the CGT law additionally requires non-degenerate coupling/readout, $r_\gamma=o(\Phi_\gamma)$, and $\int_{S_\gamma}(dB^{(R)}-\kappa_1\Omega)=o(\Phi_\gamma)$. Only then does $R_{\rm anti}=\kappa_1\Phi_\gamma+o(\Phi_\gamma)$, or $\Delta R_\gamma=2\kappa_1\Phi_\gamma+o(\Phi_\gamma)$. An evidentiary test must compute $\Phi_\gamma$ independently and measure a response whose definition contains no $\Phi$, $\Omega$, or loop orientation.
+Deriving that reduction and a deterministic or stochastic rate for $r_\gamma$ remains open for the unconstrained full CWT scheduler. Sections 36.2–36.4 separate the explicit benchmark-C fixed-tick recurrence, a general finite-dimensional uniformly contractive class theorem, and a named five-state core open-system specialization. The last item proves the reduction for one authored Benchmark D channel/readout, but still does not establish a physical-time scheduler law or an external response. For a specified shrinking-loop family with nonzero leading flux, the CGT law additionally requires non-degenerate coupling/readout, $r_\gamma=o(\Phi_\gamma)$, and $\int_{S_\gamma}(dB^{(R)}-\kappa_1\Omega)=o(\Phi_\gamma)$. Only then does $R_{\rm anti}=\kappa_1\Phi_\gamma+o(\Phi_\gamma)$, or $\Delta R_\gamma=2\kappa_1\Phi_\gamma+o(\Phi_\gamma)$. An evidentiary test must compute $\Phi_\gamma$ independently and measure a response whose definition contains no $\Phi$, $\Omega$, or loop orientation.
 
 ### 36.1 Evidence status
 
@@ -850,7 +850,40 @@ r=-\frac{1-\rho}{\rho}\,\beta(\lambda)\cdot(x-\lambda)
 \]
 realizes $B=\beta$ exactly. A normalized projective state map, and hence its $\Omega$, can be chosen independently in an augmented contracting state. Therefore contraction, smoothness, a gap, and a branch imply neither $\Omega\ne0\Rightarrow F_R\ne0$ nor $F_R\ne0\Rightarrow\Omega\ne0$, and cannot imply $F_R^D=\kappa\Omega$. Alignment additionally requires zero-set compatibility, collinearity, and $d\kappa\wedge\Omega=0$; a pointwise quotient remains tautological in two dimensions. The computed C1–C8/P1 matrix includes non-implications, sign-changing/readout-dependent coefficients, finite-speed effects, covariance checks, a scoped non-normal warning, and a three-dimensional deliberately aligned oracle/positive implementation control. P1 is not an independently measured response. Its disposition is `PASS_INTERNAL_ANALYTIC` / `NO_EMPIRICAL_EVIDENCE`; numerical fixtures test the implementation rather than prove the theorem or support an external response law. Benchmark C in Section 36.2 is a narrow linear-contracting corollary under its locked assumptions.
 
-### 36.4 Current coefficient decomposition is approximate
+### 36.4 Named Benchmark D core open-system specialization
+
+The executable harness at `cwt-sim/experiments/benchmark_d_open_response_proof/` instantiates the contraction theorem with the named core map `cwt.cgt.open_system.apply_local_open_step`, the fixed Benchmark D `D0` kernel, and the geometry-blind Hermitian `mean_position` readout. It freezes
+
+* $b\in[0.01,0.05]$, $d\in[0.205,0.245]$, centered at $(0.03,0.225)$;
+* `dt=.18`, edge-jump scale `.20`, depolarization `.008=1/125`, dephasing `.30`, and zero coherent/site-potential scales;
+* a single fixed branch with no continuation; and
+* right-endpoint update-then-sample $Q=\sum_n H[x_n-\bar x(\lambda_n)]$, with CW the exact stored-sequence reverse.
+
+On the invariant diagonal-density subspace the core Kraus map reduces exactly to
+\[
+x_n=M(b_n,d_n)x_{n-1}+c,
+\qquad
+M=\frac{124}{125}\left[\left(1-\frac9{250}\right)I+\frac9{250}K(b,d)\right]^T,
+\qquad c=\frac1{625}{\bf 1}.
+\]
+The true fixed branch is $\bar x=(I-M)^{-1}c$. Exact Kraus completeness, inactive clip/rescale/square-root thresholds, a full-rank depolarizing floor, and the global trace/$\ell^1$ contraction factor $124/125$ are certified on the box. The experiment-local affine reduction is cross-checked against complete cycles of the core function; it does not use the authored `stationary_from_row_stochastic` vector as the open-system fixed point.
+
+For $H=(1,2,3,4,5)$, exact rational implicit differentiation of
+\[
+B_i=-H(I-M)^{-1}M\partial_i\bar x
+\]
+at the center gives
+\[
+F_{bd}=\partial_bB_d-\partial_dB_b
+=-\frac{1389405980846240823998759336989273383099794763750000000000}
+{2559023550169319630994375590863181495045970285707766901}
+\approx-542.9438039967665.
+\]
+An independent numerical curl agrees, the fixed-loop error converges as $O(1/N)$, and an in-box shrinking-square ladder with $Ns\to\infty$ gives $Q_{\rm anti}/s^2\to F_{bd}$. Its tolerances were selected during internal harness development and are regression checks, not preregistered evidence; an explicit fixed-solver centering budget is negligible relative to the observed convergence error. Identity-readout and constant-branch controls vanish; depolarization zero is refused a strict contraction certificate; and Benchmark C's true unital fixed branch gives zero centered response.
+
+This is `PASS_INTERNAL_ANALYTIC` / `NO_EMPIRICAL_EVIDENCE` for one authored five-state fixed-tick core channel/readout. It is not the full scheduler, a physical-time model, an external result, or a CGT alignment law. The authored stationary-probability D0 geometry is not used as a smooth projective branch. Instead, because the frozen channel is insensitive to $p$ and $\theta$, a separately frozen constant normalized reference $p_j=1/5$, $\theta_j=0$ has exactly $\Omega_{bd}=0$. Its coexistence with nonzero response curvature is only a constant-reference no-go control: response curvature does not by itself imply universal CGT alignment. The historical Phase10 entry script explicitly selects `branch_steps=2`, and the tracked Benchmark-C JSON records that value plus recommended $\gamma=0.2$; the current library default is 3 and `cwt/cgt/analysis/phase10_analysis.py` is the current recomputation implementation. Recomputing from the explicit recorded configuration gives a nonzero fixed residual, so the artifact remains a finite-step surrogate. A separate Benchmark-D three-step diagnostic does not validate that historical artifact.
+
+### 36.5 Current coefficient decomposition is approximate
 
 The earlier scalar decomposition
 \[
@@ -858,7 +891,7 @@ The earlier scalar decomposition
 \]
 is a heuristic scaling ansatz, not a coefficient-complete prediction. Moreover, every positive scalar multiplier applied uniformly inside the current column-normalized transport construction cancels under normalization; `kappa=0` instead triggers the degenerate identity/self-loop fallback. Neither case implements directional anisotropy. The ansatz therefore neither predicts the leading shape nor the absolute coefficient without a concrete non-cancelling mechanism.
 
-### 36.5 Coefficient-complete direction
+### 36.6 Coefficient-complete direction
 
 A coefficient-complete theory should derive \(\kappa_1\) from branch-local tangent or adjoint response. Let \(x_t=(p_t,\theta_t)\) and let \(U(T,t+1)\) be the tangent propagator from step \(t+1\) to the final time. If \(B_i(x_t,\lambda_t)\Delta\lambda_t^i\) is the infinitesimal phase-kick/control perturbation at step \(t\), then
 \[
