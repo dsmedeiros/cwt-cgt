@@ -130,11 +130,21 @@ def _format_float(value: float | None) -> str:
     return f"{finite:.3e}"
 
 
+def _observed_response_per_flux(summary: LoopSummary, flux_floor: float = 1e-15) -> float:
+    """Return the observed response/flux slope when it is identifiable."""
+
+    phi = float(summary.phi_flux)
+    response = float(summary.R_bias)
+    if not math.isfinite(phi) or not math.isfinite(response) or abs(phi) <= abs(float(flux_floor)):
+        return float("nan")
+    return response / phi
+
+
 def _build_markdown(
     entries: list[dict[str, Any]], statuses: dict[str, bool | None], pair_ok: bool | None
 ) -> str:
     lines = [
-        "| Run | Label | Orientation | Φ | R | κ₁ | Flip? |",
+        "| Run | Label | Orientation | Φ | R | Observed R/Φ | Flip? |",
         "| --- | --- | --- | --- | --- | --- | --- |",
     ]
     for entry in entries:
@@ -144,15 +154,15 @@ def _build_markdown(
             flip_text = "–"
         else:
             flip_text = "✓" if flip_state else "✗"
-        kappa1 = summary.fs_stats.get("kappa1")
+        observed_response_per_flux = _observed_response_per_flux(summary)
         lines.append(
-            "| {run} | {label} | {orient} | {phi} | {bias} | {kappa} | {flip} |".format(
+            "| {run} | {label} | {orient} | {phi} | {bias} | {observed} | {flip} |".format(
                 run=entry["run_id"],
                 label=entry["label"],
                 orient=summary.orientation,
                 phi=_format_float(summary.phi_flux),
                 bias=_format_float(summary.R_bias),
-                kappa=_format_float(kappa1),
+                observed=_format_float(observed_response_per_flux),
                 flip=flip_text,
             )
         )
@@ -177,6 +187,7 @@ def _build_json(
                 "orientation": summary.orientation,
                 "phi_flux": _finite_or_none(summary.phi_flux),
                 "R_bias": _finite_or_none(summary.R_bias),
+                "observed_response_per_flux": _finite_or_none(_observed_response_per_flux(summary)),
                 "overlap_min": _finite_or_none(summary.overlaps_min),
                 "fs_stats": stats,
                 "sign_flip": statuses.get(entry["run_id"]),

@@ -1,0 +1,240 @@
+{
+  "canonical_json_encoding": "UTF-8, allow_nan=false, sort_keys=true, separators=(',', ':')",
+  "dataset_classification": "profiles packaged with an external public test-system dataset; measurement provenance unspecified",
+  "dataset_doi": "10.25984/2228282",
+  "dataset_landing_page": "https://data.openei.org/submissions/5773",
+  "dataset_title": "Sample IEEE123 Bus system for OEDI SI",
+  "experiment_id": "oedi_ieee123_reconstruction",
+  "mode": "retrospective_post_hoc_reconstruction",
+  "networkx_version": "3.5",
+  "not_cgt_validation": true,
+  "not_historical_provenance_proof": true,
+  "numpy_version": "2.3.3",
+  "pinned_upstream_commit": "7c8bcca06708ea2dd54b822821d637814ef08dc4",
+  "protocol_sha256": "c7b3a558801259ca221c0682a360628c1b6739c707cc13dbe161da044fb19a80",
+  "python_version": "3.11.9",
+  "records_canonical_json_sha256": "3f237e2c296806a44db713915f8144b141e110d0fbf629cd6acb7b05ff2ae9a0",
+  "schema_version": 1,
+  "scipy_version": "1.16.2",
+  "source_access_roles": {
+    "catalogued_verified": "bytes/OID/size verified; content does not affect the named metric",
+    "catalogued_verified_context_only": "bytes/OID/size verified as source context; not parsed or metric-affecting",
+    "metric_affecting": "field on each pinned-file record, not inferred from closure",
+    "numerically_executed_retrospective": "numeric values contribute to the post-hoc retrospective vector",
+    "parsed_metadata": "active metadata parsed; no numeric profile execution implied"
+  },
+  "source_code_bundle_sha256": "b64d964654272306669c5ab9564eca35e06019110d66118675ebedad4c5bf6b0",
+  "source_code_hashes_sha256": {
+    "PROSPECTIVE_PASSIVE_PROTOCOL_LOCK.md": "c7b3a558801259ca221c0682a360628c1b6739c707cc13dbe161da044fb19a80",
+    "RETROSPECTIVE_METHOD.md": "d0a5a4b7d5fd772674d49d2d61a512e9505e94059ea029a8004cae9a6d058675",
+    "UPSTREAM_MANIFEST.json": "592e1a1eef24150b4fab7b22550490a4de88f603a074195f47cd946700f8c5c8",
+    "__init__.py": "624f60e6fd956dcb5977b7635b11714d682c84559164cacc69386e9a885f7daf",
+    "prospective.py": "173acb56f9b99a6abe419f860ccdc9e690f31bc21d3edf00798044898f1c7784",
+    "prospective_confirm.py": "c35c058509dae0c3173bf3435ef2839cf9e4fc3a5b6b8eca96be769c3b27670a",
+    "retrospective.py": "cd9c4b8799bbf0329aa3cdd79e429c15b1be7e91bea9046f7b12ef0153a1522c",
+    "run.py": "c0fc313d072486eb26a494084a9439d41d49fa4dfb768dfd45369bf286203f5f",
+    "source.py": "7bbf841f0229dbdf57307fad9e869ff6fd1c7f5034dfd668dd347da12f77b6c0"
+  },
+  "source_verification": {
+    "dataset_id": "openedi_oedisi_ieee123",
+    "files": [
+      {
+        "access_level": "catalogued_verified",
+        "byte_size": 1523,
+        "canonical_git_blob_sha256": "c02828f67504b3e403d3f830ed7f1858353f43088d5c8bd9bc496067de057eec",
+        "git_blob_byte_size": 1523,
+        "git_blob_oid": "54e2443b545fdde405988a7535383ea7977647ae",
+        "metric_affecting": false,
+        "path": "LICENSE.md",
+        "sha256": "c02828f67504b3e403d3f830ed7f1858353f43088d5c8bd9bc496067de057eec",
+        "verified": true
+      },
+      {
+        "access_level": "parsed_metadata",
+        "byte_size": 829,
+        "canonical_git_blob_sha256": "b09796a2532ef5f7d6b630213951f25fa089ab705d61d0b47f60881abf9a6b63",
+        "git_blob_byte_size": 829,
+        "git_blob_oid": "4720d52ef1233c9b8583cb8e428d2e4a0fa0509d",
+        "metric_affecting": true,
+        "path": "sensors.json",
+        "sha256": "b09796a2532ef5f7d6b630213951f25fa089ab705d61d0b47f60881abf9a6b63",
+        "verified": true
+      },
+      {
+        "access_level": "parsed_metadata",
+        "byte_size": 15450,
+        "canonical_git_blob_sha256": "889ec3ab8944d5f05a6aa2bafc8af9ef69b3449a1ac4e0c3365cfdb498bdafd8",
+        "git_blob_byte_size": 15450,
+        "git_blob_oid": "648093ff2ffbe95613ec9582c93119b9e3c94f8c",
+        "metric_affecting": true,
+        "path": "qsts/master.dss",
+        "sha256": "889ec3ab8944d5f05a6aa2bafc8af9ef69b3449a1ac4e0c3365cfdb498bdafd8",
+        "verified": true
+      },
+      {
+        "access_level": "parsed_metadata",
+        "byte_size": 4527,
+        "canonical_git_blob_sha256": "cbd402dfb5ccbd8d8c17cfcc4f673316e3bb43ca3096c0f67ee88449643d2785",
+        "git_blob_byte_size": 4527,
+        "git_blob_oid": "35c888d1e4d2a64371e47222abe1c77ed1b688f2",
+        "metric_affecting": true,
+        "path": "qsts/Buscoords.dss",
+        "sha256": "cbd402dfb5ccbd8d8c17cfcc4f673316e3bb43ca3096c0f67ee88449643d2785",
+        "verified": true
+      },
+      {
+        "access_level": "parsed_metadata",
+        "byte_size": 14603,
+        "canonical_git_blob_sha256": "8b5b54db2e357d2caf77df17a572d2f9768764171d1fc1980bc3a74642357b11",
+        "git_blob_byte_size": 14603,
+        "git_blob_oid": "7d645f9c5dc5bc84d0c7211abc246f621d4ac54c",
+        "metric_affecting": true,
+        "path": "qsts/IEEE123LoadsQsts.dss",
+        "sha256": "8b5b54db2e357d2caf77df17a572d2f9768764171d1fc1980bc3a74642357b11",
+        "verified": true
+      },
+      {
+        "access_level": "parsed_metadata",
+        "byte_size": 15385,
+        "canonical_git_blob_sha256": "445365614e83e3d31d9a406c5ab831cb9494d6b86d261282dc05bbd0845747f5",
+        "git_blob_byte_size": 15385,
+        "git_blob_oid": "38234f8823c9a4cd0fbd99665c1b1a0cda3bb5c9",
+        "metric_affecting": true,
+        "path": "qsts/IEEE123LoadShapes.dss",
+        "sha256": "445365614e83e3d31d9a406c5ab831cb9494d6b86d261282dc05bbd0845747f5",
+        "verified": true
+      },
+      {
+        "access_level": "catalogued_verified",
+        "byte_size": 11638,
+        "canonical_git_blob_sha256": "cc1c17c16a3987e5bd1b470a0a2a9e2f5568f09675740a286e70db086865a56c",
+        "git_blob_byte_size": 11638,
+        "git_blob_oid": "1d0da3f78846ec7545e1c40776fb9f9f3e8817a9",
+        "metric_affecting": false,
+        "path": "qsts/IEEELinecodes.dss",
+        "sha256": "cc1c17c16a3987e5bd1b470a0a2a9e2f5568f09675740a286e70db086865a56c",
+        "verified": true
+      },
+      {
+        "access_level": "parsed_metadata",
+        "byte_size": 1790,
+        "canonical_git_blob_sha256": "8c41d5019f5a55caedd3bab6b1f3fa3c0dc72fa0bec8a335e1042df8a4ac4b86",
+        "git_blob_byte_size": 1790,
+        "git_blob_oid": "863c6cd22c9ff416b7daa6b561e3dab074a5420b",
+        "metric_affecting": true,
+        "path": "qsts/IEEE123Regulators.dss",
+        "sha256": "8c41d5019f5a55caedd3bab6b1f3fa3c0dc72fa0bec8a335e1042df8a4ac4b86",
+        "verified": true
+      },
+      {
+        "access_level": "catalogued_verified_context_only",
+        "byte_size": 1220,
+        "canonical_git_blob_sha256": "c1e58947a4b3504a789164c61a66caf31fc036398a6143ce8f85af51c0d09056",
+        "git_blob_byte_size": 1220,
+        "git_blob_oid": "2a004b19af11d5f6198300cb585ce0c691a47fd2",
+        "metric_affecting": false,
+        "path": "qsts/IEEE123Pv.dss",
+        "sha256": "c1e58947a4b3504a789164c61a66caf31fc036398a6143ce8f85af51c0d09056",
+        "verified": true
+      },
+      {
+        "access_level": "catalogued_verified",
+        "byte_size": 1416,
+        "canonical_git_blob_sha256": "a5e7724e2aac42fe817b6a9222ac3297b206051cf348868be348c78ee8963261",
+        "git_blob_byte_size": 1416,
+        "git_blob_oid": "d505fce9e60fd01aae3986633fd330230a6da129",
+        "metric_affecting": false,
+        "path": "qsts/IEEE123PvShapes.dss",
+        "sha256": "a5e7724e2aac42fe817b6a9222ac3297b206051cf348868be348c78ee8963261",
+        "verified": true
+      },
+      {
+        "access_level": "numerically_executed_retrospective",
+        "byte_size": 659088,
+        "canonical_git_blob_sha256": "faa14ebb7f7d51d36d155c2c91e785bba552bd99b59c355c111c0fe95e70c796",
+        "git_blob_byte_size": 659088,
+        "git_blob_oid": "bdc2e08b4326a4eaf84195007fc0e5bea952c097",
+        "metric_affecting": true,
+        "path": "profiles/load_profiles/loadshape_S1a.csv",
+        "sha256": "faa14ebb7f7d51d36d155c2c91e785bba552bd99b59c355c111c0fe95e70c796",
+        "verified": true
+      },
+      {
+        "access_level": "numerically_executed_retrospective",
+        "byte_size": 658971,
+        "canonical_git_blob_sha256": "8ffb332d0b0fbb04c07fc686d8b4819fb687f0706fcb161e9ad6b09d377934cf",
+        "git_blob_byte_size": 658971,
+        "git_blob_oid": "3ef07af7c71a3cddba23bf93d8c8a4595b3f6ad9",
+        "metric_affecting": true,
+        "path": "profiles/load_profiles/loadshape_S19a.csv",
+        "sha256": "8ffb332d0b0fbb04c07fc686d8b4819fb687f0706fcb161e9ad6b09d377934cf",
+        "verified": true
+      },
+      {
+        "access_level": "numerically_executed_retrospective",
+        "byte_size": 659056,
+        "canonical_git_blob_sha256": "e6910096a355b4fccbabda337b3c750eb7cf302f0011418bf20c4a9863b51144",
+        "git_blob_byte_size": 659056,
+        "git_blob_oid": "9ab931e520c4974bf811aa22fd01f21f1f493715",
+        "metric_affecting": true,
+        "path": "profiles/load_profiles/loadshape_S47.csv",
+        "sha256": "e6910096a355b4fccbabda337b3c750eb7cf302f0011418bf20c4a9863b51144",
+        "verified": true
+      },
+      {
+        "access_level": "numerically_executed_retrospective",
+        "byte_size": 659046,
+        "canonical_git_blob_sha256": "2dedd72224b38985c1129f5ea1b00c6aee0cc9c19c98665c1166b0b7c0cfa419",
+        "git_blob_byte_size": 659046,
+        "git_blob_oid": "c30f1e65e4b6a71b63f22e302d31ec9418a889fd",
+        "metric_affecting": true,
+        "path": "profiles/load_profiles/loadshape_S49a.csv",
+        "sha256": "2dedd72224b38985c1129f5ea1b00c6aee0cc9c19c98665c1166b0b7c0cfa419",
+        "verified": true
+      },
+      {
+        "access_level": "numerically_executed_retrospective",
+        "byte_size": 659004,
+        "canonical_git_blob_sha256": "e8f2c86464324c7e47639c53ee954bce351eaaa30855fe6b3f642d037ddc1b91",
+        "git_blob_byte_size": 659004,
+        "git_blob_oid": "9657095c1add8b982d85e0fc9d6553fe79fba43f",
+        "metric_affecting": true,
+        "path": "profiles/load_profiles/loadshape_S65a.csv",
+        "sha256": "e8f2c86464324c7e47639c53ee954bce351eaaa30855fe6b3f642d037ddc1b91",
+        "verified": true
+      },
+      {
+        "access_level": "numerically_executed_retrospective",
+        "byte_size": 425130,
+        "canonical_git_blob_sha256": "e62ee36bceda609be64aef7e29436230bc262ada33f40834311d8d7dccbaa128",
+        "git_blob_byte_size": 425130,
+        "git_blob_oid": "6f72dd919911beba33431cea5f39d2322ce75844",
+        "metric_affecting": true,
+        "path": "profiles/pv_profiles/pvshape_49.csv",
+        "sha256": "e62ee36bceda609be64aef7e29436230bc262ada33f40834311d8d7dccbaa128",
+        "verified": true
+      },
+      {
+        "access_level": "catalogued_verified_context_only",
+        "byte_size": 105120,
+        "canonical_git_blob_sha256": "3aeac74e327c49bb64446a29b7750f175882756a1e2b2a06b083aec43f341fff",
+        "git_blob_byte_size": 105120,
+        "git_blob_oid": "5048a7aedcf2a308c5a2c6a32c2cb36e810581d4",
+        "metric_affecting": false,
+        "path": "profiles/pv_profiles/temperature.csv",
+        "sha256": "3aeac74e327c49bb64446a29b7750f175882756a1e2b2a06b083aec43f341fff",
+        "verified": true
+      }
+    ],
+    "git": {
+      "head": "7c8bcca06708ea2dd54b822821d637814ef08dc4",
+      "origin": "https://github.com/openEDI/oedisi-ieee123",
+      "verified": true
+    },
+    "pinned_commit": "7c8bcca06708ea2dd54b822821d637814ef08dc4",
+    "repository_url": "https://github.com/openEDI/oedisi-ieee123"
+  },
+  "summary_canonical_json_sha256": "87c53fe8048a9d67860f8d8135916ef5338ff8474e61837c6353da5ae6ea4088",
+  "typer_version": "0.17.4",
+  "upstream_manifest_sha256": "592e1a1eef24150b4fab7b22550490a4de88f603a074195f47cd946700f8c5c8"
+}

@@ -84,7 +84,7 @@ def projective_metric_trace_and_curvature(
     g_vv = float(np.real(np.vdot(q_v, q_v)))
     metric_trace = g_uu + g_vv
     c_uv = np.vdot(q_u, q_v)
-    curvature = float(-2.0 * np.imag(c_uv))
+    curvature = float(2.0 * np.imag(c_uv))
     return metric_trace, curvature
 
 
@@ -111,7 +111,9 @@ def polygon_signed_area(path: list[tuple[float, float]]) -> float:
     return 0.5 * area
 
 
-def branch_distance(state_a, state_b, p_weight: float = 1.0, theta_weight: float = 0.55, kernel_weight: float = 0.15) -> float:
+def branch_distance(
+    state_a, state_b, p_weight: float = 1.0, theta_weight: float = 0.55, kernel_weight: float = 0.15
+) -> float:
     p_a = normalize_probabilities(np.asarray(state_a.p, dtype=float))
     p_b = normalize_probabilities(np.asarray(state_b.p, dtype=float))
     p_term = float(np.linalg.norm(p_a - p_b, ord=1))
@@ -122,7 +124,7 @@ def branch_distance(state_a, state_b, p_weight: float = 1.0, theta_weight: float
     theta_term = float(np.linalg.norm(theta_diff) / max(math.sqrt(theta_diff.size) * np.pi, 1e-12))
 
     kernel_term = 0.0
-    if getattr(state_a, 'kernel', None) is not None and getattr(state_b, 'kernel', None) is not None:
+    if getattr(state_a, "kernel", None) is not None and getattr(state_b, "kernel", None) is not None:
         ka = np.asarray(state_a.kernel, dtype=float)
         kb = np.asarray(state_b.kernel, dtype=float)
         kernel_term = float(np.linalg.norm(ka - kb) / max(ka.size, 1))
@@ -134,13 +136,13 @@ def summarize(values: Iterable[float]) -> dict[str, float | int | None]:
     arr = np.asarray(list(values), dtype=float)
     arr = arr[np.isfinite(arr)]
     if arr.size == 0:
-        return {'count': 0, 'min': None, 'max': None, 'mean': None, 'median': None}
+        return {"count": 0, "min": None, "max": None, "mean": None, "median": None}
     return {
-        'count': int(arr.size),
-        'min': float(np.min(arr)),
-        'max': float(np.max(arr)),
-        'mean': float(np.mean(arr)),
-        'median': float(np.median(arr)),
+        "count": int(arr.size),
+        "min": float(np.min(arr)),
+        "max": float(np.max(arr)),
+        "mean": float(np.mean(arr)),
+        "median": float(np.median(arr)),
     }
 
 
@@ -148,11 +150,11 @@ def summarize_abs(values: Iterable[float]) -> dict[str, float | int | None]:
     arr = np.asarray(list(values), dtype=float)
     arr = np.abs(arr[np.isfinite(arr)])
     if arr.size == 0:
-        return {'count': 0, 'min': None, 'max': None, 'mean': None, 'median': None}
+        return {"count": 0, "min": None, "max": None, "mean": None, "median": None}
     return {
-        'count': int(arr.size),
-        'min': float(np.min(arr)),
-        'max': float(np.max(arr)),
-        'mean': float(np.mean(arr)),
-        'median': float(np.median(arr)),
+        "count": int(arr.size),
+        "min": float(np.min(arr)),
+        "max": float(np.max(arr)),
+        "mean": float(np.mean(arr)),
+        "median": float(np.median(arr)),
     }

@@ -87,8 +87,8 @@ class ReportHeaderMetrics:
     R_cw: float | None = None
     R_ccw: float | None = None
     flip_error: float | None = None
-    kappa1_mean: float | None = None
-    kappa1_ci: tuple[float, float] | None = None
+    observed_response_per_flux_mean: float | None = None
+    observed_response_per_flux_ci: tuple[float, float] | None = None
     spectral_gap: float | None = None
     grad_r: float | None = None
 
@@ -151,18 +151,37 @@ def render_report_header(metrics: ReportHeaderMetrics) -> list[str]:
             f"{_format_value(metrics.phi_flux)}, area: {_format_value(metrics.geom_area)}, "
             f"extents: {extent_text}, steps: {_format_value(metrics.steps, precision='integer')}"
         ),
-        (
+    ]
+
+    readout_values = (
+        metrics.R_cw,
+        metrics.R_ccw,
+        metrics.flip_error,
+        metrics.observed_response_per_flux_mean,
+    )
+    if any(value is not None for value in readout_values):
+        readout = (
             "Readout — R_CW: "
             f"{_format_value(metrics.R_cw)}, R_CCW: {_format_value(metrics.R_ccw)}, "
-            f"flip error: {_format_value(metrics.flip_error)}, "
-            f"κ₁: {_format_value(metrics.kappa1_mean)} (CI {_format_ci(metrics.kappa1_ci)})"
-        ),
-        (
-            "Markers — spectral gap(P): "
-            f"{_format_value(metrics.spectral_gap)}, |∇r|: {_format_value(metrics.grad_r)}"
-        ),
-        "",
-    ]
+            f"flip error: {_format_value(metrics.flip_error)}"
+        )
+        if metrics.observed_response_per_flux_mean is not None:
+            readout += (
+                ", observed R/Φ (flux-conditioned): "
+                f"{_format_value(metrics.observed_response_per_flux_mean)} "
+                f"(CI {_format_ci(metrics.observed_response_per_flux_ci)})"
+            )
+        lines.append(readout)
+
+    lines.extend(
+        [
+            (
+                "Markers — spectral gap(P): "
+                f"{_format_value(metrics.spectral_gap)}, |∇r|: {_format_value(metrics.grad_r)}"
+            ),
+            "",
+        ]
+    )
     return lines
 
 

@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "experiment_id": "oedi_ieee123_prospective_passive",
+  "attempt_id": "attempt_002",
+  "attempt_status": "COMPLETED_PROTOCOL_DECISION",
+  "recovery_of_attempt_id": "attempt_001",
+  "recovery_of_incident_sha256": "ba58eb84f715ebf50cb2935dc6ba616c5c0a4a8f169f774a3b9c35d80b6cbd28",
+  "started_at": "2026-08-15T20:37:41.3869430-05:00",
+  "post_completion_observation_at": "2026-08-15T20:39:01.2100297-05:00",
+  "approval": {
+    "scope": "exactly one byte-identical recovery execution after ABORTED_NO_RESULT",
+    "root_recovery_authorization_explicit": true,
+    "adversarial_recovery_authorization_explicit": true,
+    "immediate_preflight_status": "PASS"
+  },
+  "execution": {
+    "cwd": "C:\\Users\\Administrator\\source\\repos\\cwt-cgt\\cwt-sim",
+    "interpreter": "C:\\Users\\Administrator\\source\\repos\\cwt-cgt\\cwt-sim\\.venv\\Scripts\\python.exe",
+    "argv": [
+      "-m",
+      "experiments.oedi_ieee123_reconstruction.run",
+      "confirm",
+      "--source-dir",
+      "..\\.tmp_oedi_ieee123_canonical_git",
+      "--prepared-summary",
+      "experiments\\oedi_ieee123_reconstruction\\artifacts\\prospective_prepare\\summary.json",
+      "--freeze-lock",
+      "experiments\\oedi_ieee123_reconstruction\\artifacts\\prospective_prepare\\FREEZE_LOCK.json",
+      "--approved-freeze-lock-sha256",
+      "ff246decbfb7b0a3d2716f5191e7c93a3579f2f9cc82bb052db23bcfbd2f955c",
+      "--unlock-digest",
+      "2502fd7a938d78a78f29da0d3e643ceb85e62822f2519f39a24fffbff6a51919",
+      "--root-and-adversarial-approved"
+    ],
+    "outer_harness_timeout_ms": 1800000,
+    "observed_elapsed_seconds": 67.4,
+    "process_exit_code": 1,
+    "process_exit_semantics": "CLI completed artifacts and exits 1 for every protocol decision other than pass",
+    "automatic_same_stream_extension_occurred": false,
+    "manual_retry_or_tuning_after_result": false
+  },
+  "unchanged_frozen_inputs": {
+    "freeze_digest_sha256": "2502fd7a938d78a78f29da0d3e643ceb85e62822f2519f39a24fffbff6a51919",
+    "freeze_lock_file_sha256": "ff246decbfb7b0a3d2716f5191e7c93a3579f2f9cc82bb052db23bcfbd2f955c",
+    "prepared_summary_canonical_json_sha256": "703c44eedf57322ef7cb89aa8967b42f6d03f927c78a6be3de6d98fea4605382",
+    "prepared_summary_file_sha256": "43031f2941adff9b76149cd0971d546cf0a89ec79c474d8743207e194e27ee81",
+    "source_inventory_sha256": "2193767d0cedc525d32617ec0e7b4575098f64e48ef8e78670516fa7ae6f74cd",
+    "split_manifest_sha256": "b5dec69f45461d17f16f27104ef7837df39310e6f59d85b826aa1dd18854a22f",
+    "protocol_sha256": "c7b3a558801259ca221c0682a360628c1b6739c707cc13dbe161da044fb19a80",
+    "source_code_bundle_sha256": "b64d964654272306669c5ab9564eca35e06019110d66118675ebedad4c5bf6b0",
+    "upstream_manifest_sha256": "592e1a1eef24150b4fab7b22550490a4de88f603a074195f47cd946700f8c5c8",
+    "runtime_versions": {
+      "networkx": "3.5",
+      "numpy": "2.3.3",
+      "python": "3.11.9",
+      "scipy": "1.16.2",
+      "typer": "0.17.4"
+    }
+  },
+  "protocol_result": {
+    "decision": "fail",
+    "valid_confirmation_profile_count": 61,
+    "invalid_admitted_profile_count": 0,
+    "invalid_admitted_fraction": 0.0,
+    "primary": {
+      "status": "complete",
+      "method": "PCG64_bus_bundle_monte_carlo",
+      "observed_T": 0.013066368743938832,
+      "threshold_T": 0.1,
+      "p_value": 0.39696,
+      "threshold_p": 0.05,
+      "draws": 99999,
+      "extreme_count": 39695,
+      "clopper_pearson_99": [
+        0.39296862162223856,
+        0.4009491374352013
+      ],
+      "same_rng_stream_extended": false
+    },
+    "specificity_controls": {
+      "numeric_bus_id_distance": {
+        "observed_T": 0.018274943371803624,
+        "p_value_plus_one": 0.34168,
+        "extreme_count": 34167,
+        "triggered_indeterminate": false
+      },
+      "buscoords_file_order_distance": {
+        "observed_T": 0.020687865336005244,
+        "p_value_plus_one": 0.32331,
+        "extreme_count": 32330,
+        "triggered_indeterminate": false
+      }
+    },
+    "robustness": {
+      "raw_profile_dissimilarity_T": 0.01229838303572177,
+      "first_difference_dissimilarity_T": 0.007660512553977202,
+      "block_T": [
+        0.007103808259026556,
+        0.02159963443037184,
+        0.00430192139088568,
+        0.024363758450725737
+      ],
+      "positive_block_count": 4,
+      "leave_one_no_sign_reversal": false,
+      "negative_leave_one_count": 2,
+      "negative_leave_one_ids": [
+        "S113a",
+        "S52a"
+      ],
+      "lateral_no_sign_reversal": false,
+      "negative_lateral_count": 10,
+      "phase_descriptive_T": {
+        "A": 0.06926615601925937,
+        "B": -0.04792126366918562,
+        "C": -0.02215097046333336
+      },
+      "whole_day_circular_shift_warning_T": 0.014792186460319583,
+      "zero_shift_load_ids": []
+    }
+  },
+  "access_ledger": {
+    "attempt_count": 77,
+    "success_count": 77,
+    "failure_count": 0,
+    "numeric_parse_attempt_count": 77,
+    "unique_profile_path_count": 77,
+    "calibration_profile_count": 16,
+    "confirmation_profile_count": 61,
+    "full_ledger_location": "../prospective_confirmation/records.json"
+  },
+  "outcome_artifacts": {
+    "summary.json": {
+      "file_sha256": "e562e544c7d6c285accb72d63e65b4596c53259cc8a34c354bb2acf8f84bdc4a",
+      "canonical_json_sha256": "220157234ca7d32a502c3de9855962b051c421fb045de80449dc404eaeef9124"
+    },
+    "records.json": {
+      "file_sha256": "e3ab6f5b0539ec6a4c88fb3ada9daabc3d9175c0f85f1df517037d4a5ac29fff",
+      "canonical_json_sha256": "e14c433295f331ae2d0e03497c49b5977804fb2d0f8712c5496052fc9369b4cf"
+    },
+    "PROVENANCE.json": {
+      "file_sha256": "1853afb0a8f72417f61865c459bf126d0171e40df0b0858019c9d42668b57873"
+    },
+    "REPORT.md": {
+      "file_sha256": "a17785cb46dd230626eb97d2a7ee5dbc6435c9969a7dc657a7206bb55fc2105f"
+    },
+    "CHECKSUMS.json": {
+      "file_sha256": "350055208bb450bc8c01d0cdb6cbd8910e53608f5d82864c548fc21482956c56"
+    },
+    "internal_checksum_and_canonical_payload_verification": "PASS"
+  }
+}

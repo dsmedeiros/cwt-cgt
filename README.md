@@ -101,12 +101,12 @@ python -m scripts.eval_report runs --format markdown --report reports/summary.md
 Use `--format json` for machine consumption or `--report PATH` to persist Markdown alongside stdout.
 
 #### Operator-view demo – `scripts/demo_operator_view.py`
-Integrate the QP-1 example’s curvature density to validate the operator-bundle helpers.
+Integrate the QP-1 $S^2$ sphere-quotient calibration to validate the normal-state operator-bundle helpers. QP-1 is not a periodic-torus band benchmark.
 ```bash
 cd cwt-sim
 python -m scripts.demo_operator_view --samples 4096
 ```
-The script prints the integrated Ω density and its deviation from the expected `2π` reference.
+The script prints the integrated Ω density and its deviation from the expected `-2π` reference in the repository's unified convention.
 
 ### Configuration files
 Simulation runs are parameterised through YAML files that map directly onto the [`AppConfig`](cwt-sim/cwt/io/config.py) Pydantic model. Key sections include:

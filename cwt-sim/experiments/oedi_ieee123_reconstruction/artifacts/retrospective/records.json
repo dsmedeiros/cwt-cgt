@@ -1,0 +1,82 @@
+[
+  {
+    "a": "1a",
+    "b": "19a",
+    "corr": 0.989068565205963,
+    "dependent_five_profile_slice": true,
+    "distance": 5,
+    "record_type": "historical_pair"
+  },
+  {
+    "a": "1a",
+    "b": "47",
+    "corr": 0.9970752033172635,
+    "dependent_five_profile_slice": true,
+    "distance": 10,
+    "record_type": "historical_pair"
+  },
+  {
+    "a": "1a",
+    "b": "49a",
+    "corr": 0.996191391254564,
+    "dependent_five_profile_slice": true,
+    "distance": 11,
+    "record_type": "historical_pair"
+  },
+  {
+    "a": "1a",
+    "b": "65a",
+    "corr": 0.9790644656576601,
+    "dependent_five_profile_slice": true,
+    "distance": 13,
+    "record_type": "historical_pair"
+  },
+  {
+    "a": "19a",
+    "b": "47",
+    "corr": 0.9960315020060845,
+    "dependent_five_profile_slice": true,
+    "distance": 7,
+    "record_type": "historical_pair"
+  },
+  {
+    "a": "19a",
+    "b": "49a",
+    "corr": 0.9968965661130353,
+    "dependent_five_profile_slice": true,
+    "distance": 8,
+    "record_type": "historical_pair"
+  },
+  {
+    "a": "19a",
+    "b": "65a",
+    "corr": 0.9983420838906513,
+    "dependent_five_profile_slice": true,
+    "distance": 12,
+    "record_type": "historical_pair"
+  },
+  {
+    "a": "47",
+    "b": "49a",
+    "corr": 0.9971370667481101,
+    "dependent_five_profile_slice": true,
+    "distance": 1,
+    "record_type": "historical_pair"
+  },
+  {
+    "a": "47",
+    "b": "65a",
+    "corr": 0.990152370507728,
+    "dependent_five_profile_slice": true,
+    "distance": 17,
+    "record_type": "historical_pair"
+  },
+  {
+    "a": "49a",
+    "b": "65a",
+    "corr": 0.9909548317482854,
+    "dependent_five_profile_slice": true,
+    "distance": 18,
+    "record_type": "historical_pair"
+  }
+]

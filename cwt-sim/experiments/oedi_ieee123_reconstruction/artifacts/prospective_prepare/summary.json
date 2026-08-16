@@ -1,0 +1,5186 @@
+{
+  "access_plan": {
+    "calibration": {
+      "numeric_access_condition": "only after exact detached-lock SHA, frozen digest, and explicit reviewer unlock",
+      "profile_paths": [
+        "profiles/load_profiles/loadshape_S107b.csv",
+        "profiles/load_profiles/loadshape_S111a.csv",
+        "profiles/load_profiles/loadshape_S12b.csv",
+        "profiles/load_profiles/loadshape_S33a.csv",
+        "profiles/load_profiles/loadshape_S34c.csv",
+        "profiles/load_profiles/loadshape_S4c.csv",
+        "profiles/load_profiles/loadshape_S53a.csv",
+        "profiles/load_profiles/loadshape_S59b.csv",
+        "profiles/load_profiles/loadshape_S60a.csv",
+        "profiles/load_profiles/loadshape_S62c.csv",
+        "profiles/load_profiles/loadshape_S66c.csv",
+        "profiles/load_profiles/loadshape_S75c.csv",
+        "profiles/load_profiles/loadshape_S79a.csv",
+        "profiles/load_profiles/loadshape_S7a.csv",
+        "profiles/load_profiles/loadshape_S94a.csv",
+        "profiles/load_profiles/loadshape_S96b.csv"
+      ],
+      "status": "not_executed"
+    },
+    "confirm": {
+      "profile_paths": [
+        "profiles/load_profiles/loadshape_S100c.csv",
+        "profiles/load_profiles/loadshape_S102c.csv",
+        "profiles/load_profiles/loadshape_S103c.csv",
+        "profiles/load_profiles/loadshape_S104c.csv",
+        "profiles/load_profiles/loadshape_S106b.csv",
+        "profiles/load_profiles/loadshape_S109a.csv",
+        "profiles/load_profiles/loadshape_S10a.csv",
+        "profiles/load_profiles/loadshape_S112a.csv",
+        "profiles/load_profiles/loadshape_S113a.csv",
+        "profiles/load_profiles/loadshape_S114a.csv",
+        "profiles/load_profiles/loadshape_S11a.csv",
+        "profiles/load_profiles/loadshape_S16c.csv",
+        "profiles/load_profiles/loadshape_S17c.csv",
+        "profiles/load_profiles/loadshape_S20a.csv",
+        "profiles/load_profiles/loadshape_S22b.csv",
+        "profiles/load_profiles/loadshape_S24c.csv",
+        "profiles/load_profiles/loadshape_S28a.csv",
+        "profiles/load_profiles/loadshape_S29a.csv",
+        "profiles/load_profiles/loadshape_S2b.csv",
+        "profiles/load_profiles/loadshape_S30c.csv",
+        "profiles/load_profiles/loadshape_S31c.csv",
+        "profiles/load_profiles/loadshape_S32c.csv",
+        "profiles/load_profiles/loadshape_S37a.csv",
+        "profiles/load_profiles/loadshape_S38b.csv",
+        "profiles/load_profiles/loadshape_S39b.csv",
+        "profiles/load_profiles/loadshape_S41c.csv",
+        "profiles/load_profiles/loadshape_S42a.csv",
+        "profiles/load_profiles/loadshape_S43b.csv",
+        "profiles/load_profiles/loadshape_S45a.csv",
+        "profiles/load_profiles/loadshape_S46a.csv",
+        "profiles/load_profiles/loadshape_S50c.csv",
+        "profiles/load_profiles/loadshape_S51a.csv",
+        "profiles/load_profiles/loadshape_S52a.csv",
+        "profiles/load_profiles/loadshape_S55a.csv",
+        "profiles/load_profiles/loadshape_S56b.csv",
+        "profiles/load_profiles/loadshape_S58b.csv",
+        "profiles/load_profiles/loadshape_S5c.csv",
+        "profiles/load_profiles/loadshape_S63a.csv",
+        "profiles/load_profiles/loadshape_S64b.csv",
+        "profiles/load_profiles/loadshape_S68a.csv",
+        "profiles/load_profiles/loadshape_S69a.csv",
+        "profiles/load_profiles/loadshape_S6c.csv",
+        "profiles/load_profiles/loadshape_S70a.csv",
+        "profiles/load_profiles/loadshape_S71a.csv",
+        "profiles/load_profiles/loadshape_S73c.csv",
+        "profiles/load_profiles/loadshape_S74c.csv",
+        "profiles/load_profiles/loadshape_S77b.csv",
+        "profiles/load_profiles/loadshape_S80b.csv",
+        "profiles/load_profiles/loadshape_S82a.csv",
+        "profiles/load_profiles/loadshape_S83c.csv",
+        "profiles/load_profiles/loadshape_S84c.csv",
+        "profiles/load_profiles/loadshape_S85c.csv",
+        "profiles/load_profiles/loadshape_S86b.csv",
+        "profiles/load_profiles/loadshape_S87b.csv",
+        "profiles/load_profiles/loadshape_S88a.csv",
+        "profiles/load_profiles/loadshape_S90b.csv",
+        "profiles/load_profiles/loadshape_S92c.csv",
+        "profiles/load_profiles/loadshape_S95b.csv",
+        "profiles/load_profiles/loadshape_S98a.csv",
+        "profiles/load_profiles/loadshape_S99b.csv",
+        "profiles/load_profiles/loadshape_S9a.csv"
+      ],
+      "required_unlock_digest": "2502fd7a938d78a78f29da0d3e643ceb85e62822f2519f39a24fffbff6a51919",
+      "status": "locked_pending_root_and_adversarial_approval",
+      "strict_qc_rule": "every admitted calibration and confirmation profile must pass; no attrition"
+    },
+    "prepare": {
+      "numeric_profile_paths_allowed": [],
+      "operation": "hash bytes, compare canonical Git blobs, count nonempty rows without numeric conversion, and parse DSS metadata only"
+    },
+    "reconstruct": {
+      "numeric_profile_paths_allowed": [
+        "profiles/load_profiles/loadshape_S19a.csv",
+        "profiles/load_profiles/loadshape_S1a.csv",
+        "profiles/load_profiles/loadshape_S47.csv",
+        "profiles/load_profiles/loadshape_S49a.csv",
+        "profiles/load_profiles/loadshape_S65a.csv",
+        "profiles/pv_profiles/pvshape_49.csv"
+      ],
+      "temperature_numeric_access": "forbidden_verified_hash_only",
+      "temperature_path": "profiles/pv_profiles/temperature.csv"
+    }
+  },
+  "adequacy": {
+    "at_least_three_distances_each_phase": true,
+    "calibration_phases": [
+      "A",
+      "B",
+      "C"
+    ],
+    "checks": {
+      "all_admitted_buses_connected": true,
+      "at_least_fifty_confirmation_profiles": true,
+      "at_least_ten_confirmation_buses": true,
+      "at_least_ten_confirmation_profiles_each_phase": true,
+      "at_least_three_distances_each_phase": true,
+      "calibration_carries_each_phase": true,
+      "frozen_membership_matches_oracle": true,
+      "no_nonlegacy_candidate_mapping_defect": true,
+      "open_stub_admitted_distance_vector_exact": true,
+      "open_stub_topology_oracle": true,
+      "pair_and_qap_space_oracle": true,
+      "primary_topology_oracle": true,
+      "source_bus_oracle": true
+    },
+    "confirmation_bus_count": 61,
+    "confirmation_pair_count_total": 610,
+    "confirmation_pair_counts": {
+      "A": 300,
+      "B": 120,
+      "C": 190
+    },
+    "confirmation_phase_counts": {
+      "A": 25,
+      "B": 16,
+      "C": 20
+    },
+    "confirmation_profile_count": 61,
+    "confirmation_signature_bus_counts": {
+      "A0_B0_C1": 20,
+      "A0_B1_C0": 16,
+      "A1_B0_C0": 25
+    },
+    "disconnected_load_ids": [],
+    "distinct_graph_distances_by_phase": {
+      "A": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "B": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23
+      ],
+      "C": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26
+      ]
+    },
+    "qap_permutation_space_size": 789568637724233695255040401494127477134458880000000000000
+  },
+  "claim_scope_if_eventually_run": "prespecified within-OEDI-package association under a conditional bus-bundle random-label null; common passive-locality diagnostic only",
+  "confirmation_population_wording": "previously unanalysed in the tracked repository/current workflow and prospectively specified for this analysis",
+  "confirmation_values_accessed": false,
+  "dataset_classification": "profiles packaged with an external public test-system dataset; measurement provenance unspecified",
+  "dataset_doi": "10.25984/2228282",
+  "dataset_landing_page": "https://data.openei.org/submissions/5773",
+  "experiment_id": "oedi_ieee123_prospective_passive",
+  "field_observation_provenance_established": false,
+  "freeze_components": {
+    "protocol_sha256": "c7b3a558801259ca221c0682a360628c1b6739c707cc13dbe161da044fb19a80",
+    "runtime_versions": {
+      "networkx": "3.5",
+      "numpy": "2.3.3",
+      "python": "3.11.9",
+      "scipy": "1.16.2",
+      "typer": "0.17.4"
+    },
+    "source_code_hashes": {
+      "PROSPECTIVE_PASSIVE_PROTOCOL_LOCK.md": "c7b3a558801259ca221c0682a360628c1b6739c707cc13dbe161da044fb19a80",
+      "RETROSPECTIVE_METHOD.md": "d0a5a4b7d5fd772674d49d2d61a512e9505e94059ea029a8004cae9a6d058675",
+      "UPSTREAM_MANIFEST.json": "592e1a1eef24150b4fab7b22550490a4de88f603a074195f47cd946700f8c5c8",
+      "__init__.py": "624f60e6fd956dcb5977b7635b11714d682c84559164cacc69386e9a885f7daf",
+      "prospective.py": "173acb56f9b99a6abe419f860ccdc9e690f31bc21d3edf00798044898f1c7784",
+      "prospective_confirm.py": "c35c058509dae0c3173bf3435ef2839cf9e4fc3a5b6b8eca96be769c3b27670a",
+      "retrospective.py": "cd9c4b8799bbf0329aa3cdd79e429c15b1be7e91bea9046f7b12ef0153a1522c",
+      "run.py": "c0fc313d072486eb26a494084a9439d41d49fa4dfb768dfd45369bf286203f5f",
+      "source.py": "7bbf841f0229dbdf57307fad9e869ff6fd1c7f5034dfd668dd347da12f77b6c0"
+    },
+    "source_inventory_sha256": "2193767d0cedc525d32617ec0e7b4575098f64e48ef8e78670516fa7ae6f74cd",
+    "split_manifest_sha256": "b5dec69f45461d17f16f27104ef7837df39310e6f59d85b826aa1dd18854a22f",
+    "upstream_commit": "7c8bcca06708ea2dd54b822821d637814ef08dc4"
+  },
+  "freeze_digest_sha256": "2502fd7a938d78a78f29da0d3e643ceb85e62822f2519f39a24fffbff6a51919",
+  "full_year_residualization_disclosure": "quarter-hour medians are estimated from the full confirmation year, not from a training period or out-of-sample normalization",
+  "lateral_root_bus": "150",
+  "lateral_root_derivation": "active Circuit.ieee123 Bus1 in qsts/master.dss",
+  "loads": [
+    {
+      "base_bus": "1",
+      "bus1": "1.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S1a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "discovery_only_legacy_bus_cluster",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659088,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S1a.csv",
+      "profile_sha256": "faa14ebb7f7d51d36d155c2c91e785bba552bd99b59c355c111c0fe95e70c796",
+      "sample_count": 35040,
+      "yearly": "loadshape_s1a"
+    },
+    {
+      "base_bus": "2",
+      "bus1": "2.2",
+      "conductors": [
+        "2"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S2b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "B",
+      "phases": 1,
+      "profile_byte_size": 659052,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S2b.csv",
+      "profile_sha256": "9541b6f9bc5b3c20508b00872a9a68b89aa1da4354b21a19aaa4233bffb2d2e1",
+      "sample_count": 35040,
+      "yearly": "loadshape_s2b"
+    },
+    {
+      "base_bus": "4",
+      "bus1": "4.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S4c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "calibration",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 658867,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S4c.csv",
+      "profile_sha256": "6cc3491e96dcc10cbe28b3bb3e0982d8859e6634fb156db9bbd1e324cdfdda17",
+      "sample_count": 35040,
+      "yearly": "loadshape_s4c"
+    },
+    {
+      "base_bus": "5",
+      "bus1": "5.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S5c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 659018,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S5c.csv",
+      "profile_sha256": "c687d1d10a4265f1c15afd9402cb0462cf805c8662a65e0bcd6d714dedcacdec",
+      "sample_count": 35040,
+      "yearly": "loadshape_s5c"
+    },
+    {
+      "base_bus": "6",
+      "bus1": "6.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S6c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 659130,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S6c.csv",
+      "profile_sha256": "c04711155b566d8fb763da5162d14983ce64896d1c72fef23dc7fdb50a45a229",
+      "sample_count": 35040,
+      "yearly": "loadshape_s6c"
+    },
+    {
+      "base_bus": "7",
+      "bus1": "7.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S7a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "calibration",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659055,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S7a.csv",
+      "profile_sha256": "e488ee0529363d59894305379178e88db0047e030d2efcc36ee735dc1fe1ab15",
+      "sample_count": 35040,
+      "yearly": "loadshape_s7a"
+    },
+    {
+      "base_bus": "9",
+      "bus1": "9.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S9a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659040,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S9a.csv",
+      "profile_sha256": "295172ca10dbb815a15b43e8b7b3dcc2aa25e37aa3eb4d0807aed6a6578101e2",
+      "sample_count": 35040,
+      "yearly": "loadshape_s9a"
+    },
+    {
+      "base_bus": "10",
+      "bus1": "10.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S10a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659105,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S10a.csv",
+      "profile_sha256": "aac46156dac3844fdc56563b85274425e844a20e805a481b73c3dddcf1e07c04",
+      "sample_count": 35040,
+      "yearly": "loadshape_s10a"
+    },
+    {
+      "base_bus": "11",
+      "bus1": "11.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S11a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659054,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S11a.csv",
+      "profile_sha256": "e5e3780d7f37cc47a1dae347426af1fd6e02312bed66977338a2b119eedf79c8",
+      "sample_count": 35040,
+      "yearly": "loadshape_s11a"
+    },
+    {
+      "base_bus": "12",
+      "bus1": "12.2",
+      "conductors": [
+        "2"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S12b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "calibration",
+      "numeric_values_accessed": false,
+      "phase": "B",
+      "phases": 1,
+      "profile_byte_size": 659132,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S12b.csv",
+      "profile_sha256": "e94c80b535d79dc5ee0f317f3d31341ffdfc4e6b321c87abd7b31fdb366da5e7",
+      "sample_count": 35040,
+      "yearly": "loadshape_s12b"
+    },
+    {
+      "base_bus": "16",
+      "bus1": "16.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S16c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 659052,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S16c.csv",
+      "profile_sha256": "0f201c40b3a20d10cb8eab4dae9b4d80f7562504ee81dfe698e906f8abdec875",
+      "sample_count": 35040,
+      "yearly": "loadshape_s16c"
+    },
+    {
+      "base_bus": "17",
+      "bus1": "17.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S17c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 659057,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S17c.csv",
+      "profile_sha256": "0079507bd2208cd4c3f96367dcdd95a6f553498af9d9156404698e5ccd1b7381",
+      "sample_count": 35040,
+      "yearly": "loadshape_s17c"
+    },
+    {
+      "base_bus": "19",
+      "bus1": "19.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S19a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "discovery_only_legacy_bus_cluster",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 658971,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S19a.csv",
+      "profile_sha256": "8ffb332d0b0fbb04c07fc686d8b4819fb687f0706fcb161e9ad6b09d377934cf",
+      "sample_count": 35040,
+      "yearly": "loadshape_s19a"
+    },
+    {
+      "base_bus": "20",
+      "bus1": "20.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S20a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659084,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S20a.csv",
+      "profile_sha256": "1f81f1b31530cf5eac9c7221cd3d1aa47b34d458ac4f84343b61f3376d5180d0",
+      "sample_count": 35040,
+      "yearly": "loadshape_s20a"
+    },
+    {
+      "base_bus": "22",
+      "bus1": "22.2",
+      "conductors": [
+        "2"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S22b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "B",
+      "phases": 1,
+      "profile_byte_size": 659132,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S22b.csv",
+      "profile_sha256": "58c8a6b986ba8c22711f52318d784032ab90bf6b93275385da1b7f7ece667c82",
+      "sample_count": 35040,
+      "yearly": "loadshape_s22b"
+    },
+    {
+      "base_bus": "24",
+      "bus1": "24.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S24c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 659147,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S24c.csv",
+      "profile_sha256": "568857a21a064c39167d182c67ef275eeed953691abc3f422bca30431afa5330",
+      "sample_count": 35040,
+      "yearly": "loadshape_s24c"
+    },
+    {
+      "base_bus": "28",
+      "bus1": "28.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S28a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659069,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S28a.csv",
+      "profile_sha256": "7ed25cfc3f3cba32cc12a1ddf743c6da11bd7d86faed479579ba92547c17e5eb",
+      "sample_count": 35040,
+      "yearly": "loadshape_s28a"
+    },
+    {
+      "base_bus": "29",
+      "bus1": "29.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S29a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659072,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S29a.csv",
+      "profile_sha256": "9814516f31d86d1930d0b7ed2e1ecf1e07bec82b84ec78da17de97e7760c3f16",
+      "sample_count": 35040,
+      "yearly": "loadshape_s29a"
+    },
+    {
+      "base_bus": "30",
+      "bus1": "30.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S30c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 659150,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S30c.csv",
+      "profile_sha256": "dce5abc86f9b51d8a9b4939d772a13152eb79031287d69153c49c1f532521a00",
+      "sample_count": 35040,
+      "yearly": "loadshape_s30c"
+    },
+    {
+      "base_bus": "31",
+      "bus1": "31.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S31c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 658926,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S31c.csv",
+      "profile_sha256": "528744384abba79885fdcb7155076173cad77de22f0f85a2677cfadc7228cf01",
+      "sample_count": 35040,
+      "yearly": "loadshape_s31c"
+    },
+    {
+      "base_bus": "32",
+      "bus1": "32.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S32c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 659028,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S32c.csv",
+      "profile_sha256": "7f475d9d17be036dea249b9c4a55fedd17ae3cca2e4150f007ad29275cbce5c6",
+      "sample_count": 35040,
+      "yearly": "loadshape_s32c"
+    },
+    {
+      "base_bus": "33",
+      "bus1": "33.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S33a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "calibration",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659151,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S33a.csv",
+      "profile_sha256": "e6912b65c86ec7614a852fccf9a76e60a772e2062a1bf43c4cefe91c60bd38ef",
+      "sample_count": 35040,
+      "yearly": "loadshape_s33a"
+    },
+    {
+      "base_bus": "34",
+      "bus1": "34.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S34c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "calibration",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 659052,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S34c.csv",
+      "profile_sha256": "e4b0f828a907279cd3bccd97cf4fdc3c956c23558f37f6e98313879b8071b0eb",
+      "sample_count": 35040,
+      "yearly": "loadshape_s34c"
+    },
+    {
+      "base_bus": "35",
+      "bus1": "35.1.2",
+      "conductors": [
+        "1",
+        "2"
+      ],
+      "conn": "delta",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S35a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "exploratory_ineligible_excluded",
+      "numeric_values_accessed": false,
+      "phase": null,
+      "phases": 1,
+      "profile_byte_size": 659083,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S35a.csv",
+      "profile_sha256": "27f6f91a50e5e960d94d458eb4edc43db2f2beb34cc3aef8efb8e8875735b190",
+      "sample_count": 35040,
+      "yearly": "loadshape_s35a"
+    },
+    {
+      "base_bus": "37",
+      "bus1": "37.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S37a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659074,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S37a.csv",
+      "profile_sha256": "4c393dda822b000d29130fed8489211efd8debeaf14eb6b89ef1ab68072953be",
+      "sample_count": 35040,
+      "yearly": "loadshape_s37a"
+    },
+    {
+      "base_bus": "38",
+      "bus1": "38.2",
+      "conductors": [
+        "2"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S38b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "B",
+      "phases": 1,
+      "profile_byte_size": 659028,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S38b.csv",
+      "profile_sha256": "9b4fe0c96be2abb61eb3c20ab50e48499ff28b864d41d123de51efa18265eacd",
+      "sample_count": 35040,
+      "yearly": "loadshape_s38b"
+    },
+    {
+      "base_bus": "39",
+      "bus1": "39.2",
+      "conductors": [
+        "2"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S39b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "B",
+      "phases": 1,
+      "profile_byte_size": 658985,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S39b.csv",
+      "profile_sha256": "4febce6262587e8261a627a6de44c1043672fa75573c19d27f4dc226ee129b64",
+      "sample_count": 35040,
+      "yearly": "loadshape_s39b"
+    },
+    {
+      "base_bus": "41",
+      "bus1": "41.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S41c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 658998,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S41c.csv",
+      "profile_sha256": "83497e7edf4ea74bbfba88a747c8926adf86517c3b4addbf35513899b47ff1c8",
+      "sample_count": 35040,
+      "yearly": "loadshape_s41c"
+    },
+    {
+      "base_bus": "42",
+      "bus1": "42.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S42a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659000,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S42a.csv",
+      "profile_sha256": "23b7cd0036b927c408d23949dea3d9624b2b4af090e36ed472cc65f04afb108d",
+      "sample_count": 35040,
+      "yearly": "loadshape_s42a"
+    },
+    {
+      "base_bus": "43",
+      "bus1": "43.2",
+      "conductors": [
+        "2"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S43b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "B",
+      "phases": 1,
+      "profile_byte_size": 659011,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S43b.csv",
+      "profile_sha256": "0e76fbb678f7a079f1ab48cb8d28f1ba001f88e64665f1717fd103a43369cdf9",
+      "sample_count": 35040,
+      "yearly": "loadshape_s43b"
+    },
+    {
+      "base_bus": "45",
+      "bus1": "45.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S45a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 658998,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S45a.csv",
+      "profile_sha256": "328246b2c58786f56b637abae422eae56e99c2cd5c57ae57a3d371959f792eb1",
+      "sample_count": 35040,
+      "yearly": "loadshape_s45a"
+    },
+    {
+      "base_bus": "46",
+      "bus1": "46.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S46a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659032,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S46a.csv",
+      "profile_sha256": "21844dc868a5183bdfd1fca2b505ecdcead88d2de2eab662b4a5c2ad7f710834",
+      "sample_count": 35040,
+      "yearly": "loadshape_s46a"
+    },
+    {
+      "base_bus": "47",
+      "bus1": "47",
+      "conductors": [],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 75.0,
+      "kw": 105.0,
+      "load_id": "S47",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "discovery_only_legacy_bus_cluster",
+      "numeric_values_accessed": false,
+      "phase": null,
+      "phases": 3,
+      "profile_byte_size": 659056,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S47.csv",
+      "profile_sha256": "e6910096a355b4fccbabda337b3c750eb7cf302f0011418bf20c4a9863b51144",
+      "sample_count": 35040,
+      "yearly": "loadshape_s47"
+    },
+    {
+      "base_bus": "48",
+      "bus1": "48",
+      "conductors": [],
+      "conn": "wye",
+      "interval_hours": null,
+      "kvar": 150.0,
+      "kw": 210.0,
+      "load_id": "S48",
+      "mapping_status": "no_explicit_active_yearly_mapping",
+      "membership": "catalogued_unmapped_excluded",
+      "numeric_values_accessed": false,
+      "phase": null,
+      "phases": 3,
+      "profile_byte_size": null,
+      "profile_metadata_valid": false,
+      "profile_path": null,
+      "profile_sha256": null,
+      "sample_count": null,
+      "yearly": null
+    },
+    {
+      "base_bus": "49",
+      "bus1": "49.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 25.0,
+      "kw": 35.0,
+      "load_id": "S49a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "discovery_only_legacy_bus_cluster",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659046,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S49a.csv",
+      "profile_sha256": "2dedd72224b38985c1129f5ea1b00c6aee0cc9c19c98665c1166b0b7c0cfa419",
+      "sample_count": 35040,
+      "yearly": "loadshape_s49a"
+    },
+    {
+      "base_bus": "49",
+      "bus1": "49.2",
+      "conductors": [
+        "2"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 50.0,
+      "kw": 70.0,
+      "load_id": "S49b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "discovery_only_legacy_bus_cluster",
+      "numeric_values_accessed": false,
+      "phase": "B",
+      "phases": 1,
+      "profile_byte_size": 659033,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S49b.csv",
+      "profile_sha256": "d864a599755101169de1c939c7501f98067921f7ad6922e17d4e8dde37212ad3",
+      "sample_count": 35040,
+      "yearly": "loadshape_s49b"
+    },
+    {
+      "base_bus": "49",
+      "bus1": "49.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": null,
+      "kvar": 20.0,
+      "kw": 35.0,
+      "load_id": "S49c",
+      "mapping_status": "no_explicit_active_yearly_mapping",
+      "membership": "discovery_only_legacy_bus_cluster",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": null,
+      "profile_metadata_valid": false,
+      "profile_path": null,
+      "profile_sha256": null,
+      "sample_count": null,
+      "yearly": null
+    },
+    {
+      "base_bus": "50",
+      "bus1": "50.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S50c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 659182,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S50c.csv",
+      "profile_sha256": "bfd41e963e81d9a0fe0463d02b8c4c2a130cc2241cc5040c845f12376c5a721d",
+      "sample_count": 35040,
+      "yearly": "loadshape_s50c"
+    },
+    {
+      "base_bus": "51",
+      "bus1": "51.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S51a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659161,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S51a.csv",
+      "profile_sha256": "1b2ead29c291497aeffa524cf9709885460be0c77afdc66aa6d8e5cc8d84add6",
+      "sample_count": 35040,
+      "yearly": "loadshape_s51a"
+    },
+    {
+      "base_bus": "52",
+      "bus1": "52.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S52a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659017,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S52a.csv",
+      "profile_sha256": "3ad26372b5e03ad4b57922bfc530c6f3d57d72799dc4cf85b9e42ff4337723b9",
+      "sample_count": 35040,
+      "yearly": "loadshape_s52a"
+    },
+    {
+      "base_bus": "53",
+      "bus1": "53.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S53a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "calibration",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659015,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S53a.csv",
+      "profile_sha256": "2400940f8bdb31a2a8087bfc4bf8fefdc70ff5d25a18862d8c3927383b5fe9ce",
+      "sample_count": 35040,
+      "yearly": "loadshape_s53a"
+    },
+    {
+      "base_bus": "55",
+      "bus1": "55.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S55a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659101,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S55a.csv",
+      "profile_sha256": "23dc267883f68866f3b7a36e4ada91eb9ebeee5646736b0ac65ecb80fd4bbcfe",
+      "sample_count": 35040,
+      "yearly": "loadshape_s55a"
+    },
+    {
+      "base_bus": "56",
+      "bus1": "56.2",
+      "conductors": [
+        "2"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S56b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "B",
+      "phases": 1,
+      "profile_byte_size": 659113,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S56b.csv",
+      "profile_sha256": "cc10c1d8e641df4adcbc5fa30bbeaea745c52498449d1a3a59bf6d6e8f13ed1b",
+      "sample_count": 35040,
+      "yearly": "loadshape_s56b"
+    },
+    {
+      "base_bus": "58",
+      "bus1": "58.2",
+      "conductors": [
+        "2"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S58b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "B",
+      "phases": 1,
+      "profile_byte_size": 658979,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S58b.csv",
+      "profile_sha256": "140ce0cfbcf33d0faebcae1295ebf55033fc5f0399079dc632d45c8f298fe0c0",
+      "sample_count": 35040,
+      "yearly": "loadshape_s58b"
+    },
+    {
+      "base_bus": "59",
+      "bus1": "59.2",
+      "conductors": [
+        "2"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S59b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "calibration",
+      "numeric_values_accessed": false,
+      "phase": "B",
+      "phases": 1,
+      "profile_byte_size": 659150,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S59b.csv",
+      "profile_sha256": "ca2f3b554f9206020ab7815def7d1e9e7c6048e3fe7801cdc2c2ea0649bce581",
+      "sample_count": 35040,
+      "yearly": "loadshape_s59b"
+    },
+    {
+      "base_bus": "60",
+      "bus1": "60.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S60a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "calibration",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659072,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S60a.csv",
+      "profile_sha256": "51ca550c5dddf1b88b250138000f0fe3ed45c478638796f41ca1fb6ad8741172",
+      "sample_count": 35040,
+      "yearly": "loadshape_s60a"
+    },
+    {
+      "base_bus": "62",
+      "bus1": "62.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S62c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "calibration",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 658976,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S62c.csv",
+      "profile_sha256": "e7c3770c218f723ef8457df30ce6a3bc5213b9e0d013f96cd2721fb5e4bb6b62",
+      "sample_count": 35040,
+      "yearly": "loadshape_s62c"
+    },
+    {
+      "base_bus": "63",
+      "bus1": "63.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S63a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 658916,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S63a.csv",
+      "profile_sha256": "871ada679d7ab3574add769ce07b8d9859c32640325fe174e2ee8c6cc49cb2e1",
+      "sample_count": 35040,
+      "yearly": "loadshape_s63a"
+    },
+    {
+      "base_bus": "64",
+      "bus1": "64.2",
+      "conductors": [
+        "2"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 35.0,
+      "kw": 75.0,
+      "load_id": "S64b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "B",
+      "phases": 1,
+      "profile_byte_size": 658982,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S64b.csv",
+      "profile_sha256": "3239363bcbfb3b28d77a0274fb1e062704dd4f13050c5778d4fc4c9fc6b7b8de",
+      "sample_count": 35040,
+      "yearly": "loadshape_s64b"
+    },
+    {
+      "base_bus": "65",
+      "bus1": "65.1.2",
+      "conductors": [
+        "1",
+        "2"
+      ],
+      "conn": "delta",
+      "interval_hours": 0.25,
+      "kvar": 25.0,
+      "kw": 35.0,
+      "load_id": "S65a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "discovery_only_legacy_bus_cluster",
+      "numeric_values_accessed": false,
+      "phase": null,
+      "phases": 1,
+      "profile_byte_size": 659004,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S65a.csv",
+      "profile_sha256": "e8f2c86464324c7e47639c53ee954bce351eaaa30855fe6b3f642d037ddc1b91",
+      "sample_count": 35040,
+      "yearly": "loadshape_s65a"
+    },
+    {
+      "base_bus": "65",
+      "bus1": "65.2.3",
+      "conductors": [
+        "2",
+        "3"
+      ],
+      "conn": "delta",
+      "interval_hours": 0.25,
+      "kvar": 25.0,
+      "kw": 35.0,
+      "load_id": "S65b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "discovery_only_legacy_bus_cluster",
+      "numeric_values_accessed": false,
+      "phase": null,
+      "phases": 1,
+      "profile_byte_size": 659074,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S65b.csv",
+      "profile_sha256": "724ed0fd80f96f46af24c278997d6b1b961c2cf705436aca386f77b883e2a8d6",
+      "sample_count": 35040,
+      "yearly": "loadshape_s65b"
+    },
+    {
+      "base_bus": "65",
+      "bus1": "65.3.1",
+      "conductors": [
+        "3",
+        "1"
+      ],
+      "conn": "delta",
+      "interval_hours": 0.25,
+      "kvar": 50.0,
+      "kw": 70.0,
+      "load_id": "S65c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "discovery_only_legacy_bus_cluster",
+      "numeric_values_accessed": false,
+      "phase": null,
+      "phases": 1,
+      "profile_byte_size": 659248,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S65c.csv",
+      "profile_sha256": "af9ae5b8ede5638e141d7d0a02b81eef35212e6b94d300c82a58f5c50fb741bb",
+      "sample_count": 35040,
+      "yearly": "loadshape_s65c"
+    },
+    {
+      "base_bus": "66",
+      "bus1": "66.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 35.0,
+      "kw": 75.0,
+      "load_id": "S66c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "calibration",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 658922,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S66c.csv",
+      "profile_sha256": "546f7823bc3b8483e554ec47a0c8ed425b8253590220b84bef569b2f2edefa49",
+      "sample_count": 35040,
+      "yearly": "loadshape_s66c"
+    },
+    {
+      "base_bus": "68",
+      "bus1": "68.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S68a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659103,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S68a.csv",
+      "profile_sha256": "10324c51ecc552276e47827640d5119f62801a39e4ce4695425c97c9595c70b3",
+      "sample_count": 35040,
+      "yearly": "loadshape_s68a"
+    },
+    {
+      "base_bus": "69",
+      "bus1": "69.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S69a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659127,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S69a.csv",
+      "profile_sha256": "a9f1a39db7c7e680a29b29b7127a7495f04f121099ce2d10da2c8d8c430efb8b",
+      "sample_count": 35040,
+      "yearly": "loadshape_s69a"
+    },
+    {
+      "base_bus": "70",
+      "bus1": "70.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S70a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659098,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S70a.csv",
+      "profile_sha256": "905140a24332f8859f9e634081471a60dc5f3f65cb10ed8fc00eeefeb1df138d",
+      "sample_count": 35040,
+      "yearly": "loadshape_s70a"
+    },
+    {
+      "base_bus": "71",
+      "bus1": "71.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S71a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 658997,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S71a.csv",
+      "profile_sha256": "a1dcf6934ca160292d191c7874a125b5bb0b970a08a47fbeac18e91518a6040e",
+      "sample_count": 35040,
+      "yearly": "loadshape_s71a"
+    },
+    {
+      "base_bus": "73",
+      "bus1": "73.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S73c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 659132,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S73c.csv",
+      "profile_sha256": "bcf8bf54a4c5981509afedf78812806c7cf673e10d3f9c35abe33fb4d4e3f714",
+      "sample_count": 35040,
+      "yearly": "loadshape_s73c"
+    },
+    {
+      "base_bus": "74",
+      "bus1": "74.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S74c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 659133,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S74c.csv",
+      "profile_sha256": "79a98baf71597d6566843b272108b5500b21033c0d7c16baf843aa5c0d49abe3",
+      "sample_count": 35040,
+      "yearly": "loadshape_s74c"
+    },
+    {
+      "base_bus": "75",
+      "bus1": "75.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S75c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "calibration",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 659076,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S75c.csv",
+      "profile_sha256": "52c993fec679241217081904227fcd692c655ac3ede659771486f1c3841c86c3",
+      "sample_count": 35040,
+      "yearly": "loadshape_s75c"
+    },
+    {
+      "base_bus": "76",
+      "bus1": "76.1.2",
+      "conductors": [
+        "1",
+        "2"
+      ],
+      "conn": "delta",
+      "interval_hours": 0.25,
+      "kvar": 80.0,
+      "kw": 105.0,
+      "load_id": "S76a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "exploratory_ineligible_excluded",
+      "numeric_values_accessed": false,
+      "phase": null,
+      "phases": 1,
+      "profile_byte_size": 659064,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S76a.csv",
+      "profile_sha256": "fbec5dc0cf56b9563d462215a37d334187eb86010944145affa9c3013c73127a",
+      "sample_count": 35040,
+      "yearly": "loadshape_s76a"
+    },
+    {
+      "base_bus": "76",
+      "bus1": "76.2.3",
+      "conductors": [
+        "2",
+        "3"
+      ],
+      "conn": "delta",
+      "interval_hours": 0.25,
+      "kvar": 50.0,
+      "kw": 70.0,
+      "load_id": "S76b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "exploratory_ineligible_excluded",
+      "numeric_values_accessed": false,
+      "phase": null,
+      "phases": 1,
+      "profile_byte_size": 659055,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S76b.csv",
+      "profile_sha256": "177f987fd2317931500b4f11c20bbd5020deb54f91d906543de0c381432037d4",
+      "sample_count": 35040,
+      "yearly": "loadshape_s76b"
+    },
+    {
+      "base_bus": "76",
+      "bus1": "76.3.1",
+      "conductors": [
+        "3",
+        "1"
+      ],
+      "conn": "delta",
+      "interval_hours": 0.25,
+      "kvar": 50.0,
+      "kw": 70.0,
+      "load_id": "S76c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "exploratory_ineligible_excluded",
+      "numeric_values_accessed": false,
+      "phase": null,
+      "phases": 1,
+      "profile_byte_size": 658995,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S76c.csv",
+      "profile_sha256": "45ce13d98ba7fee883be486fdddcdbfdc4334bd1eb53669bb5e4680f22bf3357",
+      "sample_count": 35040,
+      "yearly": "loadshape_s76c"
+    },
+    {
+      "base_bus": "77",
+      "bus1": "77.2",
+      "conductors": [
+        "2"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S77b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "B",
+      "phases": 1,
+      "profile_byte_size": 659039,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S77b.csv",
+      "profile_sha256": "9752f34a6d7573c56dbb7b8059e6973f78a8de12a4411550c9c82238da6a5177",
+      "sample_count": 35040,
+      "yearly": "loadshape_s77b"
+    },
+    {
+      "base_bus": "79",
+      "bus1": "79.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S79a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "calibration",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659034,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S79a.csv",
+      "profile_sha256": "a33f5ae6e3cdf65ed4244cf02020699b5d9026864e56da9b4d445f0506d41d95",
+      "sample_count": 35040,
+      "yearly": "loadshape_s79a"
+    },
+    {
+      "base_bus": "80",
+      "bus1": "80.2",
+      "conductors": [
+        "2"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S80b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "B",
+      "phases": 1,
+      "profile_byte_size": 659162,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S80b.csv",
+      "profile_sha256": "4caae899d48d45a4b6cb0a2e889b52b8965dda02530fc4c8c85c2f018ca12b88",
+      "sample_count": 35040,
+      "yearly": "loadshape_s80b"
+    },
+    {
+      "base_bus": "82",
+      "bus1": "82.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S82a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 658986,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S82a.csv",
+      "profile_sha256": "429b48abefd2185b6c792966223b633fadac45dc8d6c7324a0df20ff801afab1",
+      "sample_count": 35040,
+      "yearly": "loadshape_s82a"
+    },
+    {
+      "base_bus": "83",
+      "bus1": "83.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S83c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 659114,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S83c.csv",
+      "profile_sha256": "10a47ce5c65185bab300758c19d3e54774d81bdc9d7ad7ea230f6b0a4e30f84d",
+      "sample_count": 35040,
+      "yearly": "loadshape_s83c"
+    },
+    {
+      "base_bus": "84",
+      "bus1": "84.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S84c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 659203,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S84c.csv",
+      "profile_sha256": "e2f32ada8620b1e983b5d7b81c7448196ca09b55a83f6b199991b73bca4f0d9a",
+      "sample_count": 35040,
+      "yearly": "loadshape_s84c"
+    },
+    {
+      "base_bus": "85",
+      "bus1": "85.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S85c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 659107,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S85c.csv",
+      "profile_sha256": "634d8b21b52e10b82ec45b672f72b1bb0f36ca0b490ddd4c504b8bc0cbbd2dde",
+      "sample_count": 35040,
+      "yearly": "loadshape_s85c"
+    },
+    {
+      "base_bus": "86",
+      "bus1": "86.2",
+      "conductors": [
+        "2"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S86b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "B",
+      "phases": 1,
+      "profile_byte_size": 659147,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S86b.csv",
+      "profile_sha256": "bee98314c8afa22d817291a7ab5e21fc78039cca2907993896676e6f0dfbd3c4",
+      "sample_count": 35040,
+      "yearly": "loadshape_s86b"
+    },
+    {
+      "base_bus": "87",
+      "bus1": "87.2",
+      "conductors": [
+        "2"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S87b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "B",
+      "phases": 1,
+      "profile_byte_size": 659019,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S87b.csv",
+      "profile_sha256": "45334b5f501cff5303bc5763ef305177a998c514b4ce951bb8212ea86f29afc9",
+      "sample_count": 35040,
+      "yearly": "loadshape_s87b"
+    },
+    {
+      "base_bus": "88",
+      "bus1": "88.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S88a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659005,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S88a.csv",
+      "profile_sha256": "e0a80cb1c0163a4d14468ff09ff3abd54a8b2b93a7be51e7e23fa9db02af4ce3",
+      "sample_count": 35040,
+      "yearly": "loadshape_s88a"
+    },
+    {
+      "base_bus": "90",
+      "bus1": "90.2",
+      "conductors": [
+        "2"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S90b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "B",
+      "phases": 1,
+      "profile_byte_size": 658825,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S90b.csv",
+      "profile_sha256": "72797e71562a856d3a029de2be7169d4c6a60822afb601e4380e2deeb70ebfca",
+      "sample_count": 35040,
+      "yearly": "loadshape_s90b"
+    },
+    {
+      "base_bus": "92",
+      "bus1": "92.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S92c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 658920,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S92c.csv",
+      "profile_sha256": "15e9fd47dfc5c79881a4fa0973249a63baea0378bfafbbd0b1d094defef5ea7b",
+      "sample_count": 35040,
+      "yearly": "loadshape_s92c"
+    },
+    {
+      "base_bus": "94",
+      "bus1": "94.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S94a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "calibration",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 658945,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S94a.csv",
+      "profile_sha256": "6e2be6ea3050aa9d4dacc9b62499fae2052072720fc3051dab1ccb4f8e24e7e3",
+      "sample_count": 35040,
+      "yearly": "loadshape_s94a"
+    },
+    {
+      "base_bus": "95",
+      "bus1": "95.2",
+      "conductors": [
+        "2"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S95b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "B",
+      "phases": 1,
+      "profile_byte_size": 659115,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S95b.csv",
+      "profile_sha256": "b28e06e2580d0a698ec6b3bf61067864fc9905bb13340c645805baeec34dcbf6",
+      "sample_count": 35040,
+      "yearly": "loadshape_s95b"
+    },
+    {
+      "base_bus": "96",
+      "bus1": "96.2",
+      "conductors": [
+        "2"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S96b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "calibration",
+      "numeric_values_accessed": false,
+      "phase": "B",
+      "phases": 1,
+      "profile_byte_size": 659103,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S96b.csv",
+      "profile_sha256": "9724472597d0998be98a0a91310dc3387671079af43dd11487f43b298225c06a",
+      "sample_count": 35040,
+      "yearly": "loadshape_s96b"
+    },
+    {
+      "base_bus": "98",
+      "bus1": "98.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S98a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659068,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S98a.csv",
+      "profile_sha256": "e359d108f7e5396c82d03be7d6e092c771b582a81fe9cb8aa40cf63412252dbd",
+      "sample_count": 35040,
+      "yearly": "loadshape_s98a"
+    },
+    {
+      "base_bus": "99",
+      "bus1": "99.2",
+      "conductors": [
+        "2"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S99b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "B",
+      "phases": 1,
+      "profile_byte_size": 659107,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S99b.csv",
+      "profile_sha256": "3735e45ae970a7d42f4f7255aa76a4b9ad69b6acabfd6b14615b0aa78ce9e3a0",
+      "sample_count": 35040,
+      "yearly": "loadshape_s99b"
+    },
+    {
+      "base_bus": "100",
+      "bus1": "100.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S100c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 659034,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S100c.csv",
+      "profile_sha256": "0372a8b4e869beacdde40502e413666089f43b57a15c847188adbdfe4fd47277",
+      "sample_count": 35040,
+      "yearly": "loadshape_s100c"
+    },
+    {
+      "base_bus": "102",
+      "bus1": "102.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S102c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 659074,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S102c.csv",
+      "profile_sha256": "8b81bc54bf0b4109678b64f291b7d7395a77a0445a7442fc0f70372a88f7b1df",
+      "sample_count": 35040,
+      "yearly": "loadshape_s102c"
+    },
+    {
+      "base_bus": "103",
+      "bus1": "103.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S103c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 659035,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S103c.csv",
+      "profile_sha256": "225c645c84040cf0ad2389baf59507dfe3dd3d9c93ee0244a14824b148bb1eb4",
+      "sample_count": 35040,
+      "yearly": "loadshape_s103c"
+    },
+    {
+      "base_bus": "104",
+      "bus1": "104.3",
+      "conductors": [
+        "3"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S104c",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "C",
+      "phases": 1,
+      "profile_byte_size": 659047,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S104c.csv",
+      "profile_sha256": "03c7990622c555f8e8490dbf060599cad8ea6093e67e2a8895662c3220d1eda0",
+      "sample_count": 35040,
+      "yearly": "loadshape_s104c"
+    },
+    {
+      "base_bus": "106",
+      "bus1": "106.2",
+      "conductors": [
+        "2"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S106b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "B",
+      "phases": 1,
+      "profile_byte_size": 659084,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S106b.csv",
+      "profile_sha256": "a2e258d04cb0d817fc847bd7ba9a09de3e1019a661b160a61b1da5f8c90e1ea4",
+      "sample_count": 35040,
+      "yearly": "loadshape_s106b"
+    },
+    {
+      "base_bus": "107",
+      "bus1": "107.2",
+      "conductors": [
+        "2"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S107b",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "calibration",
+      "numeric_values_accessed": false,
+      "phase": "B",
+      "phases": 1,
+      "profile_byte_size": 659031,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S107b.csv",
+      "profile_sha256": "33a7195176825d3795c8a0827a9df6d036424e69162f7eeb1cd9e5cedb62d9e4",
+      "sample_count": 35040,
+      "yearly": "loadshape_s107b"
+    },
+    {
+      "base_bus": "109",
+      "bus1": "109.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S109a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659083,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S109a.csv",
+      "profile_sha256": "499aa640423908ae0966a39c8234737c86313afc5309d584f1a993d7272aec83",
+      "sample_count": 35040,
+      "yearly": "loadshape_s109a"
+    },
+    {
+      "base_bus": "111",
+      "bus1": "111.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S111a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "calibration",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659109,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S111a.csv",
+      "profile_sha256": "4dd81449bbeb58144808efdc505a790635e3f1269b92ed9ad6f1c34dd3b59b11",
+      "sample_count": 35040,
+      "yearly": "loadshape_s111a"
+    },
+    {
+      "base_bus": "112",
+      "bus1": "112.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S112a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659138,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S112a.csv",
+      "profile_sha256": "bdf374ff30d5eaab1c14fb27b79d7d0eff3e815dd1b9325889180a58200ee2c9",
+      "sample_count": 35040,
+      "yearly": "loadshape_s112a"
+    },
+    {
+      "base_bus": "113",
+      "bus1": "113.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S113a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 658999,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S113a.csv",
+      "profile_sha256": "1ffd7f1e1b5a8e589cf2fa72102c5b6d991736a213f213d935af09d7c1ea1d9b",
+      "sample_count": 35040,
+      "yearly": "loadshape_s113a"
+    },
+    {
+      "base_bus": "114",
+      "bus1": "114.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "interval_hours": 0.25,
+      "kvar": 10.0,
+      "kw": 20.0,
+      "load_id": "S114a",
+      "mapping_status": "explicit_active_yearly_mapping",
+      "membership": "confirmation",
+      "numeric_values_accessed": false,
+      "phase": "A",
+      "phases": 1,
+      "profile_byte_size": 659134,
+      "profile_metadata_valid": true,
+      "profile_path": "profiles/load_profiles/loadshape_S114a.csv",
+      "profile_sha256": "fe4e81bc0ff97b8adbbaadec5bf136624a26a4612192184ead490d681efffdb7",
+      "sample_count": 35040,
+      "yearly": "loadshape_s114a"
+    }
+  ],
+  "loadshape_catalog": [
+    {
+      "byte_size": 659088,
+      "canonical_git_blob_sha256": "faa14ebb7f7d51d36d155c2c91e785bba552bd99b59c355c111c0fe95e70c796",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659088,
+      "git_blob_oid": "bdc2e08b4326a4eaf84195007fc0e5bea952c097",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S1a.csv",
+      "sha256": "faa14ebb7f7d51d36d155c2c91e785bba552bd99b59c355c111c0fe95e70c796",
+      "shape_id": "loadshape_s1a"
+    },
+    {
+      "byte_size": 659052,
+      "canonical_git_blob_sha256": "9541b6f9bc5b3c20508b00872a9a68b89aa1da4354b21a19aaa4233bffb2d2e1",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659052,
+      "git_blob_oid": "2480d9f865711d1e2485c097d89a3cb08c6c67b6",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S2b.csv",
+      "sha256": "9541b6f9bc5b3c20508b00872a9a68b89aa1da4354b21a19aaa4233bffb2d2e1",
+      "shape_id": "loadshape_s2b"
+    },
+    {
+      "byte_size": 658867,
+      "canonical_git_blob_sha256": "6cc3491e96dcc10cbe28b3bb3e0982d8859e6634fb156db9bbd1e324cdfdda17",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 658867,
+      "git_blob_oid": "9e555169732f76553a832d50e8ecb88477456e0e",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S4c.csv",
+      "sha256": "6cc3491e96dcc10cbe28b3bb3e0982d8859e6634fb156db9bbd1e324cdfdda17",
+      "shape_id": "loadshape_s4c"
+    },
+    {
+      "byte_size": 659018,
+      "canonical_git_blob_sha256": "c687d1d10a4265f1c15afd9402cb0462cf805c8662a65e0bcd6d714dedcacdec",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659018,
+      "git_blob_oid": "4fe753420886d5d3919a9c20a37a857bd7d84fe5",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S5c.csv",
+      "sha256": "c687d1d10a4265f1c15afd9402cb0462cf805c8662a65e0bcd6d714dedcacdec",
+      "shape_id": "loadshape_s5c"
+    },
+    {
+      "byte_size": 659130,
+      "canonical_git_blob_sha256": "c04711155b566d8fb763da5162d14983ce64896d1c72fef23dc7fdb50a45a229",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659130,
+      "git_blob_oid": "0f3fe796c21c880094a3290bbac75d6f467c633c",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S6c.csv",
+      "sha256": "c04711155b566d8fb763da5162d14983ce64896d1c72fef23dc7fdb50a45a229",
+      "shape_id": "loadshape_s6c"
+    },
+    {
+      "byte_size": 659055,
+      "canonical_git_blob_sha256": "e488ee0529363d59894305379178e88db0047e030d2efcc36ee735dc1fe1ab15",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659055,
+      "git_blob_oid": "5df0d305fb5a7df97573cdfae5fb1afbba36be62",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S7a.csv",
+      "sha256": "e488ee0529363d59894305379178e88db0047e030d2efcc36ee735dc1fe1ab15",
+      "shape_id": "loadshape_s7a"
+    },
+    {
+      "byte_size": 659040,
+      "canonical_git_blob_sha256": "295172ca10dbb815a15b43e8b7b3dcc2aa25e37aa3eb4d0807aed6a6578101e2",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659040,
+      "git_blob_oid": "1e42b07234336059f2290c769a41714d2ce87212",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S9a.csv",
+      "sha256": "295172ca10dbb815a15b43e8b7b3dcc2aa25e37aa3eb4d0807aed6a6578101e2",
+      "shape_id": "loadshape_s9a"
+    },
+    {
+      "byte_size": 659105,
+      "canonical_git_blob_sha256": "aac46156dac3844fdc56563b85274425e844a20e805a481b73c3dddcf1e07c04",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659105,
+      "git_blob_oid": "0446c79a57b617d09f2bc059d8691984d811a051",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S10a.csv",
+      "sha256": "aac46156dac3844fdc56563b85274425e844a20e805a481b73c3dddcf1e07c04",
+      "shape_id": "loadshape_s10a"
+    },
+    {
+      "byte_size": 659054,
+      "canonical_git_blob_sha256": "e5e3780d7f37cc47a1dae347426af1fd6e02312bed66977338a2b119eedf79c8",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659054,
+      "git_blob_oid": "4c45fefcea6adf1b7832224982e453f2df7b6f93",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S11a.csv",
+      "sha256": "e5e3780d7f37cc47a1dae347426af1fd6e02312bed66977338a2b119eedf79c8",
+      "shape_id": "loadshape_s11a"
+    },
+    {
+      "byte_size": 659132,
+      "canonical_git_blob_sha256": "e94c80b535d79dc5ee0f317f3d31341ffdfc4e6b321c87abd7b31fdb366da5e7",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659132,
+      "git_blob_oid": "c8b0f2120f27bc283b2e8d870dcd6135e0ef80bc",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S12b.csv",
+      "sha256": "e94c80b535d79dc5ee0f317f3d31341ffdfc4e6b321c87abd7b31fdb366da5e7",
+      "shape_id": "loadshape_s12b"
+    },
+    {
+      "byte_size": 659052,
+      "canonical_git_blob_sha256": "0f201c40b3a20d10cb8eab4dae9b4d80f7562504ee81dfe698e906f8abdec875",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659052,
+      "git_blob_oid": "c9007dc30983ba67e8674dca6c37150feeeb57a5",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S16c.csv",
+      "sha256": "0f201c40b3a20d10cb8eab4dae9b4d80f7562504ee81dfe698e906f8abdec875",
+      "shape_id": "loadshape_s16c"
+    },
+    {
+      "byte_size": 659057,
+      "canonical_git_blob_sha256": "0079507bd2208cd4c3f96367dcdd95a6f553498af9d9156404698e5ccd1b7381",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659057,
+      "git_blob_oid": "b6e9fff44dee31a62df5f8561ef982aeb9dc3ccb",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S17c.csv",
+      "sha256": "0079507bd2208cd4c3f96367dcdd95a6f553498af9d9156404698e5ccd1b7381",
+      "shape_id": "loadshape_s17c"
+    },
+    {
+      "byte_size": 658971,
+      "canonical_git_blob_sha256": "8ffb332d0b0fbb04c07fc686d8b4819fb687f0706fcb161e9ad6b09d377934cf",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 658971,
+      "git_blob_oid": "3ef07af7c71a3cddba23bf93d8c8a4595b3f6ad9",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S19a.csv",
+      "sha256": "8ffb332d0b0fbb04c07fc686d8b4819fb687f0706fcb161e9ad6b09d377934cf",
+      "shape_id": "loadshape_s19a"
+    },
+    {
+      "byte_size": 659084,
+      "canonical_git_blob_sha256": "1f81f1b31530cf5eac9c7221cd3d1aa47b34d458ac4f84343b61f3376d5180d0",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659084,
+      "git_blob_oid": "994cc9c343b1a2d8bf7f0fa3984eb849a7c5b17c",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S20a.csv",
+      "sha256": "1f81f1b31530cf5eac9c7221cd3d1aa47b34d458ac4f84343b61f3376d5180d0",
+      "shape_id": "loadshape_s20a"
+    },
+    {
+      "byte_size": 659132,
+      "canonical_git_blob_sha256": "58c8a6b986ba8c22711f52318d784032ab90bf6b93275385da1b7f7ece667c82",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659132,
+      "git_blob_oid": "53fb89112b707fac5fdc6dce225cefe5cdc5b2e5",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S22b.csv",
+      "sha256": "58c8a6b986ba8c22711f52318d784032ab90bf6b93275385da1b7f7ece667c82",
+      "shape_id": "loadshape_s22b"
+    },
+    {
+      "byte_size": 659147,
+      "canonical_git_blob_sha256": "568857a21a064c39167d182c67ef275eeed953691abc3f422bca30431afa5330",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659147,
+      "git_blob_oid": "d492f46be76d7270155beefcf57afb4bafff007c",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S24c.csv",
+      "sha256": "568857a21a064c39167d182c67ef275eeed953691abc3f422bca30431afa5330",
+      "shape_id": "loadshape_s24c"
+    },
+    {
+      "byte_size": 659069,
+      "canonical_git_blob_sha256": "7ed25cfc3f3cba32cc12a1ddf743c6da11bd7d86faed479579ba92547c17e5eb",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659069,
+      "git_blob_oid": "2d663fc9d14f628464057f9739a45aac67b30a5a",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S28a.csv",
+      "sha256": "7ed25cfc3f3cba32cc12a1ddf743c6da11bd7d86faed479579ba92547c17e5eb",
+      "shape_id": "loadshape_s28a"
+    },
+    {
+      "byte_size": 659072,
+      "canonical_git_blob_sha256": "9814516f31d86d1930d0b7ed2e1ecf1e07bec82b84ec78da17de97e7760c3f16",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659072,
+      "git_blob_oid": "f3411375b332cf8b96c278655e42b6dbdd5168b9",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S29a.csv",
+      "sha256": "9814516f31d86d1930d0b7ed2e1ecf1e07bec82b84ec78da17de97e7760c3f16",
+      "shape_id": "loadshape_s29a"
+    },
+    {
+      "byte_size": 659150,
+      "canonical_git_blob_sha256": "dce5abc86f9b51d8a9b4939d772a13152eb79031287d69153c49c1f532521a00",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659150,
+      "git_blob_oid": "4a540fad9efb5beac43e33a00f96965a272f37dc",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S30c.csv",
+      "sha256": "dce5abc86f9b51d8a9b4939d772a13152eb79031287d69153c49c1f532521a00",
+      "shape_id": "loadshape_s30c"
+    },
+    {
+      "byte_size": 658926,
+      "canonical_git_blob_sha256": "528744384abba79885fdcb7155076173cad77de22f0f85a2677cfadc7228cf01",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 658926,
+      "git_blob_oid": "c3ad774a0a2504f16c89eb03ef4016476b9b81fb",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S31c.csv",
+      "sha256": "528744384abba79885fdcb7155076173cad77de22f0f85a2677cfadc7228cf01",
+      "shape_id": "loadshape_s31c"
+    },
+    {
+      "byte_size": 659028,
+      "canonical_git_blob_sha256": "7f475d9d17be036dea249b9c4a55fedd17ae3cca2e4150f007ad29275cbce5c6",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659028,
+      "git_blob_oid": "6b7db6705096d06a945e229ec10fde1368eef834",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S32c.csv",
+      "sha256": "7f475d9d17be036dea249b9c4a55fedd17ae3cca2e4150f007ad29275cbce5c6",
+      "shape_id": "loadshape_s32c"
+    },
+    {
+      "byte_size": 659151,
+      "canonical_git_blob_sha256": "e6912b65c86ec7614a852fccf9a76e60a772e2062a1bf43c4cefe91c60bd38ef",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659151,
+      "git_blob_oid": "2766f0179b891685d14a23323b4e48a9402e4641",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S33a.csv",
+      "sha256": "e6912b65c86ec7614a852fccf9a76e60a772e2062a1bf43c4cefe91c60bd38ef",
+      "shape_id": "loadshape_s33a"
+    },
+    {
+      "byte_size": 659052,
+      "canonical_git_blob_sha256": "e4b0f828a907279cd3bccd97cf4fdc3c956c23558f37f6e98313879b8071b0eb",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659052,
+      "git_blob_oid": "e0d05b6fb9a191fab766912c779d497f92fdf46f",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S34c.csv",
+      "sha256": "e4b0f828a907279cd3bccd97cf4fdc3c956c23558f37f6e98313879b8071b0eb",
+      "shape_id": "loadshape_s34c"
+    },
+    {
+      "byte_size": 659083,
+      "canonical_git_blob_sha256": "27f6f91a50e5e960d94d458eb4edc43db2f2beb34cc3aef8efb8e8875735b190",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659083,
+      "git_blob_oid": "8f3f3a2e3319f5cd117ec7432440a507ff0acdfd",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S35a.csv",
+      "sha256": "27f6f91a50e5e960d94d458eb4edc43db2f2beb34cc3aef8efb8e8875735b190",
+      "shape_id": "loadshape_s35a"
+    },
+    {
+      "byte_size": 659074,
+      "canonical_git_blob_sha256": "4c393dda822b000d29130fed8489211efd8debeaf14eb6b89ef1ab68072953be",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659074,
+      "git_blob_oid": "d368e3ba0fd21af7daec9c63b3da89069120ffdc",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S37a.csv",
+      "sha256": "4c393dda822b000d29130fed8489211efd8debeaf14eb6b89ef1ab68072953be",
+      "shape_id": "loadshape_s37a"
+    },
+    {
+      "byte_size": 659028,
+      "canonical_git_blob_sha256": "9b4fe0c96be2abb61eb3c20ab50e48499ff28b864d41d123de51efa18265eacd",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659028,
+      "git_blob_oid": "488b3dddc0f94a84f450dce53fdbab6a247b1d91",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S38b.csv",
+      "sha256": "9b4fe0c96be2abb61eb3c20ab50e48499ff28b864d41d123de51efa18265eacd",
+      "shape_id": "loadshape_s38b"
+    },
+    {
+      "byte_size": 658985,
+      "canonical_git_blob_sha256": "4febce6262587e8261a627a6de44c1043672fa75573c19d27f4dc226ee129b64",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 658985,
+      "git_blob_oid": "3f8b7f9bb61d0c2fba263ffcf66e3546e320ab21",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S39b.csv",
+      "sha256": "4febce6262587e8261a627a6de44c1043672fa75573c19d27f4dc226ee129b64",
+      "shape_id": "loadshape_s39b"
+    },
+    {
+      "byte_size": 658998,
+      "canonical_git_blob_sha256": "83497e7edf4ea74bbfba88a747c8926adf86517c3b4addbf35513899b47ff1c8",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 658998,
+      "git_blob_oid": "920301f0de1961f2e6f08f656f5b2313fbbe2daf",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S41c.csv",
+      "sha256": "83497e7edf4ea74bbfba88a747c8926adf86517c3b4addbf35513899b47ff1c8",
+      "shape_id": "loadshape_s41c"
+    },
+    {
+      "byte_size": 659000,
+      "canonical_git_blob_sha256": "23b7cd0036b927c408d23949dea3d9624b2b4af090e36ed472cc65f04afb108d",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659000,
+      "git_blob_oid": "c7e533a6d535a2dddfa43d6e19a50e3ca46186b5",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S42a.csv",
+      "sha256": "23b7cd0036b927c408d23949dea3d9624b2b4af090e36ed472cc65f04afb108d",
+      "shape_id": "loadshape_s42a"
+    },
+    {
+      "byte_size": 659011,
+      "canonical_git_blob_sha256": "0e76fbb678f7a079f1ab48cb8d28f1ba001f88e64665f1717fd103a43369cdf9",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659011,
+      "git_blob_oid": "c4d0dd29bb52fc98229d1a9f88fbcb14fa4969e4",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S43b.csv",
+      "sha256": "0e76fbb678f7a079f1ab48cb8d28f1ba001f88e64665f1717fd103a43369cdf9",
+      "shape_id": "loadshape_s43b"
+    },
+    {
+      "byte_size": 658998,
+      "canonical_git_blob_sha256": "328246b2c58786f56b637abae422eae56e99c2cd5c57ae57a3d371959f792eb1",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 658998,
+      "git_blob_oid": "63e9fd6208ab20a3f2b00b193fbbbb57ee57c5ab",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S45a.csv",
+      "sha256": "328246b2c58786f56b637abae422eae56e99c2cd5c57ae57a3d371959f792eb1",
+      "shape_id": "loadshape_s45a"
+    },
+    {
+      "byte_size": 659032,
+      "canonical_git_blob_sha256": "21844dc868a5183bdfd1fca2b505ecdcead88d2de2eab662b4a5c2ad7f710834",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659032,
+      "git_blob_oid": "77bb33ff349f15e0aed90ae9fe7bb525f44c4a28",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S46a.csv",
+      "sha256": "21844dc868a5183bdfd1fca2b505ecdcead88d2de2eab662b4a5c2ad7f710834",
+      "shape_id": "loadshape_s46a"
+    },
+    {
+      "byte_size": 659056,
+      "canonical_git_blob_sha256": "e6910096a355b4fccbabda337b3c750eb7cf302f0011418bf20c4a9863b51144",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659056,
+      "git_blob_oid": "9ab931e520c4974bf811aa22fd01f21f1f493715",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S47.csv",
+      "sha256": "e6910096a355b4fccbabda337b3c750eb7cf302f0011418bf20c4a9863b51144",
+      "shape_id": "loadshape_s47"
+    },
+    {
+      "byte_size": 659037,
+      "canonical_git_blob_sha256": "b6e9a0897cd9ce983677730da7b74a9957c2fbf8949be5bb1ae4e41b1abbe724",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659037,
+      "git_blob_oid": "00de446df596f7a6d226e10e531711123db2d95d",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S48.csv",
+      "sha256": "b6e9a0897cd9ce983677730da7b74a9957c2fbf8949be5bb1ae4e41b1abbe724",
+      "shape_id": "loadshape_s48"
+    },
+    {
+      "byte_size": 659046,
+      "canonical_git_blob_sha256": "2dedd72224b38985c1129f5ea1b00c6aee0cc9c19c98665c1166b0b7c0cfa419",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659046,
+      "git_blob_oid": "c30f1e65e4b6a71b63f22e302d31ec9418a889fd",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S49a.csv",
+      "sha256": "2dedd72224b38985c1129f5ea1b00c6aee0cc9c19c98665c1166b0b7c0cfa419",
+      "shape_id": "loadshape_s49a"
+    },
+    {
+      "byte_size": 659033,
+      "canonical_git_blob_sha256": "d864a599755101169de1c939c7501f98067921f7ad6922e17d4e8dde37212ad3",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659033,
+      "git_blob_oid": "9c6c433f05b30c8d76553b74cc306eb1302dba70",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S49b.csv",
+      "sha256": "d864a599755101169de1c939c7501f98067921f7ad6922e17d4e8dde37212ad3",
+      "shape_id": "loadshape_s49b"
+    },
+    {
+      "byte_size": 658971,
+      "canonical_git_blob_sha256": "e1344e9d938857ac8b646fc00bec06b93143e3b7d18140a99f507756f60d56fd",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 658971,
+      "git_blob_oid": "45c424ba0b4fef38ce968c8c38d472924dabe3ad",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S49c.csv",
+      "sha256": "e1344e9d938857ac8b646fc00bec06b93143e3b7d18140a99f507756f60d56fd",
+      "shape_id": "loadshape_s49c"
+    },
+    {
+      "byte_size": 659182,
+      "canonical_git_blob_sha256": "bfd41e963e81d9a0fe0463d02b8c4c2a130cc2241cc5040c845f12376c5a721d",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659182,
+      "git_blob_oid": "73a8002d7b5b305175d1c72cb8ba2106bba972bb",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S50c.csv",
+      "sha256": "bfd41e963e81d9a0fe0463d02b8c4c2a130cc2241cc5040c845f12376c5a721d",
+      "shape_id": "loadshape_s50c"
+    },
+    {
+      "byte_size": 659161,
+      "canonical_git_blob_sha256": "1b2ead29c291497aeffa524cf9709885460be0c77afdc66aa6d8e5cc8d84add6",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659161,
+      "git_blob_oid": "6df293f91f3a573335d56e6c9aa008ac99a13343",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S51a.csv",
+      "sha256": "1b2ead29c291497aeffa524cf9709885460be0c77afdc66aa6d8e5cc8d84add6",
+      "shape_id": "loadshape_s51a"
+    },
+    {
+      "byte_size": 659017,
+      "canonical_git_blob_sha256": "3ad26372b5e03ad4b57922bfc530c6f3d57d72799dc4cf85b9e42ff4337723b9",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659017,
+      "git_blob_oid": "76fda0607ee113200db4f67bfafc241e39be9475",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S52a.csv",
+      "sha256": "3ad26372b5e03ad4b57922bfc530c6f3d57d72799dc4cf85b9e42ff4337723b9",
+      "shape_id": "loadshape_s52a"
+    },
+    {
+      "byte_size": 659015,
+      "canonical_git_blob_sha256": "2400940f8bdb31a2a8087bfc4bf8fefdc70ff5d25a18862d8c3927383b5fe9ce",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659015,
+      "git_blob_oid": "dce0a93e865fbd94f5e9d9a08cf384b7bec9ef26",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S53a.csv",
+      "sha256": "2400940f8bdb31a2a8087bfc4bf8fefdc70ff5d25a18862d8c3927383b5fe9ce",
+      "shape_id": "loadshape_s53a"
+    },
+    {
+      "byte_size": 659101,
+      "canonical_git_blob_sha256": "23dc267883f68866f3b7a36e4ada91eb9ebeee5646736b0ac65ecb80fd4bbcfe",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659101,
+      "git_blob_oid": "cee0e42f860177b0b82dbf47e6f70a771facd34d",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S55a.csv",
+      "sha256": "23dc267883f68866f3b7a36e4ada91eb9ebeee5646736b0ac65ecb80fd4bbcfe",
+      "shape_id": "loadshape_s55a"
+    },
+    {
+      "byte_size": 659113,
+      "canonical_git_blob_sha256": "cc10c1d8e641df4adcbc5fa30bbeaea745c52498449d1a3a59bf6d6e8f13ed1b",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659113,
+      "git_blob_oid": "5445b876951884ea21b5cf212b64dd27a0a6c0e5",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S56b.csv",
+      "sha256": "cc10c1d8e641df4adcbc5fa30bbeaea745c52498449d1a3a59bf6d6e8f13ed1b",
+      "shape_id": "loadshape_s56b"
+    },
+    {
+      "byte_size": 658979,
+      "canonical_git_blob_sha256": "140ce0cfbcf33d0faebcae1295ebf55033fc5f0399079dc632d45c8f298fe0c0",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 658979,
+      "git_blob_oid": "9c333f9e8d03e2fe8db4107aca598f6153f5c3e1",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S58b.csv",
+      "sha256": "140ce0cfbcf33d0faebcae1295ebf55033fc5f0399079dc632d45c8f298fe0c0",
+      "shape_id": "loadshape_s58b"
+    },
+    {
+      "byte_size": 659150,
+      "canonical_git_blob_sha256": "ca2f3b554f9206020ab7815def7d1e9e7c6048e3fe7801cdc2c2ea0649bce581",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659150,
+      "git_blob_oid": "52a342c66f388ef6f348b0186e50f620c5d535ac",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S59b.csv",
+      "sha256": "ca2f3b554f9206020ab7815def7d1e9e7c6048e3fe7801cdc2c2ea0649bce581",
+      "shape_id": "loadshape_s59b"
+    },
+    {
+      "byte_size": 659072,
+      "canonical_git_blob_sha256": "51ca550c5dddf1b88b250138000f0fe3ed45c478638796f41ca1fb6ad8741172",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659072,
+      "git_blob_oid": "3df6e18a7cd3c846f416f0748f085dcfbb8aecca",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S60a.csv",
+      "sha256": "51ca550c5dddf1b88b250138000f0fe3ed45c478638796f41ca1fb6ad8741172",
+      "shape_id": "loadshape_s60a"
+    },
+    {
+      "byte_size": 658976,
+      "canonical_git_blob_sha256": "e7c3770c218f723ef8457df30ce6a3bc5213b9e0d013f96cd2721fb5e4bb6b62",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 658976,
+      "git_blob_oid": "143314c96310a59977a05ed14c4408de6506b61d",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S62c.csv",
+      "sha256": "e7c3770c218f723ef8457df30ce6a3bc5213b9e0d013f96cd2721fb5e4bb6b62",
+      "shape_id": "loadshape_s62c"
+    },
+    {
+      "byte_size": 658916,
+      "canonical_git_blob_sha256": "871ada679d7ab3574add769ce07b8d9859c32640325fe174e2ee8c6cc49cb2e1",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 658916,
+      "git_blob_oid": "284e1cbe6142d3549f52f4dcca499b58eb4e6fa7",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S63a.csv",
+      "sha256": "871ada679d7ab3574add769ce07b8d9859c32640325fe174e2ee8c6cc49cb2e1",
+      "shape_id": "loadshape_s63a"
+    },
+    {
+      "byte_size": 658982,
+      "canonical_git_blob_sha256": "3239363bcbfb3b28d77a0274fb1e062704dd4f13050c5778d4fc4c9fc6b7b8de",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 658982,
+      "git_blob_oid": "1509fde03189d3aa889936d4395bd51d357a6251",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S64b.csv",
+      "sha256": "3239363bcbfb3b28d77a0274fb1e062704dd4f13050c5778d4fc4c9fc6b7b8de",
+      "shape_id": "loadshape_s64b"
+    },
+    {
+      "byte_size": 659004,
+      "canonical_git_blob_sha256": "e8f2c86464324c7e47639c53ee954bce351eaaa30855fe6b3f642d037ddc1b91",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659004,
+      "git_blob_oid": "9657095c1add8b982d85e0fc9d6553fe79fba43f",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S65a.csv",
+      "sha256": "e8f2c86464324c7e47639c53ee954bce351eaaa30855fe6b3f642d037ddc1b91",
+      "shape_id": "loadshape_s65a"
+    },
+    {
+      "byte_size": 659074,
+      "canonical_git_blob_sha256": "724ed0fd80f96f46af24c278997d6b1b961c2cf705436aca386f77b883e2a8d6",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659074,
+      "git_blob_oid": "fe46478ecb844d2e221238a540b243358107d829",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S65b.csv",
+      "sha256": "724ed0fd80f96f46af24c278997d6b1b961c2cf705436aca386f77b883e2a8d6",
+      "shape_id": "loadshape_s65b"
+    },
+    {
+      "byte_size": 659248,
+      "canonical_git_blob_sha256": "af9ae5b8ede5638e141d7d0a02b81eef35212e6b94d300c82a58f5c50fb741bb",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659248,
+      "git_blob_oid": "47de66e08c89ee00dee0da7c6fbeecc01d656d71",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S65c.csv",
+      "sha256": "af9ae5b8ede5638e141d7d0a02b81eef35212e6b94d300c82a58f5c50fb741bb",
+      "shape_id": "loadshape_s65c"
+    },
+    {
+      "byte_size": 658922,
+      "canonical_git_blob_sha256": "546f7823bc3b8483e554ec47a0c8ed425b8253590220b84bef569b2f2edefa49",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 658922,
+      "git_blob_oid": "a97de10eb4f4ac041cf9ded1d3ba9eb4669ee80d",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S66c.csv",
+      "sha256": "546f7823bc3b8483e554ec47a0c8ed425b8253590220b84bef569b2f2edefa49",
+      "shape_id": "loadshape_s66c"
+    },
+    {
+      "byte_size": 659103,
+      "canonical_git_blob_sha256": "10324c51ecc552276e47827640d5119f62801a39e4ce4695425c97c9595c70b3",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659103,
+      "git_blob_oid": "e5dafab58d53a67350bfe4133b0a8147ee7a4b13",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S68a.csv",
+      "sha256": "10324c51ecc552276e47827640d5119f62801a39e4ce4695425c97c9595c70b3",
+      "shape_id": "loadshape_s68a"
+    },
+    {
+      "byte_size": 659127,
+      "canonical_git_blob_sha256": "a9f1a39db7c7e680a29b29b7127a7495f04f121099ce2d10da2c8d8c430efb8b",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659127,
+      "git_blob_oid": "fdeb5e10c47229d6f2a8d694773089ca27e9e2d9",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S69a.csv",
+      "sha256": "a9f1a39db7c7e680a29b29b7127a7495f04f121099ce2d10da2c8d8c430efb8b",
+      "shape_id": "loadshape_s69a"
+    },
+    {
+      "byte_size": 659098,
+      "canonical_git_blob_sha256": "905140a24332f8859f9e634081471a60dc5f3f65cb10ed8fc00eeefeb1df138d",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659098,
+      "git_blob_oid": "07218e1cdff5f578e602bd5de82ecedec7f33adf",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S70a.csv",
+      "sha256": "905140a24332f8859f9e634081471a60dc5f3f65cb10ed8fc00eeefeb1df138d",
+      "shape_id": "loadshape_s70a"
+    },
+    {
+      "byte_size": 658997,
+      "canonical_git_blob_sha256": "a1dcf6934ca160292d191c7874a125b5bb0b970a08a47fbeac18e91518a6040e",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 658997,
+      "git_blob_oid": "783fb4dc0e6a0d5e0b3d9c2a38e862377b8a4253",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S71a.csv",
+      "sha256": "a1dcf6934ca160292d191c7874a125b5bb0b970a08a47fbeac18e91518a6040e",
+      "shape_id": "loadshape_s71a"
+    },
+    {
+      "byte_size": 659132,
+      "canonical_git_blob_sha256": "bcf8bf54a4c5981509afedf78812806c7cf673e10d3f9c35abe33fb4d4e3f714",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659132,
+      "git_blob_oid": "286948dff6cf037a9a7318851cbc5d1366699153",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S73c.csv",
+      "sha256": "bcf8bf54a4c5981509afedf78812806c7cf673e10d3f9c35abe33fb4d4e3f714",
+      "shape_id": "loadshape_s73c"
+    },
+    {
+      "byte_size": 659133,
+      "canonical_git_blob_sha256": "79a98baf71597d6566843b272108b5500b21033c0d7c16baf843aa5c0d49abe3",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659133,
+      "git_blob_oid": "b5208f46f1fbe5891200c4a99174d5dc508e5159",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S74c.csv",
+      "sha256": "79a98baf71597d6566843b272108b5500b21033c0d7c16baf843aa5c0d49abe3",
+      "shape_id": "loadshape_s74c"
+    },
+    {
+      "byte_size": 659076,
+      "canonical_git_blob_sha256": "52c993fec679241217081904227fcd692c655ac3ede659771486f1c3841c86c3",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659076,
+      "git_blob_oid": "f4418bdc7000c4a6c39388d7b4b04d22f2e77667",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S75c.csv",
+      "sha256": "52c993fec679241217081904227fcd692c655ac3ede659771486f1c3841c86c3",
+      "shape_id": "loadshape_s75c"
+    },
+    {
+      "byte_size": 659064,
+      "canonical_git_blob_sha256": "fbec5dc0cf56b9563d462215a37d334187eb86010944145affa9c3013c73127a",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659064,
+      "git_blob_oid": "4f7341b086945d4a1f410623c0563897bc54989e",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S76a.csv",
+      "sha256": "fbec5dc0cf56b9563d462215a37d334187eb86010944145affa9c3013c73127a",
+      "shape_id": "loadshape_s76a"
+    },
+    {
+      "byte_size": 659055,
+      "canonical_git_blob_sha256": "177f987fd2317931500b4f11c20bbd5020deb54f91d906543de0c381432037d4",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659055,
+      "git_blob_oid": "844b95eb7a4760bd882b573e547d214324c85771",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S76b.csv",
+      "sha256": "177f987fd2317931500b4f11c20bbd5020deb54f91d906543de0c381432037d4",
+      "shape_id": "loadshape_s76b"
+    },
+    {
+      "byte_size": 658995,
+      "canonical_git_blob_sha256": "45ce13d98ba7fee883be486fdddcdbfdc4334bd1eb53669bb5e4680f22bf3357",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 658995,
+      "git_blob_oid": "b490c26f5bb37ae3e9055b64948f2891119426fa",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S76c.csv",
+      "sha256": "45ce13d98ba7fee883be486fdddcdbfdc4334bd1eb53669bb5e4680f22bf3357",
+      "shape_id": "loadshape_s76c"
+    },
+    {
+      "byte_size": 659039,
+      "canonical_git_blob_sha256": "9752f34a6d7573c56dbb7b8059e6973f78a8de12a4411550c9c82238da6a5177",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659039,
+      "git_blob_oid": "c1b5b240a326a60ad708fde2419a6087af85c3f6",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S77b.csv",
+      "sha256": "9752f34a6d7573c56dbb7b8059e6973f78a8de12a4411550c9c82238da6a5177",
+      "shape_id": "loadshape_s77b"
+    },
+    {
+      "byte_size": 659034,
+      "canonical_git_blob_sha256": "a33f5ae6e3cdf65ed4244cf02020699b5d9026864e56da9b4d445f0506d41d95",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659034,
+      "git_blob_oid": "248625d75aacf649faa2b434359c5b99af3ff4e7",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S79a.csv",
+      "sha256": "a33f5ae6e3cdf65ed4244cf02020699b5d9026864e56da9b4d445f0506d41d95",
+      "shape_id": "loadshape_s79a"
+    },
+    {
+      "byte_size": 659162,
+      "canonical_git_blob_sha256": "4caae899d48d45a4b6cb0a2e889b52b8965dda02530fc4c8c85c2f018ca12b88",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659162,
+      "git_blob_oid": "41f54e3f9941dc793a609fb2b34b43989701a05b",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S80b.csv",
+      "sha256": "4caae899d48d45a4b6cb0a2e889b52b8965dda02530fc4c8c85c2f018ca12b88",
+      "shape_id": "loadshape_s80b"
+    },
+    {
+      "byte_size": 658986,
+      "canonical_git_blob_sha256": "429b48abefd2185b6c792966223b633fadac45dc8d6c7324a0df20ff801afab1",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 658986,
+      "git_blob_oid": "f49ea85bd44ee12eb5a5837a2ab8c24e5220c380",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S82a.csv",
+      "sha256": "429b48abefd2185b6c792966223b633fadac45dc8d6c7324a0df20ff801afab1",
+      "shape_id": "loadshape_s82a"
+    },
+    {
+      "byte_size": 659114,
+      "canonical_git_blob_sha256": "10a47ce5c65185bab300758c19d3e54774d81bdc9d7ad7ea230f6b0a4e30f84d",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659114,
+      "git_blob_oid": "309558ab09281ba4c500d669397533b824476870",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S83c.csv",
+      "sha256": "10a47ce5c65185bab300758c19d3e54774d81bdc9d7ad7ea230f6b0a4e30f84d",
+      "shape_id": "loadshape_s83c"
+    },
+    {
+      "byte_size": 659203,
+      "canonical_git_blob_sha256": "e2f32ada8620b1e983b5d7b81c7448196ca09b55a83f6b199991b73bca4f0d9a",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659203,
+      "git_blob_oid": "41d299a6a881f6a84103411cd5e7026598719534",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S84c.csv",
+      "sha256": "e2f32ada8620b1e983b5d7b81c7448196ca09b55a83f6b199991b73bca4f0d9a",
+      "shape_id": "loadshape_s84c"
+    },
+    {
+      "byte_size": 659107,
+      "canonical_git_blob_sha256": "634d8b21b52e10b82ec45b672f72b1bb0f36ca0b490ddd4c504b8bc0cbbd2dde",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659107,
+      "git_blob_oid": "6347dc7d584d24cdef2fbebbbb65c48045f48ece",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S85c.csv",
+      "sha256": "634d8b21b52e10b82ec45b672f72b1bb0f36ca0b490ddd4c504b8bc0cbbd2dde",
+      "shape_id": "loadshape_s85c"
+    },
+    {
+      "byte_size": 659147,
+      "canonical_git_blob_sha256": "bee98314c8afa22d817291a7ab5e21fc78039cca2907993896676e6f0dfbd3c4",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659147,
+      "git_blob_oid": "aa5917d5133738ed8ebb01b80b62d9de19c8f8e2",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S86b.csv",
+      "sha256": "bee98314c8afa22d817291a7ab5e21fc78039cca2907993896676e6f0dfbd3c4",
+      "shape_id": "loadshape_s86b"
+    },
+    {
+      "byte_size": 659019,
+      "canonical_git_blob_sha256": "45334b5f501cff5303bc5763ef305177a998c514b4ce951bb8212ea86f29afc9",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659019,
+      "git_blob_oid": "08f0c7a0dff591efc4c4169f87a44453294c1cf7",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S87b.csv",
+      "sha256": "45334b5f501cff5303bc5763ef305177a998c514b4ce951bb8212ea86f29afc9",
+      "shape_id": "loadshape_s87b"
+    },
+    {
+      "byte_size": 659005,
+      "canonical_git_blob_sha256": "e0a80cb1c0163a4d14468ff09ff3abd54a8b2b93a7be51e7e23fa9db02af4ce3",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659005,
+      "git_blob_oid": "9fef8fba8ce3e1821fb40a14a8c48b0ad82dff7c",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S88a.csv",
+      "sha256": "e0a80cb1c0163a4d14468ff09ff3abd54a8b2b93a7be51e7e23fa9db02af4ce3",
+      "shape_id": "loadshape_s88a"
+    },
+    {
+      "byte_size": 658825,
+      "canonical_git_blob_sha256": "72797e71562a856d3a029de2be7169d4c6a60822afb601e4380e2deeb70ebfca",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 658825,
+      "git_blob_oid": "ecc09d40882f95f26a09ab4746d8d696f994d31a",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S90b.csv",
+      "sha256": "72797e71562a856d3a029de2be7169d4c6a60822afb601e4380e2deeb70ebfca",
+      "shape_id": "loadshape_s90b"
+    },
+    {
+      "byte_size": 658920,
+      "canonical_git_blob_sha256": "15e9fd47dfc5c79881a4fa0973249a63baea0378bfafbbd0b1d094defef5ea7b",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 658920,
+      "git_blob_oid": "c0ddc93a3e0f7b1a9da77bbbcb8c9ca4d86dcb84",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S92c.csv",
+      "sha256": "15e9fd47dfc5c79881a4fa0973249a63baea0378bfafbbd0b1d094defef5ea7b",
+      "shape_id": "loadshape_s92c"
+    },
+    {
+      "byte_size": 658945,
+      "canonical_git_blob_sha256": "6e2be6ea3050aa9d4dacc9b62499fae2052072720fc3051dab1ccb4f8e24e7e3",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 658945,
+      "git_blob_oid": "f5ea278e76548d040ee2196cf76fabf25d7f842b",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S94a.csv",
+      "sha256": "6e2be6ea3050aa9d4dacc9b62499fae2052072720fc3051dab1ccb4f8e24e7e3",
+      "shape_id": "loadshape_s94a"
+    },
+    {
+      "byte_size": 659115,
+      "canonical_git_blob_sha256": "b28e06e2580d0a698ec6b3bf61067864fc9905bb13340c645805baeec34dcbf6",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659115,
+      "git_blob_oid": "23e26116277c709bcdb203221bd56ad7cafd4536",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S95b.csv",
+      "sha256": "b28e06e2580d0a698ec6b3bf61067864fc9905bb13340c645805baeec34dcbf6",
+      "shape_id": "loadshape_s95b"
+    },
+    {
+      "byte_size": 659103,
+      "canonical_git_blob_sha256": "9724472597d0998be98a0a91310dc3387671079af43dd11487f43b298225c06a",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659103,
+      "git_blob_oid": "662a56bdaecd4f48b90b6955c9c26cd747df4688",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S96b.csv",
+      "sha256": "9724472597d0998be98a0a91310dc3387671079af43dd11487f43b298225c06a",
+      "shape_id": "loadshape_s96b"
+    },
+    {
+      "byte_size": 659068,
+      "canonical_git_blob_sha256": "e359d108f7e5396c82d03be7d6e092c771b582a81fe9cb8aa40cf63412252dbd",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659068,
+      "git_blob_oid": "9fe9516ec141d60c96d2ebd690e6763165f7f0ec",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S98a.csv",
+      "sha256": "e359d108f7e5396c82d03be7d6e092c771b582a81fe9cb8aa40cf63412252dbd",
+      "shape_id": "loadshape_s98a"
+    },
+    {
+      "byte_size": 659107,
+      "canonical_git_blob_sha256": "3735e45ae970a7d42f4f7255aa76a4b9ad69b6acabfd6b14615b0aa78ce9e3a0",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659107,
+      "git_blob_oid": "c94ae925f4fdc7013a2945bb2a3d5e255e964e96",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S99b.csv",
+      "sha256": "3735e45ae970a7d42f4f7255aa76a4b9ad69b6acabfd6b14615b0aa78ce9e3a0",
+      "shape_id": "loadshape_s99b"
+    },
+    {
+      "byte_size": 659034,
+      "canonical_git_blob_sha256": "0372a8b4e869beacdde40502e413666089f43b57a15c847188adbdfe4fd47277",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659034,
+      "git_blob_oid": "0f7eca08ab1a917e8f1e44ecca314858607b1d43",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S100c.csv",
+      "sha256": "0372a8b4e869beacdde40502e413666089f43b57a15c847188adbdfe4fd47277",
+      "shape_id": "loadshape_s100c"
+    },
+    {
+      "byte_size": 659074,
+      "canonical_git_blob_sha256": "8b81bc54bf0b4109678b64f291b7d7395a77a0445a7442fc0f70372a88f7b1df",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659074,
+      "git_blob_oid": "7def707e70fc1196470b4663afac84eb430bd754",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S102c.csv",
+      "sha256": "8b81bc54bf0b4109678b64f291b7d7395a77a0445a7442fc0f70372a88f7b1df",
+      "shape_id": "loadshape_s102c"
+    },
+    {
+      "byte_size": 659035,
+      "canonical_git_blob_sha256": "225c645c84040cf0ad2389baf59507dfe3dd3d9c93ee0244a14824b148bb1eb4",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659035,
+      "git_blob_oid": "f042133dbaf32321a04083c908c3de08588dff77",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S103c.csv",
+      "sha256": "225c645c84040cf0ad2389baf59507dfe3dd3d9c93ee0244a14824b148bb1eb4",
+      "shape_id": "loadshape_s103c"
+    },
+    {
+      "byte_size": 659047,
+      "canonical_git_blob_sha256": "03c7990622c555f8e8490dbf060599cad8ea6093e67e2a8895662c3220d1eda0",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659047,
+      "git_blob_oid": "67bc2325babcd07509b6deccc7c3964dc4d9e4b6",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S104c.csv",
+      "sha256": "03c7990622c555f8e8490dbf060599cad8ea6093e67e2a8895662c3220d1eda0",
+      "shape_id": "loadshape_s104c"
+    },
+    {
+      "byte_size": 659084,
+      "canonical_git_blob_sha256": "a2e258d04cb0d817fc847bd7ba9a09de3e1019a661b160a61b1da5f8c90e1ea4",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659084,
+      "git_blob_oid": "7f69ef7c73b842f7b3d4099e467d70813127c66c",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S106b.csv",
+      "sha256": "a2e258d04cb0d817fc847bd7ba9a09de3e1019a661b160a61b1da5f8c90e1ea4",
+      "shape_id": "loadshape_s106b"
+    },
+    {
+      "byte_size": 659031,
+      "canonical_git_blob_sha256": "33a7195176825d3795c8a0827a9df6d036424e69162f7eeb1cd9e5cedb62d9e4",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659031,
+      "git_blob_oid": "2e7a3e0729357668239c41e6e8f573c0e8d03e87",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S107b.csv",
+      "sha256": "33a7195176825d3795c8a0827a9df6d036424e69162f7eeb1cd9e5cedb62d9e4",
+      "shape_id": "loadshape_s107b"
+    },
+    {
+      "byte_size": 659083,
+      "canonical_git_blob_sha256": "499aa640423908ae0966a39c8234737c86313afc5309d584f1a993d7272aec83",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659083,
+      "git_blob_oid": "00f0335bf14c3f66a8893f2f8c7e8c6f635fd5ce",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S109a.csv",
+      "sha256": "499aa640423908ae0966a39c8234737c86313afc5309d584f1a993d7272aec83",
+      "shape_id": "loadshape_s109a"
+    },
+    {
+      "byte_size": 659109,
+      "canonical_git_blob_sha256": "4dd81449bbeb58144808efdc505a790635e3f1269b92ed9ad6f1c34dd3b59b11",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659109,
+      "git_blob_oid": "d6733a9695f096cbc874f50d8782de8064dbe60f",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S111a.csv",
+      "sha256": "4dd81449bbeb58144808efdc505a790635e3f1269b92ed9ad6f1c34dd3b59b11",
+      "shape_id": "loadshape_s111a"
+    },
+    {
+      "byte_size": 659138,
+      "canonical_git_blob_sha256": "bdf374ff30d5eaab1c14fb27b79d7d0eff3e815dd1b9325889180a58200ee2c9",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659138,
+      "git_blob_oid": "f73be00e6b1b223faa880c5eb38c5f90e8bf349b",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S112a.csv",
+      "sha256": "bdf374ff30d5eaab1c14fb27b79d7d0eff3e815dd1b9325889180a58200ee2c9",
+      "shape_id": "loadshape_s112a"
+    },
+    {
+      "byte_size": 658999,
+      "canonical_git_blob_sha256": "1ffd7f1e1b5a8e589cf2fa72102c5b6d991736a213f213d935af09d7c1ea1d9b",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 658999,
+      "git_blob_oid": "67ebf543388e0ea0754099da01c2cebb889965f5",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S113a.csv",
+      "sha256": "1ffd7f1e1b5a8e589cf2fa72102c5b6d991736a213f213d935af09d7c1ea1d9b",
+      "shape_id": "loadshape_s113a"
+    },
+    {
+      "byte_size": 659134,
+      "canonical_git_blob_sha256": "fe4e81bc0ff97b8adbbaadec5bf136624a26a4612192184ead490d681efffdb7",
+      "declared_interval_hours": 0.25,
+      "declared_npts": 35040,
+      "git_blob_byte_size": 659134,
+      "git_blob_oid": "4ad04e483a3e009c6d0e038e48c1f9d9266508b1",
+      "nonempty_row_count": 35040,
+      "numeric_values_accessed": false,
+      "profile_exists": true,
+      "profile_path": "profiles/load_profiles/loadshape_S114a.csv",
+      "sha256": "fe4e81bc0ff97b8adbbaadec5bf136624a26a4612192184ead490d681efffdb7",
+      "shape_id": "loadshape_s114a"
+    }
+  ],
+  "mapping_amendment": {
+    "affected_loads": [
+      "S48",
+      "S49c"
+    ],
+    "classification": "no_explicit_active_yearly_mapping",
+    "outcome_values_seen_before_amendment": false,
+    "reason": "Pinned OpenDSS comment semantics make the trailing yearly tokens for S48 and S49c inactive. No identifier-based inference is permitted.",
+    "superseded_draft_hash": null,
+    "timing": "pre_outcome_access"
+  },
+  "mode": "metadata_only_prepare",
+  "nonlegacy_profile_values_or_statistics_accessed": false,
+  "not_independent_dataset_replication": true,
+  "not_prospective_collection": true,
+  "not_theory_specific_evidence": true,
+  "population": {
+    "count_checks": {
+      "explicit_active_mapping_count_89": true,
+      "explicit_mapped_one_phase_wye_count_81": true,
+      "fresh_mapped_wye_count_77": true,
+      "load_definition_count_91": true,
+      "loadshape_file_count_91": true
+    },
+    "explicit_active_mapping_count": 89,
+    "fresh_mapped_wye_count": 77,
+    "load_count": 91,
+    "loadshape_catalog_count": 91,
+    "mapped_one_phase_wye_count": 81,
+    "mapping_defects": [
+      {
+        "base_bus": "48",
+        "load_id": "S48",
+        "mapping_status": "no_explicit_active_yearly_mapping"
+      },
+      {
+        "base_bus": "49",
+        "load_id": "S49c",
+        "mapping_status": "no_explicit_active_yearly_mapping"
+      }
+    ]
+  },
+  "pre_outcome_status": "pass",
+  "schema_version": 1,
+  "source_inventory_sha256": "2193767d0cedc525d32617ec0e7b4575098f64e48ef8e78670516fa7ae6f74cd",
+  "source_verification": {
+    "dataset_id": "openedi_oedisi_ieee123",
+    "files": [
+      {
+        "access_level": "catalogued_verified",
+        "byte_size": 1523,
+        "canonical_git_blob_sha256": "c02828f67504b3e403d3f830ed7f1858353f43088d5c8bd9bc496067de057eec",
+        "git_blob_byte_size": 1523,
+        "git_blob_oid": "54e2443b545fdde405988a7535383ea7977647ae",
+        "metric_affecting": false,
+        "path": "LICENSE.md",
+        "sha256": "c02828f67504b3e403d3f830ed7f1858353f43088d5c8bd9bc496067de057eec",
+        "verified": true
+      },
+      {
+        "access_level": "parsed_metadata",
+        "byte_size": 829,
+        "canonical_git_blob_sha256": "b09796a2532ef5f7d6b630213951f25fa089ab705d61d0b47f60881abf9a6b63",
+        "git_blob_byte_size": 829,
+        "git_blob_oid": "4720d52ef1233c9b8583cb8e428d2e4a0fa0509d",
+        "metric_affecting": true,
+        "path": "sensors.json",
+        "sha256": "b09796a2532ef5f7d6b630213951f25fa089ab705d61d0b47f60881abf9a6b63",
+        "verified": true
+      },
+      {
+        "access_level": "parsed_metadata",
+        "byte_size": 15450,
+        "canonical_git_blob_sha256": "889ec3ab8944d5f05a6aa2bafc8af9ef69b3449a1ac4e0c3365cfdb498bdafd8",
+        "git_blob_byte_size": 15450,
+        "git_blob_oid": "648093ff2ffbe95613ec9582c93119b9e3c94f8c",
+        "metric_affecting": true,
+        "path": "qsts/master.dss",
+        "sha256": "889ec3ab8944d5f05a6aa2bafc8af9ef69b3449a1ac4e0c3365cfdb498bdafd8",
+        "verified": true
+      },
+      {
+        "access_level": "parsed_metadata",
+        "byte_size": 4527,
+        "canonical_git_blob_sha256": "cbd402dfb5ccbd8d8c17cfcc4f673316e3bb43ca3096c0f67ee88449643d2785",
+        "git_blob_byte_size": 4527,
+        "git_blob_oid": "35c888d1e4d2a64371e47222abe1c77ed1b688f2",
+        "metric_affecting": true,
+        "path": "qsts/Buscoords.dss",
+        "sha256": "cbd402dfb5ccbd8d8c17cfcc4f673316e3bb43ca3096c0f67ee88449643d2785",
+        "verified": true
+      },
+      {
+        "access_level": "parsed_metadata",
+        "byte_size": 14603,
+        "canonical_git_blob_sha256": "8b5b54db2e357d2caf77df17a572d2f9768764171d1fc1980bc3a74642357b11",
+        "git_blob_byte_size": 14603,
+        "git_blob_oid": "7d645f9c5dc5bc84d0c7211abc246f621d4ac54c",
+        "metric_affecting": true,
+        "path": "qsts/IEEE123LoadsQsts.dss",
+        "sha256": "8b5b54db2e357d2caf77df17a572d2f9768764171d1fc1980bc3a74642357b11",
+        "verified": true
+      },
+      {
+        "access_level": "parsed_metadata",
+        "byte_size": 15385,
+        "canonical_git_blob_sha256": "445365614e83e3d31d9a406c5ab831cb9494d6b86d261282dc05bbd0845747f5",
+        "git_blob_byte_size": 15385,
+        "git_blob_oid": "38234f8823c9a4cd0fbd99665c1b1a0cda3bb5c9",
+        "metric_affecting": true,
+        "path": "qsts/IEEE123LoadShapes.dss",
+        "sha256": "445365614e83e3d31d9a406c5ab831cb9494d6b86d261282dc05bbd0845747f5",
+        "verified": true
+      },
+      {
+        "access_level": "catalogued_verified",
+        "byte_size": 11638,
+        "canonical_git_blob_sha256": "cc1c17c16a3987e5bd1b470a0a2a9e2f5568f09675740a286e70db086865a56c",
+        "git_blob_byte_size": 11638,
+        "git_blob_oid": "1d0da3f78846ec7545e1c40776fb9f9f3e8817a9",
+        "metric_affecting": false,
+        "path": "qsts/IEEELinecodes.dss",
+        "sha256": "cc1c17c16a3987e5bd1b470a0a2a9e2f5568f09675740a286e70db086865a56c",
+        "verified": true
+      },
+      {
+        "access_level": "parsed_metadata",
+        "byte_size": 1790,
+        "canonical_git_blob_sha256": "8c41d5019f5a55caedd3bab6b1f3fa3c0dc72fa0bec8a335e1042df8a4ac4b86",
+        "git_blob_byte_size": 1790,
+        "git_blob_oid": "863c6cd22c9ff416b7daa6b561e3dab074a5420b",
+        "metric_affecting": true,
+        "path": "qsts/IEEE123Regulators.dss",
+        "sha256": "8c41d5019f5a55caedd3bab6b1f3fa3c0dc72fa0bec8a335e1042df8a4ac4b86",
+        "verified": true
+      },
+      {
+        "access_level": "catalogued_verified_context_only",
+        "byte_size": 1220,
+        "canonical_git_blob_sha256": "c1e58947a4b3504a789164c61a66caf31fc036398a6143ce8f85af51c0d09056",
+        "git_blob_byte_size": 1220,
+        "git_blob_oid": "2a004b19af11d5f6198300cb585ce0c691a47fd2",
+        "metric_affecting": false,
+        "path": "qsts/IEEE123Pv.dss",
+        "sha256": "c1e58947a4b3504a789164c61a66caf31fc036398a6143ce8f85af51c0d09056",
+        "verified": true
+      },
+      {
+        "access_level": "catalogued_verified",
+        "byte_size": 1416,
+        "canonical_git_blob_sha256": "a5e7724e2aac42fe817b6a9222ac3297b206051cf348868be348c78ee8963261",
+        "git_blob_byte_size": 1416,
+        "git_blob_oid": "d505fce9e60fd01aae3986633fd330230a6da129",
+        "metric_affecting": false,
+        "path": "qsts/IEEE123PvShapes.dss",
+        "sha256": "a5e7724e2aac42fe817b6a9222ac3297b206051cf348868be348c78ee8963261",
+        "verified": true
+      },
+      {
+        "access_level": "numerically_executed_retrospective",
+        "byte_size": 659088,
+        "canonical_git_blob_sha256": "faa14ebb7f7d51d36d155c2c91e785bba552bd99b59c355c111c0fe95e70c796",
+        "git_blob_byte_size": 659088,
+        "git_blob_oid": "bdc2e08b4326a4eaf84195007fc0e5bea952c097",
+        "metric_affecting": true,
+        "path": "profiles/load_profiles/loadshape_S1a.csv",
+        "sha256": "faa14ebb7f7d51d36d155c2c91e785bba552bd99b59c355c111c0fe95e70c796",
+        "verified": true
+      },
+      {
+        "access_level": "numerically_executed_retrospective",
+        "byte_size": 658971,
+        "canonical_git_blob_sha256": "8ffb332d0b0fbb04c07fc686d8b4819fb687f0706fcb161e9ad6b09d377934cf",
+        "git_blob_byte_size": 658971,
+        "git_blob_oid": "3ef07af7c71a3cddba23bf93d8c8a4595b3f6ad9",
+        "metric_affecting": true,
+        "path": "profiles/load_profiles/loadshape_S19a.csv",
+        "sha256": "8ffb332d0b0fbb04c07fc686d8b4819fb687f0706fcb161e9ad6b09d377934cf",
+        "verified": true
+      },
+      {
+        "access_level": "numerically_executed_retrospective",
+        "byte_size": 659056,
+        "canonical_git_blob_sha256": "e6910096a355b4fccbabda337b3c750eb7cf302f0011418bf20c4a9863b51144",
+        "git_blob_byte_size": 659056,
+        "git_blob_oid": "9ab931e520c4974bf811aa22fd01f21f1f493715",
+        "metric_affecting": true,
+        "path": "profiles/load_profiles/loadshape_S47.csv",
+        "sha256": "e6910096a355b4fccbabda337b3c750eb7cf302f0011418bf20c4a9863b51144",
+        "verified": true
+      },
+      {
+        "access_level": "numerically_executed_retrospective",
+        "byte_size": 659046,
+        "canonical_git_blob_sha256": "2dedd72224b38985c1129f5ea1b00c6aee0cc9c19c98665c1166b0b7c0cfa419",
+        "git_blob_byte_size": 659046,
+        "git_blob_oid": "c30f1e65e4b6a71b63f22e302d31ec9418a889fd",
+        "metric_affecting": true,
+        "path": "profiles/load_profiles/loadshape_S49a.csv",
+        "sha256": "2dedd72224b38985c1129f5ea1b00c6aee0cc9c19c98665c1166b0b7c0cfa419",
+        "verified": true
+      },
+      {
+        "access_level": "numerically_executed_retrospective",
+        "byte_size": 659004,
+        "canonical_git_blob_sha256": "e8f2c86464324c7e47639c53ee954bce351eaaa30855fe6b3f642d037ddc1b91",
+        "git_blob_byte_size": 659004,
+        "git_blob_oid": "9657095c1add8b982d85e0fc9d6553fe79fba43f",
+        "metric_affecting": true,
+        "path": "profiles/load_profiles/loadshape_S65a.csv",
+        "sha256": "e8f2c86464324c7e47639c53ee954bce351eaaa30855fe6b3f642d037ddc1b91",
+        "verified": true
+      },
+      {
+        "access_level": "numerically_executed_retrospective",
+        "byte_size": 425130,
+        "canonical_git_blob_sha256": "e62ee36bceda609be64aef7e29436230bc262ada33f40834311d8d7dccbaa128",
+        "git_blob_byte_size": 425130,
+        "git_blob_oid": "6f72dd919911beba33431cea5f39d2322ce75844",
+        "metric_affecting": true,
+        "path": "profiles/pv_profiles/pvshape_49.csv",
+        "sha256": "e62ee36bceda609be64aef7e29436230bc262ada33f40834311d8d7dccbaa128",
+        "verified": true
+      },
+      {
+        "access_level": "catalogued_verified_context_only",
+        "byte_size": 105120,
+        "canonical_git_blob_sha256": "3aeac74e327c49bb64446a29b7750f175882756a1e2b2a06b083aec43f341fff",
+        "git_blob_byte_size": 105120,
+        "git_blob_oid": "5048a7aedcf2a308c5a2c6a32c2cb36e810581d4",
+        "metric_affecting": false,
+        "path": "profiles/pv_profiles/temperature.csv",
+        "sha256": "3aeac74e327c49bb64446a29b7750f175882756a1e2b2a06b083aec43f341fff",
+        "verified": true
+      }
+    ],
+    "git": {
+      "head": "7c8bcca06708ea2dd54b822821d637814ef08dc4",
+      "origin": "https://github.com/openEDI/oedisi-ieee123",
+      "verified": true
+    },
+    "pinned_commit": "7c8bcca06708ea2dd54b822821d637814ef08dc4",
+    "repository_url": "https://github.com/openEDI/oedisi-ieee123"
+  },
+  "split": {
+    "allocation": "K=ceil(0.20*N), deterministic largest remainder, then lowest hashes",
+    "buses": [
+      {
+        "base_bus": "10",
+        "eligible_load_ids": [
+          "S10a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|10",
+        "split_hash_sha256": "c94e39601e5b8e87d2956f3ffceaf4ff91f3712d373a9645a3c6fedeb0c94199"
+      },
+      {
+        "base_bus": "100",
+        "eligible_load_ids": [
+          "S100c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|100",
+        "split_hash_sha256": "cd2e4413c8ec83a9f5dbd07a06e27fcb81b5a3ebc384ba821b318a449912806a"
+      },
+      {
+        "base_bus": "102",
+        "eligible_load_ids": [
+          "S102c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|102",
+        "split_hash_sha256": "eb5d2aefb7907b0bea48c3dbe650a4c1466f2b0efcac9f202a33d9228dbb22da"
+      },
+      {
+        "base_bus": "103",
+        "eligible_load_ids": [
+          "S103c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|103",
+        "split_hash_sha256": "d61e7daabacc8256a3c863c35d300c90a764c93e56c7f6aa72b64ae9d3d2bb9a"
+      },
+      {
+        "base_bus": "104",
+        "eligible_load_ids": [
+          "S104c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|104",
+        "split_hash_sha256": "f9eb1ee39649dc4538756c3363df212463561743d267a71ec57cd58f1ac361c5"
+      },
+      {
+        "base_bus": "106",
+        "eligible_load_ids": [
+          "S106b"
+        ],
+        "signature": "A0_B1_C0",
+        "signature_counts": {
+          "A": 0,
+          "B": 1,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|106",
+        "split_hash_sha256": "842cb5b6039e4b7d70c579c326f0a9f1b0b57333f832d1ff6429d89152ba2b72"
+      },
+      {
+        "base_bus": "107",
+        "eligible_load_ids": [
+          "S107b"
+        ],
+        "signature": "A0_B1_C0",
+        "signature_counts": {
+          "A": 0,
+          "B": 1,
+          "C": 0
+        },
+        "split": "calibration",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|107",
+        "split_hash_sha256": "14ba4df44149731f5e9925c231c6c4b4e9f679f5137ef3e28abc4b0c03899a83"
+      },
+      {
+        "base_bus": "109",
+        "eligible_load_ids": [
+          "S109a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|109",
+        "split_hash_sha256": "ab8e2ebcc080ff6394a3608e706812062d90e181e02b697bd827a589829b9557"
+      },
+      {
+        "base_bus": "11",
+        "eligible_load_ids": [
+          "S11a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|11",
+        "split_hash_sha256": "d3c7414268e19f92c78b6f30c584152752ce23553a33e44d0627b31bbcfe9edf"
+      },
+      {
+        "base_bus": "111",
+        "eligible_load_ids": [
+          "S111a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "calibration",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|111",
+        "split_hash_sha256": "18019114664deccd413200d68b5264d46fe835ab7b2d13b250bd96400198b3c5"
+      },
+      {
+        "base_bus": "112",
+        "eligible_load_ids": [
+          "S112a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|112",
+        "split_hash_sha256": "f638f8765656ba1face95ceeb7cac2311ceba81b5b4d945f8801fb67c158dc8f"
+      },
+      {
+        "base_bus": "113",
+        "eligible_load_ids": [
+          "S113a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|113",
+        "split_hash_sha256": "b04bcc4066181795c1d0c62c924c0ac60f7d7c4152529c2303de83b417639e3e"
+      },
+      {
+        "base_bus": "114",
+        "eligible_load_ids": [
+          "S114a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|114",
+        "split_hash_sha256": "9f4ba2c6aa7e09574ef14e898b38cdaf9bfa3b00cab52b0184db7644308b499d"
+      },
+      {
+        "base_bus": "12",
+        "eligible_load_ids": [
+          "S12b"
+        ],
+        "signature": "A0_B1_C0",
+        "signature_counts": {
+          "A": 0,
+          "B": 1,
+          "C": 0
+        },
+        "split": "calibration",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|12",
+        "split_hash_sha256": "13e12d2b6abd3d9c4571dba0f0f32d42bc7d6ec1ecc4db9fa635cf64d37a3655"
+      },
+      {
+        "base_bus": "16",
+        "eligible_load_ids": [
+          "S16c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|16",
+        "split_hash_sha256": "53377e28afcead880457e6c401422e1cad14c530c9ab80ae5114becce2520fa6"
+      },
+      {
+        "base_bus": "17",
+        "eligible_load_ids": [
+          "S17c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|17",
+        "split_hash_sha256": "6b95349a68f19b2a448c7432f526255ef5386192dbc39cfc8932b4d81a44edb4"
+      },
+      {
+        "base_bus": "2",
+        "eligible_load_ids": [
+          "S2b"
+        ],
+        "signature": "A0_B1_C0",
+        "signature_counts": {
+          "A": 0,
+          "B": 1,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|2",
+        "split_hash_sha256": "1fd93962d02f5dd144dc2fa748c418a800aed8d7aa636a5f2f4fcd8b8fcb7113"
+      },
+      {
+        "base_bus": "20",
+        "eligible_load_ids": [
+          "S20a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|20",
+        "split_hash_sha256": "7b2884dbb1efd27957f4dc6d2cd9f40f6e6083e117fb2d28800735af3ca0fa08"
+      },
+      {
+        "base_bus": "22",
+        "eligible_load_ids": [
+          "S22b"
+        ],
+        "signature": "A0_B1_C0",
+        "signature_counts": {
+          "A": 0,
+          "B": 1,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|22",
+        "split_hash_sha256": "4c5a86613f733b695af4fcbc5782edd8e9d175a4f4d67fc9dc9b705ed97683a9"
+      },
+      {
+        "base_bus": "24",
+        "eligible_load_ids": [
+          "S24c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|24",
+        "split_hash_sha256": "a347565a96edd3094128b2c11f48219e4c39d1eb270c67a2c419e047490c4555"
+      },
+      {
+        "base_bus": "28",
+        "eligible_load_ids": [
+          "S28a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|28",
+        "split_hash_sha256": "da2cbae227423674fe43b991885cc5a6fbd7d386a2e162c0dd9b38b36ea631ad"
+      },
+      {
+        "base_bus": "29",
+        "eligible_load_ids": [
+          "S29a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|29",
+        "split_hash_sha256": "abfeaf6bedb974830e0144c46df3ecfb93c3dc22e5b80f58f1a46b00f6c97675"
+      },
+      {
+        "base_bus": "30",
+        "eligible_load_ids": [
+          "S30c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|30",
+        "split_hash_sha256": "b1ef5dcf9fcb2bf635b765721c84a907d9f31ac84edbf4c69542cd1127c099e5"
+      },
+      {
+        "base_bus": "31",
+        "eligible_load_ids": [
+          "S31c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|31",
+        "split_hash_sha256": "9ebe0316f2c66d2922a07626ed7f9a8da854f2faea14137a21eee91e595ec697"
+      },
+      {
+        "base_bus": "32",
+        "eligible_load_ids": [
+          "S32c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|32",
+        "split_hash_sha256": "d77f136fc2fcea896fdacb2a1d7dc1709f2eae76f4a5508c541705cafd5f9530"
+      },
+      {
+        "base_bus": "33",
+        "eligible_load_ids": [
+          "S33a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "calibration",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|33",
+        "split_hash_sha256": "70583f66c44b975eb373be44374092a52789dbdbb96443c3885f674a80df16dc"
+      },
+      {
+        "base_bus": "34",
+        "eligible_load_ids": [
+          "S34c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "calibration",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|34",
+        "split_hash_sha256": "286c95962fef4df293dc7f7f160e933a6421b349037c94598ca990a806740718"
+      },
+      {
+        "base_bus": "37",
+        "eligible_load_ids": [
+          "S37a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|37",
+        "split_hash_sha256": "c7a28cd1fdbb088bfebc79f1960e3e04e45772cd456316bae4512ad2531fab3a"
+      },
+      {
+        "base_bus": "38",
+        "eligible_load_ids": [
+          "S38b"
+        ],
+        "signature": "A0_B1_C0",
+        "signature_counts": {
+          "A": 0,
+          "B": 1,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|38",
+        "split_hash_sha256": "dbc6b3826703df4c8adc18f2c0aa7634bf6d33e6a5a089a0c37a6296a119e83a"
+      },
+      {
+        "base_bus": "39",
+        "eligible_load_ids": [
+          "S39b"
+        ],
+        "signature": "A0_B1_C0",
+        "signature_counts": {
+          "A": 0,
+          "B": 1,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|39",
+        "split_hash_sha256": "4bbee1962fe3fac64bdec635a4002e719c0c0400653d1303f0fc3f86e618422a"
+      },
+      {
+        "base_bus": "4",
+        "eligible_load_ids": [
+          "S4c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "calibration",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|4",
+        "split_hash_sha256": "2e019f53c3659b8a701f6f6ed9382ec16b677ab5220923e3044c2eb5967ae532"
+      },
+      {
+        "base_bus": "41",
+        "eligible_load_ids": [
+          "S41c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|41",
+        "split_hash_sha256": "fd597a39fa2727f9104d92d0782bac6c1de10b76d7aba5026498e42202a428ff"
+      },
+      {
+        "base_bus": "42",
+        "eligible_load_ids": [
+          "S42a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|42",
+        "split_hash_sha256": "ac594eba5544eb6f995052eb968f1a3ae2e2d92a3ee5c1a0efd381fe94f6ca4f"
+      },
+      {
+        "base_bus": "43",
+        "eligible_load_ids": [
+          "S43b"
+        ],
+        "signature": "A0_B1_C0",
+        "signature_counts": {
+          "A": 0,
+          "B": 1,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|43",
+        "split_hash_sha256": "6cf7ba82a26b9662a215852a7e1590b343506daec0553121ae3ab8b624e0d42a"
+      },
+      {
+        "base_bus": "45",
+        "eligible_load_ids": [
+          "S45a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|45",
+        "split_hash_sha256": "d8044842696c1121fe66e3c9c24951611ff3942fa04b0cb3bd92ffd1b7ab9cc3"
+      },
+      {
+        "base_bus": "46",
+        "eligible_load_ids": [
+          "S46a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|46",
+        "split_hash_sha256": "ec35e56c0eeb50d03283b33d4bb2c338be498aee2b64afa306cc9d00cbe935d2"
+      },
+      {
+        "base_bus": "5",
+        "eligible_load_ids": [
+          "S5c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|5",
+        "split_hash_sha256": "7d95a48bc0547899b92a5ace958ca1ef206441d413c577a170cd8479ec1e91ca"
+      },
+      {
+        "base_bus": "50",
+        "eligible_load_ids": [
+          "S50c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|50",
+        "split_hash_sha256": "43a93f8af1e6dcb33c2908cc189ff2e446bb4936c11f263beefe34140c6664e5"
+      },
+      {
+        "base_bus": "51",
+        "eligible_load_ids": [
+          "S51a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|51",
+        "split_hash_sha256": "7fe5dc2ac940bd9ed62632558eb2ef90ba602a342032afba0e01463ca522b1e3"
+      },
+      {
+        "base_bus": "52",
+        "eligible_load_ids": [
+          "S52a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|52",
+        "split_hash_sha256": "ab0a6167f0978ebc8f98e04bbc85b6626609dff6b2816e5b878188615283e8cc"
+      },
+      {
+        "base_bus": "53",
+        "eligible_load_ids": [
+          "S53a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "calibration",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|53",
+        "split_hash_sha256": "30e5474bcc51eb08111b36f0b3b058e4a8eccf58f6f593d36c2957e17a5b3b4c"
+      },
+      {
+        "base_bus": "55",
+        "eligible_load_ids": [
+          "S55a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|55",
+        "split_hash_sha256": "d3fc0215e0c4f9b8c3712246d92dcfcc823d7ceeafd78cc01c9cd4d5c1ecf5d6"
+      },
+      {
+        "base_bus": "56",
+        "eligible_load_ids": [
+          "S56b"
+        ],
+        "signature": "A0_B1_C0",
+        "signature_counts": {
+          "A": 0,
+          "B": 1,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|56",
+        "split_hash_sha256": "aa1623919ffc57d6a6b228d028f64bae8b652b730af7d18961eff354f7714c9a"
+      },
+      {
+        "base_bus": "58",
+        "eligible_load_ids": [
+          "S58b"
+        ],
+        "signature": "A0_B1_C0",
+        "signature_counts": {
+          "A": 0,
+          "B": 1,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|58",
+        "split_hash_sha256": "3f0ecde823d22b16b46e8a44b1496142448d937a49e20da64e1768a293f9f94f"
+      },
+      {
+        "base_bus": "59",
+        "eligible_load_ids": [
+          "S59b"
+        ],
+        "signature": "A0_B1_C0",
+        "signature_counts": {
+          "A": 0,
+          "B": 1,
+          "C": 0
+        },
+        "split": "calibration",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|59",
+        "split_hash_sha256": "15a356e522beff1f30c1eefb849c60828cece027dd42c510d1f5d810f7f686b6"
+      },
+      {
+        "base_bus": "6",
+        "eligible_load_ids": [
+          "S6c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|6",
+        "split_hash_sha256": "9141631578f1971e9cc2bcc025a62f745b723bd62faf33d28fc47f7568a08b19"
+      },
+      {
+        "base_bus": "60",
+        "eligible_load_ids": [
+          "S60a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "calibration",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|60",
+        "split_hash_sha256": "31179d01d963c589d9c5b8d37f90efda68163ab068aebacfd3fbc8b8cb0d2564"
+      },
+      {
+        "base_bus": "62",
+        "eligible_load_ids": [
+          "S62c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "calibration",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|62",
+        "split_hash_sha256": "344e276977f761f46eaa067a5d4cfffeb906ceb9906418b99c71ad94175c7018"
+      },
+      {
+        "base_bus": "63",
+        "eligible_load_ids": [
+          "S63a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|63",
+        "split_hash_sha256": "d3e9c4c146e7ef2d5ad61f426ddcfb485053c28bf382be60ccfb7a78052c9425"
+      },
+      {
+        "base_bus": "64",
+        "eligible_load_ids": [
+          "S64b"
+        ],
+        "signature": "A0_B1_C0",
+        "signature_counts": {
+          "A": 0,
+          "B": 1,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|64",
+        "split_hash_sha256": "c2c44fe682cefd4cb45d782eb57322c81b8a1271e9baab9325e486be4395b88b"
+      },
+      {
+        "base_bus": "66",
+        "eligible_load_ids": [
+          "S66c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "calibration",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|66",
+        "split_hash_sha256": "250c7f9d711dceb0fcbf8f889e9a072109754610f2478c9f934a1877cf31ef88"
+      },
+      {
+        "base_bus": "68",
+        "eligible_load_ids": [
+          "S68a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|68",
+        "split_hash_sha256": "cfc1853890b7b1ffa31ea49c5a1876def08a028aa7492b4d06592911e364f33b"
+      },
+      {
+        "base_bus": "69",
+        "eligible_load_ids": [
+          "S69a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|69",
+        "split_hash_sha256": "8dddc0f84369fdc091a703a60827ca2bd050f35e5ae32fc1b0ee773a16f6b56b"
+      },
+      {
+        "base_bus": "7",
+        "eligible_load_ids": [
+          "S7a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "calibration",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|7",
+        "split_hash_sha256": "6a20d62c6d7776ef1c7ef80a380c44759c01e1e889e2cffb650be4f5f6c7e593"
+      },
+      {
+        "base_bus": "70",
+        "eligible_load_ids": [
+          "S70a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|70",
+        "split_hash_sha256": "d2866c04270a457347af167745cfd5899df164483ceca95a79186ead40577ed6"
+      },
+      {
+        "base_bus": "71",
+        "eligible_load_ids": [
+          "S71a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|71",
+        "split_hash_sha256": "bac3075ffefb174511306c6302617673083c6da0da8661687530c0b29c0d7d4f"
+      },
+      {
+        "base_bus": "73",
+        "eligible_load_ids": [
+          "S73c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|73",
+        "split_hash_sha256": "54a22e6cdfea218f87afb881d89cdc4275d5cc339f64694f0ef1cfa66f10d899"
+      },
+      {
+        "base_bus": "74",
+        "eligible_load_ids": [
+          "S74c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|74",
+        "split_hash_sha256": "c9c00053eb707b98ec2db5389d378de730cced3a65a57222af819694677018ee"
+      },
+      {
+        "base_bus": "75",
+        "eligible_load_ids": [
+          "S75c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "calibration",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|75",
+        "split_hash_sha256": "1ec5af99da17cf035bec14615624a8fe03826811692ad66d5cf9a187278ede96"
+      },
+      {
+        "base_bus": "77",
+        "eligible_load_ids": [
+          "S77b"
+        ],
+        "signature": "A0_B1_C0",
+        "signature_counts": {
+          "A": 0,
+          "B": 1,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|77",
+        "split_hash_sha256": "51205bc10c4d1f0e1463f2f98ea8a34f8e09e179d93b73bbe9528288715a097c"
+      },
+      {
+        "base_bus": "79",
+        "eligible_load_ids": [
+          "S79a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "calibration",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|79",
+        "split_hash_sha256": "19cf3ddb37b1f9e94a569268c37e387e0ac6d10366fba424a1756edd5429c66a"
+      },
+      {
+        "base_bus": "80",
+        "eligible_load_ids": [
+          "S80b"
+        ],
+        "signature": "A0_B1_C0",
+        "signature_counts": {
+          "A": 0,
+          "B": 1,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|80",
+        "split_hash_sha256": "3a1bb1ef78eed23a85737701835ac50de0578e4bf7033b3944a947eb3276738f"
+      },
+      {
+        "base_bus": "82",
+        "eligible_load_ids": [
+          "S82a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|82",
+        "split_hash_sha256": "c89798c64ff45f3b9db1e43df0981ac5a4f59afec1c7b8e8927888547e9c1084"
+      },
+      {
+        "base_bus": "83",
+        "eligible_load_ids": [
+          "S83c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|83",
+        "split_hash_sha256": "a41e3697c759997895ea4cf96d48aecca711d57e1270af61a555c8f98475122c"
+      },
+      {
+        "base_bus": "84",
+        "eligible_load_ids": [
+          "S84c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|84",
+        "split_hash_sha256": "7ef27211b848b6978bb122bd6ea7d1024a1a40b204781e080cbe5c3fea6c670c"
+      },
+      {
+        "base_bus": "85",
+        "eligible_load_ids": [
+          "S85c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|85",
+        "split_hash_sha256": "97063c12d625fa70bfe952a12a69f2ce23df42d697b888f9b78305dbd4626273"
+      },
+      {
+        "base_bus": "86",
+        "eligible_load_ids": [
+          "S86b"
+        ],
+        "signature": "A0_B1_C0",
+        "signature_counts": {
+          "A": 0,
+          "B": 1,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|86",
+        "split_hash_sha256": "65b0da8f6cfac539a18321923b6b32c595e6abf165472ec1345cb561cc2c5d6b"
+      },
+      {
+        "base_bus": "87",
+        "eligible_load_ids": [
+          "S87b"
+        ],
+        "signature": "A0_B1_C0",
+        "signature_counts": {
+          "A": 0,
+          "B": 1,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|87",
+        "split_hash_sha256": "aa73234ae7f38d7403fe96bd2a3f982d3911a7cb715ff54f631ca85344881dfa"
+      },
+      {
+        "base_bus": "88",
+        "eligible_load_ids": [
+          "S88a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|88",
+        "split_hash_sha256": "b858cb99d6e560aacbc0a73492e11db785d84072886d97d5487888d4f9859bc4"
+      },
+      {
+        "base_bus": "9",
+        "eligible_load_ids": [
+          "S9a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|9",
+        "split_hash_sha256": "a0156277015c08f0819cd6ca0455bb50a9cd3958a9146c564ff69f282486c7e3"
+      },
+      {
+        "base_bus": "90",
+        "eligible_load_ids": [
+          "S90b"
+        ],
+        "signature": "A0_B1_C0",
+        "signature_counts": {
+          "A": 0,
+          "B": 1,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|90",
+        "split_hash_sha256": "c303150a95b54e7b3c9ffad999ec380f89a473135bf4130a5092ca5c9883d7f1"
+      },
+      {
+        "base_bus": "92",
+        "eligible_load_ids": [
+          "S92c"
+        ],
+        "signature": "A0_B0_C1",
+        "signature_counts": {
+          "A": 0,
+          "B": 0,
+          "C": 1
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|92",
+        "split_hash_sha256": "e8cb5ea2da95b996dd7be26a19c292dc6ec1333e1cb8ae4b445c4f49073163bf"
+      },
+      {
+        "base_bus": "94",
+        "eligible_load_ids": [
+          "S94a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "calibration",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|94",
+        "split_hash_sha256": "5a4c7d58fa5dfbc7af5713a536718f0bf032c8f8dfde81180f18d76202096968"
+      },
+      {
+        "base_bus": "95",
+        "eligible_load_ids": [
+          "S95b"
+        ],
+        "signature": "A0_B1_C0",
+        "signature_counts": {
+          "A": 0,
+          "B": 1,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|95",
+        "split_hash_sha256": "2172d46b1444a942daeb665a0a5bef21a907eb8da5579b532e00a08316dc5a06"
+      },
+      {
+        "base_bus": "96",
+        "eligible_load_ids": [
+          "S96b"
+        ],
+        "signature": "A0_B1_C0",
+        "signature_counts": {
+          "A": 0,
+          "B": 1,
+          "C": 0
+        },
+        "split": "calibration",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|96",
+        "split_hash_sha256": "1bb1b69230d48590a3c2efe63536166b8e6455374304093e18442ae9cdecbe5b"
+      },
+      {
+        "base_bus": "98",
+        "eligible_load_ids": [
+          "S98a"
+        ],
+        "signature": "A1_B0_C0",
+        "signature_counts": {
+          "A": 1,
+          "B": 0,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|98",
+        "split_hash_sha256": "9273b498c5b194134027c7d36b613a1085f3f2bf53eb6394e6bb15ffe6e51e53"
+      },
+      {
+        "base_bus": "99",
+        "eligible_load_ids": [
+          "S99b"
+        ],
+        "signature": "A0_B1_C0",
+        "signature_counts": {
+          "A": 0,
+          "B": 1,
+          "C": 0
+        },
+        "split": "confirmation",
+        "split_hash_input_utf8": "CWT-OEDI-PASSIVE-V1|7c8bcca06708ea2dd54b822821d637814ef08dc4|BUS|99",
+        "split_hash_sha256": "1f7b66f1627dd8a9246151e6fbbe63e1d737cdcd060d867ec6884b898fb3c0a7"
+      }
+    ],
+    "calibration_buses": [
+      "107",
+      "111",
+      "12",
+      "33",
+      "34",
+      "4",
+      "53",
+      "59",
+      "60",
+      "62",
+      "66",
+      "7",
+      "75",
+      "79",
+      "94",
+      "96"
+    ],
+    "calibration_target_bus_count": 16,
+    "canonical_bus_rule": "resolved active DSS Bus1 base with conductor suffix stripped, whitespace trimmed, case-folded, and no numeric coercion",
+    "confirmation_buses": [
+      "10",
+      "100",
+      "102",
+      "103",
+      "104",
+      "106",
+      "109",
+      "11",
+      "112",
+      "113",
+      "114",
+      "16",
+      "17",
+      "2",
+      "20",
+      "22",
+      "24",
+      "28",
+      "29",
+      "30",
+      "31",
+      "32",
+      "37",
+      "38",
+      "39",
+      "41",
+      "42",
+      "43",
+      "45",
+      "46",
+      "5",
+      "50",
+      "51",
+      "52",
+      "55",
+      "56",
+      "58",
+      "6",
+      "63",
+      "64",
+      "68",
+      "69",
+      "70",
+      "71",
+      "73",
+      "74",
+      "77",
+      "80",
+      "82",
+      "83",
+      "84",
+      "85",
+      "86",
+      "87",
+      "88",
+      "9",
+      "90",
+      "92",
+      "95",
+      "98",
+      "99"
+    ],
+    "largest_remainder_tie_break": "lexicographic signature text A<n>_B<n>_C<n>",
+    "pinned_commit_in_digest": "7c8bcca06708ea2dd54b822821d637814ef08dc4",
+    "remaining_bus_count": 77,
+    "salt": "CWT-OEDI-PASSIVE-V1",
+    "signature_allocations": [
+      {
+        "calibration_bus_count": 5,
+        "calibration_buses": [
+          "75",
+          "66",
+          "34",
+          "4",
+          "62"
+        ],
+        "calibration_quota_exact": 5.194805194805195,
+        "remaining_bus_count": 25,
+        "signature": "A0_B0_C1"
+      },
+      {
+        "calibration_bus_count": 4,
+        "calibration_buses": [
+          "12",
+          "107",
+          "59",
+          "96"
+        ],
+        "calibration_quota_exact": 4.1558441558441555,
+        "remaining_bus_count": 20,
+        "signature": "A0_B1_C0"
+      },
+      {
+        "calibration_bus_count": 7,
+        "calibration_buses": [
+          "111",
+          "79",
+          "53",
+          "60",
+          "94",
+          "7",
+          "33"
+        ],
+        "calibration_quota_exact": 6.64935064935065,
+        "remaining_bus_count": 32,
+        "signature": "A1_B0_C0"
+      }
+    ],
+    "stratification": "eligible phase-count signature (nA,nB,nC)",
+    "unit": "physical_base_bus_cluster"
+  },
+  "split_manifest_sha256": "b5dec69f45461d17f16f27104ef7837df39310e6f59d85b826aa1dd18854a22f",
+  "threshold_disclosure": "T>=0.10 was selected after the five-profile historical exploration but is prospective for the locked confirmation membership"
+}

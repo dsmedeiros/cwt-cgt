@@ -1,4 +1,4 @@
-"""Gate B experiment: critical ridge finder via metric trace hotspots."""
+"""Internal-synthetic exploratory metric-ridge scan."""
 
 from __future__ import annotations
 
@@ -70,6 +70,26 @@ BASELINE_NODE_COUNT = 20
 TARGET_MEAN_DEGREE = 4.0
 
 
+def _provenance_metadata() -> dict[str, object]:
+    """Return durable limitations for Gate B outputs."""
+
+    return {
+        "evidence_tier": "internal_synthetic",
+        "input_provenance": "synthetic_generated",
+        "external_dataset_ingested": False,
+        "evaluation_scope": "exploratory_same_grid_not_held_out",
+        "label_construction": (
+            "Post-hoc labels are defined on the evaluated grid from the 25th percentile "
+            "of spectral gap and the 75th percentile of |grad r|."
+        ),
+        "bootstrap_unit": "iid_grid_cells",
+        "independence_warning": (
+            "The bootstrap treats grid cells as IID and does not account for spatial dependence; "
+            "its interval is descriptive, not a held-out validation interval."
+        ),
+    }
+
+
 @dataclass(frozen=True)
 class SimulationConfig:
     """Configuration controlling the short-run layer dynamics."""
@@ -129,7 +149,7 @@ class DetectionMetrics:
     corr_trace_gap: float
     corr_trace_delta_r: float
 
-    def to_json(self) -> Mapping[str, float | None | list[float | None]]:
+    def to_json(self) -> dict[str, object]:
         return {
             "auc": _json_safe_float(self.auc),
             "auc_ci": [_json_safe_float(x) for x in self.auc_ci],
@@ -137,6 +157,9 @@ class DetectionMetrics:
             "delta_r_threshold": _json_safe_float(self.delta_r_threshold),
             "corr_trace_gap": _json_safe_float(self.corr_trace_gap),
             "corr_trace_delta_r": _json_safe_float(self.corr_trace_delta_r),
+            "label_construction": _provenance_metadata()["label_construction"],
+            "bootstrap_unit": _provenance_metadata()["bootstrap_unit"],
+            "evaluation_scope": _provenance_metadata()["evaluation_scope"],
         }
 
 
@@ -680,7 +703,11 @@ def detection_from_trace(
     bootstrap_samples: int,
     seed: int,
 ) -> DetectionMetrics:
-    """Build ROC metrics treating trace(g) as the hotspot score."""
+    """Build exploratory same-grid ROC metrics from post-hoc percentile labels.
+
+    The confidence interval resamples individual grid cells as if they were IID.
+    It is not a spatial bootstrap or an independently held-out validation interval.
+    """
 
     scores = np.asarray(trace_g, dtype=float).ravel()
     gap_flat = np.asarray(spectral_gap, dtype=float).ravel()
@@ -735,6 +762,20 @@ def detection_from_trace(
 
 def ensure_dir(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
+
+
+def save_provenance(out_dir: Path) -> None:
+    """Write limitations alongside figures, tabular files, and array bundles."""
+
+    ensure_dir(out_dir)
+    with (out_dir / "PROVENANCE.json").open("w", encoding="utf-8") as handle:
+        json.dump(
+            _provenance_metadata(),
+            handle,
+            indent=2,
+            ensure_ascii=False,
+            allow_nan=False,
+        )
 
 
 def resolve_output_dir(cli_value: Path | None) -> Path:
@@ -792,7 +833,7 @@ def save_heatmaps(
         fig.colorbar(im, ax=ax)
 
     figure_path = out_dir / "heatmaps.png"
-    fig.suptitle(f"Gate B ridge diagnostics — {result.name}")
+    fig.suptitle(f"Internal-synthetic exploratory ridge diagnostics — {result.name}")
     fig.savefig(figure_path, dpi=150)
     plt.close(fig)
 
@@ -815,7 +856,7 @@ def save_roc_curve(result: GraphScanResult, out_dir: Path) -> None:
     ax.plot([0, 1], [0, 1], linestyle="--", color="grey", linewidth=1.0)
     ax.set_xlabel("False positive rate")
     ax.set_ylabel("True positive rate")
-    ax.set_title(f"Hotspot ROC — {result.name}")
+    ax.set_title(f"Exploratory same-grid ROC (post-hoc labels) — {result.name}")
     ax.legend(loc="lower right")
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
@@ -841,9 +882,16 @@ def save_numpy_bundle(result: GraphScanResult, out_dir: Path) -> None:
         roc_fpr=result.detection.roc_fpr,
         roc_tpr=result.detection.roc_tpr,
         roc_thresholds=result.detection.roc_thresholds,
+        evidence_tier=np.array("internal_synthetic"),
+        evaluation_scope=np.array("exploratory_same_grid_not_held_out"),
+        label_construction=np.array("posthoc_25th_gap_or_75th_gradient_percentiles"),
+        bootstrap_unit=np.array("iid_grid_cells"),
     )
 
-    summary_payload: dict[str, object] = dict(result.detection.to_json())
+    summary_payload: dict[str, object] = {
+        **_provenance_metadata(),
+        **result.detection.to_json(),
+    }
     descriptor = result.graph_descriptor
     seed_value: int | None = result.factory_seed
 
@@ -1380,6 +1428,7 @@ def run_experiment(
             graph_descriptor=descriptor,
         )
         graph_dir = output_dir / built.name
+        save_provenance(graph_dir)
         save_heatmaps(result, graph_dir)
         save_roc_curve(result, graph_dir)
         save_numpy_bundle(result, graph_dir)
@@ -1412,7 +1461,8 @@ def _render_graph_section(result: GraphScanResult) -> list[str]:
         f"- Mean tr(g): {trace_mean:.3e}",
         f"- Spectral gap mean: {spectral_mean:.3e}",
         f"- |∇r| mean: {grad_mean:.3e}",
-        f"- Hotspot AUC: {auc:.3f} (CI [{auc_ci[0]:.3f}, {auc_ci[1]:.3f}])",
+        "- Exploratory same-grid AUC (post-hoc labels; IID-cell bootstrap CI): "
+        f"{auc:.3f} ([{auc_ci[0]:.3f}, {auc_ci[1]:.3f}])",
         f"- corr(trace, gap): {detection.corr_trace_gap:.3f}",
         f"- corr(trace, |∇r|): {detection.corr_trace_delta_r:.3f}",
         "",
@@ -1439,7 +1489,16 @@ def _render_report(
                 )
 
     lines = [
-        "# Gate B — Critical Ridge Finder",
+        "# Gate B — Internal-synthetic exploratory metric-ridge scan",
+        "",
+        "**Evidence tier:** internal synthetic; no external dataset is ingested.",
+        "",
+        (
+            "**Evaluation scope:** labels are created post hoc on the evaluated grid from the "
+            "25th-percentile gap and 75th-percentile |grad r| thresholds. The CI resamples IID "
+            "grid cells despite spatial dependence. These are exploratory same-grid diagnostics, "
+            "not held-out validation."
+        ),
         "",
         f"Grid size: {grid_shape}",
         *axis_texts,
@@ -1457,7 +1516,12 @@ def _render_report(
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Gate B critical ridge finder")
+    parser = argparse.ArgumentParser(
+        description=(
+            "Run the internal-synthetic Gate B exploratory same-grid ridge scan; "
+            "this command does not ingest an external dataset."
+        )
+    )
     parser.add_argument(
         "--grid-size",
         type=int,
@@ -1590,6 +1654,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     cli_output_dir: Path | None = args.output_dir
     output_dir = resolve_output_dir(cli_output_dir)
     ensure_dir(output_dir)
+    save_provenance(output_dir)
 
     rho_base = float(args.rho_base) if args.rho_base is not None else float(np.mean(args.rho_range))
     tau_base = float(args.tau_base) if args.tau_base is not None else float(np.mean(args.tau_range))
@@ -1631,7 +1696,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     summary_path = output_dir / "summary.json"
     with summary_path.open("w", encoding="utf-8") as fh:
-        summary_payload: dict[str, dict[str, object]] = {}
+        summary_payload: dict[str, object] = {"provenance": _provenance_metadata()}
         for result in results:
             entry = dict(result.detection.to_json())
             for key, value in result.topology_metrics.items():
@@ -1660,7 +1725,10 @@ def main(argv: Sequence[str] | None = None) -> None:
         print(f"Graph: {result.name}")
         auc = result.detection.auc
         ci_low, ci_high = result.detection.auc_ci
-        print(f"  AUC: {auc:.3f} (95% CI {ci_low:.3f}, {ci_high:.3f})")
+        print(
+            "  Exploratory same-grid AUC (post-hoc labels; IID-cell CI): "
+            f"{auc:.3f} ({ci_low:.3f}, {ci_high:.3f})"
+        )
         print(f"  corr(trace, gap): {result.detection.corr_trace_gap:.3f}")
         print(f"  corr(trace, |grad r|): {result.detection.corr_trace_delta_r:.3f}")
 

@@ -1,0 +1,280 @@
+{
+  "affected_paths": [
+    {
+      "canonical_repository_text": {
+        "git_blob_oid_sha1": "6eaf4fa51497ec8fcfc5bfed4f151fa5e4476e3a",
+        "hash_domain": "sha256_utf8_lf_v1",
+        "sha256": "d2e21872f982bc3890cb7e32cdfe006379cfd0aeab65b14f2b308fa0ea46a3ea",
+        "size_bytes": 1038
+      },
+      "execution_worktree": {
+        "hash_domain": "sha256_raw_bytes_v1",
+        "sha256": "4236d137b37cdb5f129b63409cf0b54cc0bcf0e03844f7c16523f32d5aed2ae8",
+        "size_bytes": 1080
+      },
+      "path": "cwt/cgt/_geom_compat.py",
+      "transformation_proof": {
+        "bare_cr_count": 0,
+        "bare_lf_count": 0,
+        "bare_lf_ordinals": [],
+        "crlf_count": 42,
+        "operation": "CRLF_to_LF_only",
+        "reconstructed_execution_hash_and_size_match": true
+      }
+    },
+    {
+      "canonical_repository_text": {
+        "git_blob_oid_sha1": "7071c327885e8458d2f734b1ea44a2ed52c467c8",
+        "hash_domain": "sha256_utf8_lf_v1",
+        "sha256": "eb713c61cb8b860c7011f823cdd4f531ba6dace5a63c1d306c6c5b7e974ef6d0",
+        "size_bytes": 11141
+      },
+      "execution_worktree": {
+        "hash_domain": "sha256_raw_bytes_v1",
+        "sha256": "4f793fc625707e0e93bacda391374131bb582f6678d4c643c9ffde282b3b59fe",
+        "size_bytes": 11416
+      },
+      "path": "cwt/cgt/benchmarks.py",
+      "transformation_proof": {
+        "bare_cr_count": 0,
+        "bare_lf_count": 0,
+        "bare_lf_ordinals": [],
+        "crlf_count": 275,
+        "operation": "CRLF_to_LF_only",
+        "reconstructed_execution_hash_and_size_match": true
+      }
+    },
+    {
+      "canonical_repository_text": {
+        "git_blob_oid_sha1": "74cc5b8b3ff0fec627597f678834d070f137ec6c",
+        "hash_domain": "sha256_utf8_lf_v1",
+        "sha256": "a4fd16111b2dba5f435c902db7b9a35c08be7b2fa276e430d1c8d132f6a6b8fe",
+        "size_bytes": 11583
+      },
+      "execution_worktree": {
+        "hash_domain": "sha256_raw_bytes_v1",
+        "sha256": "ddf6723c175fa930aaaaffd5345ceb9940de0afc8d4b62abe61cb8bfc649591e",
+        "size_bytes": 11888
+      },
+      "path": "cwt/cgt/continuation.py",
+      "transformation_proof": {
+        "bare_cr_count": 0,
+        "bare_lf_count": 0,
+        "bare_lf_ordinals": [],
+        "crlf_count": 305,
+        "operation": "CRLF_to_LF_only",
+        "reconstructed_execution_hash_and_size_match": true
+      }
+    },
+    {
+      "canonical_repository_text": {
+        "git_blob_oid_sha1": "51653441df38f01e214eceaf2f6f4f3e25d465f1",
+        "hash_domain": "sha256_utf8_lf_v1",
+        "sha256": "f5f12a169c0107f7da383a9549136360428ce07a8ecd9f091caf5db5caae5fc7",
+        "size_bytes": 21855
+      },
+      "execution_worktree": {
+        "hash_domain": "sha256_raw_bytes_v1",
+        "sha256": "08d237e1601517a5ba14092dbb0250cc022a1608404e542d98aaf256e1a457bf",
+        "size_bytes": 22397
+      },
+      "path": "cwt/cgt/loop_protocols.py",
+      "transformation_proof": {
+        "bare_cr_count": 0,
+        "bare_lf_count": 0,
+        "bare_lf_ordinals": [],
+        "crlf_count": 542,
+        "operation": "CRLF_to_LF_only",
+        "reconstructed_execution_hash_and_size_match": true
+      }
+    },
+    {
+      "canonical_repository_text": {
+        "git_blob_oid_sha1": "59b441387fead9f368fa9daa326a2bf1dc0e4d17",
+        "hash_domain": "sha256_utf8_lf_v1",
+        "sha256": "850babc5a37d29a002d507a0c38f69065881fb429c9c21e91531f213ae68cb70",
+        "size_bytes": 2583
+      },
+      "execution_worktree": {
+        "hash_domain": "sha256_raw_bytes_v1",
+        "sha256": "203d8d2eaf3ddbd708ec3eebd825630cf9cd31ede06343a69f9df67f8a6996c4",
+        "size_bytes": 2668
+      },
+      "path": "cwt/cgt/models.py",
+      "transformation_proof": {
+        "bare_cr_count": 0,
+        "bare_lf_count": 0,
+        "bare_lf_ordinals": [],
+        "crlf_count": 85,
+        "operation": "CRLF_to_LF_only",
+        "reconstructed_execution_hash_and_size_match": true
+      }
+    },
+    {
+      "canonical_repository_text": {
+        "git_blob_oid_sha1": "d6f3e385cb17c080592a1e94aaded998d4c7f835",
+        "hash_domain": "sha256_utf8_lf_v1",
+        "sha256": "9917098d6c539e19d714693dffe1df48696e1cdc1c2502228155afdcb044a7ec",
+        "size_bytes": 1760
+      },
+      "execution_worktree": {
+        "hash_domain": "sha256_raw_bytes_v1",
+        "sha256": "97679cdb5712075e553caef56fddb069e32f3d81ff15118089789ce87bb14d5c",
+        "size_bytes": 1816
+      },
+      "path": "cwt/geometry/berry.py",
+      "transformation_proof": {
+        "bare_cr_count": 0,
+        "bare_lf_count": 0,
+        "bare_lf_ordinals": [],
+        "crlf_count": 56,
+        "operation": "CRLF_to_LF_only",
+        "reconstructed_execution_hash_and_size_match": true
+      }
+    },
+    {
+      "canonical_repository_text": {
+        "git_blob_oid_sha1": "48c54a8003c2f2c6b78c3800054c2bd7dbac0753",
+        "hash_domain": "sha256_utf8_lf_v1",
+        "sha256": "3a87e86f402cb20bad5970eda932ea6fb81888464a55517dd710711faf8f5146",
+        "size_bytes": 1437
+      },
+      "execution_worktree": {
+        "hash_domain": "sha256_raw_bytes_v1",
+        "sha256": "a3b49220dbdc8dc3b62ad7459266e2d75bbe8f2e48a17c14c0d1f8ddd37b503c",
+        "size_bytes": 1476
+      },
+      "path": "cwt/geometry/branch_distance.py",
+      "transformation_proof": {
+        "bare_cr_count": 0,
+        "bare_lf_count": 0,
+        "bare_lf_ordinals": [],
+        "crlf_count": 39,
+        "operation": "CRLF_to_LF_only",
+        "reconstructed_execution_hash_and_size_match": true
+      }
+    },
+    {
+      "canonical_repository_text": {
+        "git_blob_oid_sha1": "3246f649330687a29148f7d1b11d6cb47d228e42",
+        "hash_domain": "sha256_utf8_lf_v1",
+        "sha256": "f217072118a9738a8a1bef70881c6b4fba1721d96f4d0892b5fd1eeb961d483b",
+        "size_bytes": 3029
+      },
+      "execution_worktree": {
+        "hash_domain": "sha256_raw_bytes_v1",
+        "sha256": "572cab21432105dfe31ed7b641fa17075e6f0d3f7b42858f5398165712c8508c",
+        "size_bytes": 3108
+      },
+      "path": "cwt/geometry/coherence.py",
+      "transformation_proof": {
+        "bare_cr_count": 0,
+        "bare_lf_count": 1,
+        "bare_lf_ordinals": [
+          78
+        ],
+        "crlf_count": 79,
+        "operation": "CRLF_to_LF_only",
+        "reconstructed_execution_hash_and_size_match": true
+      }
+    },
+    {
+      "canonical_repository_text": {
+        "git_blob_oid_sha1": "cb4b525efe29aa8c539c1d5887e169046b9608a6",
+        "hash_domain": "sha256_utf8_lf_v1",
+        "sha256": "a3c9f06ded36507a881d3127efb102a56d313d51692c62663316fd7276c909fd",
+        "size_bytes": 1657
+      },
+      "execution_worktree": {
+        "hash_domain": "sha256_raw_bytes_v1",
+        "sha256": "ba94c4008aae7de7ad48c00d9c8d7be28925e7568b8b10cdd84157a4508b3298",
+        "size_bytes": 1714
+      },
+      "path": "cwt/geometry/psi.py",
+      "transformation_proof": {
+        "bare_cr_count": 0,
+        "bare_lf_count": 0,
+        "bare_lf_ordinals": [],
+        "crlf_count": 57,
+        "operation": "CRLF_to_LF_only",
+        "reconstructed_execution_hash_and_size_match": true
+      }
+    },
+    {
+      "canonical_repository_text": {
+        "git_blob_oid_sha1": "ba08b0d4854e6fac3100a575effd5aceba3bd351",
+        "hash_domain": "sha256_utf8_lf_v1",
+        "sha256": "071c752ea5f6df9470acebd4af92d4bf3e2de6a4ceffd329f540117e73aa99bf",
+        "size_bytes": 2111
+      },
+      "execution_worktree": {
+        "hash_domain": "sha256_raw_bytes_v1",
+        "sha256": "67acacd17b8fa77f3383cec8ae56429d123a66b508edc8cad61a0a875c43bbd4",
+        "size_bytes": 2173
+      },
+      "path": "cwt/geometry/stats.py",
+      "transformation_proof": {
+        "bare_cr_count": 0,
+        "bare_lf_count": 0,
+        "bare_lf_ordinals": [],
+        "crlf_count": 62,
+        "operation": "CRLF_to_LF_only",
+        "reconstructed_execution_hash_and_size_match": true
+      }
+    }
+  ],
+  "canonical_hashes_are_repository_identity_not_execution_bytes": true,
+  "corrected": {
+    "artifact_sha256_raw_bytes": {
+      "PROVENANCE.json": "e8cf6a19102a75a627a1454ec7256c92f8291c24c2610451d9969cc6c373adfc",
+      "REPORT.md": "64a90b357af34648f16c42dc671c473b0099c1e89b6fe1cea3916470430415a3",
+      "records.json": "9d9abe277daf305014e52a7ace0517fb72f31037da630545521dd3daf125e2f7",
+      "summary.json": "afc8923bd9c15de461c8b18a58c7249fc082bac2e746a668204a37b1d9d02b63"
+    },
+    "source_bundle_sha256": "2443cd1e5bb097451fe8abf0585318412fa84f0581a3e39bda44dc9e92b39a00",
+    "source_hash_domain": {
+      "bom_policy": "reject UTF-8 BOM",
+      "encoding": "strict UTF-8",
+      "id": "sha256_utf8_lf_v1",
+      "newline_policy": "replace CRLF with LF; reject every remaining bare CR",
+      "other_normalization": "none"
+    }
+  },
+  "correction_scope": "independent_response_theorem provenance format only",
+  "correction_status": "PACKAGING_CORRECTION_NO_NUMERIC_CHANGE",
+  "cross_platform_byte_scope": "Git checkouts and archives preserve the reviewed raw CRLF artifact snapshot via artifact-only -text attributes. Portable source identity and JSON semantic hashes are canonical; a host-native artifact regeneration is not claimed to reproduce raw newline bytes on every operating system.",
+  "deterministic_theorem_recomputed_for_packaging_or_validation": true,
+  "discovery_timing": "2026-08-15 after the numerical result and independent review, before first commit",
+  "no_new_empirical_or_confirmation_run": true,
+  "not_new_evidence": true,
+  "original_runtime_newline_representation": "CRLF for nine files; coherence.py had 79 CRLF endings and one documented LF ending after the sign patch",
+  "parameters_numerical_gates_decision_hashes_identical": true,
+  "previous": {
+    "artifact_sha256_raw_bytes": {
+      "PROVENANCE.json": "f415d7814f33d8f9bcb460a4587e61383fe307921440728aeedef5f6d8fe6751",
+      "REPORT.md": "64a90b357af34648f16c42dc671c473b0099c1e89b6fe1cea3916470430415a3",
+      "records.json": "9d9abe277daf305014e52a7ace0517fb72f31037da630545521dd3daf125e2f7",
+      "summary.json": "afc8923bd9c15de461c8b18a58c7249fc082bac2e746a668204a37b1d9d02b63"
+    },
+    "provenance_sha256_raw_bytes": "f415d7814f33d8f9bcb460a4587e61383fe307921440728aeedef5f6d8fe6751",
+    "source_bundle_sha256_ambiguous_raw_checkout_domain": "8f28a6910aace66bc577d766ea33a579bdede0e05f359ce4e67ab2320fb5657d"
+  },
+  "reason": "Schema-v1 source hashes captured Windows CRLF checkout bytes for ten shared Python dependencies, while repository identity is the LF Git blob required by .gitattributes.",
+  "schema_version": 1,
+  "semantic_equivalence": {
+    "claim_text_unchanged": true,
+    "config_unchanged": true,
+    "decision_unchanged": true,
+    "gates_and_thresholds_unchanged": true,
+    "metrics_unchanged": true,
+    "numeric_records_unchanged": true,
+    "semantic_sha256": {
+      "config": "38f353e188fedc2389b52e496d631ab88840aa72a1ccb06fa52322ac3e127de1",
+      "gates": "ec907b15d54162bb566546e805140cd4aa307a7a3298ed7aa12601d79aa4575e",
+      "metrics": "ed49d5268f5a874ec65ffde97b8de76b931f6e2f4c9184d8e49521cfd45dcd34",
+      "records": "42e6a124bb3d604e571498164d73a2e156f8360fc98d3c7a76e1c50af6c3efd6",
+      "report_text": "d5dff67e207d5dc5c165cc24a1dc2db72befcb878958cd9f5abef4f1199ea1a1",
+      "summary": "ac784afb9d30f2fab70a7db3376baedbc2f0e9df3ff487145da027062d55ae36"
+    }
+  }
+}

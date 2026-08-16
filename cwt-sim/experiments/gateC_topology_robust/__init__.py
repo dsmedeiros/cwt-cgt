@@ -1,4 +1,4 @@
-"""Gate C topology robustness experiment package."""
+"""Gate C internal-synthetic loop/noise robustness construction package."""
 
 from __future__ import annotations
 

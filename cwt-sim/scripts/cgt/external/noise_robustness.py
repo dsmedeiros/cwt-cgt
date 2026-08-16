@@ -9,6 +9,9 @@ CWT_SIM_ROOT = Path(__file__).resolve().parents[3]
 if str(CWT_SIM_ROOT) not in sys.path:
     sys.path.insert(0, str(CWT_SIM_ROOT))
 
+DEFAULT_S_BARS = "0.99,0.95,0.90,0.88,0.84"
+DEFAULT_RESPONSES = "1.00,0.95,0.81,-0.20,-0.45"
+
 
 def _parse_floats(raw: str) -> list[float]:
     return [float(part.strip()) for part in raw.split(",") if part.strip()]
@@ -17,9 +20,22 @@ def _parse_floats(raw: str) -> list[float]:
 def main() -> None:
     from cwt.metrics.eval_curves import log_log_slope, noise_threshold_report
 
-    parser = argparse.ArgumentParser(description="Summarize phase-noise robustness thresholds.")
-    parser.add_argument("--s-bars", default="0.99,0.95,0.90,0.88,0.84")
-    parser.add_argument("--responses", default="1.00,0.95,0.81,-0.20,-0.45")
+    parser = argparse.ArgumentParser(
+        description=(
+            "Summarize supplied phase-noise values. This utility does not load or verify "
+            "an external dataset; its defaults are illustrative synthetic numbers."
+        )
+    )
+    parser.add_argument(
+        "--s-bars",
+        default=DEFAULT_S_BARS,
+        help="Comma-separated coherence values; the default is illustrative synthetic data.",
+    )
+    parser.add_argument(
+        "--responses",
+        default=DEFAULT_RESPONSES,
+        help="Comma-separated responses; the default is illustrative synthetic data.",
+    )
     parser.add_argument("--mild-s-bar-floor", type=float, default=0.95)
     parser.add_argument("--output", type=Path, default=None)
     args = parser.parse_args()
@@ -39,6 +55,13 @@ def main() -> None:
         [item[1] for item in mild_pairs],
     )
     payload = {
+        "input_provenance": (
+            "illustrative_synthetic_defaults"
+            if args.s_bars == DEFAULT_S_BARS and args.responses == DEFAULT_RESPONSES
+            else "unverified_cli_values"
+        ),
+        "is_external_evidence": False,
+        "evidence_limit": "No dataset manifest or external result artifact is loaded by this script.",
         "noise_threshold": report,
         "mild_noise_log_log_slope": slope,
     }

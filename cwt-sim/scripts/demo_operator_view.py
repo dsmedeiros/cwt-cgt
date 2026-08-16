@@ -30,7 +30,7 @@ def integrate_qp1(num_samples: int) -> float:
         A_y = biorth_connection(state, d_y)
 
         dA_i = 0.0  # ∂_x A_y
-        dA_j = -(math.pi**2) * math.sin(math.pi * y)  # ∂_y A_x
+        dA_j = (math.pi**2) * math.sin(math.pi * y)  # ∂_y A_x
         omega_density = biorth_curvature(A_x, A_y, dA_i, dA_j)
         total += float(omega_density) * dx * dy
 
@@ -48,11 +48,12 @@ def main() -> None:
     args = parser.parse_args()
 
     total = integrate_qp1(max(int(args.samples), 1))
-    target = 2.0 * math.pi
+    target = -2.0 * math.pi
     deviation = total - target
 
-    print(f"Integral of Ω over the QP-1 rectangle: {total:.6f} rad")
-    print(f"Deviation from 2π: {deviation:.6e} rad")
+    # Keep CLI output ASCII-safe on Windows consoles that default to cp1252.
+    print(f"Integral of Omega over the QP-1 rectangle: {total:.6f} rad")
+    print(f"Deviation from -2*pi: {deviation:.6e} rad")
 
 
 if __name__ == "__main__":

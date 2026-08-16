@@ -1,4 +1,4 @@
-"""Gate A experiment: density–delay loops and readout bias calibration."""
+"""Internal-synthetic Gate A flux-conditioned construction check."""
 
 from __future__ import annotations
 
@@ -52,7 +52,7 @@ class LoopOrientationResult:
     orientation: str
     flux: float
     R_gamma: float
-    slope: float
+    observed_response_per_flux: float
     clip_total: int
     fs_steps: list[float]
 
@@ -76,8 +76,15 @@ class ExtentResult:
     samples: list[PairedLoopResult]
     s_min: float
 
+    def response_per_flux_samples(self) -> list[float]:
+        """Return observed ``R/Phi`` values from the programmed readout."""
+
+        return [sample.ccw.observed_response_per_flux for sample in self.samples]
+
     def slope_samples(self) -> list[float]:
-        return [sample.ccw.slope for sample in self.samples]
+        """Deprecated compatibility alias for :meth:`response_per_flux_samples`."""
+
+        return self.response_per_flux_samples()
 
     def cw_bias(self) -> list[float]:
         return [sample.cw.R_gamma for sample in self.samples]
@@ -131,6 +138,7 @@ class ExperimentResults:
 
     def to_dict(self) -> dict:
         return {
+            **_evidence_metadata(),
             "num_trials": self.num_trials,
             "grid_size": self.grid_size,
             "s_min": self.s_min,
@@ -160,6 +168,21 @@ class ExperimentResults:
                 for graph in self.graphs
             ],
         }
+
+
+def _evidence_metadata() -> dict[str, object]:
+    """Return durable claim-scope metadata for every Gate A artifact."""
+
+    return {
+        "evidence_tier": "internal_synthetic",
+        "input_provenance": "synthetic_generated",
+        "external_dataset_ingested": False,
+        "claim_scope": "flux_conditioned_construction_check",
+        "circularity_note": (
+            "Signed geometric flux is supplied directly to the memory/readout; "
+            "observed R/Phi is a construction-consistency ratio, not an independently derived kappa_1."
+        ),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -216,7 +239,7 @@ def _gateA_header_metrics(results: ExperimentResults) -> ReportHeaderMetrics:
     omega_values: list[float] = []
     tile_areas: list[float] = []
     fs_steps: list[float] = []
-    slope_samples: list[float] = []
+    response_per_flux_samples: list[float] = []
     cw_bias: list[float] = []
     ccw_bias: list[float] = []
     flip_terms: list[float] = []
@@ -230,7 +253,7 @@ def _gateA_header_metrics(results: ExperimentResults) -> ReportHeaderMetrics:
             omega_values.extend(abs(tile.omega) for tile in extent.tiles)
             tile_areas.extend(tile.area for tile in extent.tiles)
             fs_steps.extend(extent.fs_steps_all())
-            slope_samples.extend(extent.slope_samples())
+            response_per_flux_samples.extend(extent.response_per_flux_samples())
             cw_bias.extend(extent.cw_bias())
             ccw_bias.extend(extent.ccw_bias())
             flip_terms.extend(extent.orientation_sums())
@@ -266,14 +289,16 @@ def _gateA_header_metrics(results: ExperimentResults) -> ReportHeaderMetrics:
         {f"±{extent.extent_fraction * 100:.1f}%" for graph in results.graphs for extent in graph.extents}
     )
 
-    slope_arr = np.asarray(slope_samples, dtype=float)
-    slope_arr = slope_arr[np.isfinite(slope_arr)]
-    kappa_mean = float(slope_arr.mean()) if slope_arr.size else float("nan")
-    kappa_ci = None
-    if slope_arr.size:
-        mean_val, ci_val = _mean_ci(slope_arr)
-        kappa_mean = mean_val
-        kappa_ci = ci_val
+    response_per_flux_arr = np.asarray(response_per_flux_samples, dtype=float)
+    response_per_flux_arr = response_per_flux_arr[np.isfinite(response_per_flux_arr)]
+    response_per_flux_mean = (
+        float(response_per_flux_arr.mean()) if response_per_flux_arr.size else float("nan")
+    )
+    response_per_flux_ci = None
+    if response_per_flux_arr.size:
+        mean_val, ci_val = _mean_ci(response_per_flux_arr)
+        response_per_flux_mean = mean_val
+        response_per_flux_ci = ci_val
 
     cw_arr = np.asarray(cw_bias, dtype=float)
     cw_arr = cw_arr[np.isfinite(cw_arr)]
@@ -320,8 +345,8 @@ def _gateA_header_metrics(results: ExperimentResults) -> ReportHeaderMetrics:
         R_cw=float(cw_arr.mean()) if cw_arr.size else float("nan"),
         R_ccw=float(ccw_arr.mean()) if ccw_arr.size else float("nan"),
         flip_error=float(np.mean(np.abs(flip_arr))) if flip_arr.size else float("nan"),
-        kappa1_mean=kappa_mean,
-        kappa1_ci=kappa_ci,
+        observed_response_per_flux_mean=response_per_flux_mean,
+        observed_response_per_flux_ci=response_per_flux_ci,
         spectral_gap=spectral_gap_mean,
         grad_r=float(np.mean(np.abs(grad_arr))) if grad_arr.size else float("nan"),
     )
@@ -466,13 +491,13 @@ def _run_orientation(
     rng = np.random.default_rng(seed)
     noise_scale = 0.05 * abs(bias) + 1e-20
     bias += float(rng.normal(0.0, noise_scale))
-    slope = bias / flux_signed if flux_signed != 0.0 else float("nan")
+    observed_response_per_flux = bias / flux_signed if flux_signed != 0.0 else float("nan")
 
     return LoopOrientationResult(
         orientation=path.orientation,
         flux=float(flux_signed),
         R_gamma=bias,
-        slope=slope,
+        observed_response_per_flux=observed_response_per_flux,
         clip_total=0,
         fs_steps=fs_steps,
     )
@@ -631,7 +656,7 @@ def _format_ci(ci: tuple[float, float]) -> str:
 
 
 def _render_extent_section(extent: ExtentResult) -> list[str]:
-    slope_mean, slope_ci = _mean_ci(extent.slope_samples())
+    response_per_flux_mean, response_per_flux_ci = _mean_ci(extent.response_per_flux_samples())
     ccw_mean, ccw_ci = _mean_ci(extent.ccw_bias())
     cw_mean, cw_ci = _mean_ci(extent.cw_bias())
     orient_mean, orient_ci = _mean_ci(extent.orientation_sums())
@@ -641,7 +666,8 @@ def _render_extent_section(extent: ExtentResult) -> list[str]:
 
     lines = [
         f"- Flux magnitude: {extent.flux:.3e}",
-        f"- κ₁ mean: {slope_mean:.3e} with CI {_format_ci(slope_ci)}",
+        "- Observed R/Φ mean (flux-conditioned construction): "
+        f"{response_per_flux_mean:.3e} with CI {_format_ci(response_per_flux_ci)}",
         f"- CCW bias: {ccw_mean:.3e} with CI {_format_ci(ccw_ci)}",
         f"- CW bias: {cw_mean:.3e} with CI {_format_ci(cw_ci)}",
         f"- Orientation sum mean: {orient_mean:.3e} with CI {_format_ci(orient_ci)}",
@@ -659,7 +685,14 @@ def _render_report(results: ExperimentResults) -> str:
     header_metrics = _gateA_header_metrics(results)
 
     lines = [
-        "# Gate A: density–delay loop",
+        "# Gate A: internal-synthetic flux-conditioned loop construction",
+        "",
+        "**Evidence tier:** internal synthetic; no external dataset is ingested.",
+        "",
+        (
+            "**Claim scope:** construction consistency only. Signed flux is supplied to the "
+            "memory/readout, so observed R/Φ is not an independently derived theoretical κ₁."
+        ),
         "",
         f"Trials per extent: {results.num_trials}",
         f"Tile grid: {results.grid_size} × {results.grid_size}",
@@ -674,17 +707,20 @@ def _render_report(results: ExperimentResults) -> str:
 
     for graph in results.graphs:
         lines.extend([f"## Graph: {graph.name}", ""])
-        slope_means: dict[float, float] = {}
+        response_per_flux_means: dict[float, float] = {}
         for extent in graph.extents:
             lines.append(f"### Extent ±{extent.extent_fraction * 100:.1f}%")
             lines.extend(_render_extent_section(extent))
             lines.append("")
-            slope_mean, _ = _mean_ci(extent.slope_samples())
-            slope_means[extent.extent_fraction] = slope_mean
+            response_per_flux_mean, _ = _mean_ci(extent.response_per_flux_samples())
+            response_per_flux_means[extent.extent_fraction] = response_per_flux_mean
 
-        if 0.02 in slope_means and 0.04 in slope_means:
-            ratio = slope_means[0.04] / slope_means[0.02] if slope_means[0.02] != 0 else float("nan")
-            lines.append(f"κ₁ ratio (4% / 2%): {ratio:.3f} (deviation {(ratio - 1.0):+.3f})")
+        if 0.02 in response_per_flux_means and 0.04 in response_per_flux_means:
+            denominator = response_per_flux_means[0.02]
+            ratio = response_per_flux_means[0.04] / denominator if denominator != 0 else float("nan")
+            lines.append(
+                "Observed R/Φ scale ratio (4% / 2%): " f"{ratio:.3f} (deviation {(ratio - 1.0):+.3f})"
+            )
             lines.append("")
 
     return "\n".join(lines)
@@ -696,7 +732,12 @@ def _render_report(results: ExperimentResults) -> str:
 
 
 def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run the Gate A density–delay experiment")
+    parser = argparse.ArgumentParser(
+        description=(
+            "Run the internal-synthetic Gate A flux-conditioned construction check; "
+            "this command does not ingest an external dataset."
+        )
+    )
     parser.add_argument(
         "--output-dir",
         type=Path,

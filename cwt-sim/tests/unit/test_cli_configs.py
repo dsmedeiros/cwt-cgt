@@ -9,6 +9,7 @@ import pytest
 import yaml
 from pydantic import ValidationError
 from scripts import eval_report, run_loop, sweep_grid
+from scripts.cgt.external import gate_a, gate_b
 from typer.testing import CliRunner
 
 from cwt.io.config import AppConfig, load_config
@@ -96,3 +97,20 @@ def test_sweep_grid_cli_and_report(tmp_path: Path) -> None:
     assert summary["count"] == 2
     reported_labels = {item["label"] for item in summary["runs"]}
     assert reported_labels == labels
+    for item in summary["runs"]:
+        phi = item["phi_flux"]
+        response = item["R_bias"]
+        observed_response_per_flux = item["observed_response_per_flux"]
+        if phi is None or response is None or abs(phi) <= 1e-15:
+            assert observed_response_per_flux is None
+        else:
+            assert observed_response_per_flux == pytest.approx(response / phi)
+
+
+@pytest.mark.parametrize("wrapper", [gate_a, gate_b])
+def test_external_gate_wrappers_disclose_synthetic_provenance(wrapper, capsys) -> None:
+    wrapper._warn_synthetic_wrapper()
+
+    warning = capsys.readouterr().err
+    assert "synthetic/generated" in warning
+    assert "does not ingest or validate an external dataset" in warning

@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "experiment_id": "oedi_ieee123_prospective_passive",
+  "attempt_id": "attempt_001",
+  "attempt_status": "ABORTED_NO_RESULT",
+  "started_at": "2026-08-15T20:31:14.2181485-05:00",
+  "approval": {
+    "scope": "one execution of the exact frozen confirmation",
+    "approved_freeze_digest_sha256": "2502fd7a938d78a78f29da0d3e643ceb85e62822f2519f39a24fffbff6a51919",
+    "approved_freeze_lock_file_sha256": "ff246decbfb7b0a3d2716f5191e7c93a3579f2f9cc82bb052db23bcfbd2f955c",
+    "root_and_adversarial_approval_was_explicit": true
+  },
+  "execution": {
+    "cwd": "C:\\Users\\Administrator\\source\\repos\\cwt-cgt\\cwt-sim",
+    "interpreter": "C:\\Users\\Administrator\\source\\repos\\cwt-cgt\\cwt-sim\\.venv\\Scripts\\python.exe",
+    "argv": [
+      "-m",
+      "experiments.oedi_ieee123_reconstruction.run",
+      "confirm",
+      "--source-dir",
+      "..\\.tmp_oedi_ieee123_canonical_git",
+      "--prepared-summary",
+      "experiments\\oedi_ieee123_reconstruction\\artifacts\\prospective_prepare\\summary.json",
+      "--freeze-lock",
+      "experiments\\oedi_ieee123_reconstruction\\artifacts\\prospective_prepare\\FREEZE_LOCK.json",
+      "--approved-freeze-lock-sha256",
+      "ff246decbfb7b0a3d2716f5191e7c93a3579f2f9cc82bb052db23bcfbd2f955c",
+      "--unlock-digest",
+      "2502fd7a938d78a78f29da0d3e643ceb85e62822f2519f39a24fffbff6a51919",
+      "--root-and-adversarial-approved"
+    ],
+    "outer_harness_timeout_ms": 1000,
+    "observed_elapsed_seconds": 1.488,
+    "outer_harness_exit_code": 124,
+    "child_stdout_observed": {
+      "byte_count": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "child_stderr_observed": {
+      "byte_count": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "outer_harness_error": {
+      "text": "command timed out after 1488 milliseconds",
+      "utf8_byte_count": 41,
+      "sha256": "2eadb76fb67d7ab0f512ea331cc0cf64cccd7e1d33b1c5e193281debbf662e6a"
+    }
+  },
+  "frozen_inputs": {
+    "freeze_digest_sha256": "2502fd7a938d78a78f29da0d3e643ceb85e62822f2519f39a24fffbff6a51919",
+    "freeze_lock_file_sha256": "ff246decbfb7b0a3d2716f5191e7c93a3579f2f9cc82bb052db23bcfbd2f955c",
+    "prepared_summary_canonical_json_sha256": "703c44eedf57322ef7cb89aa8967b42f6d03f927c78a6be3de6d98fea4605382",
+    "prepared_summary_file_sha256": "43031f2941adff9b76149cd0971d546cf0a89ec79c474d8743207e194e27ee81",
+    "source_inventory_sha256": "2193767d0cedc525d32617ec0e7b4575098f64e48ef8e78670516fa7ae6f74cd",
+    "split_manifest_sha256": "b5dec69f45461d17f16f27104ef7837df39310e6f59d85b826aa1dd18854a22f",
+    "protocol_sha256": "c7b3a558801259ca221c0682a360628c1b6739c707cc13dbe161da044fb19a80",
+    "source_code_bundle_sha256": "b64d964654272306669c5ab9564eca35e06019110d66118675ebedad4c5bf6b0",
+    "upstream_manifest_sha256": "592e1a1eef24150b4fab7b22550490a4de88f603a074195f47cd946700f8c5c8",
+    "runtime_versions": {
+      "networkx": "3.5",
+      "numpy": "2.3.3",
+      "python": "3.11.9",
+      "scipy": "1.16.2",
+      "typer": "0.17.4"
+    }
+  },
+  "observations": {
+    "numeric_nonlegacy_profile_access": "possible_some_or_all_admitted_profiles",
+    "outcome_statistic_or_value_observed": false,
+    "decision_observed": false,
+    "child_stdout_outcome_observed": false,
+    "confirmation_artifact_directory_existed_after_abort": false,
+    "surviving_python_process_observed_after_abort": false,
+    "frozen_source_code_protocol_prepared_or_source_data_edited_after_abort": false,
+    "root_independent_verification_at": "2026-08-15T20:32:04.1692906-05:00"
+  },
+  "methodological_classification": {
+    "result": null,
+    "decision": null,
+    "classification": "outcome-independent external-harness abort before any result was exposed",
+    "formal_and_adversarial_recovery_verdict": "Exactly one byte-identical recovery execution may follow only after detached incident disclosure, full frozen-DAG verification, and fresh explicit root reauthorization.",
+    "recovery_constraints": [
+      "same frozen virtual environment, source bytes, code, protocol, prepared payload, digest, lock, seed, and decision rules",
+      "change only the outer execution timeout or wait mechanism",
+      "no tuning, analytic edits, or outcome-dependent adaptation",
+      "if any frozen hash differs, any outcome was exposed, or recovery aborts, stop for adjudication without another retry"
+    ]
+  }
+}

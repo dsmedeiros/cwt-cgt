@@ -76,5 +76,5 @@ def projective_metric_trace_and_curvature(
     g_vv = float(np.real(np.vdot(q_v, q_v)))
     metric_trace = g_uu + g_vv
     c_uv = np.vdot(q_u, q_v)
-    curvature = float(-2.0 * np.imag(c_uv))
+    curvature = float(2.0 * np.imag(c_uv))
     return metric_trace, curvature

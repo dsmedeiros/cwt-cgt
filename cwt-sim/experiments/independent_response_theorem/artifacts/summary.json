@@ -1,0 +1,261 @@
+{
+  "central_empirical_external_claim_status": "proof_incomplete",
+  "claim_scope": "explicit benchmark-C fixed-tick geometry-blind-response theorem",
+  "config": {
+    "area_center": [
+      0.0,
+      0.0
+    ],
+    "area_sides": [
+      0.16,
+      0.08,
+      0.04,
+      0.02
+    ],
+    "area_step_scale": 0.96,
+    "current_phase_gain": 0.45,
+    "cyclic_center": [
+      0.18,
+      0.0
+    ],
+    "cyclic_side": 0.08,
+    "cyclic_start_fractions": [
+      0.0,
+      0.25,
+      0.5,
+      0.75
+    ],
+    "cyclic_steps": [
+      96,
+      192,
+      384,
+      768
+    ],
+    "derivative_center": [
+      0.0,
+      0.0
+    ],
+    "derivative_steps": [
+      0.004,
+      0.002,
+      0.001,
+      0.0005
+    ],
+    "null_center": [
+      0.0,
+      0.0
+    ],
+    "null_side": 0.08,
+    "null_steps_per_segment": 96,
+    "phase_relaxation": 0.35,
+    "quotient_centers": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.18,
+        0.0
+      ],
+      [
+        0.0,
+        0.18
+      ],
+      [
+        -0.18,
+        0.1
+      ]
+    ],
+    "quotient_side": 0.02,
+    "quotient_steps_per_segment": 2400,
+    "refinement_center": [
+      0.18,
+      0.0
+    ],
+    "refinement_side": 0.08,
+    "refinement_steps": [
+      48,
+      96,
+      192,
+      384
+    ]
+  },
+  "estimand": "discrete_cycle_sum_surrogate",
+  "estimand_and_thresholds_selected_after_exploratory_probe": true,
+  "estimand_units": "circulation-current-ticks with dt=1",
+  "evidence_tier": "internal_synthetic_analytic_fixture",
+  "experiment_id": "independent_response_theorem",
+  "failed_gates": [],
+  "gates": [
+    {
+      "name": "exact_lag_recurrence",
+      "observed": 8.881784197001252e-16,
+      "requirement": "max wrapped recurrence residual <= 5e-13",
+      "status": "pass"
+    },
+    {
+      "name": "fixed_branch_no_wrap_domain",
+      "observed": {
+        "fixed_branch": true,
+        "max_abs_lag_error": 0.0057551875917609685,
+        "max_abs_phase_increment": 0.00309894736842109
+      },
+      "requirement": "C0 only, no ambiguous steps, and phase increments/lags < 0.1 rad",
+      "status": "pass"
+    },
+    {
+      "name": "endpoint_duplication",
+      "observed": true,
+      "requirement": "every loop includes the legacy duplicated endpoint",
+      "status": "pass"
+    },
+    {
+      "name": "tangent_derivative_stability",
+      "observed": {
+        "projective_relative_change": 3.114081924454885e-07,
+        "response_relative_change": 9.32684456463563e-08
+      },
+      "requirement": "last-two central-difference relative changes <= 1e-4",
+      "status": "pass"
+    },
+    {
+      "name": "legacy_mean_vanishes_with_ticks",
+      "observed": -1.0104576655480415,
+      "requirement": "log slope versus steps lies in [-1.1, -0.9]",
+      "status": "pass"
+    },
+    {
+      "name": "summed_remainder_is_inverse_tick",
+      "observed": -0.9579448174357739,
+      "requirement": "|Q_anti-line integral| log slope lies in [-1.15, -0.8]",
+      "status": "pass"
+    },
+    {
+      "name": "discrete_cycle_sum_converges_to_tangent_line",
+      "observed": 0.004267686281610438,
+      "requirement": "finest fixed-side relative error <= 0.005",
+      "status": "pass"
+    },
+    {
+      "name": "coupled_area_tick_response_limit",
+      "observed": [
+        0.02295648538793926,
+        0.004522756119585484,
+        0.0010266285760350802,
+        0.00024739132150130335
+      ],
+      "requirement": "m scales as 0.96/side^2; errors decrease and final error <= 5e-4",
+      "status": "pass"
+    },
+    {
+      "name": "wilson_flux_density_limit",
+      "observed": [
+        0.00014009888211360857,
+        3.559113185489477e-05,
+        8.827099108278625e-06,
+        2.1288395412322734e-06
+      ],
+      "requirement": "Wilson Phi_anti/area errors decrease and final error <= 2e-5",
+      "status": "pass"
+    },
+    {
+      "name": "two_dimensional_quotient_consistency",
+      "observed": [
+        0.0002452630040856224,
+        0.0030118836295668907,
+        0.0008145267919700724,
+        0.002534100669496367
+      ],
+      "requirement": "finite-loop Q_anti/Phi_anti approaches pointwise F_R/Omega within 0.5%; this is an algebraic 2D quotient consistency check, not predictive evidence",
+      "status": "pass"
+    },
+    {
+      "name": "local_two_form_quotient_is_not_common",
+      "observed": {
+        "local_two_form_quotients": [
+          -0.5441216722179453,
+          -0.34338421714062545,
+          -0.4405833197664991,
+          -0.7363162937098516
+        ],
+        "spread": 0.3929320765692262
+      },
+      "requirement": "pointwise F_R/Omega quotient spread >= 0.15; no common coefficient is inferred",
+      "status": "pass"
+    },
+    {
+      "name": "same_observable_exact_nulls",
+      "observed": 7.632783294297951e-17,
+      "requirement": "gain=0 and phase_relaxation=1 each give max |q_t| <= 1e-14",
+      "status": "pass"
+    },
+    {
+      "name": "orientation_even_contamination",
+      "observed": 0.00014080264971746837,
+      "requirement": "|Q_even/Q_anti| <= 0.005 on the finest coupled refinement",
+      "status": "pass"
+    },
+    {
+      "name": "cyclic_start_remainder",
+      "observed": {
+        "relative_spreads": [
+          0.04557430704536225,
+          0.022710304479542028,
+          0.011337751607219695,
+          0.005664749720282222
+        ],
+        "spread_log_slope": -1.0002649128673984
+      },
+      "requirement": "start-point spread scales as 1/m and final relative spread <= 0.007",
+      "status": "pass"
+    },
+    {
+      "name": "orientation_and_area_signs",
+      "observed": true,
+      "requirement": "CCW/CW areas reverse, Phi_anti > 0, and Q_anti < 0",
+      "status": "pass"
+    },
+    {
+      "name": "two_dimensional_quotient_spatial_convergence",
+      "observed": {
+        "relative_error_log_slope": 1.9991303718301736,
+        "relative_errors": [
+          0.005793248377525074,
+          0.001449061637762963,
+          0.0003624732775505377,
+          9.068422509144482e-05
+        ]
+      },
+      "requirement": "line-vs-local-(F_R/Omega)*Phi consistency error is second order and final <= 2e-4; this has no independent predictive content",
+      "status": "pass"
+    }
+  ],
+  "indeterminate_gates": [],
+  "legacy_mean_response_preserved": true,
+  "metrics": {
+    "cyclic_start_spread_log_slope": -1.0002649128673984,
+    "finest_cyclic_start_relative_spread": 0.005664749720282222,
+    "finest_flux_density_relative_error": 2.1288395412322734e-06,
+    "finest_q_to_tangent_relative_error": 0.004267686281610438,
+    "finest_response_density_relative_error": 0.00024739132150130335,
+    "legacy_mean_log_slope": -1.0104576655480415,
+    "local_two_form_quotient_center": -0.5441216722179453,
+    "local_two_form_quotient_spread": 0.3929320765692262,
+    "max_exact_null_q_sample": 7.632783294297951e-17,
+    "max_lag_recurrence_residual": 8.881784197001252e-16,
+    "max_local_quotient_consistency_relative_error": 0.0030118836295668907,
+    "orientation_even_fraction": 0.00014080264971746837,
+    "projective_curvature_center": 0.14583331819552453,
+    "projective_derivative_stability": 3.114081924454885e-07,
+    "response_curvature_center": -0.07935106896164051,
+    "response_derivative_stability": 9.32684456463563e-08,
+    "summed_tangent_remainder_log_slope": -0.9579448174357739
+  },
+  "not_external_evidence": true,
+  "not_preregistered": true,
+  "not_untouched_holdout": true,
+  "quotient_consistency_is_not_predictive_evidence": true,
+  "schema_version": 1,
+  "status": "pass",
+  "two_dimensional_pointwise_proportionality_is_algebraic": true
+}

@@ -70,12 +70,17 @@ class StepOperator:
 
 
 # ---------------------------------------------------------------------------
-# Explicit construction of the QP-1 two-level example from the theory notes.
+# Explicit construction of the QP-1 two-level sphere-chart calibration.
 # ---------------------------------------------------------------------------
 
 
 def qp1_state(lam: ParameterMap) -> np.ndarray:
-    """Return the dominant right eigenvector ``u_R`` for the QP-1 example."""
+    """Return the dominant right eigenvector ``u_R`` for QP-1.
+
+    ``x`` is a periodic azimuth and ``y`` is a polar coordinate. The ``y=0``
+    and ``y=1`` projectors are the two distinct poles, so this construction is
+    a sphere-coordinate quotient rather than a doubly periodic torus model.
+    """
 
     x = float(lam["x"])
     y = float(lam["y"])
@@ -147,8 +152,10 @@ def qp1_eigenvalues(lam: ParameterMap) -> np.ndarray:
     """Return the eigenvalues for the QP-1 construction.
 
     The dominant eigenvalue is fixed at unity.  The sub-dominant eigenvalue is
-    modulated so that the spectral gap is smallest along the ``y = 1/2`` line,
-    illustrating the connection between small gaps and metric spikes.
+    deliberately modulated so that its smallest gap coincides with the maximum
+    of the independently authored state-metric fixture at ``y = 1/2``.  This is
+    a co-designed calibration coincidence, not evidence that the gap causes the
+    metric profile.
     """
 
     y = float(lam["y"])
