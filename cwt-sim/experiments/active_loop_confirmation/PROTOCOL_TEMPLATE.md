@@ -257,23 +257,86 @@ proved. Derive or estimate the tangent response without `Omega`, for example
 Y-Y_{\mathrm{eq}}=B_i\dot x^i+O(|\dot x|^2),
 \]
 
-or supply the correct memory-kernel limit. On the selected substrate, establish
-a uniform bound of the declared form
+or supply the correct memory-kernel limit. The source must select exactly one
+asymptotic regime through the machine enums, bind the same structured
+initialization and regularity modes in the physical-time section, and freeze a
+hashed common-norm definition plus uniform contraction bound `rho<1`. A hashed
+derivation certificate must be theory/calibration-only, locked before
+confirmation, and explicitly attest that it used neither confirmation data nor
+outcome response. The tangent derivation, fixed norm, selected domain, and six
+validation checks are represented only by recursively closed hash-bound
+definition records: exact definition ID, one fixed neutral relative artifact path,
+SHA-256, `theory_only` or `calibration_only` stage, fixed provenance, pre-lock
+flag, and a false confirmation/outcome-use flag. Inline descriptions are not
+accepted. Current metadata validation checks only this closed record shape,
+the exact ID/path declarations, SHA-256 syntax, and the record's own flags. It
+does **not** resolve the paths, establish that files exist, recompute their
+hashes, authenticate content, or prove the mathematics. The checked template
+therefore keeps `reference_content_authentication` explicitly unimplemented
+and forbids implementation or response unlock. A future reviewed
+implementation must resolve every reference within one frozen root, verify
+containment, existence, regular-file type, and raw-byte SHA-256, and include
+the bytes in the immutable closure before either implementation or response
+unlock. Independent semantic review of every resolved record is additionally
+required.
 
-\[
-D=\int_S F_R^D+r,\qquad
-\frac{|r|}{s^2}\le C_s s+C_T\frac{\tau}{T}
- +C_{dt}\left(\frac{dt}{\tau}\right)^p+C_\Phi s,
-\]
+For an equilibrium reset, the generic discrete theorem retains its endpoint
+boundary term:
 
-or a rigorous stochastic analogue with an explicit probability statement.
+```text
+|r_discrete| <= C_N1*s/N + C_N2*s^2/N,
+discrete area-relative limit: N*s -> infinity.
+```
+
+The corresponding generic stable-ODE remainder and area-relative limit are
+
+```text
+|r_continuous| <= C_T1*s*tau/T,
+continuous area-relative limit: s*T/tau -> infinity.
+```
+
+The stronger regime is separately admissible only under one of two exact
+structured contracts: `unique_driven_periodic_orbit` paired with
+`periodic_c3_endpoint_consistent_full_period`, or `matched_c3_corrector` paired
+with `endpoint_flat_c3_matched_corrector`. The corresponding typed certificate
+must be `periodic_summation_by_parts_v1` or
+`endpoint_flat_matched_corrector_v1`, respectively, and must carry a non-null
+SHA-256 for the cancellation proof. Equilibrium reset, `C2`, free-text
+self-attestation, or a missing cancellation hash cannot claim the improved
+rate:
+
+```text
+|r_discrete| <= C_N1*s^2/N + C_N2*s/N^2,
+discrete area-relative limits: N -> infinity and N^2*s -> infinity;
+|r_continuous| <= C_T1*s^2*tau/T + C_T2*s*(tau/T)^2,
+continuous area-relative limits: T/tau -> infinity and s*(T/tau)^2 -> infinity.
+```
+
+The locked total deterministic bounds add the declared finite-sampling term
+and local-flux approximation term. For the generic regime this is
+
+```text
+|r| <= C_N1*s/N + C_N2*s^2/N + C_T1*s*tau/T
+       + C_dt*s*(dt/tau)^p + C_phi*s^3,
+```
+
+and for the improved regime it is
+
+```text
+|r| <= C_N1*s^2/N + C_N2*s/N^2 + C_T1*s^2*tau/T
+       + C_T2*s*(tau/T)^2 + C_dt*s^2*(dt/tau)^p + C_phi*s^3.
+```
+
+A rigorous stochastic analogue must give an explicit probability statement.
 Here `s`, `tau/T`, and `dt/tau` are dimensionless, `p>0`, and every `C` has the
-same integrated-`Q` units as `D` (equivalently `D/s^2`, because `s` is
-dimensionless). The machine lock requires exact equality between those units,
-the SESOI units, and the interaction-nondegeneracy units. The selected control/time domain and
-the deterministic or stochastic interpretation must be frozen. `C_Phi s`
-includes the divided-by-`s^2` contribution of the local `O(s^3)` flux
-approximation; it is absent only when exact integrated/Wilson flux is used.
+integrated-`Q` units of `D`. The machine lock requires exact equality between
+those units, the SESOI units, and the interaction-nondegeneracy units. The
+selected control/time domain and deterministic or stochastic interpretation
+must be frozen. `C_phi*s^3` is retained when the local `O(s^3)` vector-area flux
+approximation is used and may vanish only when exact integrated/Wilson flux is
+used. Every constant that appears in the selected bound is strictly positive;
+the unused `C_T2` is exactly zero in the generic regime. An equilibrium-reset
+source cannot claim either improved rate.
 Use at least four fit levels plus a held-out level for each of the `s`, `T`, and
 `dt` ladders. Predeclare reversal, cyclic start, smooth reparameterization,
 concatenation, matched-area shape, and `D`-versus-`\oint B^D` checks. A valid

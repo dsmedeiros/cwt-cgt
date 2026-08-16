@@ -832,6 +832,14 @@
           ],
           "type": "object"
         },
+        "initialization_mode": {
+          "enum": [
+            null,
+            "equilibrium_reset_at_initial_control",
+            "unique_driven_periodic_orbit",
+            "matched_c3_corrector"
+          ]
+        },
         "jitter_bound_seconds": {
           "minimum": 0.0,
           "type": [
@@ -844,6 +852,14 @@
           "type": [
             "null",
             "number"
+          ]
+        },
+        "path_regularity_mode": {
+          "enum": [
+            null,
+            "piecewise_c2_closed_exact_reverse",
+            "periodic_c3_endpoint_consistent_full_period",
+            "endpoint_flat_c3_matched_corrector"
           ]
         },
         "quadrature_rule": {
@@ -870,13 +886,6 @@
             "seconds"
           ]
         },
-        "washout_or_periodic_initialization": {
-          "minLength": 1,
-          "type": [
-            "null",
-            "string"
-          ]
-        },
         "waveform_family": {
           "minLength": 1,
           "type": [
@@ -895,7 +904,8 @@
         "endpoint_rule",
         "achieved_path_source",
         "achieved_path_closure_tolerance",
-        "washout_or_periodic_initialization",
+        "initialization_mode",
+        "path_regularity_mode",
         "control_dynamics_map",
         "waveform_family",
         "dt_ladder",
@@ -2356,28 +2366,295 @@
     "tangent_remainder_validation": {
       "additionalProperties": false,
       "properties": {
+        "asymptotic_regime": {
+          "additionalProperties": false,
+          "properties": {
+            "continuous_area_relative_limit": {
+              "enum": [
+                "s*T/tau->infinity",
+                "T/tau->infinity_and_s*(T/tau)^2->infinity"
+              ]
+            },
+            "continuous_remainder_bound": {
+              "enum": [
+                "|r_continuous| <= C_T1*s*tau/T",
+                "|r_continuous| <= C_T1*s^2*tau/T + C_T2*s*(tau/T)^2"
+              ]
+            },
+            "derivation_certificate": {
+              "additionalProperties": false,
+              "properties": {
+                "cancellation_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "derivation_sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                },
+                "kind": {
+                  "enum": [
+                    "generic_contraction_bound_v1",
+                    "periodic_summation_by_parts_v1",
+                    "endpoint_flat_matched_corrector_v1"
+                  ]
+                },
+                "locked_before_confirmation": {
+                  "const": true
+                },
+                "provenance": {
+                  "const": "theory_or_calibration_only_preconfirmation_v1"
+                },
+                "uses_confirmation_data": {
+                  "const": false
+                },
+                "uses_outcome_response": {
+                  "const": false
+                }
+              },
+              "required": [
+                "kind",
+                "provenance",
+                "derivation_sha256",
+                "cancellation_sha256",
+                "uses_confirmation_data",
+                "uses_outcome_response",
+                "locked_before_confirmation"
+              ],
+              "type": "object"
+            },
+            "discrete_area_relative_limit": {
+              "enum": [
+                "N*s->infinity",
+                "N->infinity_and_N^2*s->infinity"
+              ]
+            },
+            "discrete_remainder_bound": {
+              "enum": [
+                "|r_discrete| <= C_N1*s/N + C_N2*s^2/N",
+                "|r_discrete| <= C_N1*s^2/N + C_N2*s/N^2"
+              ]
+            },
+            "fixed_norm_definition": {
+              "additionalProperties": false,
+              "properties": {
+                "artifact_path": {
+                  "const": "definitions/reference_08.json"
+                },
+                "definition_id": {
+                  "const": "fixed_norm_definition_v1"
+                },
+                "locked_before_confirmation": {
+                  "const": true
+                },
+                "provenance": {
+                  "const": "hash_bound_preconfirmation_definition_v1"
+                },
+                "sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                },
+                "stage": {
+                  "enum": [
+                    "theory_only",
+                    "calibration_only"
+                  ]
+                },
+                "uses_any_confirmation_or_outcome": {
+                  "const": false
+                }
+              },
+              "required": [
+                "definition_id",
+                "artifact_path",
+                "sha256",
+                "stage",
+                "provenance",
+                "locked_before_confirmation",
+                "uses_any_confirmation_or_outcome"
+              ],
+              "type": "object"
+            },
+            "generic_boundary_term_retained": {
+              "type": "boolean"
+            },
+            "initialization_mode": {
+              "enum": [
+                "equilibrium_reset_at_initial_control",
+                "unique_driven_periodic_orbit",
+                "matched_c3_corrector"
+              ]
+            },
+            "regularity_mode": {
+              "enum": [
+                "piecewise_c2_closed_exact_reverse",
+                "periodic_c3_endpoint_consistent_full_period",
+                "endpoint_flat_c3_matched_corrector"
+              ]
+            },
+            "selected_regime": {
+              "enum": [
+                "equilibrium_reset_generic",
+                "periodic_or_endpoint_flat_improved"
+              ]
+            },
+            "uniform_contraction_rho_upper": {
+              "exclusiveMaximum": 1.0,
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            }
+          },
+          "required": [
+            "selected_regime",
+            "fixed_norm_definition",
+            "uniform_contraction_rho_upper",
+            "initialization_mode",
+            "regularity_mode",
+            "discrete_remainder_bound",
+            "continuous_remainder_bound",
+            "discrete_area_relative_limit",
+            "continuous_area_relative_limit",
+            "generic_boundary_term_retained",
+            "derivation_certificate"
+          ],
+          "type": [
+            "null",
+            "object"
+          ]
+        },
         "compare_interaction_not_on_only": {
           "const": true
         },
         "concatenation_test": {
-          "minLength": 1,
+          "additionalProperties": false,
+          "properties": {
+            "artifact_path": {
+              "const": "definitions/reference_05.json"
+            },
+            "definition_id": {
+              "const": "concatenation_validation_definition_v1"
+            },
+            "locked_before_confirmation": {
+              "const": true
+            },
+            "provenance": {
+              "const": "hash_bound_preconfirmation_definition_v1"
+            },
+            "sha256": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "stage": {
+              "enum": [
+                "theory_only",
+                "calibration_only"
+              ]
+            },
+            "uses_any_confirmation_or_outcome": {
+              "const": false
+            }
+          },
+          "required": [
+            "definition_id",
+            "artifact_path",
+            "sha256",
+            "stage",
+            "provenance",
+            "locked_before_confirmation",
+            "uses_any_confirmation_or_outcome"
+          ],
           "type": [
             "null",
-            "string"
+            "object"
           ]
         },
         "cyclic_start_test": {
-          "minLength": 1,
+          "additionalProperties": false,
+          "properties": {
+            "artifact_path": {
+              "const": "definitions/reference_03.json"
+            },
+            "definition_id": {
+              "const": "cyclic_start_validation_definition_v1"
+            },
+            "locked_before_confirmation": {
+              "const": true
+            },
+            "provenance": {
+              "const": "hash_bound_preconfirmation_definition_v1"
+            },
+            "sha256": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "stage": {
+              "enum": [
+                "theory_only",
+                "calibration_only"
+              ]
+            },
+            "uses_any_confirmation_or_outcome": {
+              "const": false
+            }
+          },
+          "required": [
+            "definition_id",
+            "artifact_path",
+            "sha256",
+            "stage",
+            "provenance",
+            "locked_before_confirmation",
+            "uses_any_confirmation_or_outcome"
+          ],
           "type": [
             "null",
-            "string"
+            "object"
           ]
         },
         "derivation_or_memory_kernel_limit": {
-          "minLength": 1,
+          "additionalProperties": false,
+          "properties": {
+            "artifact_path": {
+              "const": "definitions/reference_01.json"
+            },
+            "definition_id": {
+              "const": "tangent_reduction_definition_v1"
+            },
+            "locked_before_confirmation": {
+              "const": true
+            },
+            "provenance": {
+              "const": "hash_bound_preconfirmation_definition_v1"
+            },
+            "sha256": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "stage": {
+              "enum": [
+                "theory_only",
+                "calibration_only"
+              ]
+            },
+            "uses_any_confirmation_or_outcome": {
+              "const": false
+            }
+          },
+          "required": [
+            "definition_id",
+            "artifact_path",
+            "sha256",
+            "stage",
+            "provenance",
+            "locked_before_confirmation",
+            "uses_any_confirmation_or_outcome"
+          ],
           "type": [
             "null",
-            "string"
+            "object"
           ]
         },
         "heldout_ladder_level_required": {
@@ -2390,34 +2667,226 @@
           "const": "B^D=B^on-B^0"
         },
         "line_integral_comparison": {
-          "minLength": 1,
+          "additionalProperties": false,
+          "properties": {
+            "artifact_path": {
+              "const": "definitions/reference_07.json"
+            },
+            "definition_id": {
+              "const": "line_integral_validation_definition_v1"
+            },
+            "locked_before_confirmation": {
+              "const": true
+            },
+            "provenance": {
+              "const": "hash_bound_preconfirmation_definition_v1"
+            },
+            "sha256": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "stage": {
+              "enum": [
+                "theory_only",
+                "calibration_only"
+              ]
+            },
+            "uses_any_confirmation_or_outcome": {
+              "const": false
+            }
+          },
+          "required": [
+            "definition_id",
+            "artifact_path",
+            "sha256",
+            "stage",
+            "provenance",
+            "locked_before_confirmation",
+            "uses_any_confirmation_or_outcome"
+          ],
           "type": [
             "null",
-            "string"
+            "object"
           ]
         },
         "matched_area_shape_test": {
-          "minLength": 1,
+          "additionalProperties": false,
+          "properties": {
+            "artifact_path": {
+              "const": "definitions/reference_06.json"
+            },
+            "definition_id": {
+              "const": "shape_validation_definition_v1"
+            },
+            "locked_before_confirmation": {
+              "const": true
+            },
+            "provenance": {
+              "const": "hash_bound_preconfirmation_definition_v1"
+            },
+            "sha256": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "stage": {
+              "enum": [
+                "theory_only",
+                "calibration_only"
+              ]
+            },
+            "uses_any_confirmation_or_outcome": {
+              "const": false
+            }
+          },
+          "required": [
+            "definition_id",
+            "artifact_path",
+            "sha256",
+            "stage",
+            "provenance",
+            "locked_before_confirmation",
+            "uses_any_confirmation_or_outcome"
+          ],
           "type": [
             "null",
-            "string"
+            "object"
           ]
         },
         "minimum_fit_levels_per_ladder": {
           "const": 4
         },
+        "reference_content_authentication": {
+          "additionalProperties": false,
+          "properties": {
+            "containment_verified": {
+              "const": false
+            },
+            "existence_verified": {
+              "const": false
+            },
+            "gate_status": {
+              "const": "UNIMPLEMENTED_REQUIRED_BEFORE_IMPLEMENTATION_OR_RESPONSE_UNLOCK"
+            },
+            "implementation_or_response_unlock_allowed": {
+              "const": false
+            },
+            "included_in_immutable_closure": {
+              "const": false
+            },
+            "raw_sha256_matched": {
+              "const": false
+            },
+            "reference_content_authenticated": {
+              "const": false
+            },
+            "reference_root": {
+              "type": "null"
+            },
+            "regular_file_verified": {
+              "const": false
+            },
+            "resolver_implemented": {
+              "const": false
+            }
+          },
+          "required": [
+            "gate_status",
+            "reference_root",
+            "resolver_implemented",
+            "containment_verified",
+            "existence_verified",
+            "regular_file_verified",
+            "raw_sha256_matched",
+            "included_in_immutable_closure",
+            "reference_content_authenticated",
+            "implementation_or_response_unlock_allowed"
+          ],
+          "type": "object"
+        },
         "reversal_test": {
-          "minLength": 1,
+          "additionalProperties": false,
+          "properties": {
+            "artifact_path": {
+              "const": "definitions/reference_02.json"
+            },
+            "definition_id": {
+              "const": "reversal_validation_definition_v1"
+            },
+            "locked_before_confirmation": {
+              "const": true
+            },
+            "provenance": {
+              "const": "hash_bound_preconfirmation_definition_v1"
+            },
+            "sha256": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "stage": {
+              "enum": [
+                "theory_only",
+                "calibration_only"
+              ]
+            },
+            "uses_any_confirmation_or_outcome": {
+              "const": false
+            }
+          },
+          "required": [
+            "definition_id",
+            "artifact_path",
+            "sha256",
+            "stage",
+            "provenance",
+            "locked_before_confirmation",
+            "uses_any_confirmation_or_outcome"
+          ],
           "type": [
             "null",
-            "string"
+            "object"
           ]
         },
         "smooth_reparameterization_test": {
-          "minLength": 1,
+          "additionalProperties": false,
+          "properties": {
+            "artifact_path": {
+              "const": "definitions/reference_04.json"
+            },
+            "definition_id": {
+              "const": "reparameterization_validation_definition_v1"
+            },
+            "locked_before_confirmation": {
+              "const": true
+            },
+            "provenance": {
+              "const": "hash_bound_preconfirmation_definition_v1"
+            },
+            "sha256": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "stage": {
+              "enum": [
+                "theory_only",
+                "calibration_only"
+              ]
+            },
+            "uses_any_confirmation_or_outcome": {
+              "const": false
+            }
+          },
+          "required": [
+            "definition_id",
+            "artifact_path",
+            "sha256",
+            "stage",
+            "provenance",
+            "locked_before_confirmation",
+            "uses_any_confirmation_or_outcome"
+          ],
           "type": [
             "null",
-            "string"
+            "object"
           ]
         },
         "uniform_remainder_bound": {
@@ -2426,7 +2895,19 @@
             "constants": {
               "additionalProperties": false,
               "properties": {
-                "C_T": {
+                "C_N1": {
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                "C_N2": {
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                "C_T1": {
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                "C_T2": {
                   "minimum": 0.0,
                   "type": "number"
                 },
@@ -2437,22 +2918,27 @@
                 "C_phi": {
                   "minimum": 0.0,
                   "type": "number"
-                },
-                "C_s": {
-                  "minimum": 0.0,
-                  "type": "number"
                 }
               },
               "required": [
-                "C_s",
-                "C_T",
+                "C_N1",
+                "C_N2",
+                "C_T1",
+                "C_T2",
                 "C_dt",
                 "C_phi"
               ],
               "type": "object"
             },
             "form": {
-              "const": "|r|/s^2 <= C_s*s + C_T*tau/T + C_dt*(dt/tau)^p + C_phi*s"
+              "enum": [
+                "|r| <= C_N1*s/N + C_N2*s^2/N + C_T1*s*tau/T + C_dt*s*(dt/tau)^p + C_phi*s^3",
+                "|r| <= C_N1*s^2/N + C_N2*s/N^2 + C_T1*s^2*tau/T + C_T2*s*(tau/T)^2 + C_dt*s^2*(dt/tau)^p + C_phi*s^3"
+              ]
+            },
+            "integrated_response_units": {
+              "minLength": 1,
+              "type": "string"
             },
             "p": {
               "exclusiveMinimum": 0.0,
@@ -2472,22 +2958,54 @@
                 "number"
               ]
             },
-            "response_units_after_dividing_by_s_squared": {
-              "minLength": 1,
-              "type": "string"
-            },
-            "selected_domain": {
-              "minLength": 1,
-              "type": "string"
+            "selected_domain_definition": {
+              "additionalProperties": false,
+              "properties": {
+                "artifact_path": {
+                  "const": "definitions/reference_09.json"
+                },
+                "definition_id": {
+                  "const": "remainder_domain_definition_v1"
+                },
+                "locked_before_confirmation": {
+                  "const": true
+                },
+                "provenance": {
+                  "const": "hash_bound_preconfirmation_definition_v1"
+                },
+                "sha256": {
+                  "pattern": "^[0-9a-f]{64}$",
+                  "type": "string"
+                },
+                "stage": {
+                  "enum": [
+                    "theory_only",
+                    "calibration_only"
+                  ]
+                },
+                "uses_any_confirmation_or_outcome": {
+                  "const": false
+                }
+              },
+              "required": [
+                "definition_id",
+                "artifact_path",
+                "sha256",
+                "stage",
+                "provenance",
+                "locked_before_confirmation",
+                "uses_any_confirmation_or_outcome"
+              ],
+              "type": "object"
             }
           },
           "required": [
             "form",
-            "selected_domain",
+            "selected_domain_definition",
             "probability_domain",
             "probability_level",
             "p",
-            "response_units_after_dividing_by_s_squared",
+            "integrated_response_units",
             "constants"
           ],
           "type": [
@@ -2501,7 +3019,9 @@
         "interaction_curvature",
         "compare_interaction_not_on_only",
         "derivation_or_memory_kernel_limit",
+        "asymptotic_regime",
         "uniform_remainder_bound",
+        "reference_content_authentication",
         "minimum_fit_levels_per_ladder",
         "heldout_ladder_level_required",
         "reversal_test",

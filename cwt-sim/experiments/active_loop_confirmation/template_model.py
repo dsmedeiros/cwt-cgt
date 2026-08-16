@@ -15,7 +15,35 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Mapping, Sequence
 
-from .schema import POWER_GATES, PREIMPLEMENTATION_STATES, protocol_schema
+from .schema import (
+    CERTIFICATE_PROVENANCE,
+    DEFINITION_PROVENANCE,
+    DEFINITION_STAGES,
+    ENDPOINT_FLAT_C3_REGULARITY,
+    EQUILIBRIUM_INITIALIZATION,
+    GENERIC_ASYMPTOTIC_REGIME,
+    GENERIC_CONTINUOUS_AREA_RELATIVE_LIMIT,
+    GENERIC_CONTINUOUS_BOUND,
+    GENERIC_DISCRETE_AREA_RELATIVE_LIMIT,
+    GENERIC_DISCRETE_BOUND,
+    GENERIC_REGULARITY,
+    GENERIC_TOTAL_BOUND,
+    IMPROVED_ASYMPTOTIC_REGIME,
+    IMPROVED_CONTINUOUS_AREA_RELATIVE_LIMIT,
+    IMPROVED_CONTINUOUS_BOUND,
+    IMPROVED_DISCRETE_AREA_RELATIVE_LIMIT,
+    IMPROVED_DISCRETE_BOUND,
+    IMPROVED_TOTAL_BOUND,
+    MATCHED_CORRECTOR_INITIALIZATION,
+    PERIODIC_C3_REGULARITY,
+    PERIODIC_INITIALIZATION,
+    POWER_GATES,
+    PREIMPLEMENTATION_STATES,
+    REFERENCE_AUTHENTICATION_GATE_STATUS,
+    TANGENT_DEFINITION_IDS,
+    TANGENT_DEFINITION_PATHS,
+    protocol_schema,
+)
 
 
 class TemplateState(str, Enum):
@@ -190,6 +218,31 @@ CONDITION_LABEL_TOKENS = {
 }
 COMPACT_CONDITION_ALIASES = CONDITION_LABEL_TOKENS - {"on"}
 OUTCOME_FIT_PARTITION_MARKERS = {"confirmation", "heldout", "holdout"}
+REFERENCE_PROXY_COMPACT_MARKERS = {
+    "confirmation",
+    "evaluationset",
+    "evalset",
+    "heldout",
+    "holdout",
+    "reserved",
+    "testset",
+    "unseen",
+}
+REFERENCE_PROXY_TOKENS = PROXY_TOKENS | {
+    "confirmation",
+    "eval",
+    "evaluation",
+    "heldout",
+    "holdout",
+    "label",
+    "outcome",
+    "readout",
+    "reserved",
+    "response",
+    "target",
+    "test",
+    "unseen",
+}
 FORBIDDEN_GENERALIZATIONS = {
     "universal_CWT_or_CGT",
     "topology_or_topological_protection",
@@ -255,6 +308,44 @@ def _has_dynamic_or_condition_proxy(value: Any, payload: Mapping[str, Any]) -> b
 def _has_outcome_fit_language(value: Any) -> bool:
     compact = _compact_text(value)
     return any(marker in compact for marker in OUTCOME_FIT_PARTITION_MARKERS)
+
+
+def _reference_has_proxy(value: Any, payload: Mapping[str, Any]) -> bool:
+    compact = _compact_text(value)
+    tokens = _semantic_tokens(value)
+    return (
+        any(marker in compact for marker in REFERENCE_PROXY_COMPACT_MARKERS)
+        or bool(tokens.intersection(REFERENCE_PROXY_TOKENS))
+        or _has_dynamic_or_condition_proxy(value, payload)
+    )
+
+
+def _canonical_reference_path(value: Any) -> bool:
+    if not isinstance(value, str) or RAW_PATH_RE.fullmatch(value) is None:
+        return False
+    parts = value.split("/")
+    return bool(parts) and all(part not in {"", ".", ".."} for part in parts)
+
+
+def _definition_record_valid(
+    record: Mapping[str, Any],
+    expected_id: str,
+    expected_path: str,
+    payload: Mapping[str, Any],
+) -> bool:
+    artifact_path = record.get("artifact_path")
+    return (
+        record.get("definition_id") == expected_id
+        and artifact_path == expected_path
+        and _canonical_reference_path(artifact_path)
+        and re.fullmatch(r"[0-9a-f]{64}", str(record.get("sha256") or "")) is not None
+        and record.get("stage") in DEFINITION_STAGES
+        and record.get("provenance") == DEFINITION_PROVENANCE
+        and record.get("locked_before_confirmation") is True
+        and record.get("uses_any_confirmation_or_outcome") is False
+        and not _reference_has_proxy(record.get("definition_id"), payload)
+        and not _reference_has_proxy(artifact_path, payload)
+    )
 
 
 def _issue(issues: list[ValidationIssue], code: str, path: str, message: str) -> None:
@@ -702,13 +793,34 @@ def _check_quartet_clock(payload: Mapping[str, Any], issues: list[ValidationIssu
     for field in (
         "endpoint_rule",
         "achieved_path_source",
-        "washout_or_periodic_initialization",
         "waveform_family",
     ):
         if not _nonempty_text(clock.get(field)):
             _issue(
                 issues, "PHYSICAL_CLOCK_FIELD_MISSING", f"physical_time_protocol.{field}", "must be frozen"
             )
+    if clock.get("initialization_mode") not in {
+        EQUILIBRIUM_INITIALIZATION,
+        PERIODIC_INITIALIZATION,
+        MATCHED_CORRECTOR_INITIALIZATION,
+    }:
+        _issue(
+            issues,
+            "PHYSICAL_INITIALIZATION_INVALID",
+            "physical_time_protocol.initialization_mode",
+            "must select one reviewed initialization mode",
+        )
+    if clock.get("path_regularity_mode") not in {
+        GENERIC_REGULARITY,
+        PERIODIC_C3_REGULARITY,
+        ENDPOINT_FLAT_C3_REGULARITY,
+    }:
+        _issue(
+            issues,
+            "PHYSICAL_REGULARITY_INVALID",
+            "physical_time_protocol.path_regularity_mode",
+            "must select one reviewed path/branch regularity mode",
+        )
     if clock.get("quadrature_rule") != QUADRATURE_RULE:
         _issue(
             issues,
@@ -913,12 +1025,12 @@ def _check_geometry(payload: Mapping[str, Any], issues: list[ValidationIssue]) -
             "predictor_geometry.finite_flux_estimator",
             "must be integrated_curvature or wilson_loop",
         )
-    if predictor.get("local_approximation_in_remainder") is not True:
+    if not isinstance(predictor.get("local_approximation_in_remainder"), bool):
         _issue(
             issues,
             "LOCAL_FLUX_REMAINDER_MISSING",
             "predictor_geometry.local_approximation_in_remainder",
-            "must be true",
+            "must explicitly distinguish local area approximation from exact integrated/Wilson flux",
         )
     if mode == "common_on_geometry":
         for field in ("zero_state_equivalence", "zero_achieved_path_equivalence", "zero_omega_equivalence"):
@@ -995,6 +1107,101 @@ def _check_geometry(payload: Mapping[str, Any], issues: list[ValidationIssue]) -
 
 def _check_tangent_prediction(payload: Mapping[str, Any], issues: list[ValidationIssue]) -> None:
     tangent = _mapping(payload.get("tangent_remainder_validation"))
+    regime = _mapping(tangent.get("asymptotic_regime"))
+    remainder = _mapping(tangent.get("uniform_remainder_bound"))
+    record_specs: list[tuple[str, Mapping[str, Any], str, str]] = [
+        (
+            f"tangent_remainder_validation.{field}",
+            _mapping(tangent.get(field)),
+            TANGENT_DEFINITION_IDS[field],
+            TANGENT_DEFINITION_PATHS[field],
+        )
+        for field in (
+            "derivation_or_memory_kernel_limit",
+            "reversal_test",
+            "cyclic_start_test",
+            "smooth_reparameterization_test",
+            "concatenation_test",
+            "matched_area_shape_test",
+            "line_integral_comparison",
+        )
+    ]
+    record_specs.extend(
+        (
+            (
+                "tangent_remainder_validation.asymptotic_regime.fixed_norm_definition",
+                _mapping(regime.get("fixed_norm_definition")),
+                TANGENT_DEFINITION_IDS["fixed_norm_definition"],
+                TANGENT_DEFINITION_PATHS["fixed_norm_definition"],
+            ),
+            (
+                "tangent_remainder_validation.uniform_remainder_bound.selected_domain_definition",
+                _mapping(remainder.get("selected_domain_definition")),
+                TANGENT_DEFINITION_IDS["selected_domain_definition"],
+                TANGENT_DEFINITION_PATHS["selected_domain_definition"],
+            ),
+        )
+    )
+    reference_paths: list[str] = []
+    for path, record, expected_id, expected_path in record_specs:
+        if not _definition_record_valid(record, expected_id, expected_path, payload):
+            _issue(
+                issues,
+                "TANGENT_REFERENCE_INVALID",
+                path,
+                (
+                    "must be the exact closed theory/calibration reference declaration "
+                    f"with ID {expected_id!r} and path {expected_path!r}"
+                ),
+            )
+        definition_id = record.get("definition_id")
+        artifact_path = record.get("artifact_path")
+        if isinstance(definition_id, str) and _reference_has_proxy(definition_id, payload):
+            _issue(
+                issues,
+                "TANGENT_REFERENCE_PROXY",
+                f"{path}.definition_id",
+                "definition IDs cannot encode response, orientation, control, or partition proxies",
+            )
+        if isinstance(artifact_path, str):
+            reference_paths.append(artifact_path)
+            if _reference_has_proxy(artifact_path, payload):
+                _issue(
+                    issues,
+                    "TANGENT_REFERENCE_PROXY",
+                    f"{path}.artifact_path",
+                    "reference path cannot encode response, orientation, control, or partition proxies",
+                )
+    if len(reference_paths) != len(set(reference_paths)):
+        _issue(
+            issues,
+            "TANGENT_REFERENCE_PATH_DUPLICATE",
+            "tangent_remainder_validation",
+            "all nine hash-bound definition paths must be unique",
+        )
+    authentication = _mapping(tangent.get("reference_content_authentication"))
+    expected_authentication = {
+        "gate_status": REFERENCE_AUTHENTICATION_GATE_STATUS,
+        "reference_root": None,
+        "resolver_implemented": False,
+        "containment_verified": False,
+        "existence_verified": False,
+        "regular_file_verified": False,
+        "raw_sha256_matched": False,
+        "included_in_immutable_closure": False,
+        "reference_content_authenticated": False,
+        "implementation_or_response_unlock_allowed": False,
+    }
+    if authentication != expected_authentication:
+        _issue(
+            issues,
+            "REFERENCE_CONTENT_AUTHENTICATION_CLAIM_INVALID",
+            "tangent_remainder_validation.reference_content_authentication",
+            (
+                "this metadata-only template must keep reference-byte authentication "
+                "explicitly unimplemented and implementation/response unlock forbidden"
+            ),
+        )
     for field in (
         "derivation_or_memory_kernel_limit",
         "reversal_test",
@@ -1004,14 +1211,137 @@ def _check_tangent_prediction(payload: Mapping[str, Any], issues: list[Validatio
         "matched_area_shape_test",
         "line_integral_comparison",
     ):
-        if not _nonempty_text(tangent.get(field)):
+        if not _mapping(tangent.get(field)):
             _issue(
                 issues,
                 "TANGENT_VALIDATION_MISSING",
                 f"tangent_remainder_validation.{field}",
-                "must be frozen",
+                "must be a hash-bound definition record",
             )
-    remainder = _mapping(tangent.get("uniform_remainder_bound"))
+    selected_regime = regime.get("selected_regime")
+    if not regime:
+        _issue(
+            issues,
+            "ASYMPTOTIC_REGIME_MISSING",
+            "tangent_remainder_validation.asymptotic_regime",
+            "must select and justify the generic or improved asymptotic regime",
+        )
+    else:
+        expected: dict[str, tuple[str, str, str, str, str]] = {
+            GENERIC_ASYMPTOTIC_REGIME: (
+                GENERIC_DISCRETE_BOUND,
+                GENERIC_CONTINUOUS_BOUND,
+                GENERIC_DISCRETE_AREA_RELATIVE_LIMIT,
+                GENERIC_CONTINUOUS_AREA_RELATIVE_LIMIT,
+                GENERIC_TOTAL_BOUND,
+            ),
+            IMPROVED_ASYMPTOTIC_REGIME: (
+                IMPROVED_DISCRETE_BOUND,
+                IMPROVED_CONTINUOUS_BOUND,
+                IMPROVED_DISCRETE_AREA_RELATIVE_LIMIT,
+                IMPROVED_CONTINUOUS_AREA_RELATIVE_LIMIT,
+                IMPROVED_TOTAL_BOUND,
+            ),
+        }
+        if selected_regime not in expected:
+            _issue(
+                issues,
+                "ASYMPTOTIC_REGIME_INVALID",
+                "tangent_remainder_validation.asymptotic_regime.selected_regime",
+                "must use one exact reviewed regime",
+            )
+        elif (
+            regime.get("discrete_remainder_bound"),
+            regime.get("continuous_remainder_bound"),
+            regime.get("discrete_area_relative_limit"),
+            regime.get("continuous_area_relative_limit"),
+        ) != expected[selected_regime][:4]:
+            _issue(
+                issues,
+                "ASYMPTOTIC_BOUND_MISMATCH",
+                "tangent_remainder_validation.asymptotic_regime",
+                "bound and area-relative scaling must match the selected regime",
+            )
+        rho = regime.get("uniform_contraction_rho_upper")
+        certificate = _mapping(regime.get("derivation_certificate"))
+        if (
+            not isinstance(rho, (int, float))
+            or isinstance(rho, bool)
+            or not math.isfinite(rho)
+            or not 0 < rho < 1
+        ):
+            _issue(
+                issues,
+                "ASYMPTOTIC_ASSUMPTION_INVALID",
+                "tangent_remainder_validation.asymptotic_regime",
+                "must hash one fixed norm and freeze a uniform contraction bound",
+            )
+        if (
+            certificate.get("provenance") != CERTIFICATE_PROVENANCE
+            or re.fullmatch(r"[0-9a-f]{64}", str(certificate.get("derivation_sha256") or "")) is None
+            or certificate.get("uses_confirmation_data") is not False
+            or certificate.get("uses_outcome_response") is not False
+            or certificate.get("locked_before_confirmation") is not True
+        ):
+            _issue(
+                issues,
+                "ASYMPTOTIC_CERTIFICATE_INVALID",
+                "tangent_remainder_validation.asymptotic_regime.derivation_certificate",
+                "must be a hashed theory/calibration-only preconfirmation certificate",
+            )
+        clock = _mapping(payload.get("physical_time_protocol"))
+        if regime.get("initialization_mode") != clock.get("initialization_mode") or regime.get(
+            "regularity_mode"
+        ) != clock.get("path_regularity_mode"):
+            _issue(
+                issues,
+                "ASYMPTOTIC_CLOCK_MISMATCH",
+                "tangent_remainder_validation.asymptotic_regime",
+                "initialization and regularity must match the physical-time protocol",
+            )
+        if selected_regime == GENERIC_ASYMPTOTIC_REGIME:
+            if (
+                regime.get("generic_boundary_term_retained") is not True
+                or regime.get("initialization_mode") != EQUILIBRIUM_INITIALIZATION
+                or regime.get("regularity_mode") != GENERIC_REGULARITY
+                or certificate.get("kind") != "generic_contraction_bound_v1"
+                or certificate.get("cancellation_sha256") is not None
+            ):
+                _issue(
+                    issues,
+                    "GENERIC_REGIME_ASSUMPTIONS_INVALID",
+                    "tangent_remainder_validation.asymptotic_regime",
+                    (
+                        "generic reset must use the piecewise-C2 contract, retain O(s/N), "
+                        "and claim no cancellation"
+                    ),
+                )
+        if selected_regime == IMPROVED_ASYMPTOTIC_REGIME:
+            periodic_contract = (
+                regime.get("initialization_mode") == PERIODIC_INITIALIZATION
+                and regime.get("regularity_mode") == PERIODIC_C3_REGULARITY
+                and certificate.get("kind") == "periodic_summation_by_parts_v1"
+            )
+            corrector_contract = (
+                regime.get("initialization_mode") == MATCHED_CORRECTOR_INITIALIZATION
+                and regime.get("regularity_mode") == ENDPOINT_FLAT_C3_REGULARITY
+                and certificate.get("kind") == "endpoint_flat_matched_corrector_v1"
+            )
+            if (
+                regime.get("generic_boundary_term_retained") is not False
+                or not (periodic_contract or corrector_contract)
+                or re.fullmatch(r"[0-9a-f]{64}", str(certificate.get("cancellation_sha256") or "")) is None
+            ):
+                _issue(
+                    issues,
+                    "IMPROVED_REGIME_UNJUSTIFIED",
+                    "tangent_remainder_validation.asymptotic_regime",
+                    (
+                        "improved rate requires the matching periodic-C3 or endpoint-flat-C3 "
+                        "initialization contract and a hashed cancellation proof"
+                    ),
+                )
+
     if not remainder:
         _issue(
             issues,
@@ -1020,6 +1350,21 @@ def _check_tangent_prediction(payload: Mapping[str, Any], issues: list[Validatio
             "must be a typed bound",
         )
     else:
+        if selected_regime in {
+            GENERIC_ASYMPTOTIC_REGIME,
+            IMPROVED_ASYMPTOTIC_REGIME,
+        }:
+            expected_form = {
+                GENERIC_ASYMPTOTIC_REGIME: GENERIC_TOTAL_BOUND,
+                IMPROVED_ASYMPTOTIC_REGIME: IMPROVED_TOTAL_BOUND,
+            }[selected_regime]
+            if remainder.get("form") != expected_form:
+                _issue(
+                    issues,
+                    "TOTAL_REMAINDER_BOUND_MISMATCH",
+                    "tangent_remainder_validation.uniform_remainder_bound.form",
+                    "must match the selected asymptotic regime",
+                )
         if remainder.get("probability_domain") == "high_probability" and not isinstance(
             remainder.get("probability_level"), (int, float)
         ):
@@ -1039,6 +1384,49 @@ def _check_tangent_prediction(payload: Mapping[str, Any], issues: list[Validatio
                 "tangent_remainder_validation.uniform_remainder_bound.probability_level",
                 "must be null for a deterministic bound",
             )
+        constants = _mapping(remainder.get("constants"))
+        values_valid = all(
+            isinstance(constants.get(name), (int, float))
+            and not isinstance(constants.get(name), bool)
+            and math.isfinite(constants.get(name))
+            for name in ("C_N1", "C_N2", "C_T1", "C_T2", "C_dt", "C_phi")
+        )
+        local_approximation = _mapping(payload.get("predictor_geometry")).get(
+            "local_approximation_in_remainder"
+        )
+        if not values_valid:
+            _issue(
+                issues,
+                "REMAINDER_CONSTANT_INVALID",
+                "tangent_remainder_validation.uniform_remainder_bound.constants",
+                "all regime constants must be finite numbers",
+            )
+        else:
+            positive_names = {"C_N1", "C_N2", "C_T1", "C_dt"}
+            if selected_regime == IMPROVED_ASYMPTOTIC_REGIME:
+                positive_names.add("C_T2")
+            if any(float(constants[name]) <= 0 for name in positive_names):
+                _issue(
+                    issues,
+                    "REMAINDER_CONSTANT_INVALID",
+                    "tangent_remainder_validation.uniform_remainder_bound.constants",
+                    "every regime-relevant bound constant must be strictly positive",
+                )
+            if selected_regime == GENERIC_ASYMPTOTIC_REGIME and constants.get("C_T2") != 0:
+                _issue(
+                    issues,
+                    "UNUSED_REMAINDER_CONSTANT_NONZERO",
+                    "tangent_remainder_validation.uniform_remainder_bound.constants.C_T2",
+                    "C_T2 is unused in the generic bound and must equal zero",
+                )
+            c_phi = float(constants["C_phi"])
+            if (local_approximation is True and c_phi <= 0) or (local_approximation is False and c_phi < 0):
+                _issue(
+                    issues,
+                    "LOCAL_FLUX_CONSTANT_INVALID",
+                    "tangent_remainder_validation.uniform_remainder_bound.constants.C_phi",
+                    "local area approximation requires C_phi>0; exact integrated/Wilson flux permits C_phi=0",
+                )
 
     prediction = _mapping(payload.get("prediction_model"))
     if (
@@ -1401,13 +1789,13 @@ def _check_readiness(payload: Mapping[str, Any], issues: list[ValidationIssue]) 
         )
     remainder_units = _mapping(
         _mapping(payload.get("tangent_remainder_validation")).get("uniform_remainder_bound")
-    ).get("response_units_after_dividing_by_s_squared")
+    ).get("integrated_response_units")
     if remainder_units != response_units:
         _issue(
             issues,
             "REMAINDER_UNITS_MISMATCH",
-            "tangent_remainder_validation.uniform_remainder_bound.response_units_after_dividing_by_s_squared",
-            "must equal integrated Q response units because s is dimensionless",
+            "tangent_remainder_validation.uniform_remainder_bound.integrated_response_units",
+            "must equal integrated Q response units",
         )
     interaction = _mapping(readiness.get("interaction_nondegeneracy_definition"))
     if interaction and interaction.get("units") != response_units:

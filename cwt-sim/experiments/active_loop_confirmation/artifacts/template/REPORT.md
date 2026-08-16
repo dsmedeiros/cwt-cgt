@@ -14,6 +14,16 @@ at least three independently actuated controls and the repository sign conventio
 physical-time response integral; a complete on/zero by positive/negative quartet;
 whole-cluster splitting; tangent/remainder validation; a calibration-only, full-rank
 three-dimensional prediction; conjunctive inference; controls; and recovery rules.
+The tangent lock distinguishes the generic equilibrium-reset rate from the stronger
+periodic/endpoint-flat C3 rate through matched initialization/regularity enums, exact
+discrete and continuous scaling limits, and a theory/calibration-only hashed derivation
+certificate that forbids confirmation or outcome-response provenance. All nine tangent,
+norm, domain, and validation definitions are closed hash-bound references with no inline
+proof text. Current validation checks only closed record shape, exact declared ID/path,
+hash syntax, and self-declared flags; it does not resolve files or authenticate content.
+Reference-byte containment, existence, regular-file, raw-hash, and immutable-closure
+checks remain an explicit fail-closed future gate before implementation or response unlock.
+Independent semantic review of resolved records is also required.
 
 It freezes no source-specific numerical threshold. Those fields remain explicitly null
 and cannot be filled without a named qualified substrate and a new reviewed lock.
@@ -25,7 +35,7 @@ and this package has no raw-data or outcome path.
 ## Metadata validation
 
 - State: `BLOCKED_NO_SUBSTRATE`
-- Unresolved metadata gates: `133`
+- Unresolved metadata gates: `144`
 - Strongest reachable code state: `METADATA_VERIFIED_PENDING_IMPLEMENTATION`
 - Outcome execution available: `false`
 - Study decision available: `false`
@@ -33,6 +43,7 @@ and this package has no raw-data or outcome path.
 Unresolved issue-code classes:
 
 - `ACTUABLE_CONTROLS_INVALID`
+- `ASYMPTOTIC_REGIME_MISSING`
 - `BETA_MARGIN_INVALID`
 - `CLOCK_BOUND_INVALID`
 - `CONDITION_THRESHOLD_INVALID`
@@ -57,8 +68,10 @@ Unresolved issue-code classes:
 - `PHYSICAL_CLOCK_FIELD_MISSING`
 - `PHYSICAL_DT_INVALID`
 - `PHYSICAL_DURATION_INVALID`
+- `PHYSICAL_INITIALIZATION_INVALID`
 - `PHYSICAL_QUADRATURE_INVALID`
 - `PHYSICAL_RATE_MAP_INVALID`
+- `PHYSICAL_REGULARITY_INVALID`
 - `PHYSICAL_TIME_UNITS_INVALID`
 - `PREDICTION_DESIGN_MISSING`
 - `PREDICTION_HASH_INVALID`
@@ -90,6 +103,7 @@ Unresolved issue-code classes:
 - `SOURCE_UNVERSIONED`
 - `SPLIT_ARRAY_CLOSURE_INVALID`
 - `SPLIT_RULE_MISSING`
+- `TANGENT_REFERENCE_INVALID`
 - `TANGENT_VALIDATION_MISSING`
 - `ZERO_COUPLING_MISSING`
 

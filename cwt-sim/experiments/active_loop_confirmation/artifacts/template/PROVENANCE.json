@@ -4,25 +4,34 @@
   "artifact_kind": "metadata_only_design_template_freeze",
   "candidate_screening_disclosure": "small official structural payloads were inspected; no candidate outcome analysis was conducted; no candidate data were retained; this package has no raw-data or outcome path",
   "confirmation_command_available": false,
+  "definition_reference_validation_scope": "closed record shape, exact declared ID/path, SHA-256 syntax, and self-declarations only; no file resolution or content authentication",
   "design_freeze_not_study_preregistration": true,
   "deterministic_reproduction_command": "cd cwt-sim && .venv/Scripts/python.exe experiments/active_loop_confirmation/run.py freeze-template",
   "evidence_contribution": "none",
   "maximum_reachable_code_state": "METADATA_VERIFIED_PENDING_IMPLEMENTATION",
   "outcome_execution_available": false,
   "raw_data_access_available": false,
+  "reference_content_authentication_gate": {
+    "containment_existence_regular_file_verified": false,
+    "implementation_or_response_unlock_allowed": false,
+    "included_in_immutable_closure": false,
+    "raw_sha256_matched": false,
+    "reference_root_frozen": false,
+    "status": "UNIMPLEMENTED_REQUIRED_BEFORE_IMPLEMENTATION_OR_RESPONSE_UNLOCK"
+  },
   "result_directory_available": false,
   "schema_version": 2,
   "source_hash_domain": "sha256_utf8_lf_v1: reject BOM/non-UTF8/bare CR; convert CRLF to LF only",
   "source_hashes": {
-    "PROTOCOL_TEMPLATE.md": "173fd935fecc7aafd1d63efe2e0e2b1f37c8212e7c52295abd0fd7f42e7cb500",
+    "PROTOCOL_TEMPLATE.md": "ef600eab0a63d1a8f0df736b841bc001f198ba5cfeed44b27394c849ce59baeb",
     "SUBSTRATE_SCREEN.md": "61c5979cf16250770401e02b9021461718f59cd28996c8f658c21665c40f73a5",
     "__init__.py": "4ae00660f6d68e20a19134a5535169723e41fa8783d4ac9fdf5f94f75aa20dc1",
-    "artifacts.py": "d3691366c1d62f0fca6d64fc083fb2bb188d163336a7a0e8e92f1e2a9f6ee851",
-    "protocol_template.json": "90ae5a638a5ecf17fc97a331cc12a5a723bff8271fda0242bb792de3d88ee905",
-    "protocol_template.schema.json": "84df03711d8eed925d6d1c82cc301a0109f95d00745b5c7d75834e1963d9692f",
+    "artifacts.py": "02597ceb0f2944d06ea27c139269e49fc914b3579dacb5048952a2c9d77860c3",
+    "protocol_template.json": "c28e4e3cd92be1a3f2dec19c18cd793b750064d3c36493494794db7d25ed0e54",
+    "protocol_template.schema.json": "f40418a17cf6bfde654e022c223bc5c698c9aebc63b93865d4a472e9c405db31",
     "run.py": "330ef699c773bb1bcc71af1869031afa2b1c89eee8cac61b0aff01158097bf80",
-    "schema.py": "ed6f1f5495d15ba67b96cee20690da292e454bb3a74cac3427eb4dd24feea3f8",
-    "template_model.py": "21d7fa1affae7dbe89ed69984321b8d502c45f99bece9ea8e6615489292363a6"
+    "schema.py": "f0034c2a5ef66a3900f9c4b4d7723a0c0cf7aee624b68479e9b2de51588d958a",
+    "template_model.py": "a876ab6cccd74bfdd939745ebf8507f8338a1418724b5ea2a6f359a728d3e802"
   },
   "source_specific_nulls": [
     "source identity and qualification",
@@ -39,6 +48,7 @@
   "text_encoding": "strict UTF-8 with LF line endings",
   "validation_issue_codes": [
     "ACTUABLE_CONTROLS_INVALID",
+    "ASYMPTOTIC_REGIME_MISSING",
     "BETA_MARGIN_INVALID",
     "CLOCK_BOUND_INVALID",
     "CONDITION_THRESHOLD_INVALID",
@@ -63,8 +73,10 @@
     "PHYSICAL_CLOCK_FIELD_MISSING",
     "PHYSICAL_DT_INVALID",
     "PHYSICAL_DURATION_INVALID",
+    "PHYSICAL_INITIALIZATION_INVALID",
     "PHYSICAL_QUADRATURE_INVALID",
     "PHYSICAL_RATE_MAP_INVALID",
+    "PHYSICAL_REGULARITY_INVALID",
     "PHYSICAL_TIME_UNITS_INVALID",
     "PREDICTION_DESIGN_MISSING",
     "PREDICTION_HASH_INVALID",
@@ -96,9 +108,10 @@
     "SOURCE_UNVERSIONED",
     "SPLIT_ARRAY_CLOSURE_INVALID",
     "SPLIT_RULE_MISSING",
+    "TANGENT_REFERENCE_INVALID",
     "TANGENT_VALIDATION_MISSING",
     "ZERO_COUPLING_MISSING"
   ],
-  "validation_issue_count": 133,
+  "validation_issue_count": 144,
   "verification_command": "cd cwt-sim && .venv/Scripts/python.exe experiments/active_loop_confirmation/run.py verify-template"
 }

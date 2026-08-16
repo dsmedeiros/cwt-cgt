@@ -1,0 +1,632 @@
+[
+  {
+    "absolute_remainder": 0.014331174111269357,
+    "initialization": "equilibrium",
+    "line_integral": 0.1254619396218376,
+    "orientation_even": -0.0008021724831831223,
+    "q_anti": 0.11113076551056825,
+    "record_type": "fixed_loop_refinement",
+    "relative_remainder": 0.11422726409671183,
+    "scale": 0.2,
+    "steps": 64
+  },
+  {
+    "absolute_remainder": 0.006026558160265885,
+    "initialization": "equilibrium",
+    "line_integral": 0.12561324627819012,
+    "orientation_even": -0.00020825595876990122,
+    "q_anti": 0.11958668811792424,
+    "record_type": "fixed_loop_refinement",
+    "relative_remainder": 0.047977091101675154,
+    "scale": 0.2,
+    "steps": 128
+  },
+  {
+    "absolute_remainder": 0.002664547044998522,
+    "initialization": "equilibrium",
+    "line_integral": 0.1256510900373109,
+    "orientation_even": -5.256943799989561e-05,
+    "q_anti": 0.12298654299231238,
+    "record_type": "fixed_loop_refinement",
+    "relative_remainder": 0.021205920650647043,
+    "scale": 0.2,
+    "steps": 256
+  },
+  {
+    "absolute_remainder": 0.0012380000456484463,
+    "initialization": "equilibrium",
+    "line_integral": 0.125660552045772,
+    "orientation_even": -1.3174334255162956e-05,
+    "q_anti": 0.12442255200012356,
+    "record_type": "fixed_loop_refinement",
+    "relative_remainder": 0.00985193861950808,
+    "scale": 0.2,
+    "steps": 512
+  },
+  {
+    "absolute_remainder": 0.000594630372670546,
+    "initialization": "equilibrium",
+    "line_integral": 0.1256629176146835,
+    "orientation_even": -3.2955880664015114e-06,
+    "q_anti": 0.12506828724201297,
+    "record_type": "fixed_loop_refinement",
+    "relative_remainder": 0.004731947848718931,
+    "scale": 0.2,
+    "steps": 1024
+  },
+  {
+    "absolute_remainder": 0.00029112875687492545,
+    "initialization": "equilibrium",
+    "line_integral": 0.12566350901108653,
+    "orientation_even": -8.240223934169455e-07,
+    "q_anti": 0.1253723802542116,
+    "record_type": "fixed_loop_refinement",
+    "relative_remainder": 0.0023167326709716577,
+    "scale": 0.2,
+    "steps": 2048
+  },
+  {
+    "absolute_remainder": 0.00609952216069834,
+    "initialization": "periodic",
+    "line_integral": 0.1254619396218376,
+    "orientation_even": 6.938893903907228e-18,
+    "q_anti": 0.11936241746113926,
+    "record_type": "fixed_loop_refinement",
+    "relative_remainder": 0.048616514132359796,
+    "scale": 0.2,
+    "steps": 64
+  },
+  {
+    "absolute_remainder": 0.0015854367901738942,
+    "initialization": "periodic",
+    "line_integral": 0.12561324627819012,
+    "orientation_even": -6.938893903907228e-18,
+    "q_anti": 0.12402780948801623,
+    "record_type": "fixed_loop_refinement",
+    "relative_remainder": 0.012621573258784326,
+    "scale": 0.2,
+    "steps": 128
+  },
+  {
+    "absolute_remainder": 0.00040032770832287845,
+    "initialization": "periodic",
+    "line_integral": 0.1256510900373109,
+    "orientation_even": -4.163336342344337e-17,
+    "q_anti": 0.12525076232898802,
+    "record_type": "fixed_loop_refinement",
+    "relative_remainder": 0.003186026545444253,
+    "scale": 0.2,
+    "steps": 256
+  },
+  {
+    "absolute_remainder": 0.00010033297668776697,
+    "initialization": "periodic",
+    "line_integral": 0.125660552045772,
+    "orientation_even": -2.7755575615628914e-17,
+    "q_anti": 0.12556021906908424,
+    "record_type": "fixed_loop_refinement",
+    "relative_remainder": 0.0007984445003171764,
+    "scale": 0.2,
+    "steps": 512
+  },
+  {
+    "absolute_remainder": 2.509898252622822e-05,
+    "initialization": "periodic",
+    "line_integral": 0.1256629176146835,
+    "orientation_even": 5.551115123125783e-17,
+    "q_anti": 0.12563781863215728,
+    "record_type": "fixed_loop_refinement",
+    "relative_remainder": 0.0001997326100862029,
+    "scale": 0.2,
+    "steps": 1024
+  },
+  {
+    "absolute_remainder": 6.2757300273719174e-06,
+    "initialization": "periodic",
+    "line_integral": 0.12566350901108653,
+    "orientation_even": -6.938893903907228e-17,
+    "q_anti": 0.12565723328105916,
+    "record_type": "fixed_loop_refinement",
+    "relative_remainder": 4.9940751111909885e-05,
+    "scale": 0.2,
+    "steps": 2048
+  },
+  {
+    "absolute_remainder": 0.0025134521869010773,
+    "bound_denominator": 0.000825,
+    "initialization": "equilibrium",
+    "line_integral": 0.3216910132371766,
+    "observed_bound_ratio": 3.0466087113952454,
+    "orientation_even": -2.1078934808377303e-05,
+    "q_anti": 0.3191775610502755,
+    "record_type": "scaled_bound_check",
+    "relative_remainder": 0.007813249619901435,
+    "scale": 0.32,
+    "steps": 512
+  },
+  {
+    "absolute_remainder": 0.00025685242032097433,
+    "bound_denominator": 0.000201220703125,
+    "initialization": "periodic",
+    "line_integral": 0.3216910132371766,
+    "observed_bound_ratio": 1.2764711400566742,
+    "orientation_even": 2.7755575615628914e-17,
+    "q_anti": 0.3214341608168556,
+    "record_type": "scaled_bound_check",
+    "relative_remainder": 0.0007984445003180801,
+    "scale": 0.32,
+    "steps": 512
+  },
+  {
+    "absolute_remainder": 0.0009016246842082354,
+    "bound_denominator": 0.00036250000000000003,
+    "initialization": "equilibrium",
+    "line_integral": 0.08042275330929416,
+    "observed_bound_ratio": 2.487240508160649,
+    "orientation_even": -1.0539467404001301e-05,
+    "q_anti": 0.07952112862508592,
+    "record_type": "scaled_bound_check",
+    "relative_remainder": 0.011211064619246727,
+    "scale": 0.16,
+    "steps": 512
+  },
+  {
+    "absolute_remainder": 6.421310508025746e-05,
+    "bound_denominator": 5.06103515625e-05,
+    "initialization": "periodic",
+    "line_integral": 0.08042275330929416,
+    "observed_bound_ratio": 1.268774136076867,
+    "orientation_even": 1.5265566588595902e-16,
+    "q_anti": 0.0803585402042139,
+    "record_type": "scaled_bound_check",
+    "relative_remainder": 0.0007984445003182525,
+    "scale": 0.16,
+    "steps": 512
+  },
+  {
+    "absolute_remainder": 0.00036203698979351065,
+    "bound_denominator": 0.00016875,
+    "initialization": "equilibrium",
+    "line_integral": 0.020105688327323533,
+    "observed_bound_ratio": 2.1454043839615444,
+    "orientation_even": -5.269733702021467e-06,
+    "q_anti": 0.019743651337530022,
+    "record_type": "scaled_bound_check",
+    "relative_remainder": 0.01800669461793577,
+    "scale": 0.08,
+    "steps": 512
+  },
+  {
+    "absolute_remainder": 1.6053276269998445e-05,
+    "bound_denominator": 1.2805175781250001e-05,
+    "initialization": "periodic",
+    "line_integral": 0.020105688327323533,
+    "observed_bound_ratio": 1.2536552831632721,
+    "orientation_even": 9.367506770274758e-17,
+    "q_anti": 0.020089635051053534,
+    "record_type": "scaled_bound_check",
+    "relative_remainder": 0.0007984445003149741,
+    "scale": 0.08,
+    "steps": 512
+  },
+  {
+    "absolute_remainder": 0.0001588246568191426,
+    "bound_denominator": 8.125e-05,
+    "initialization": "equilibrium",
+    "line_integral": 0.00502642208183089,
+    "observed_bound_ratio": 1.9547650070048321,
+    "orientation_even": -2.6348668512895905e-06,
+    "q_anti": 0.004867597425011748,
+    "record_type": "scaled_bound_check",
+    "relative_remainder": 0.03159795461532156,
+    "scale": 0.04,
+    "steps": 512
+  },
+  {
+    "absolute_remainder": 4.0133190675265e-06,
+    "bound_denominator": 3.2775878906250003e-06,
+    "initialization": "periodic",
+    "line_integral": 0.00502642208183089,
+    "observed_bound_ratio": 1.2244733631723308,
+    "orientation_even": -2.415602440297704e-16,
+    "q_anti": 0.005022408762763364,
+    "record_type": "scaled_bound_check",
+    "relative_remainder": 0.0007984445003203223,
+    "scale": 0.04,
+    "steps": 512
+  },
+  {
+    "absolute_remainder": 7.386386889010003e-05,
+    "bound_denominator": 3.984375e-05,
+    "initialization": "equilibrium",
+    "line_integral": 0.0012566055204577171,
+    "observed_bound_ratio": 1.8538382780260398,
+    "orientation_even": -1.3174334255923199e-06,
+    "q_anti": 0.001182741651567617,
+    "record_type": "scaled_bound_check",
+    "relative_remainder": 0.058780474610039275,
+    "scale": 0.02,
+    "steps": 512
+  },
+  {
+    "absolute_remainder": 1.0033297668631935e-06,
+    "bound_denominator": 8.575439453125e-07,
+    "initialization": "periodic",
+    "line_integral": 0.0012566055204577171,
+    "observed_bound_ratio": 1.1700039074937054,
+    "orientation_even": -4.9439619065339e-17,
+    "q_anti": 0.001255602190690854,
+    "record_type": "scaled_bound_check",
+    "relative_remainder": 0.0007984445003056582,
+    "scale": 0.02,
+    "steps": 512
+  },
+  {
+    "interaction_D": 0.18848584992158873,
+    "ordinary_did_factor": 2.0,
+    "ordinary_difference_in_differences": 0.37697169984317747,
+    "orientation_even_on": -1.3877787807814457e-16,
+    "orientation_even_zero": -3.469446951953614e-17,
+    "qanti_on": 0.2513144665621183,
+    "qanti_zero": 0.06282861664052958,
+    "record_type": "nonzero_baseline_interaction",
+    "relative_error": 4.9940751111909885e-05,
+    "target_integral_dB_difference": 0.1884952635166298
+  },
+  {
+    "absolute_remainder": 0.0346551499901796,
+    "alpha_at_sample_dt": 0.0004881620601105974,
+    "initialization": "equilibrium",
+    "line_integral": 0.12566370614359174,
+    "period": 8.0,
+    "record_type": "continuous_stable_ode",
+    "response": 0.09100855615341213,
+    "tau": 0.5,
+    "tau_over_period": 0.0625
+  },
+  {
+    "absolute_remainder": 0.014579625787205536,
+    "alpha_at_sample_dt": 0.0009760858180243304,
+    "initialization": "equilibrium",
+    "line_integral": 0.12566370614359174,
+    "period": 16.0,
+    "record_type": "continuous_stable_ode",
+    "response": 0.1110840803563862,
+    "tau": 0.5,
+    "tau_over_period": 0.03125
+  },
+  {
+    "absolute_remainder": 0.0062152956114250035,
+    "alpha_at_sample_dt": 0.0019512188925244756,
+    "initialization": "equilibrium",
+    "line_integral": 0.12566370614359174,
+    "period": 32.0,
+    "record_type": "continuous_stable_ode",
+    "response": 0.11944841053216673,
+    "tau": 0.5,
+    "tau_over_period": 0.015625
+  },
+  {
+    "absolute_remainder": 0.002793907614757507,
+    "alpha_at_sample_dt": 0.0038986305298824853,
+    "initialization": "equilibrium",
+    "line_integral": 0.12566370614359174,
+    "period": 64.0,
+    "record_type": "continuous_stable_ode",
+    "response": 0.12286979852883423,
+    "tau": 0.5,
+    "tau_over_period": 0.0078125
+  },
+  {
+    "absolute_remainder": 0.0013135553913533465,
+    "alpha_at_sample_dt": 0.007782061739756485,
+    "initialization": "equilibrium",
+    "line_integral": 0.12566370614359174,
+    "period": 128.0,
+    "record_type": "continuous_stable_ode",
+    "response": 0.12435015075223839,
+    "tau": 0.5,
+    "tau_over_period": 0.00390625
+  },
+  {
+    "absolute_remainder": 0.01678973479372936,
+    "alpha_at_sample_dt": 0.0004881620601105974,
+    "initialization": "periodic",
+    "line_integral": 0.12566370614359174,
+    "period": 8.0,
+    "record_type": "continuous_stable_ode",
+    "response": 0.10887397134986238,
+    "tau": 0.5,
+    "tau_over_period": 0.0625
+  },
+  {
+    "absolute_remainder": 0.00466488476561977,
+    "alpha_at_sample_dt": 0.0009760858180243304,
+    "initialization": "periodic",
+    "line_integral": 0.12566370614359174,
+    "period": 16.0,
+    "record_type": "continuous_stable_ode",
+    "response": 0.12099882137797197,
+    "tau": 0.5,
+    "tau_over_period": 0.03125
+  },
+  {
+    "absolute_remainder": 0.001199620398870796,
+    "alpha_at_sample_dt": 0.0019512188925244756,
+    "initialization": "periodic",
+    "line_integral": 0.12566370614359174,
+    "period": 32.0,
+    "record_type": "continuous_stable_ode",
+    "response": 0.12446408574472094,
+    "tau": 0.5,
+    "tau_over_period": 0.015625
+  },
+  {
+    "absolute_remainder": 0.0003020678167379165,
+    "alpha_at_sample_dt": 0.0038986305298824853,
+    "initialization": "periodic",
+    "line_integral": 0.12566370614359174,
+    "period": 64.0,
+    "record_type": "continuous_stable_ode",
+    "response": 0.12536163832685382,
+    "tau": 0.5,
+    "tau_over_period": 0.0078125
+  },
+  {
+    "absolute_remainder": 7.565334464287865e-05,
+    "alpha_at_sample_dt": 0.007782061739756485,
+    "initialization": "periodic",
+    "line_integral": 0.12566370614359174,
+    "period": 128.0,
+    "record_type": "continuous_stable_ode",
+    "response": 0.12558805279894886,
+    "tau": 0.5,
+    "tau_over_period": 0.00390625
+  },
+  {
+    "case_id": "C1",
+    "description": "nonzero projective curvature with curl-free response",
+    "disposition": "COUNTEREXAMPLE",
+    "implication_refuted": "Omega_nonzero_implies_response",
+    "omega_uv": 0.4456036800221352,
+    "record_type": "frozen_case",
+    "response_curvature_uv": 5.551115123125783e-12
+  },
+  {
+    "case_id": "C2",
+    "description": "zero projective curvature with nonzero response curvature",
+    "disposition": "COUNTEREXAMPLE",
+    "implication_refuted": "response_implies_Omega",
+    "omega_uv": 0.0,
+    "record_type": "frozen_case",
+    "response_curvature_uv": 1.0000000000037756
+  },
+  {
+    "case_id": "C3",
+    "description": "an aligned coefficient can change sign",
+    "disposition": "COUNTEREXAMPLE",
+    "kappa_index": "fixture/coupling/readout",
+    "kappa_values": [
+      -1.0000000004135778,
+      0.0,
+      1.0000000004172092
+    ],
+    "max_alignment_error": 0.0,
+    "normalized_state_map": "psi=(sqrt(1-q),exp(i*phi)*sqrt(q)); q=0.5+0.2*x; phi=5*y",
+    "omega_xy": [
+      0.9999999995874223,
+      0.9999999995717106,
+      0.999999999583791
+    ],
+    "record_type": "frozen_case",
+    "response_curvature_xy": [
+      -1.000000000001,
+      0.0,
+      1.000000000001
+    ],
+    "sample_coordinates": [
+      -1.0,
+      0.0,
+      1.0
+    ]
+  },
+  {
+    "case_id": "C4",
+    "description": "one state curvature permits multiple authored readout coefficients",
+    "disposition": "COUNTEREXAMPLE",
+    "kappa_index": "fixture/coupling/readout",
+    "max_coefficient_identity_errors": [
+      8.047398303290265e-10,
+      0.0,
+      1.2126606385720606e-09
+    ],
+    "normalized_state_map": "same CP1 q=0.5+0.2*x, phi=5*y state used for every readout",
+    "projective_vs_analytic_connection_error": 4.0236991516451326e-10,
+    "readout_coefficients": [
+      -2.0,
+      0.0,
+      3.0
+    ],
+    "record_type": "frozen_case",
+    "response_tensors": [
+      [
+        [
+          0.0,
+          -2.000000000002,
+          0.0
+        ],
+        [
+          2.000000000002,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.0,
+          3.000000000008551,
+          0.0
+        ],
+        [
+          -3.000000000008551,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ]
+      ]
+    ],
+    "same_omega_tensor": [
+      [
+        0.0,
+        0.9999999995986302,
+        0.0
+      ],
+      [
+        -0.9999999995986302,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ]
+    ]
+  },
+  {
+    "case_id": "C5",
+    "description": "pointwise division of nonzero two-forms in two dimensions",
+    "disposition": "INELIGIBLE_TAUTOLOGY",
+    "first_two_form": [
+      [
+        0.0,
+        1.250000000001944
+      ],
+      [
+        -1.250000000001944,
+        0.0
+      ]
+    ],
+    "pointwise_quotient": -0.6000000000002219,
+    "quotient_identity_error": 0.0,
+    "reason": "the two-form space is one-dimensional",
+    "record_type": "frozen_case",
+    "second_two_form": [
+      [
+        0.0,
+        -0.7500000000014438
+      ],
+      [
+        0.7500000000014438,
+        0.0
+      ]
+    ]
+  },
+  {
+    "analytic_circle_line_integral": 0.12566370614359174,
+    "case_id": "C6",
+    "coarse_odd_remainder": 0.06544694438700395,
+    "coarse_orientation_even": -0.007365443754154256,
+    "coarse_orientation_odd": 0.0570117539698248,
+    "coarse_sampled_path_line_integral": 0.12245869835682875,
+    "coarse_to_fine_even_reduction": 559.075214845697,
+    "coarse_to_fine_odd_remainder_reduction": 52.86505813715362,
+    "description": "finite-speed lag contains a dynamic remainder",
+    "disposition": "COUNTEREXAMPLE",
+    "fine_odd_remainder": 0.0012380000456484463,
+    "fine_orientation_even": -1.3174334255162956e-05,
+    "fine_orientation_odd": 0.12442255200012356,
+    "fine_sampled_path_line_integral": 0.125660552045772,
+    "independent_constant_state_omega_uv": 0.0,
+    "record_type": "frozen_case"
+  },
+  {
+    "case_id": "C7",
+    "coordinate_geometry_max_error": 5.345901499254069e-11,
+    "coordinate_response_max_error": 5.0598192302686584e-11,
+    "description": "gauge invariance and coordinate covariance",
+    "disposition": "PASS_LOCAL_INTERNAL",
+    "gauge_curvature_max_error": 3.4946723292961224e-10,
+    "record_type": "frozen_case"
+  },
+  {
+    "biorthogonal_curvature": [
+      -2.0,
+      2.0
+    ],
+    "case_id": "C8",
+    "construction_id": "proof_program_similarity_family_v1",
+    "disposition": "OUT_OF_SCOPE",
+    "fixed_eigenvalues": [
+      0.0,
+      1.0,
+      2.0
+    ],
+    "left_right_overlap": [
+      1.0,
+      3.3306690738754695e-18
+    ],
+    "minimum_gap": 1.0,
+    "nonnormal_commutator_norm": 1.833438846530749,
+    "record_type": "frozen_case",
+    "right_only_curvature": 0.0,
+    "same_as_adversarial_projector_example": false
+  },
+  {
+    "area_rank": 3,
+    "case_id": "P1",
+    "control_role": "deliberately_aligned_oracle_positive_implementation_control",
+    "disposition": "PASS_LOCAL_INTERNAL",
+    "frozen_kappa": 2.0,
+    "heldout_absolute_error": 5.864837504532261e-10,
+    "heldout_cosine_max": 0.5773502691896258,
+    "heldout_prediction": -1.0957930502271347,
+    "heldout_response": -1.0957930508136184,
+    "max_tensor_error": 5.198299568576203e-10,
+    "normalized_area_condition": 2.9999999999999996,
+    "record_type": "frozen_case"
+  },
+  {
+    "center_kappa_lipschitz": 0.5,
+    "closedness_condition": "d(kappa) wedge Omega = 0",
+    "conditional_bound_example": 0.014000000000000002,
+    "conditional_bound_expected": 0.014,
+    "kappa_index": "experiment/coupling/readout",
+    "omega_comass_sup": 0.4,
+    "pointwise_collinearity_required": true,
+    "record_type": "alignment_characterization",
+    "surface_diameter": 0.1,
+    "surface_mass_convention": "two_dimensional_Hausdorff_area",
+    "three_dimensional_test": "full-rank areas plus held-out oblique direction",
+    "two_dimensional_test": "INELIGIBLE_TAUTOLOGY",
+    "two_form_norm_convention": "comass_in_the_declared_parameter_norm",
+    "varying_kappa_obstruction_volume_coefficient": 1.0,
+    "zero_set_compatibility_required": true
+  }
+]

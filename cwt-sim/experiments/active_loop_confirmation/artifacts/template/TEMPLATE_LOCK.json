@@ -1,19 +1,19 @@
 {
   "artifact_hash_domain": "sha256_raw_bytes",
   "generated_claim_artifacts": {
-    "PROVENANCE.json": "44e7dfeb3fa840261782c0779f27d3a885df42a489bc0fbcab269d162367e752",
-    "REPORT.md": "c57dd4abb18370c992b61538c143544f27dc356294332daa8c94f511c118c182"
+    "PROVENANCE.json": "8b4283eeac2980b3fb9401730e70f0894f1f8a08534a8bdd09b41595a22c9ebc",
+    "REPORT.md": "d8bae90963f247009c07140083523e32976d61dbc16cd5377748b2d0244de89c"
   },
   "inputs": {
-    "PROTOCOL_TEMPLATE.md": "173fd935fecc7aafd1d63efe2e0e2b1f37c8212e7c52295abd0fd7f42e7cb500",
+    "PROTOCOL_TEMPLATE.md": "ef600eab0a63d1a8f0df736b841bc001f198ba5cfeed44b27394c849ce59baeb",
     "SUBSTRATE_SCREEN.md": "61c5979cf16250770401e02b9021461718f59cd28996c8f658c21665c40f73a5",
     "__init__.py": "4ae00660f6d68e20a19134a5535169723e41fa8783d4ac9fdf5f94f75aa20dc1",
-    "artifacts.py": "d3691366c1d62f0fca6d64fc083fb2bb188d163336a7a0e8e92f1e2a9f6ee851",
-    "protocol_template.json": "90ae5a638a5ecf17fc97a331cc12a5a723bff8271fda0242bb792de3d88ee905",
-    "protocol_template.schema.json": "84df03711d8eed925d6d1c82cc301a0109f95d00745b5c7d75834e1963d9692f",
+    "artifacts.py": "02597ceb0f2944d06ea27c139269e49fc914b3579dacb5048952a2c9d77860c3",
+    "protocol_template.json": "c28e4e3cd92be1a3f2dec19c18cd793b750064d3c36493494794db7d25ed0e54",
+    "protocol_template.schema.json": "f40418a17cf6bfde654e022c223bc5c698c9aebc63b93865d4a472e9c405db31",
     "run.py": "330ef699c773bb1bcc71af1869031afa2b1c89eee8cac61b0aff01158097bf80",
-    "schema.py": "ed6f1f5495d15ba67b96cee20690da292e454bb3a74cac3427eb4dd24feea3f8",
-    "template_model.py": "21d7fa1affae7dbe89ed69984321b8d502c45f99bece9ea8e6615489292363a6"
+    "schema.py": "f0034c2a5ef66a3900f9c4b4d7723a0c0cf7aee624b68479e9b2de51588d958a",
+    "template_model.py": "a876ab6cccd74bfdd939745ebf8507f8338a1418724b5ea2a6f359a728d3e802"
   },
   "lock_kind": "design_template_only_no_study_or_outcome_lock",
   "not_a_study_preregistration": true,
