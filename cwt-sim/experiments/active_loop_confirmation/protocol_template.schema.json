@@ -1,0 +1,2556 @@
+{
+  "$id": "https://cwt-cgt.invalid/schemas/active-loop-confirmation-v2.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Recursively closed metadata schema. Null substrate fields preserve the checked-in BLOCKED_NO_SUBSTRATE state; semantic gates are applied by template_model.py.",
+  "properties": {
+    "analysis_implementation_available": {
+      "const": false
+    },
+    "claim_ceiling": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_if_future_pass": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "forbidden_generalizations": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "template_is_evidence": {
+          "const": false
+        },
+        "template_is_study_preregistration": {
+          "const": false
+        }
+      },
+      "required": [
+        "allowed_if_future_pass",
+        "forbidden_generalizations",
+        "template_is_evidence",
+        "template_is_study_preregistration"
+      ],
+      "type": "object"
+    },
+    "cluster_split": {
+      "additionalProperties": false,
+      "properties": {
+        "assignment_rule": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "duplicate_detection_rule": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "independent_unit_kind": {
+          "enum": [
+            null,
+            "independently_randomized_washed_out_reset_block"
+          ]
+        },
+        "minimum_independent_blocks": {
+          "minimum": 20,
+          "type": "integer"
+        },
+        "partitions": {
+          "additionalProperties": false,
+          "properties": {
+            "calibration": {
+              "additionalProperties": false,
+              "properties": {
+                "alias_ids": {
+                  "items": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "type": [
+                    "null",
+                    "array"
+                  ],
+                  "uniqueItems": true
+                },
+                "cluster_ids": {
+                  "items": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "type": [
+                    "null",
+                    "array"
+                  ],
+                  "uniqueItems": true
+                },
+                "content_sha256": {
+                  "items": {
+                    "pattern": "^[0-9a-f]{64}$",
+                    "type": "string"
+                  },
+                  "type": [
+                    "null",
+                    "array"
+                  ],
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "cluster_ids",
+                "alias_ids",
+                "content_sha256"
+              ],
+              "type": "object"
+            },
+            "confirmation": {
+              "additionalProperties": false,
+              "properties": {
+                "alias_ids": {
+                  "items": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "type": [
+                    "null",
+                    "array"
+                  ],
+                  "uniqueItems": true
+                },
+                "cluster_ids": {
+                  "items": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "type": [
+                    "null",
+                    "array"
+                  ],
+                  "uniqueItems": true
+                },
+                "content_sha256": {
+                  "items": {
+                    "pattern": "^[0-9a-f]{64}$",
+                    "type": "string"
+                  },
+                  "type": [
+                    "null",
+                    "array"
+                  ],
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "cluster_ids",
+                "alias_ids",
+                "content_sha256"
+              ],
+              "type": "object"
+            },
+            "reduction_validation": {
+              "additionalProperties": false,
+              "properties": {
+                "alias_ids": {
+                  "items": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "type": [
+                    "null",
+                    "array"
+                  ],
+                  "uniqueItems": true
+                },
+                "cluster_ids": {
+                  "items": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "type": [
+                    "null",
+                    "array"
+                  ],
+                  "uniqueItems": true
+                },
+                "content_sha256": {
+                  "items": {
+                    "pattern": "^[0-9a-f]{64}$",
+                    "type": "string"
+                  },
+                  "type": [
+                    "null",
+                    "array"
+                  ],
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "cluster_ids",
+                "alias_ids",
+                "content_sha256"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "calibration",
+            "reduction_validation",
+            "confirmation"
+          ],
+          "type": "object"
+        },
+        "salt": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      },
+      "required": [
+        "independent_unit_kind",
+        "minimum_independent_blocks",
+        "salt",
+        "assignment_rule",
+        "duplicate_detection_rule",
+        "partitions"
+      ],
+      "type": "object"
+    },
+    "controls": {
+      "additionalProperties": false,
+      "properties": {
+        "component_and_center_scramble": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "control_only_comparator": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "gauge_invariance": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "metric_only_comparator": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "omega_orthogonal_nonzero_area_loop": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "order_counterbalance": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "response_sensor_reference_injection": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "retraced_zero_area_sham": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "zero_geometry_comparator": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      },
+      "required": [
+        "retraced_zero_area_sham",
+        "omega_orthogonal_nonzero_area_loop",
+        "order_counterbalance",
+        "gauge_invariance",
+        "component_and_center_scramble",
+        "response_sensor_reference_injection",
+        "zero_geometry_comparator",
+        "metric_only_comparator",
+        "control_only_comparator"
+      ],
+      "type": "object"
+    },
+    "coordinates": {
+      "additionalProperties": false,
+      "properties": {
+        "connection_convention": {
+          "const": "A_i=-i<psi|partial_i psi>"
+        },
+        "curvature_convention": {
+          "const": "Omega_ij=+2 Im C_ij"
+        },
+        "dimension": {
+          "maximum": 3,
+          "minimum": 3,
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "independently_actuable_controls": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": [
+            "null",
+            "array"
+          ],
+          "uniqueItems": true
+        },
+        "normalized_coordinate_rule": {
+          "const": "x^i=(lambda^i-lambda_ref^i)/L_i"
+        },
+        "reference": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "right_handed_order": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": [
+            "null",
+            "array"
+          ],
+          "uniqueItems": true
+        },
+        "right_handed_orientation_verified": {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        "scales": {
+          "items": {
+            "exclusiveMinimum": 0.0,
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "units": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": [
+            "null",
+            "array"
+          ]
+        }
+      },
+      "required": [
+        "dimension",
+        "independently_actuable_controls",
+        "units",
+        "reference",
+        "scales",
+        "right_handed_order",
+        "right_handed_orientation_verified",
+        "normalized_coordinate_rule",
+        "connection_convention",
+        "curvature_convention"
+      ],
+      "type": "object"
+    },
+    "geometry_firewall": {
+      "additionalProperties": false,
+      "properties": {
+        "estimator_code_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "gap_overlap_gauge_qc": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "projector_estimator": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "qgt_estimator": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "response_signal_access": {
+          "const": false
+        },
+        "state_map_revision": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "state_sensor": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "state_sensor_distinct_from_response": {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        "wilson_estimator": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      },
+      "required": [
+        "state_sensor",
+        "state_map_revision",
+        "projector_estimator",
+        "wilson_estimator",
+        "qgt_estimator",
+        "estimator_code_sha256",
+        "gap_overlap_gauge_qc",
+        "response_signal_access",
+        "state_sensor_distinct_from_response"
+      ],
+      "type": "object"
+    },
+    "inference": {
+      "additionalProperties": false,
+      "properties": {
+        "all_primary_gates_conjunctive": {
+          "const": true
+        },
+        "alternative_hypothesis": {
+          "const": "H1: T>0 in the frozen CGT-predicted direction"
+        },
+        "confidence_level": {
+          "const": 0.99
+        },
+        "duplicate_assignment_rule": {
+          "enum": [
+            null,
+            "deduplicate_assignments_and_include_observed_once"
+          ]
+        },
+        "exact_enumeration": {
+          "additionalProperties": false,
+          "properties": {
+            "decision_rule": {
+              "const": "p<0.01 PASS; p>=0.01 FAIL"
+            },
+            "includes_observed_assignment_once": {
+              "const": true
+            },
+            "monte_carlo_interval": {
+              "const": false
+            },
+            "p_value": {
+              "const": "K/|G|"
+            }
+          },
+          "required": [
+            "p_value",
+            "includes_observed_assignment_once",
+            "monte_carlo_interval",
+            "decision_rule"
+          ],
+          "type": "object"
+        },
+        "fixed_sample_no_interim": {
+          "const": true
+        },
+        "method_selection_rule": {
+          "enum": [
+            null,
+            "exact_if_group_size_at_most_999999_else_999999_seeded_draws"
+          ]
+        },
+        "null_hypothesis": {
+          "const": "H0: outcomes are invariant under every admissible assignment in G"
+        },
+        "primary_alpha": {
+          "const": 0.01
+        },
+        "primary_statistic": {
+          "const": "T:=S=sum_bl w_l*mu_l*D_bl"
+        },
+        "primary_weights_rule": {
+          "additionalProperties": false,
+          "properties": {
+            "fit_partitions": {
+              "const": [
+                "calibration"
+              ]
+            },
+            "formula": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "provenance": {
+              "const": "calibration_design_only_v1"
+            },
+            "uses_confirmation_response": {
+              "const": false
+            },
+            "uses_heldout_response": {
+              "const": false
+            },
+            "weights_sha256": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "formula",
+            "provenance",
+            "fit_partitions",
+            "uses_confirmation_response",
+            "uses_heldout_response",
+            "weights_sha256"
+          ],
+          "type": [
+            "null",
+            "object"
+          ]
+        },
+        "randomization_group": {
+          "enum": [
+            null,
+            "all_distinct_balanced_block_level_quartet_sign_code_assignments_within_frozen_strata"
+          ]
+        },
+        "randomization_seed": {
+          "minimum": 0,
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "randomization_unit": {
+          "enum": [
+            null,
+            "independently_randomized_washed_out_reset_block"
+          ]
+        },
+        "sampled_monte_carlo": {
+          "additionalProperties": false,
+          "properties": {
+            "ad_hoc_extension_allowed": {
+              "const": false
+            },
+            "assignment_draw_rule": {
+              "const": "independent_uniform_with_replacement_from_G_using_frozen_seed"
+            },
+            "decision_rule": {
+              "const": "CP99 upper<0.01 PASS; lower>0.01 FAIL; straddle INDETERMINATE"
+            },
+            "draws": {
+              "const": 999999
+            },
+            "p_value": {
+              "const": "(1+K)/(M+1)"
+            },
+            "tail_probability_interval": {
+              "const": "99% Clopper-Pearson interval for q=P(T_perm>=T_observed)"
+            }
+          },
+          "required": [
+            "draws",
+            "assignment_draw_rule",
+            "p_value",
+            "tail_probability_interval",
+            "decision_rule",
+            "ad_hoc_extension_allowed"
+          ],
+          "type": "object"
+        },
+        "secondary_holm_alpha": {
+          "const": 0.05
+        },
+        "strata_rule": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "ties_rule": {
+          "enum": [
+            null,
+            "count_permuted_T_greater_than_or_equal_to_observed_as_extreme"
+          ]
+        }
+      },
+      "required": [
+        "primary_statistic",
+        "null_hypothesis",
+        "alternative_hypothesis",
+        "randomization_group",
+        "strata_rule",
+        "ties_rule",
+        "duplicate_assignment_rule",
+        "method_selection_rule",
+        "exact_enumeration",
+        "sampled_monte_carlo",
+        "primary_alpha",
+        "confidence_level",
+        "randomization_unit",
+        "randomization_seed",
+        "primary_weights_rule",
+        "all_primary_gates_conjunctive",
+        "fixed_sample_no_interim",
+        "secondary_holm_alpha"
+      ],
+      "type": "object"
+    },
+    "lock_and_authorization": {
+      "additionalProperties": false,
+      "properties": {
+        "acyclic_byte_hash_closure_required": {
+          "const": true
+        },
+        "clean_index_archive_cross_platform_verification_required": {
+          "const": true
+        },
+        "commanded_and_achieved_paths_required": {
+          "const": true
+        },
+        "independent_preflight_review_required": {
+          "const": true
+        },
+        "qc_code_container_dependencies_seeds_predictions_required": {
+          "const": true
+        },
+        "raw_lineage_units_and_diagrams_required": {
+          "const": true
+        },
+        "split_waveform_randomization_table_required": {
+          "const": true
+        }
+      },
+      "required": [
+        "acyclic_byte_hash_closure_required",
+        "raw_lineage_units_and_diagrams_required",
+        "split_waveform_randomization_table_required",
+        "commanded_and_achieved_paths_required",
+        "qc_code_container_dependencies_seeds_predictions_required",
+        "clean_index_archive_cross_platform_verification_required",
+        "independent_preflight_review_required"
+      ],
+      "type": "object"
+    },
+    "physical_time_protocol": {
+      "additionalProperties": false,
+      "properties": {
+        "achieved_path_closure_tolerance": {
+          "exclusiveMinimum": 0.0,
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "achieved_path_source": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "control_dynamics_map": {
+          "additionalProperties": false,
+          "properties": {
+            "fixed_alpha_across_dt_ladder": {
+              "const": false
+            },
+            "formula": {
+              "const": "alpha(dt)=1-exp(-dt/tau)"
+            },
+            "kind": {
+              "const": "continuous_rate_map"
+            },
+            "tau_seconds": {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            }
+          },
+          "required": [
+            "kind",
+            "formula",
+            "tau_seconds",
+            "fixed_alpha_across_dt_ladder"
+          ],
+          "type": [
+            "null",
+            "object"
+          ]
+        },
+        "dt_ladder": {
+          "items": {
+            "exclusiveMinimum": 0.0,
+            "type": "number"
+          },
+          "minItems": 5,
+          "type": [
+            "null",
+            "array"
+          ],
+          "uniqueItems": true
+        },
+        "dt_seconds": {
+          "exclusiveMinimum": 0.0,
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "duration_ladder": {
+          "items": {
+            "exclusiveMinimum": 0.0,
+            "type": "number"
+          },
+          "minItems": 5,
+          "type": [
+            "null",
+            "array"
+          ],
+          "uniqueItems": true
+        },
+        "duration_seconds": {
+          "exclusiveMinimum": 0.0,
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "endpoint_rule": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "heldout_level_index": {
+          "additionalProperties": false,
+          "properties": {
+            "dt": {
+              "minimum": 0,
+              "type": [
+                "null",
+                "integer"
+              ]
+            },
+            "duration": {
+              "minimum": 0,
+              "type": [
+                "null",
+                "integer"
+              ]
+            },
+            "scale": {
+              "minimum": 0,
+              "type": [
+                "null",
+                "integer"
+              ]
+            }
+          },
+          "required": [
+            "dt",
+            "duration",
+            "scale"
+          ],
+          "type": "object"
+        },
+        "jitter_bound_seconds": {
+          "minimum": 0.0,
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "latency_bound_seconds": {
+          "minimum": 0.0,
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "quadrature_rule": {
+          "enum": [
+            null,
+            "timestamp_weighted_trapezoidal_Q_integral_v1"
+          ]
+        },
+        "scale_ladder": {
+          "items": {
+            "exclusiveMinimum": 0.0,
+            "type": "number"
+          },
+          "minItems": 5,
+          "type": [
+            "null",
+            "array"
+          ],
+          "uniqueItems": true
+        },
+        "timestamp_units": {
+          "enum": [
+            null,
+            "seconds"
+          ]
+        },
+        "washout_or_periodic_initialization": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "waveform_family": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      },
+      "required": [
+        "duration_seconds",
+        "dt_seconds",
+        "timestamp_units",
+        "latency_bound_seconds",
+        "jitter_bound_seconds",
+        "quadrature_rule",
+        "endpoint_rule",
+        "achieved_path_source",
+        "achieved_path_closure_tolerance",
+        "washout_or_periodic_initialization",
+        "control_dynamics_map",
+        "waveform_family",
+        "dt_ladder",
+        "duration_ladder",
+        "scale_ladder",
+        "heldout_level_index"
+      ],
+      "type": "object"
+    },
+    "prediction_model": {
+      "additionalProperties": false,
+      "properties": {
+        "area_vector_normalization_rule": {
+          "const": "unit_Euclidean_norm_before_Frobenius_condition_v1"
+        },
+        "calibration_model_family": {
+          "additionalProperties": false,
+          "properties": {
+            "description": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "fit_partitions": {
+              "const": [
+                "calibration"
+              ]
+            },
+            "kind": {
+              "enum": [
+                "constant_kappa_v1",
+                "low_dimensional_kappa_v1"
+              ]
+            },
+            "model_spec_sha256": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "uses_confirmation_response": {
+              "const": false
+            },
+            "uses_heldout_local_response_curvature_ratio": {
+              "const": false
+            }
+          },
+          "required": [
+            "kind",
+            "description",
+            "fit_partitions",
+            "uses_confirmation_response",
+            "uses_heldout_local_response_curvature_ratio",
+            "model_spec_sha256"
+          ],
+          "type": [
+            "null",
+            "object"
+          ]
+        },
+        "calibration_uncertainty_method": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "condition_number_method": {
+          "const": "Frobenius_norm_A_times_Frobenius_norm_A_inverse"
+        },
+        "declared_frobenius_condition_number": {
+          "exclusiveMinimum": 0.0,
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "dimension": {
+          "const": 3
+        },
+        "fit_partitions": {
+          "const": [
+            "calibration"
+          ]
+        },
+        "forbid_pointwise_heldout_f_response_over_omega": {
+          "const": true
+        },
+        "geometry_uncertainty_method": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "heldout_oblique_max_abs_cosine": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 0.999999999999,
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "noncoplanar_normals": {
+          "items": {
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 3,
+            "minItems": 3,
+            "type": "array"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "oblique_heldout_direction": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": [
+            "null",
+            "array"
+          ]
+        },
+        "prediction_hash_before_response_unlock": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "rank_three_area_vector_design": {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        }
+      },
+      "required": [
+        "dimension",
+        "fit_partitions",
+        "forbid_pointwise_heldout_f_response_over_omega",
+        "calibration_model_family",
+        "rank_three_area_vector_design",
+        "area_vector_normalization_rule",
+        "condition_number_method",
+        "declared_frobenius_condition_number",
+        "noncoplanar_normals",
+        "oblique_heldout_direction",
+        "heldout_oblique_max_abs_cosine",
+        "prediction_hash_before_response_unlock",
+        "geometry_uncertainty_method",
+        "calibration_uncertainty_method"
+      ],
+      "type": "object"
+    },
+    "predictor_geometry": {
+      "additionalProperties": false,
+      "properties": {
+        "finite_flux_definition": {
+          "const": "Phi(S)=integral_S Omega using frozen integrated-curvature or Wilson estimator"
+        },
+        "finite_flux_estimator": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "geometry_interaction_code_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "geometry_interaction_definition": {
+          "additionalProperties": false,
+          "properties": {
+            "definition_sha256": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "description": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "kind": {
+              "const": "state_only_condition_contrast_v1"
+            },
+            "response_inputs_allowed": {
+              "const": false
+            },
+            "uses_confirmation_response": {
+              "const": false
+            }
+          },
+          "required": [
+            "kind",
+            "description",
+            "response_inputs_allowed",
+            "uses_confirmation_response",
+            "definition_sha256"
+          ],
+          "type": [
+            "null",
+            "object"
+          ]
+        },
+        "local_approximation_in_remainder": {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        "local_vector_area_approximation": {
+          "const": "Phi=omega(c).a+O(s^3) for the frozen shrinking-loop family"
+        },
+        "mode": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "omega_equivalence_margin": {
+          "exclusiveMinimum": 0.0,
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "path_equivalence_margin": {
+          "exclusiveMinimum": 0.0,
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "state_equivalence_margin": {
+          "exclusiveMinimum": 0.0,
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "zero_achieved_path_equivalence": {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        "zero_omega_equivalence": {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        "zero_state_equivalence": {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        }
+      },
+      "required": [
+        "mode",
+        "finite_flux_definition",
+        "finite_flux_estimator",
+        "local_vector_area_approximation",
+        "local_approximation_in_remainder",
+        "zero_state_equivalence",
+        "zero_achieved_path_equivalence",
+        "zero_omega_equivalence",
+        "state_equivalence_margin",
+        "path_equivalence_margin",
+        "omega_equivalence_margin",
+        "geometry_interaction_definition",
+        "geometry_interaction_code_sha256"
+      ],
+      "type": "object"
+    },
+    "quartet": {
+      "additionalProperties": false,
+      "properties": {
+        "assignment_table_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "common_physical_clock_verified": {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        "coupling_levels": {
+          "const": [
+            "on",
+            "zero"
+          ]
+        },
+        "exact_zero_coupling_mechanism": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "matched_achieved_shape_and_duration": {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        "negative_path_rule": {
+          "const": "gamma_minus(t)=gamma_plus(T-t)"
+        },
+        "orientations": {
+          "const": [
+            "positive",
+            "negative"
+          ]
+        },
+        "same_schedule_sensors_and_hysteresis_at_zero": {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        }
+      },
+      "required": [
+        "coupling_levels",
+        "orientations",
+        "negative_path_rule",
+        "exact_zero_coupling_mechanism",
+        "same_schedule_sensors_and_hysteresis_at_zero",
+        "matched_achieved_shape_and_duration",
+        "common_physical_clock_verified",
+        "assignment_table_sha256"
+      ],
+      "type": "object"
+    },
+    "response_firewall": {
+      "additionalProperties": false,
+      "properties": {
+        "baseline_definition": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "example_window_ids": {
+          "items": {
+            "pattern": "^ep_[0-9a-f]{16}$",
+            "type": "string"
+          },
+          "type": [
+            "null",
+            "array"
+          ],
+          "uniqueItems": true
+        },
+        "forbidden_fields": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "geometry_mutation_response_bytes_identical": {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        "integrated_units_derivation": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "quadrature_semantics": {
+          "const": "Q=integral[Y(t)-b(t)]dt with physical timestamps"
+        },
+        "reducer_code_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "reducer_input_fields": {
+          "const": [
+            "pseudonymous_episode_id",
+            "physical_timestamps",
+            "calibrated_response",
+            "predeclared_response_baseline",
+            "response_sensor_qc"
+          ]
+        },
+        "response_signal": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "response_signal_units": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "response_units": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "window_id_semantics": {
+          "enum": [
+            null,
+            "pseudonymous_sha256_prefix_v1"
+          ]
+        }
+      },
+      "required": [
+        "reducer_input_fields",
+        "forbidden_fields",
+        "response_signal",
+        "response_signal_units",
+        "response_units",
+        "integrated_units_derivation",
+        "baseline_definition",
+        "reducer_code_sha256",
+        "window_id_semantics",
+        "example_window_ids",
+        "geometry_mutation_response_bytes_identical",
+        "quadrature_semantics"
+      ],
+      "type": "object"
+    },
+    "schema_version": {
+      "const": 2
+    },
+    "source_specific_freeze_readiness": {
+      "additionalProperties": false,
+      "properties": {
+        "beta_equivalence_margin": {
+          "exclusiveMinimum": 0.0,
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "beta_interval_definition": {
+          "additionalProperties": false,
+          "properties": {
+            "calibration_uncertainty": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "cluster_unit": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "confidence": {
+              "const": 0.99
+            },
+            "denominator_rule": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "finite_miss_rule": {
+              "const": "FAIL"
+            },
+            "geometry_uncertainty": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "method": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "near_zero_rule": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "undefined_rule": {
+              "const": "INDETERMINATE"
+            }
+          },
+          "required": [
+            "confidence",
+            "method",
+            "cluster_unit",
+            "calibration_uncertainty",
+            "geometry_uncertainty",
+            "denominator_rule",
+            "near_zero_rule",
+            "finite_miss_rule",
+            "undefined_rule"
+          ],
+          "type": [
+            "null",
+            "object"
+          ]
+        },
+        "calibration_power": {
+          "additionalProperties": false,
+          "properties": {
+            "assumptions": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "gates": {
+              "additionalProperties": false,
+              "properties": {
+                "beta_equivalence": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "assumptions": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "effect": {
+                      "exclusiveMinimum": 0.0,
+                      "type": "number"
+                    },
+                    "independent_n": {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "method": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "power": {
+                      "maximum": 1.0,
+                      "minimum": 0.0,
+                      "type": "number"
+                    },
+                    "seed": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "variance": {
+                      "exclusiveMinimum": 0.0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "power",
+                    "effect",
+                    "variance",
+                    "independent_n",
+                    "method",
+                    "assumptions",
+                    "seed"
+                  ],
+                  "type": "object"
+                },
+                "comparator_loss": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "assumptions": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "effect": {
+                      "exclusiveMinimum": 0.0,
+                      "type": "number"
+                    },
+                    "independent_n": {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "method": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "power": {
+                      "maximum": 1.0,
+                      "minimum": 0.0,
+                      "type": "number"
+                    },
+                    "seed": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "variance": {
+                      "exclusiveMinimum": 0.0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "power",
+                    "effect",
+                    "variance",
+                    "independent_n",
+                    "method",
+                    "assumptions",
+                    "seed"
+                  ],
+                  "type": "object"
+                },
+                "controls": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "assumptions": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "effect": {
+                      "exclusiveMinimum": 0.0,
+                      "type": "number"
+                    },
+                    "independent_n": {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "method": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "power": {
+                      "maximum": 1.0,
+                      "minimum": 0.0,
+                      "type": "number"
+                    },
+                    "seed": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "variance": {
+                      "exclusiveMinimum": 0.0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "power",
+                    "effect",
+                    "variance",
+                    "independent_n",
+                    "method",
+                    "assumptions",
+                    "seed"
+                  ],
+                  "type": "object"
+                },
+                "firewall_and_validity": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "assumptions": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "effect": {
+                      "exclusiveMinimum": 0.0,
+                      "type": "number"
+                    },
+                    "independent_n": {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "method": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "power": {
+                      "maximum": 1.0,
+                      "minimum": 0.0,
+                      "type": "number"
+                    },
+                    "seed": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "variance": {
+                      "exclusiveMinimum": 0.0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "power",
+                    "effect",
+                    "variance",
+                    "independent_n",
+                    "method",
+                    "assumptions",
+                    "seed"
+                  ],
+                  "type": "object"
+                },
+                "on_zero_interaction": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "assumptions": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "effect": {
+                      "exclusiveMinimum": 0.0,
+                      "type": "number"
+                    },
+                    "independent_n": {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "method": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "power": {
+                      "maximum": 1.0,
+                      "minimum": 0.0,
+                      "type": "number"
+                    },
+                    "seed": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "variance": {
+                      "exclusiveMinimum": 0.0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "power",
+                    "effect",
+                    "variance",
+                    "independent_n",
+                    "method",
+                    "assumptions",
+                    "seed"
+                  ],
+                  "type": "object"
+                },
+                "perpendicular_tensor": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "assumptions": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "effect": {
+                      "exclusiveMinimum": 0.0,
+                      "type": "number"
+                    },
+                    "independent_n": {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "method": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "power": {
+                      "maximum": 1.0,
+                      "minimum": 0.0,
+                      "type": "number"
+                    },
+                    "seed": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "variance": {
+                      "exclusiveMinimum": 0.0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "power",
+                    "effect",
+                    "variance",
+                    "independent_n",
+                    "method",
+                    "assumptions",
+                    "seed"
+                  ],
+                  "type": "object"
+                },
+                "randomization": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "assumptions": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "effect": {
+                      "exclusiveMinimum": 0.0,
+                      "type": "number"
+                    },
+                    "independent_n": {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "method": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "power": {
+                      "maximum": 1.0,
+                      "minimum": 0.0,
+                      "type": "number"
+                    },
+                    "seed": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "variance": {
+                      "exclusiveMinimum": 0.0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "power",
+                    "effect",
+                    "variance",
+                    "independent_n",
+                    "method",
+                    "assumptions",
+                    "seed"
+                  ],
+                  "type": "object"
+                },
+                "response_sesoi": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "assumptions": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "effect": {
+                      "exclusiveMinimum": 0.0,
+                      "type": "number"
+                    },
+                    "independent_n": {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "method": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "power": {
+                      "maximum": 1.0,
+                      "minimum": 0.0,
+                      "type": "number"
+                    },
+                    "seed": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "variance": {
+                      "exclusiveMinimum": 0.0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "power",
+                    "effect",
+                    "variance",
+                    "independent_n",
+                    "method",
+                    "assumptions",
+                    "seed"
+                  ],
+                  "type": "object"
+                },
+                "tangent_remainder": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "assumptions": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "effect": {
+                      "exclusiveMinimum": 0.0,
+                      "type": "number"
+                    },
+                    "independent_n": {
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "method": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "power": {
+                      "maximum": 1.0,
+                      "minimum": 0.0,
+                      "type": "number"
+                    },
+                    "seed": {
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "variance": {
+                      "exclusiveMinimum": 0.0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "power",
+                    "effect",
+                    "variance",
+                    "independent_n",
+                    "method",
+                    "assumptions",
+                    "seed"
+                  ],
+                  "type": "object"
+                }
+              },
+              "required": [
+                "firewall_and_validity",
+                "randomization",
+                "beta_equivalence",
+                "response_sesoi",
+                "perpendicular_tensor",
+                "comparator_loss",
+                "on_zero_interaction",
+                "tangent_remainder",
+                "controls"
+              ],
+              "type": "object"
+            },
+            "method": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "powered_confirmation_n": {
+              "minimum": 20,
+              "type": "integer"
+            },
+            "required_minimum_power": {
+              "const": 0.9
+            },
+            "seed": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "required_minimum_power",
+            "powered_confirmation_n",
+            "method",
+            "assumptions",
+            "seed",
+            "gates"
+          ],
+          "type": [
+            "null",
+            "object"
+          ]
+        },
+        "comparator_definition": {
+          "additionalProperties": false,
+          "properties": {
+            "aggregation_unit": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "finite_miss_rule": {
+              "const": "FAIL"
+            },
+            "inputs": {
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "loss": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "loss_units": {
+              "const": "dimensionless_normalized_loss"
+            },
+            "name": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "uncertainty_method": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "undefined_rule": {
+              "const": "INDETERMINATE"
+            }
+          },
+          "required": [
+            "name",
+            "inputs",
+            "loss",
+            "loss_units",
+            "aggregation_unit",
+            "uncertainty_method",
+            "finite_miss_rule",
+            "undefined_rule"
+          ],
+          "type": [
+            "null",
+            "object"
+          ]
+        },
+        "comparator_loss_advantage_margin": {
+          "exclusiveMinimum": 0.0,
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "condition_number_threshold": {
+          "exclusiveMinimum": 0.0,
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "current_status": {
+          "enum": [
+            "BLOCKED_NO_SUBSTRATE",
+            "BLOCKED_INELIGIBLE_SOURCE",
+            "BLOCKED_INCOMPLETE_METADATA",
+            "METADATA_VERIFIED_PENDING_IMPLEMENTATION"
+          ]
+        },
+        "interaction_nondegeneracy_definition": {
+          "additionalProperties": false,
+          "properties": {
+            "confidence_bound_method": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "effect_threshold": {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            "finite_miss_rule": {
+              "const": "FAIL"
+            },
+            "target": {
+              "const": "D_bl"
+            },
+            "undefined_rule": {
+              "const": "INDETERMINATE"
+            },
+            "units": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "valid_zero_flux_orientation_effect": {
+              "const": "FAIL"
+            }
+          },
+          "required": [
+            "target",
+            "effect_threshold",
+            "units",
+            "confidence_bound_method",
+            "valid_zero_flux_orientation_effect",
+            "finite_miss_rule",
+            "undefined_rule"
+          ],
+          "type": [
+            "null",
+            "object"
+          ]
+        },
+        "missingness_and_qc_rules": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "perpendicular_ratio_definition": {
+          "additionalProperties": false,
+          "properties": {
+            "confidence_bound_method": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "denominator": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "finite_miss_rule": {
+              "const": "FAIL"
+            },
+            "near_zero_rule": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "numerator": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "undefined_rule": {
+              "const": "INDETERMINATE"
+            }
+          },
+          "required": [
+            "numerator",
+            "denominator",
+            "near_zero_rule",
+            "confidence_bound_method",
+            "finite_miss_rule",
+            "undefined_rule"
+          ],
+          "type": [
+            "null",
+            "object"
+          ]
+        },
+        "perpendicular_tensor_margin": {
+          "exclusiveMinimum": 0.0,
+          "type": [
+            "null",
+            "number"
+          ]
+        },
+        "physical_response_sesoi": {
+          "additionalProperties": false,
+          "properties": {
+            "direction": {
+              "enum": [
+                "absolute_magnitude",
+                "predicted_signed"
+              ]
+            },
+            "target": {
+              "const": "D_bl"
+            },
+            "units": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "value": {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            }
+          },
+          "required": [
+            "target",
+            "value",
+            "units",
+            "direction"
+          ],
+          "type": [
+            "null",
+            "object"
+          ]
+        },
+        "response_lower_bound_definition": {
+          "additionalProperties": false,
+          "properties": {
+            "cluster_aggregation": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "confidence": {
+              "const": 0.99
+            },
+            "finite_miss_rule": {
+              "const": "FAIL"
+            },
+            "method": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "target": {
+              "const": "absolute D_bl aligned with mu_l"
+            },
+            "uncertainty_propagation": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "undefined_rule": {
+              "const": "INDETERMINATE"
+            }
+          },
+          "required": [
+            "target",
+            "confidence",
+            "method",
+            "cluster_aggregation",
+            "uncertainty_propagation",
+            "finite_miss_rule",
+            "undefined_rule"
+          ],
+          "type": [
+            "null",
+            "object"
+          ]
+        }
+      },
+      "required": [
+        "current_status",
+        "calibration_power",
+        "physical_response_sesoi",
+        "beta_equivalence_margin",
+        "beta_interval_definition",
+        "response_lower_bound_definition",
+        "perpendicular_tensor_margin",
+        "perpendicular_ratio_definition",
+        "comparator_loss_advantage_margin",
+        "comparator_definition",
+        "interaction_nondegeneracy_definition",
+        "condition_number_threshold",
+        "missingness_and_qc_rules"
+      ],
+      "type": "object"
+    },
+    "stopping_and_recovery": {
+      "additionalProperties": false,
+      "properties": {
+        "authorized_confirmation_executions": {
+          "const": 1
+        },
+        "default_retry_allowed": {
+          "const": false
+        },
+        "identical_digest_required": {
+          "const": true
+        },
+        "incident_ledger_required": {
+          "const": true
+        },
+        "independent_reauthorization_required": {
+          "const": true
+        },
+        "no_live_process_or_artifact_required": {
+          "const": true
+        },
+        "no_outcome_observed_required": {
+          "const": true
+        }
+      },
+      "required": [
+        "authorized_confirmation_executions",
+        "default_retry_allowed",
+        "incident_ledger_required",
+        "independent_reauthorization_required",
+        "identical_digest_required",
+        "no_outcome_observed_required",
+        "no_live_process_or_artifact_required"
+      ],
+      "type": "object"
+    },
+    "substrate": {
+      "additionalProperties": false,
+      "properties": {
+        "identifier": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "source_qualification": {
+          "additionalProperties": false,
+          "properties": {
+            "achieved_controls_recorded": {
+              "type": [
+                "null",
+                "boolean"
+              ]
+            },
+            "actually_executed_intervention": {
+              "type": [
+                "null",
+                "boolean"
+              ]
+            },
+            "commanded_controls_recorded": {
+              "type": [
+                "null",
+                "boolean"
+              ]
+            },
+            "counterbalanced_orientation": {
+              "type": [
+                "null",
+                "boolean"
+              ]
+            },
+            "derived_only": {
+              "type": [
+                "null",
+                "boolean"
+              ]
+            },
+            "external_source": {
+              "type": [
+                "null",
+                "boolean"
+              ]
+            },
+            "immutable_primary_raw_measurements": {
+              "type": [
+                "null",
+                "boolean"
+              ]
+            },
+            "immutable_revision": {
+              "minLength": 1,
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "independent_raw_response_recorded": {
+              "type": [
+                "null",
+                "boolean"
+              ]
+            },
+            "license_identifier": {
+              "minLength": 1,
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "measurement_units_recorded": {
+              "type": [
+                "null",
+                "boolean"
+              ]
+            },
+            "model_generated": {
+              "type": [
+                "null",
+                "boolean"
+              ]
+            },
+            "natural_cycle_only": {
+              "type": [
+                "null",
+                "boolean"
+              ]
+            },
+            "passive_only": {
+              "type": [
+                "null",
+                "boolean"
+              ]
+            },
+            "physical_measurement": {
+              "type": [
+                "null",
+                "boolean"
+              ]
+            },
+            "physical_timestamps_recorded": {
+              "type": [
+                "null",
+                "boolean"
+              ]
+            },
+            "randomized_orientation": {
+              "type": [
+                "null",
+                "boolean"
+              ]
+            },
+            "raw_file_sha256": {
+              "additionalProperties": {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              "minProperties": 1,
+              "properties": {},
+              "propertyNames": {
+                "minLength": 1,
+                "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*//)[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$",
+                "type": "string"
+              },
+              "type": [
+                "null",
+                "object"
+              ]
+            },
+            "raw_manifest_file_count": {
+              "minimum": 1,
+              "type": [
+                "null",
+                "integer"
+              ]
+            },
+            "raw_manifest_sha256": {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "reset_block_ids_recorded": {
+              "type": [
+                "null",
+                "boolean"
+              ]
+            },
+            "simulated": {
+              "type": [
+                "null",
+                "boolean"
+              ]
+            }
+          },
+          "required": [
+            "external_source",
+            "immutable_primary_raw_measurements",
+            "physical_measurement",
+            "actually_executed_intervention",
+            "randomized_orientation",
+            "counterbalanced_orientation",
+            "commanded_controls_recorded",
+            "achieved_controls_recorded",
+            "independent_raw_response_recorded",
+            "reset_block_ids_recorded",
+            "physical_timestamps_recorded",
+            "measurement_units_recorded",
+            "passive_only",
+            "simulated",
+            "derived_only",
+            "natural_cycle_only",
+            "model_generated",
+            "immutable_revision",
+            "license_identifier",
+            "raw_manifest_sha256",
+            "raw_manifest_file_count",
+            "raw_file_sha256"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "identifier",
+        "source_qualification"
+      ],
+      "type": "object"
+    },
+    "tangent_remainder_validation": {
+      "additionalProperties": false,
+      "properties": {
+        "compare_interaction_not_on_only": {
+          "const": true
+        },
+        "concatenation_test": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "cyclic_start_test": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "derivation_or_memory_kernel_limit": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "heldout_ladder_level_required": {
+          "const": true
+        },
+        "interaction_curvature": {
+          "const": "F_R^D=dB^D"
+        },
+        "interaction_one_form": {
+          "const": "B^D=B^on-B^0"
+        },
+        "line_integral_comparison": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "matched_area_shape_test": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "minimum_fit_levels_per_ladder": {
+          "const": 4
+        },
+        "reversal_test": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "smooth_reparameterization_test": {
+          "minLength": 1,
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "uniform_remainder_bound": {
+          "additionalProperties": false,
+          "properties": {
+            "constants": {
+              "additionalProperties": false,
+              "properties": {
+                "C_T": {
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                "C_dt": {
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                "C_phi": {
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                "C_s": {
+                  "minimum": 0.0,
+                  "type": "number"
+                }
+              },
+              "required": [
+                "C_s",
+                "C_T",
+                "C_dt",
+                "C_phi"
+              ],
+              "type": "object"
+            },
+            "form": {
+              "const": "|r|/s^2 <= C_s*s + C_T*tau/T + C_dt*(dt/tau)^p + C_phi*s"
+            },
+            "p": {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            "probability_domain": {
+              "enum": [
+                "deterministic",
+                "high_probability"
+              ]
+            },
+            "probability_level": {
+              "exclusiveMinimum": 0.0,
+              "maximum": 1.0,
+              "type": [
+                "null",
+                "number"
+              ]
+            },
+            "response_units_after_dividing_by_s_squared": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "selected_domain": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "form",
+            "selected_domain",
+            "probability_domain",
+            "probability_level",
+            "p",
+            "response_units_after_dividing_by_s_squared",
+            "constants"
+          ],
+          "type": [
+            "null",
+            "object"
+          ]
+        }
+      },
+      "required": [
+        "interaction_one_form",
+        "interaction_curvature",
+        "compare_interaction_not_on_only",
+        "derivation_or_memory_kernel_limit",
+        "uniform_remainder_bound",
+        "minimum_fit_levels_per_ladder",
+        "heldout_ladder_level_required",
+        "reversal_test",
+        "cyclic_start_test",
+        "smooth_reparameterization_test",
+        "concatenation_test",
+        "matched_area_shape_test",
+        "line_integral_comparison"
+      ],
+      "type": "object"
+    },
+    "template_id": {
+      "const": "active-loop-confirmation-v2"
+    },
+    "template_kind": {
+      "const": "metadata_only_design_template"
+    },
+    "template_state": {
+      "enum": [
+        "BLOCKED_NO_SUBSTRATE",
+        "BLOCKED_INELIGIBLE_SOURCE",
+        "BLOCKED_INCOMPLETE_METADATA",
+        "METADATA_VERIFIED_PENDING_IMPLEMENTATION"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "template_id",
+    "template_kind",
+    "template_state",
+    "analysis_implementation_available",
+    "substrate",
+    "coordinates",
+    "response_firewall",
+    "quartet",
+    "physical_time_protocol",
+    "cluster_split",
+    "geometry_firewall",
+    "predictor_geometry",
+    "tangent_remainder_validation",
+    "prediction_model",
+    "inference",
+    "source_specific_freeze_readiness",
+    "controls",
+    "stopping_and_recovery",
+    "lock_and_authorization",
+    "claim_ceiling"
+  ],
+  "title": "Active-loop confirmation metadata-only design template",
+  "type": "object"
+}
