@@ -164,8 +164,6 @@ def _stage0_header_metrics(results: Stage0Results) -> ReportHeaderMetrics:
             f"δⱼ={results.ring3.delta_j:+.3f}",
         ),
         steps=steps,
-        kappa1_mean=results.line3.curvature_mean,
-        kappa1_ci=results.line3.curvature_ci,
     )
 
 

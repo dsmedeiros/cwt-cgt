@@ -1,0 +1,1302 @@
+[
+  {
+    "center": [
+      0.0,
+      0.0
+    ],
+    "derivative_step": 0.004,
+    "local_two_form_quotient": -0.5441241648150873,
+    "projective_curvature": 0.14583236451242843,
+    "record_type": "central_derivative",
+    "response_curvature": -0.0793509135433345
+  },
+  {
+    "center": [
+      0.0,
+      0.0
+    ],
+    "derivative_step": 0.002,
+    "local_two_form_quotient": -0.5441222656920849,
+    "projective_curvature": 0.14583309112752177,
+    "record_type": "central_derivative",
+    "response_curvature": -0.07935103195718743
+  },
+  {
+    "center": [
+      0.0,
+      0.0
+    ],
+    "derivative_step": 0.001,
+    "local_two_form_quotient": -0.544121790912498,
+    "projective_curvature": 0.14583327278184866,
+    "record_type": "central_derivative",
+    "response_curvature": -0.07935106156069034
+  },
+  {
+    "center": [
+      0.0,
+      0.0
+    ],
+    "derivative_step": 0.0005,
+    "local_two_form_quotient": -0.5441216722179453,
+    "projective_curvature": 0.14583331819552453,
+    "record_type": "central_derivative",
+    "response_curvature": -0.07935106896164051
+  },
+  {
+    "absolute_tangent_remainder": 1.307787212088973e-05,
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.0004445093600348865,
+      "legacy_mean_response": -2.303157305871828e-06,
+      "signed_area": 0.006399999999999999,
+      "signed_flux": 0.00122118027346314,
+      "tangent_line_integral": -0.00041865128861940244
+    },
+    "center": [
+      0.18,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.0004189489614456962,
+      "legacy_mean_response": 2.1707200074938537e-06,
+      "signed_area": -0.006399999999999991,
+      "signed_flux": -0.0012211802734631383,
+      "tangent_line_integral": 0.0004186512886194008
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.00043172916074029136,
+    "discrete_cycle_sum_surrogate_even": -1.2780199294595146e-05,
+    "endpoint_duplicated": true,
+    "flux_density": 0.19080941772861568,
+    "legacy_mean_response_anti": -2.236938656682841e-06,
+    "max_abs_lag_error": 0.0024730952359339753,
+    "max_abs_phase_increment": 0.001331666666666731,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.35353433896860514,
+    "path_length": 193,
+    "record_type": "fixed_side_tick_refinement",
+    "response_density": -0.06745768136567058,
+    "side": 0.08,
+    "signed_area_anti": 0.006399999999999994,
+    "signed_flux_anti": 0.0012211802734631392,
+    "start_fraction": 0.0,
+    "steps_per_segment": 48,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.0004186512886194016
+  },
+  {
+    "absolute_tangent_remainder": 6.886617331795276e-06,
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.0004316985755474789,
+      "legacy_mean_response": -1.1212950014188872e-06,
+      "signed_area": 0.006399999999999962,
+      "signed_flux": 0.0012211796142545905,
+      "tangent_line_integral": -0.00041865180368908927
+    },
+    "center": [
+      0.18,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.00041937826649428994,
+      "legacy_mean_response": 1.0892941986889726e-06,
+      "signed_area": -0.006399999999999984,
+      "signed_flux": -0.001221179614254596,
+      "tangent_line_integral": 0.000418651803689089
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.00042553842102088443,
+    "discrete_cycle_sum_surrogate_even": -6.160154526594491e-06,
+    "endpoint_duplicated": true,
+    "flux_density": 0.19080931472728097,
+    "legacy_mean_response_anti": -1.1052946000539299e-06,
+    "max_abs_lag_error": 0.0012365476190479008,
+    "max_abs_phase_increment": 0.0006658333333331434,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.3484650546517948,
+    "path_length": 385,
+    "record_type": "fixed_side_tick_refinement",
+    "response_density": -0.06649037828451347,
+    "side": 0.08,
+    "signed_area_anti": 0.006399999999999973,
+    "signed_flux_anti": 0.0012211796142545931,
+    "start_fraction": 0.0,
+    "steps_per_segment": 96,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.00041865180368908916
+  },
+  {
+    "absolute_tangent_remainder": 3.530035774122178e-06,
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.00042520429156261974,
+      "legacy_mean_response": -5.529314584737377e-07,
+      "signed_area": 0.006399999999999921,
+      "signed_flux": 0.0012211794494525147,
+      "tangent_line_integral": -0.0004186519324564887
+    },
+    "center": [
+      0.18,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.0004191596448986021,
+      "legacy_mean_response": 5.45071059683544e-07,
+      "signed_area": -0.006399999999999985,
+      "signed_flux": -0.0012211794494525197,
+      "tangent_line_integral": 0.0004186519324564888
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.0004221819682306109,
+    "discrete_cycle_sum_surrogate_even": -3.0223233320088305e-06,
+    "endpoint_duplicated": true,
+    "flux_density": 0.1908092889769572,
+    "legacy_mean_response_anti": -5.490012590786408e-07,
+    "max_abs_lag_error": 0.0006182738095237283,
+    "max_abs_phase_increment": 0.00033291666666679376,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.34571656804402073,
+    "path_length": 769,
+    "record_type": "fixed_side_tick_refinement",
+    "response_density": -0.06596593253603344,
+    "side": 0.08,
+    "signed_area_anti": 0.006399999999999953,
+    "signed_flux_anti": 0.001221179449452517,
+    "start_fraction": 0.0,
+    "steps_per_segment": 192,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.00041865193245648873
+  },
+  {
+    "absolute_tangent_remainder": 1.7866752462989658e-06,
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.0004219353298242634,
+      "legacy_mean_response": -2.7451875720535535e-07,
+      "signed_area": 0.0063999999999998485,
+      "signed_flux": 0.0012211794082519973,
+      "tangent_line_integral": -0.00041865196464833617
+    },
+    "center": [
+      0.18,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.0004189419499650085,
+      "legacy_mean_response": 2.725712101303568e-07,
+      "signed_area": -0.006399999999999984,
+      "signed_flux": -0.0012211794082520253,
+      "tangent_line_integral": 0.0004186519646483378
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.00042043863989463595,
+    "discrete_cycle_sum_surrogate_even": -1.4966899296274538e-06,
+    "endpoint_duplicated": true,
+    "flux_density": 0.1908092825393793,
+    "legacy_mean_response_anti": -2.7354498366785607e-07,
+    "max_abs_lag_error": 0.0003091369047618642,
+    "max_abs_phase_increment": 0.00016645833333317483,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.344289002134788,
+    "path_length": 1537,
+    "record_type": "fixed_side_tick_refinement",
+    "response_density": -0.06569353748353773,
+    "side": 0.08,
+    "signed_area_anti": 0.006399999999999916,
+    "signed_flux_anti": 0.0012211794082520114,
+    "start_fraction": 0.0,
+    "steps_per_segment": 384,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.000418651964648337
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.001996536630730572,
+      "legacy_mean_response": -1.3049259024382458e-05,
+      "signed_area": 0.025599999999999953,
+      "signed_flux": 0.0037328099100331583,
+      "tangent_line_integral": -0.002019336087490221
+    },
+    "center": [
+      0.0,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.0019729710713624893,
+      "legacy_mean_response": 1.2895235760540055e-05,
+      "signed_area": -0.025599999999999953,
+      "signed_flux": -0.003732809910033154,
+      "tangent_line_integral": 0.002019336087490222
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.0019847538510465307,
+    "discrete_cycle_sum_surrogate_even": -1.17827796840414e-05,
+    "endpoint_duplicated": true,
+    "flux_density": 0.14581288711067042,
+    "flux_density_relative_error": 0.00014009888211360857,
+    "legacy_mean_response_anti": -1.2972247392461257e-05,
+    "local_two_form_quotient": -0.5441216722179453,
+    "max_abs_lag_error": 0.0057551875917609685,
+    "max_abs_phase_increment": 0.00309894736842109,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.5317050422824509,
+    "path_length": 153,
+    "projective_curvature_at_center": 0.14583331819552453,
+    "record_type": "coupled_area_tick_refinement",
+    "response_curvature_at_center": -0.07935106896164051,
+    "response_density": -0.07752944730650525,
+    "response_density_relative_error": 0.02295648538793926,
+    "side": 0.16,
+    "signed_area_anti": 0.025599999999999953,
+    "signed_flux_anti": 0.003732809910033156,
+    "start_fraction": 0.0,
+    "steps_per_segment": 38,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.0020193360874902217,
+    "tangent_line_vs_local_quotient_flux_relative_error": 0.005793248377525074
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.0005065254259589078,
+      "legacy_mean_response": -8.428043693151664e-07,
+      "signed_area": 0.006399999999999986,
+      "signed_flux": 0.0009333000180650724,
+      "tangent_line_integral": -0.0005070928913265026
+    },
+    "center": [
+      0.0,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.0005045745219309922,
+      "legacy_mean_response": 8.395582727633213e-07,
+      "signed_area": -0.006399999999999986,
+      "signed_flux": -0.0009333000180650713,
+      "tangent_line_integral": 0.0005070928913265022
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.00050554997394495,
+    "discrete_cycle_sum_surrogate_even": -9.75452013957795e-07,
+    "endpoint_duplicated": true,
+    "flux_density": 0.1458281278226678,
+    "flux_density_relative_error": 3.559113185489477e-05,
+    "legacy_mean_response_anti": -8.411813210392439e-07,
+    "local_two_form_quotient": -0.5441216722179453,
+    "max_abs_lag_error": 0.0007111619047615036,
+    "max_abs_phase_increment": 0.00038293333333339064,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.5416800216001945,
+    "path_length": 601,
+    "projective_curvature_at_center": 0.14583331819552453,
+    "record_type": "coupled_area_tick_refinement",
+    "response_curvature_at_center": -0.07935106896164051,
+    "response_density": -0.0789921834288986,
+    "response_density_relative_error": 0.004522756119585484,
+    "side": 0.08,
+    "signed_area_anti": 0.006399999999999986,
+    "signed_flux_anti": 0.0009333000180650719,
+    "start_fraction": 0.0,
+    "steps_per_segment": 150,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.0005070928913265024,
+    "tangent_line_vs_local_quotient_flux_relative_error": 0.001449061637762963
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.00012689951000281058,
+      "legacy_mean_response": -5.285277384501775e-08,
+      "signed_area": 0.0015999999999999413,
+      "signed_flux": 0.00023333124945658314,
+      "tangent_line_integral": -0.00012691456981397543
+    },
+    "center": [
+      0.0,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.00012676322563463793,
+      "legacy_mean_response": 5.2796012342582564e-08,
+      "signed_area": -0.0015999999999999413,
+      "signed_flux": -0.0002333312494565887,
+      "tangent_line_integral": 0.00012691456981397516
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.00012683136781872426,
+    "discrete_cycle_sum_surrogate_even": -6.814218408632278e-08,
+    "endpoint_duplicated": true,
+    "flux_density": 0.14583203091037153,
+    "flux_density_relative_error": 8.827099108278625e-06,
+    "legacy_mean_response_anti": -5.282439309380016e-08,
+    "local_two_form_quotient": -0.5441216722179453,
+    "max_abs_lag_error": 8.778095238115569e-05,
+    "max_abs_phase_increment": 4.726666666687862e-05,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.5435678594877741,
+    "path_length": 2401,
+    "projective_curvature_at_center": 0.14583331819552453,
+    "record_type": "coupled_area_tick_refinement",
+    "response_curvature_at_center": -0.07935106896164051,
+    "response_density": -0.07926960488670556,
+    "response_density_relative_error": 0.0010266285760350802,
+    "side": 0.04,
+    "signed_area_anti": 0.0015999999999999413,
+    "signed_flux_anti": 0.0002333312494565859,
+    "start_fraction": 0.0,
+    "steps_per_segment": 600,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.0001269145698139753,
+    "tangent_line_vs_local_quotient_flux_relative_error": 0.0003624732775505377
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -3.173704330901306e-05,
+      "legacy_mean_response": -3.305597678349311e-09,
+      "signed_area": 0.00040000000000000614,
+      "signed_flux": 5.833320309591548e-05,
+      "tangent_line_integral": -3.17374816644274e-05
+    },
+    "center": [
+      0.0,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 3.172810724764996e-05,
+      "legacy_mean_response": 3.3046669355445764e-09,
+      "signed_area": -0.00040000000000000614,
+      "signed_flux": -5.8333203095918574e-05,
+      "tangent_line_integral": 3.173748166442733e-05
+    },
+    "discrete_cycle_sum_surrogate_anti": -3.173257527833151e-05,
+    "discrete_cycle_sum_surrogate_even": -4.4680306815481075e-09,
+    "endpoint_duplicated": true,
+    "flux_density": 0.14583300773979033,
+    "flux_density_relative_error": 2.1288395412322734e-06,
+    "legacy_mean_response_anti": -3.3051323069469437e-09,
+    "local_two_form_quotient": -0.5441216722179453,
+    "max_abs_lag_error": 1.0902976190774183e-05,
+    "max_abs_phase_increment": 5.870833333254666e-06,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.543988219302029,
+    "path_length": 9601,
+    "projective_curvature_at_center": 0.14583331819552453,
+    "record_type": "coupled_area_tick_refinement",
+    "response_curvature_at_center": -0.07935106896164051,
+    "response_density": -0.07933143819582755,
+    "response_density_relative_error": 0.00024739132150130335,
+    "side": 0.02,
+    "signed_area_anti": 0.00040000000000000614,
+    "signed_flux_anti": 5.833320309591702e-05,
+    "start_fraction": 0.0,
+    "steps_per_segment": 2400,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -3.173748166442736e-05,
+    "tangent_line_vs_local_quotient_flux_relative_error": 9.068422509144482e-05
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -3.173704330901306e-05,
+      "legacy_mean_response": -3.305597678349311e-09,
+      "signed_area": 0.00040000000000000614,
+      "signed_flux": 5.833320309591548e-05,
+      "tangent_line_integral": -3.17374816644274e-05
+    },
+    "center": [
+      0.0,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 3.172810724764996e-05,
+      "legacy_mean_response": 3.3046669355445764e-09,
+      "signed_area": -0.00040000000000000614,
+      "signed_flux": -5.8333203095918574e-05,
+      "tangent_line_integral": 3.173748166442733e-05
+    },
+    "discrete_cycle_sum_surrogate_anti": -3.173257527833151e-05,
+    "discrete_cycle_sum_surrogate_even": -4.4680306815481075e-09,
+    "endpoint_duplicated": true,
+    "flux_density": 0.14583300773979033,
+    "legacy_mean_response_anti": -3.3051323069469437e-09,
+    "local_quotient_consistency_relative_error": 0.0002452630040856224,
+    "local_two_form_quotient": -0.5441216722179453,
+    "max_abs_lag_error": 1.0902976190774183e-05,
+    "max_abs_phase_increment": 5.870833333254666e-06,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.543988219302029,
+    "path_length": 9601,
+    "projective_curvature_at_center": 0.14583331819552453,
+    "quotient_has_independent_predictive_content": false,
+    "record_type": "local_two_form_quotient_consistency",
+    "response_curvature_at_center": -0.07935106896164051,
+    "response_density": -0.07933143819582755,
+    "side": 0.02,
+    "signed_area_anti": 0.00040000000000000614,
+    "signed_flux_anti": 5.833320309591702e-05,
+    "start_fraction": 0.0,
+    "steps_per_segment": 2400,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -3.173748166442736e-05
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -2.640011965240885e-05,
+      "legacy_mean_response": -2.7497260302045134e-09,
+      "signed_area": 0.00039999999999986704,
+      "signed_flux": 7.633548082097325e-05,
+      "tangent_line_integral": -2.6209730486189068e-05
+    },
+    "center": [
+      0.18,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 2.618257638394017e-05,
+      "legacy_mean_response": 2.7270676342117106e-09,
+      "signed_area": -0.00039999999999998094,
+      "signed_flux": -7.633548082098771e-05,
+      "tangent_line_integral": 2.6209730486189468e-05
+    },
+    "discrete_cycle_sum_surrogate_anti": -2.629134801817451e-05,
+    "discrete_cycle_sum_surrogate_even": -1.0877163423433922e-07,
+    "endpoint_duplicated": true,
+    "flux_density": 0.1908387020524875,
+    "legacy_mean_response_anti": -2.738396832208112e-09,
+    "local_quotient_consistency_relative_error": 0.0030118836295668907,
+    "local_two_form_quotient": -0.34338421714062545,
+    "max_abs_lag_error": 1.2156547619213143e-05,
+    "max_abs_phase_increment": 6.545833333149176e-06,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.34441845044288294,
+    "path_length": 9601,
+    "projective_curvature_at_center": 0.19084064283195723,
+    "quotient_has_independent_predictive_content": false,
+    "record_type": "local_two_form_quotient_consistency",
+    "response_curvature_at_center": -0.06553166473746534,
+    "response_density": -0.06572837004544876,
+    "side": 0.02,
+    "signed_area_anti": 0.00039999999999992396,
+    "signed_flux_anti": 7.633548082098049e-05,
+    "start_fraction": 0.0,
+    "steps_per_segment": 2400,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -2.6209730486189268e-05
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -2.506932244530219e-05,
+      "legacy_mean_response": -2.6111157635209676e-09,
+      "signed_area": 0.00039999999999998094,
+      "signed_flux": 5.703190299432406e-05,
+      "tangent_line_integral": -2.512513294803158e-05
+    },
+    "center": [
+      0.0,
+      0.18
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 2.514435413589894e-05,
+      "legacy_mean_response": 2.6189307506088765e-09,
+      "signed_area": -0.00039999999999986704,
+      "signed_flux": -5.703190299440648e-05,
+      "tangent_line_integral": 2.5125132948031487e-05
+    },
+    "discrete_cycle_sum_surrogate_anti": -2.5106838290600564e-05,
+    "discrete_cycle_sum_surrogate_even": 3.751584529837482e-08,
+    "endpoint_duplicated": true,
+    "flux_density": 0.14257975748594026,
+    "legacy_mean_response_anti": -2.615023257064922e-09,
+    "local_quotient_consistency_relative_error": 0.0008145267919700724,
+    "local_two_form_quotient": -0.4405833197664991,
+    "max_abs_lag_error": 1.0902976190774183e-05,
+    "max_abs_phase_increment": 5.870833333254666e-06,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.4402244528484542,
+    "path_length": 9601,
+    "projective_curvature_at_center": 0.14258058722983163,
+    "quotient_has_independent_predictive_content": false,
+    "record_type": "local_two_form_quotient_consistency",
+    "response_curvature_at_center": -0.06281862845597613,
+    "response_density": -0.06276709572651334,
+    "side": 0.02,
+    "signed_area_anti": 0.00039999999999992396,
+    "signed_flux_anti": 5.7031902994365266e-05,
+    "start_fraction": 0.0,
+    "steps_per_segment": 2400,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -2.512513294803153e-05
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -3.025119920644498e-05,
+      "legacy_mean_response": -3.150838381871246e-09,
+      "signed_area": 0.0004000000000000045,
+      "signed_flux": 4.134697664042246e-05,
+      "tangent_line_integral": -3.0441790299703106e-05
+    },
+    "center": [
+      -0.18,
+      0.1
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 3.0483407370107685e-05,
+      "legacy_mean_response": 3.1750242088235403e-09,
+      "signed_area": -0.0004000000000000045,
+      "signed_flux": -4.134697664041861e-05,
+      "tangent_line_integral": 3.044179029970325e-05
+    },
+    "discrete_cycle_sum_surrogate_anti": -3.036730328827633e-05,
+    "discrete_cycle_sum_surrogate_even": 1.1610408183135301e-07,
+    "endpoint_duplicated": true,
+    "flux_density": 0.10336744160105017,
+    "legacy_mean_response_anti": -3.162931295347393e-09,
+    "local_quotient_consistency_relative_error": 0.002534100669496367,
+    "local_two_form_quotient": -0.7363162937098516,
+    "max_abs_lag_error": 9.649404761447045e-06,
+    "max_abs_phase_increment": 5.195833333360156e-06,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.7344503940970004,
+    "path_length": 9601,
+    "projective_curvature_at_center": 0.10336664578871511,
+    "quotient_has_independent_predictive_content": false,
+    "record_type": "local_two_form_quotient_consistency",
+    "response_curvature_at_center": -0.07611054552036575,
+    "response_density": -0.07591825822068997,
+    "side": 0.02,
+    "signed_area_anti": 0.0004000000000000045,
+    "signed_flux_anti": 4.1346976640420534e-05,
+    "start_fraction": 0.0,
+    "steps_per_segment": 2400,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -3.0441790299703177e-05
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": 0.0,
+      "legacy_mean_response": 0.0,
+      "signed_area": 0.006399999999999976,
+      "signed_flux": 0.0009333000830930985,
+      "tangent_line_integral": 0.0
+    },
+    "center": [
+      0.0,
+      0.0
+    ],
+    "current_phase_gain": 0.0,
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.0,
+      "legacy_mean_response": 0.0,
+      "signed_area": -0.006399999999999976,
+      "signed_flux": -0.0009333000830931004,
+      "tangent_line_integral": 0.0
+    },
+    "discrete_cycle_sum_surrogate_anti": 0.0,
+    "discrete_cycle_sum_surrogate_even": 0.0,
+    "endpoint_duplicated": true,
+    "flux_density": 0.14582813798329733,
+    "legacy_mean_response_anti": 0.0,
+    "max_abs_lag_error": 0.001111190476190238,
+    "max_abs_phase_increment": 0.0005983333333334784,
+    "max_abs_q_sample": 0.0,
+    "max_lag_recurrence_residual": 8.881784197001252e-16,
+    "null_name": "current_phase_gain_zero",
+    "observed_response_per_flux": 0.0,
+    "path_length": 385,
+    "phase_relaxation": 0.35,
+    "record_type": "same_observable_exact_null",
+    "response_density": 0.0,
+    "side": 0.08,
+    "signed_area_anti": 0.006399999999999976,
+    "signed_flux_anti": 0.0009333000830930994,
+    "start_fraction": 0.0,
+    "steps_per_segment": 96,
+    "switch_count": 0,
+    "tangent_line_integral_anti": 0.0
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": 2.42861286636753e-16,
+      "legacy_mean_response": 2.879912020664621e-19,
+      "signed_area": 0.006399999999999976,
+      "signed_flux": 0.0009333000830930985,
+      "tangent_line_integral": 0.0
+    },
+    "center": [
+      0.0,
+      0.0
+    ],
+    "current_phase_gain": 0.45,
+    "cw": {
+      "discrete_cycle_sum_surrogate": 4.440892098500626e-16,
+      "legacy_mean_response": 1.153658874160357e-18,
+      "signed_area": -0.006399999999999976,
+      "signed_flux": -0.0009333000830931004,
+      "tangent_line_integral": 0.0
+    },
+    "discrete_cycle_sum_surrogate_anti": -1.0061396160665481e-16,
+    "discrete_cycle_sum_surrogate_even": 3.434752482434078e-16,
+    "endpoint_duplicated": true,
+    "flux_density": 0.14582813798329733,
+    "legacy_mean_response_anti": -4.3283383604694747e-19,
+    "max_abs_lag_error": 0.0,
+    "max_abs_phase_increment": 0.0005983333333334784,
+    "max_abs_q_sample": 7.632783294297951e-17,
+    "max_lag_recurrence_residual": 0.0,
+    "null_name": "phase_relaxation_one",
+    "observed_response_per_flux": -1.0780451371353652e-13,
+    "path_length": 385,
+    "phase_relaxation": 1.0,
+    "record_type": "same_observable_exact_null",
+    "response_density": -1.5720931501039874e-14,
+    "side": 0.08,
+    "signed_area_anti": 0.006399999999999976,
+    "signed_flux_anti": 0.0009333000830930994,
+    "start_fraction": 0.0,
+    "steps_per_segment": 96,
+    "switch_count": 0,
+    "tangent_line_integral_anti": 0.0
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.0004316985755474789,
+      "legacy_mean_response": -1.1212950014188872e-06,
+      "signed_area": 0.006399999999999962,
+      "signed_flux": 0.0012211796142545905,
+      "tangent_line_integral": -0.00041865180368908927
+    },
+    "center": [
+      0.18,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.00041937826649428994,
+      "legacy_mean_response": 1.0892941986889726e-06,
+      "signed_area": -0.006399999999999984,
+      "signed_flux": -0.001221179614254596,
+      "tangent_line_integral": 0.000418651803689089
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.00042553842102088443,
+    "discrete_cycle_sum_surrogate_even": -6.160154526594491e-06,
+    "endpoint_duplicated": true,
+    "flux_density": 0.19080931472728097,
+    "legacy_mean_response_anti": -1.1052946000539299e-06,
+    "max_abs_lag_error": 0.0012365476190479008,
+    "max_abs_phase_increment": 0.0006658333333331434,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.3484650546517948,
+    "path_length": 385,
+    "record_type": "cyclic_start_refinement",
+    "response_density": -0.06649037828451347,
+    "side": 0.08,
+    "signed_area_anti": 0.006399999999999973,
+    "signed_flux_anti": 0.0012211796142545931,
+    "start_fraction": 0.0,
+    "steps_per_segment": 96,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.00041865180368908916
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.00040954879414237255,
+      "legacy_mean_response": -1.0637631016677251e-06,
+      "signed_area": 0.006399999999999968,
+      "signed_flux": 0.0012211796142545875,
+      "tangent_line_integral": -0.0004186518036890885
+    },
+    "center": [
+      0.18,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.00043736505066646614,
+      "legacy_mean_response": 1.1360131186161082e-06,
+      "signed_area": -0.006399999999999962,
+      "signed_flux": -0.0012211796142545957,
+      "tangent_line_integral": 0.00041865180368908905
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.00042345692240441934,
+    "discrete_cycle_sum_surrogate_even": 1.3908128262046793e-05,
+    "endpoint_duplicated": true,
+    "flux_density": 0.190809314727281,
+    "legacy_mean_response_anti": -1.0998881101419167e-06,
+    "max_abs_lag_error": 0.0012365476190479008,
+    "max_abs_phase_increment": 0.0006658333333331434,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.3467605563190617,
+    "path_length": 385,
+    "record_type": "cyclic_start_refinement",
+    "response_density": -0.06616514412569088,
+    "side": 0.08,
+    "signed_area_anti": 0.006399999999999965,
+    "signed_flux_anti": 0.0012211796142545916,
+    "start_fraction": 0.25,
+    "steps_per_segment": 96,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.0004186518036890888
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.0003919795494719616,
+      "legacy_mean_response": -1.01812869993112e-06,
+      "signed_area": 0.006399999999999994,
+      "signed_flux": 0.0012211796142545905,
+      "tangent_line_integral": -0.0004186518036890898
+    },
+    "center": [
+      0.18,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.0004270801600496643,
+      "legacy_mean_response": 1.109299117008078e-06,
+      "signed_area": -0.006399999999999968,
+      "signed_flux": -0.0012211796142545918,
+      "tangent_line_integral": 0.0004186518036890895
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.00040952985476081297,
+    "discrete_cycle_sum_surrogate_even": 1.7550305288851348e-05,
+    "endpoint_duplicated": true,
+    "flux_density": 0.19080931472728044,
+    "legacy_mean_response_anti": -1.063713908469599e-06,
+    "max_abs_lag_error": 0.0012365476190479008,
+    "max_abs_phase_increment": 0.0006658333333331434,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.3353559541777892,
+    "path_length": 385,
+    "record_type": "cyclic_start_refinement",
+    "response_density": -0.06398903980637721,
+    "side": 0.08,
+    "signed_area_anti": 0.006399999999999981,
+    "signed_flux_anti": 0.0012211796142545912,
+    "start_fraction": 0.5,
+    "steps_per_segment": 96,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.00041865180368908964
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.0004172095210507598,
+      "legacy_mean_response": -1.0836610936371116e-06,
+      "signed_area": 0.006399999999999984,
+      "signed_flux": 0.0012211796142545886,
+      "tangent_line_integral": -0.00041865180368908943
+    },
+    "center": [
+      0.18,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.0003959246079714984,
+      "legacy_mean_response": 1.0283756051235327e-06,
+      "signed_area": -0.006399999999999994,
+      "signed_flux": -0.0012211796142545931,
+      "tangent_line_integral": 0.00041865180368908905
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.0004065670645111291,
+    "discrete_cycle_sum_surrogate_even": -1.0642456539630696e-05,
+    "endpoint_duplicated": true,
+    "flux_density": 0.19080931472728016,
+    "legacy_mean_response_anti": -1.0560183493803221e-06,
+    "max_abs_lag_error": 0.0012365476190479008,
+    "max_abs_phase_increment": 0.0006658333333331434,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.3329297834367289,
+    "path_length": 385,
+    "record_type": "cyclic_start_refinement",
+    "response_density": -0.06352610382986404,
+    "side": 0.08,
+    "signed_area_anti": 0.006399999999999989,
+    "signed_flux_anti": 0.001221179614254591,
+    "start_fraction": 0.75,
+    "steps_per_segment": 96,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.00041865180368908927
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.00042520429156261974,
+      "legacy_mean_response": -5.529314584737377e-07,
+      "signed_area": 0.006399999999999921,
+      "signed_flux": 0.0012211794494525147,
+      "tangent_line_integral": -0.0004186519324564887
+    },
+    "center": [
+      0.18,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.0004191596448986021,
+      "legacy_mean_response": 5.45071059683544e-07,
+      "signed_area": -0.006399999999999985,
+      "signed_flux": -0.0012211794494525197,
+      "tangent_line_integral": 0.0004186519324564888
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.0004221819682306109,
+    "discrete_cycle_sum_surrogate_even": -3.0223233320088305e-06,
+    "endpoint_duplicated": true,
+    "flux_density": 0.1908092889769572,
+    "legacy_mean_response_anti": -5.490012590786408e-07,
+    "max_abs_lag_error": 0.0006182738095237283,
+    "max_abs_phase_increment": 0.00033291666666679376,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.34571656804402073,
+    "path_length": 769,
+    "record_type": "cyclic_start_refinement",
+    "response_density": -0.06596593253603344,
+    "side": 0.08,
+    "signed_area_anti": 0.006399999999999953,
+    "signed_flux_anti": 0.001221179449452517,
+    "start_fraction": 0.0,
+    "steps_per_segment": 192,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.00041865193245648873
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.0004141908439868683,
+      "legacy_mean_response": -5.386096800785722e-07,
+      "signed_area": 0.006399999999999918,
+      "signed_flux": 0.0012211794494525164,
+      "tangent_line_integral": -0.00041865193245648917
+    },
+    "center": [
+      0.18,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.0004280979010908778,
+      "legacy_mean_response": 5.566942797019525e-07,
+      "signed_area": -0.006399999999999921,
+      "signed_flux": -0.001221179449452524,
+      "tangent_line_integral": 0.0004186519324564883
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.00042114437253887305,
+    "discrete_cycle_sum_surrogate_even": 6.953528552004762e-06,
+    "endpoint_duplicated": true,
+    "flux_density": 0.19080928897695867,
+    "legacy_mean_response_anti": -5.476519798902624e-07,
+    "max_abs_lag_error": 0.0006182738095237283,
+    "max_abs_phase_increment": 0.00033291666666679376,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.34486690119759283,
+    "path_length": 769,
+    "record_type": "cyclic_start_refinement",
+    "response_density": -0.06580380820919975,
+    "side": 0.08,
+    "signed_area_anti": 0.00639999999999992,
+    "signed_flux_anti": 0.00122117944945252,
+    "start_fraction": 0.25,
+    "steps_per_segment": 192,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.00041865193245648873
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.0004053674933707854,
+      "legacy_mean_response": -5.271358821390404e-07,
+      "signed_area": 0.006399999999999998,
+      "signed_flux": 0.0012211794494525366,
+      "tangent_line_integral": -0.0004186519324564899
+    },
+    "center": [
+      0.18,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.0004230052298448278,
+      "legacy_mean_response": 5.500718203502175e-07,
+      "signed_area": -0.006399999999999918,
+      "signed_flux": -0.0012211794494525184,
+      "tangent_line_integral": 0.0004186519324564895
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.0004141863616078066,
+    "discrete_cycle_sum_surrogate_even": 8.818868237021188e-06,
+    "endpoint_duplicated": true,
+    "flux_density": 0.19080928897695867,
+    "legacy_mean_response_anti": -5.38603851244629e-07,
+    "max_abs_lag_error": 0.0006182738095237283,
+    "max_abs_phase_increment": 0.00033291666666679376,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.3391691219447661,
+    "path_length": 769,
+    "record_type": "cyclic_start_refinement",
+    "response_density": -0.06471661900122021,
+    "side": 0.08,
+    "signed_area_anti": 0.006399999999999958,
+    "signed_flux_anti": 0.0012211794494525275,
+    "start_fraction": 0.5,
+    "steps_per_segment": 192,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.0004186519324564897
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.00041802004258471165,
+      "legacy_mean_response": -5.435891320959563e-07,
+      "signed_area": 0.006399999999999985,
+      "signed_flux": 0.0012211794494525168,
+      "tangent_line_integral": -0.0004186519324564905
+    },
+    "center": [
+      0.18,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.0004073783833053457,
+      "legacy_mean_response": 5.297508235482806e-07,
+      "signed_area": -0.006399999999999998,
+      "signed_flux": -0.0012211794494525214,
+      "tangent_line_integral": 0.00041865193245648906
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.0004126992129450287,
+    "discrete_cycle_sum_surrogate_even": -5.320829639682972e-06,
+    "endpoint_duplicated": true,
+    "flux_density": 0.1908092889769564,
+    "legacy_mean_response_anti": -5.366699778221184e-07,
+    "max_abs_lag_error": 0.0006182738095237283,
+    "max_abs_phase_increment": 0.00033291666666679376,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.3379513249506864,
+    "path_length": 769,
+    "record_type": "cyclic_start_refinement",
+    "response_density": -0.06448425202266082,
+    "side": 0.08,
+    "signed_area_anti": 0.006399999999999991,
+    "signed_flux_anti": 0.0012211794494525192,
+    "start_fraction": 0.75,
+    "steps_per_segment": 192,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.00041865193245648976
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.0004219353298242634,
+      "legacy_mean_response": -2.7451875720535535e-07,
+      "signed_area": 0.0063999999999998485,
+      "signed_flux": 0.0012211794082519973,
+      "tangent_line_integral": -0.00041865196464833617
+    },
+    "center": [
+      0.18,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.0004189419499650085,
+      "legacy_mean_response": 2.725712101303568e-07,
+      "signed_area": -0.006399999999999984,
+      "signed_flux": -0.0012211794082520253,
+      "tangent_line_integral": 0.0004186519646483378
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.00042043863989463595,
+    "discrete_cycle_sum_surrogate_even": -1.4966899296274538e-06,
+    "endpoint_duplicated": true,
+    "flux_density": 0.1908092825393793,
+    "legacy_mean_response_anti": -2.7354498366785607e-07,
+    "max_abs_lag_error": 0.0003091369047618642,
+    "max_abs_phase_increment": 0.00016645833333317483,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.344289002134788,
+    "path_length": 1537,
+    "record_type": "cyclic_start_refinement",
+    "response_density": -0.06569353748353773,
+    "side": 0.08,
+    "signed_area_anti": 0.006399999999999916,
+    "signed_flux_anti": 0.0012211794082520114,
+    "start_fraction": 0.0,
+    "steps_per_segment": 384,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.000418651964648337
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.00041644402900811034,
+      "legacy_mean_response": -2.7094601757343684e-07,
+      "signed_area": 0.006399999999999836,
+      "signed_flux": 0.0012211794082519966,
+      "tangent_line_integral": -0.0004186519646483374
+    },
+    "center": [
+      0.18,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.00042339723182416994,
+      "legacy_mean_response": 2.7546989708748804e-07,
+      "signed_area": -0.0063999999999998485,
+      "signed_flux": -0.0012211794082520086,
+      "tangent_line_integral": 0.0004186519646483375
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.00041992063041614014,
+    "discrete_cycle_sum_surrogate_even": 3.4766014080298002e-06,
+    "endpoint_duplicated": true,
+    "flux_density": 0.19080928253938012,
+    "legacy_mean_response_anti": -2.7320795733046244e-07,
+    "max_abs_lag_error": 0.0003091369047618642,
+    "max_abs_phase_increment": 0.00016645833333317483,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.34386481427590965,
+    "path_length": 1537,
+    "record_type": "cyclic_start_refinement",
+    "response_density": -0.06561259850252352,
+    "side": 0.08,
+    "signed_area_anti": 0.0063999999999998424,
+    "signed_flux_anti": 0.0012211794082520027,
+    "start_fraction": 0.25,
+    "steps_per_segment": 384,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.0004186519646483375
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.0004120227270980603,
+      "legacy_mean_response": -2.6806943858453947e-07,
+      "signed_area": 0.0064000000000000185,
+      "signed_flux": 0.0012211794082520144,
+      "tangent_line_integral": -0.00041865196464833693
+    },
+    "center": [
+      0.18,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.0004208633843265641,
+      "legacy_mean_response": 2.7382133007541887e-07,
+      "signed_area": -0.006399999999999836,
+      "signed_flux": -0.0012211794082520125,
+      "tangent_line_integral": 0.00041865196464833704
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.0004164430557123122,
+    "discrete_cycle_sum_surrogate_even": 4.4203286142519005e-06,
+    "endpoint_duplicated": true,
+    "flux_density": 0.1908092825393793,
+    "legacy_mean_response_anti": -2.7094538432997917e-07,
+    "max_abs_lag_error": 0.0003091369047618642,
+    "max_abs_phase_increment": 0.00016645833333317483,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.341017096176233,
+    "path_length": 1537,
+    "record_type": "cyclic_start_refinement",
+    "response_density": -0.06506922745504952,
+    "side": 0.08,
+    "signed_area_anti": 0.0063999999999999274,
+    "signed_flux_anti": 0.0012211794082520135,
+    "start_fraction": 0.5,
+    "steps_per_segment": 384,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.000418651964648337
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.0004183583201940455,
+      "legacy_mean_response": -2.721914900416511e-07,
+      "signed_area": 0.006399999999999984,
+      "signed_flux": 0.0012211794082519951,
+      "tangent_line_integral": -0.00041865196464833715
+    },
+    "center": [
+      0.18,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.00041303776273046017,
+      "legacy_mean_response": 2.6872983912434867e-07,
+      "signed_area": -0.0064000000000000185,
+      "signed_flux": -0.001221179408252022,
+      "tangent_line_integral": 0.0004186519646483391
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.00041569804146225284,
+    "discrete_cycle_sum_surrogate_even": -2.66027873179267e-06,
+    "endpoint_duplicated": true,
+    "flux_density": 0.1908092825393763,
+    "legacy_mean_response_anti": -2.704606645829999e-07,
+    "max_abs_lag_error": 0.0003091369047618642,
+    "max_abs_phase_increment": 0.00016645833333317483,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.3404070185373346,
+    "path_length": 1537,
+    "record_type": "cyclic_start_refinement",
+    "response_density": -0.06495281897847699,
+    "side": 0.08,
+    "signed_area_anti": 0.006400000000000001,
+    "signed_flux_anti": 0.0012211794082520086,
+    "start_fraction": 0.75,
+    "steps_per_segment": 384,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.0004186519646483381
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.0004202954444812168,
+      "legacy_mean_response": -1.3677040171938826e-07,
+      "signed_area": 0.006399999999999925,
+      "signed_flux": 0.0012211793979519186,
+      "tangent_line_integral": -0.000418651972696299
+    },
+    "center": [
+      0.18,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.0004188059987077497,
+      "legacy_mean_response": 1.362857138670348e-07,
+      "signed_area": -0.006400000000000013,
+      "signed_flux": -0.0012211793979519496,
+      "tangent_line_integral": 0.00041865197269629534
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.00041955072159448326,
+    "discrete_cycle_sum_surrogate_even": -7.447228867335509e-07,
+    "endpoint_duplicated": true,
+    "flux_density": 0.19080928092999064,
+    "legacy_mean_response_anti": -1.3652805779321153e-07,
+    "max_abs_lag_error": 0.00015456845238137618,
+    "max_abs_phase_increment": 8.322916666658742e-05,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.343561906054197,
+    "path_length": 3073,
+    "record_type": "cyclic_start_refinement",
+    "response_density": -0.06555480024913833,
+    "side": 0.08,
+    "signed_area_anti": 0.006399999999999969,
+    "signed_flux_anti": 0.0012211793979519342,
+    "start_fraction": 0.0,
+    "steps_per_segment": 768,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.0004186519726962972
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.0004175536575788258,
+      "legacy_mean_response": -1.3587818339932944e-07,
+      "signed_area": 0.006399999999999971,
+      "signed_flux": 0.0012211793979519175,
+      "tangent_line_integral": -0.00041865197269630016
+    },
+    "center": [
+      0.18,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.00042103017030459267,
+      "legacy_mean_response": 1.37009492452711e-07,
+      "signed_area": -0.006399999999999925,
+      "signed_flux": -0.0012211793979519353,
+      "tangent_line_integral": 0.0004186519726963
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.0004192919139417092,
+    "discrete_cycle_sum_surrogate_even": 1.738256362883439e-06,
+    "endpoint_duplicated": true,
+    "flux_density": 0.19080928092999005,
+    "legacy_mean_response_anti": -1.3644383792602022e-07,
+    "max_abs_lag_error": 0.00015456845238137618,
+    "max_abs_phase_increment": 8.322916666658742e-05,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.34334997351324076,
+    "path_length": 3073,
+    "record_type": "cyclic_start_refinement",
+    "response_density": -0.0655143615533926,
+    "side": 0.08,
+    "signed_area_anti": 0.006399999999999947,
+    "signed_flux_anti": 0.0012211793979519264,
+    "start_fraction": 0.25,
+    "steps_per_segment": 768,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.00041865197269630005
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.0004153406069144286,
+      "legacy_mean_response": -1.351580237243799e-07,
+      "signed_area": 0.00640000000000006,
+      "signed_flux": 0.0012211793979519249,
+      "tangent_line_integral": -0.0004186519726963006
+    },
+    "center": [
+      0.18,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.0004197663741548757,
+      "legacy_mean_response": 1.365982343487504e-07,
+      "signed_area": -0.006399999999999971,
+      "signed_flux": -0.001221179397951951,
+      "tangent_line_integral": 0.00041865197269629956
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.00041755349053465216,
+    "discrete_cycle_sum_surrogate_even": 2.2128836202235658e-06,
+    "endpoint_duplicated": true,
+    "flux_density": 0.1908092809299899,
+    "legacy_mean_response_anti": -1.3587812903656515e-07,
+    "max_abs_lag_error": 0.00015456845238137618,
+    "max_abs_phase_increment": 8.322916666658742e-05,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.3419264124787387,
+    "path_length": 3073,
+    "record_type": "cyclic_start_refinement",
+    "response_density": -0.06524273289603924,
+    "side": 0.08,
+    "signed_area_anti": 0.006400000000000015,
+    "signed_flux_anti": 0.001221179397951938,
+    "start_fraction": 0.5,
+    "steps_per_segment": 768,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.00041865197269630005
+  },
+  {
+    "ambiguous_step_count": 0,
+    "ccw": {
+      "discrete_cycle_sum_surrogate": -0.0004185107240308669,
+      "legacy_mean_response": -1.3618962708267235e-07,
+      "signed_area": 0.006400000000000013,
+      "signed_flux": 0.0012211793979519153,
+      "tangent_line_integral": -0.00041865197269629864
+    },
+    "center": [
+      0.18,
+      0.0
+    ],
+    "cw": {
+      "discrete_cycle_sum_surrogate": 0.0004158505224468381,
+      "legacy_mean_response": 1.3532395784499052e-07,
+      "signed_area": -0.00640000000000006,
+      "signed_flux": -0.001221179397951943,
+      "tangent_line_integral": 0.0004186519726963
+    },
+    "discrete_cycle_sum_surrogate_anti": -0.0004171806232388525,
+    "discrete_cycle_sum_surrogate_even": -1.3301007920143992e-06,
+    "endpoint_duplicated": true,
+    "flux_density": 0.19080928092998783,
+    "legacy_mean_response_anti": -1.3575679246383143e-07,
+    "max_abs_lag_error": 0.00015456845238137618,
+    "max_abs_phase_increment": 8.322916666658742e-05,
+    "max_lag_recurrence_residual": 4.440892098500626e-16,
+    "observed_response_per_flux": -0.34162107871989705,
+    "path_length": 3073,
+    "record_type": "cyclic_start_refinement",
+    "response_density": -0.06518447238107034,
+    "side": 0.08,
+    "signed_area_anti": 0.006400000000000037,
+    "signed_flux_anti": 0.0012211793979519292,
+    "start_fraction": 0.75,
+    "steps_per_segment": 768,
+    "switch_count": 0,
+    "tangent_line_integral_anti": -0.0004186519726962993
+  }
+]

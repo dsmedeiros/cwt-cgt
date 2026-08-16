@@ -101,23 +101,26 @@ def _operator_curvature(
     if delta_i == 0.0 or delta_j == 0.0:
         raise ValueError("delta_i and delta_j must be non-zero for operator curvature")
 
-    uL0 = np.conjugate(Psi0)
+    # ``biorth_connection`` uses ``np.vdot`` and therefore applies the bra
+    # conjugation itself.  Passing ``conjugate(Psi)`` here would conjugate the
+    # Hermitian left vector twice.
+    uL0 = Psi0
     du_i = (Psi_i - Psi0) / delta_i
     du_j = (Psi_j - Psi0) / delta_j
     A_i = biorth_connection(uL0, du_i)
     A_j = biorth_connection(uL0, du_j)
 
-    uL_j = np.conjugate(Psi_j)
+    uL_j = Psi_j
     du_i_at_j = (Psi_ij - Psi_j) / delta_i
     A_i_at_j = biorth_connection(uL_j, du_i_at_j)
-    dA_i = (A_i_at_j - A_i) / delta_j
+    dA_i_dj = (A_i_at_j - A_i) / delta_j
 
-    uL_i = np.conjugate(Psi_i)
+    uL_i = Psi_i
     du_j_at_i = (Psi_ij - Psi_i) / delta_j
     A_j_at_i = biorth_connection(uL_i, du_j_at_i)
-    dA_j = (A_j_at_i - A_j) / delta_i
+    dA_j_di = (A_j_at_i - A_j) / delta_i
 
-    return biorth_curvature(A_i, A_j, dA_i, dA_j)
+    return biorth_curvature(A_i, A_j, dA_j_di, dA_i_dj)
 
 
 def _initial_state(substrate, center: Mapping[str, float], config: RunConfig):

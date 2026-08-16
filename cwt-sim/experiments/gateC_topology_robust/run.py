@@ -1,4 +1,4 @@
-"""Gate C experiment: topology robustness under noise perturbations."""
+"""Internal-synthetic Gate C loop/noise robustness construction."""
 
 from __future__ import annotations
 
@@ -54,8 +54,14 @@ class NoisePointResult:
     trials: list[TrialResult]
     s_bar_mean: float
     overlap_mean: float
-    quantized: bool
+    pure_state_criteria_met: bool
     sign_persistence: float
+
+    @property
+    def quantized(self) -> bool:
+        """Deprecated alias; the thresholds do not establish quantization."""
+
+        return self.pure_state_criteria_met
 
     def R_gamma_samples(self) -> list[float]:
         return [trial.R_gamma for trial in self.trials]
@@ -104,6 +110,7 @@ class ExperimentResults:
 
     def to_dict(self) -> dict:
         return {
+            **_evidence_metadata(),
             "phase_std_values": list(self.phase_std_values),
             "amp_std_values": list(self.amp_std_values),
             "delay_std_values": list(self.delay_std_values),
@@ -128,7 +135,7 @@ class ExperimentResults:
                             "delay_std": lvl.delay_std,
                             "s_bar_mean": lvl.s_bar_mean,
                             "overlap_mean": lvl.overlap_mean,
-                            "quantized": lvl.quantized,
+                            "pure_state_criteria_met": lvl.pure_state_criteria_met,
                             "sign_persistence": lvl.sign_persistence,
                             "trials": [asdict(trial) for trial in lvl.trials],
                         }
@@ -138,6 +145,27 @@ class ExperimentResults:
                 for graph in self.graphs
             ],
         }
+
+
+def _evidence_metadata() -> dict[str, object]:
+    """Return durable claim-scope metadata for Gate C outputs."""
+
+    return {
+        "evidence_tier": "internal_synthetic",
+        "input_provenance": "synthetic_generated",
+        "external_dataset_ingested": False,
+        "claim_scope": "loop_noise_robustness_construction",
+        "not_a_topology_test": True,
+        "criteria_definition": (
+            "pure_state_criteria_met means only that mean coherence and overlap exceed "
+            "their configured thresholds; it is not a quantization or Chern-number claim."
+        ),
+        "readout_circularity_note": (
+            "The response uses a memory/readout supplied with the computed loop flux and "
+            "therefore cannot independently validate a flux-to-response law."
+        ),
+        "mixed_state_fallback_implemented": False,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -604,7 +632,7 @@ def _run_noise_point(
 
     s_mean, _ = _mean_ci(trial.s_bar for trial in trials)
     o_mean, _ = _mean_ci(trial.overlap_avg for trial in trials)
-    quantized = s_mean >= coherence_threshold and o_mean >= overlap_threshold
+    pure_state_criteria_met = s_mean >= coherence_threshold and o_mean >= overlap_threshold
 
     expected_sign = 1.0 if base_sign >= 0.0 else -1.0
 
@@ -615,7 +643,7 @@ def _run_noise_point(
         trials=trials,
         s_bar_mean=float(s_mean),
         overlap_mean=float(o_mean),
-        quantized=bool(quantized),
+        pure_state_criteria_met=bool(pure_state_criteria_met),
         sign_persistence=float(
             np.mean(
                 [
@@ -804,7 +832,8 @@ def _render_noise_level(level: NoisePointResult) -> list[str]:
         f"  - ⟨s̄⟩: {s_mean:.3f} with CI {_format_ci(s_ci)}",
         f"  - ⟨overlap⟩: {o_mean:.3f} with CI {_format_ci(o_ci)}",
         f"  - Sign persistence: {level.sign_persistence:.2f}",
-        f"  - Quantization claim: {'yes' if level.quantized else 'no (tracking robustness only)'}",
+        "  - Pure-state coherence/overlap criteria met: "
+        f"{'yes' if level.pure_state_criteria_met else 'no'}",
     ]
     return lines
 
@@ -813,7 +842,15 @@ def _render_report(results: ExperimentResults) -> str:
     header_metrics = _gateC_header_metrics(results)
 
     lines = [
-        "# Gate C: topology robustness under noise",
+        "# Gate C: internal-synthetic loop/noise robustness construction",
+        "",
+        "**Evidence tier:** internal synthetic; no external dataset is ingested.",
+        "",
+        (
+            "**Claim scope:** protocol/noise robustness only, not topology or quantization. "
+            "The response is flux-conditioned, and the thresholds check only pure-state "
+            "coherence/overlap criteria. No mixed-state fallback is implemented."
+        ),
         "",
         f"Phase noise sweep: {', '.join(f'{val:.3f}' for val in results.phase_std_values)}",
         "Amplitude noise σ_amp sweep: " f"{', '.join(f'{val:.3f}' for val in results.amp_std_values)}",
@@ -841,8 +878,8 @@ def _render_report(results: ExperimentResults) -> str:
         lines.append("")
 
     lines.append(
-        "When either threshold is violated we switch to the mixed-state fallback "
-        "and report robustness trends only."
+        "When either threshold is violated, the point is marked outside the configured "
+        "pure-state criteria; no mixed-state fallback is implemented."
     )
     return "\n".join(lines)
 
@@ -935,7 +972,7 @@ def _render_phase_slices(
                 grid_sign,
                 amp_values,
                 delay_values,
-                title=f"{graph.name} sign persistence ({title_suffix})",
+                title=f"Internal-synthetic sign persistence ({graph.name}; {title_suffix})",
                 output_path=sign_path,
                 vmin=0.0,
                 vmax=1.0,
@@ -946,7 +983,7 @@ def _render_phase_slices(
                 grid_coh,
                 amp_values,
                 delay_values,
-                title=f"{graph.name} ⟨s̄⟩ ({title_suffix})",
+                title=f"Internal-synthetic ⟨s̄⟩ ({graph.name}; {title_suffix})",
                 output_path=coh_path,
                 vmin=0.0,
                 vmax=1.0,
@@ -959,7 +996,12 @@ def _render_phase_slices(
 
 
 def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run the Gate C topology robustness experiment")
+    parser = argparse.ArgumentParser(
+        description=(
+            "Run the internal-synthetic Gate C loop/noise robustness construction; "
+            "this is not a Chern-number/topology test and ingests no external dataset."
+        )
+    )
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -1034,6 +1076,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     records_path = output_dir / "records.json"
     report_path = output_dir / "REPORT.md"
+    provenance_path = output_dir / "PROVENANCE.json"
 
     records_path.write_text(
         json.dumps(results.to_dict(), indent=2, ensure_ascii=False),
@@ -1041,6 +1084,10 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
     report_path.write_text(
         _render_report(results),
+        encoding="utf-8",
+    )
+    provenance_path.write_text(
+        json.dumps(_evidence_metadata(), indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
 

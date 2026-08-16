@@ -12,7 +12,25 @@ if str(CWT_SIM_ROOT) not in sys.path:
     sys.path.insert(0, str(CWT_SIM_ROOT))
 
 
-def qp1_calibration(samples: int) -> dict[str, float | int]:
+def _derive_sign_map(
+    analytic_integral: float,
+    implementation_integral: float,
+    *,
+    magnitude_floor: float = 1.0e-12,
+) -> float | None:
+    """Return the sign multiplier mapping implementation to analytic convention."""
+
+    analytic = float(analytic_integral)
+    implementation = float(implementation_integral)
+    floor = abs(float(magnitude_floor))
+    if not np.isfinite(analytic) or not np.isfinite(implementation):
+        return None
+    if abs(analytic) <= floor or abs(implementation) <= floor:
+        return None
+    return float(np.sign(analytic / implementation))
+
+
+def qp1_calibration(samples: int) -> dict[str, float | int | str | bool | None]:
     from cwt.geometry.curvature import curvature_tile
     from cwt.operator.biorth_geom import biorth_connection, biorth_curvature
     from cwt.operator.L_map import qp1_state, qp1_state_derivatives
@@ -29,7 +47,7 @@ def qp1_calibration(samples: int) -> dict[str, float | int]:
         d_x, d_y = qp1_state_derivatives(lam)
         a_x = biorth_connection(state, d_x)
         a_y = biorth_connection(state, d_y)
-        d_a_x_dy = -(np.pi**2) * np.sin(np.pi * y)
+        d_a_x_dy = (np.pi**2) * np.sin(np.pi * y)
         omega_density = biorth_curvature(a_x, a_y, dA_i=0.0, dA_j=d_a_x_dy)
         analytic_integral += omega_density * dy
 
@@ -42,19 +60,23 @@ def qp1_calibration(samples: int) -> dict[str, float | int]:
         implementation_integral += omega_impl * dy
 
     expected = 2.0 * np.pi
+    sign_map = _derive_sign_map(analytic_integral, implementation_integral)
     return {
+        "calibration_kind": "sphere_chart",
+        "x_periodic": True,
+        "y_periodic": False,
         "samples": int(samples),
         "wilson_magnitude": float(abs(implementation_integral)),
         "analytic_magnitude": float(expected),
         "magnitude_error": float(abs(abs(implementation_integral) - expected)),
         "implementation_curvature_integral": float(implementation_integral),
         "analytic_curvature_integral": float(analytic_integral),
-        "sign_map_analytic_from_impl": -1.0,
+        "sign_map_analytic_from_impl": sign_map,
     }
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run the QP-1 curvature calibration.")
+    parser = argparse.ArgumentParser(description="Run the QP-1 sphere-chart curvature calibration.")
     parser.add_argument("--samples", type=int, default=2048)
     parser.add_argument("--output", type=Path, default=None)
     args = parser.parse_args()

@@ -1,0 +1,262 @@
+{
+  "canonical_json_hash_encoding": "UTF-8 JSON with allow_nan=false, sort_keys=true, and separators=(',', ':')",
+  "canonical_source_hashes_are_repository_identity_not_execution_bytes": true,
+  "central_empirical_external_claim_status": "proof_incomplete",
+  "claim_scope": "explicit benchmark-C fixed-tick geometry-blind-response theorem",
+  "config_sha256": "38f353e188fedc2389b52e496d631ab88840aa72a1ccb06fa52322ac3e127de1",
+  "discovery_disclosure": "The cycle-sum estimand and numerical acceptance thresholds were selected after an exploratory center-(0,0) square refinement probe; all benchmark-C configurations are discovery/analytic fixtures.",
+  "estimand": "discrete_cycle_sum_surrogate",
+  "estimand_units": "circulation-current-ticks with dt=1",
+  "evidence_tier": "internal_synthetic_analytic_fixture",
+  "experiment_id": "independent_response_theorem",
+  "external_data_blocker": "No auditable raw paired-loop dataset, frozen manifest/checksum, and independent measured response are tracked and runnable in this repository.",
+  "external_raw_data_runnable": false,
+  "fixed_tick_semantics": {
+    "dt": 1,
+    "increasing_steps": "lengthens and slows the discrete cycle",
+    "phase_relaxation_per_tick": 0.35
+  },
+  "no_seeds_or_uncertainty_intervals": true,
+  "not_external_evidence": true,
+  "not_preregistered": true,
+  "not_transported_charge_or_physical_pump": true,
+  "not_untouched_holdout": true,
+  "numpy_version": "2.3.3",
+  "pre_commit_post_result_provenance_format_correction": {
+    "ledger": "PROVENANCE_CORRECTION.json",
+    "ledger_sidecar": "PROVENANCE_CORRECTION.sha256",
+    "status": "PACKAGING_CORRECTION_NO_NUMERIC_CHANGE"
+  },
+  "protocol_file": "../PROTOCOL_LOCK.md",
+  "protocol_sha256": "1bda9a7cbaf52c13e4d3461a817af712d9ee8469627988a87cc4ad4a0917e2c1",
+  "python_version": "3.11.9",
+  "records_canonical_json_sha256": "42e6a124bb3d604e571498164d73a2e156f8360fc98d3c7a76e1c50af6c3efd6",
+  "repository_head": "4831fd15bc2c665f48136f81e174619ec2d0d0c1",
+  "repository_worktree": "dirty",
+  "reproduction_command": "cd cwt-sim && .venv/Scripts/python.exe experiments/independent_response_theorem/run.py",
+  "schema_version": 2,
+  "source_bundle_is_sorted_and_path_bound": true,
+  "source_bundle_payload": [
+    {
+      "git_blob_oid_sha1": "6eaf4fa51497ec8fcfc5bfed4f151fa5e4476e3a",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "path": "cwt/cgt/_geom_compat.py",
+      "sha256": "d2e21872f982bc3890cb7e32cdfe006379cfd0aeab65b14f2b308fa0ea46a3ea",
+      "size_bytes": 1038
+    },
+    {
+      "git_blob_oid_sha1": "7071c327885e8458d2f734b1ea44a2ed52c467c8",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "path": "cwt/cgt/benchmarks.py",
+      "sha256": "eb713c61cb8b860c7011f823cdd4f531ba6dace5a63c1d306c6c5b7e974ef6d0",
+      "size_bytes": 11141
+    },
+    {
+      "git_blob_oid_sha1": "74cc5b8b3ff0fec627597f678834d070f137ec6c",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "path": "cwt/cgt/continuation.py",
+      "sha256": "a4fd16111b2dba5f435c902db7b9a35c08be7b2fa276e430d1c8d132f6a6b8fe",
+      "size_bytes": 11583
+    },
+    {
+      "git_blob_oid_sha1": "51653441df38f01e214eceaf2f6f4f3e25d465f1",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "path": "cwt/cgt/loop_protocols.py",
+      "sha256": "f5f12a169c0107f7da383a9549136360428ce07a8ecd9f091caf5db5caae5fc7",
+      "size_bytes": 21855
+    },
+    {
+      "git_blob_oid_sha1": "59b441387fead9f368fa9daa326a2bf1dc0e4d17",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "path": "cwt/cgt/models.py",
+      "sha256": "850babc5a37d29a002d507a0c38f69065881fb429c9c21e91531f213ae68cb70",
+      "size_bytes": 2583
+    },
+    {
+      "git_blob_oid_sha1": "d6f3e385cb17c080592a1e94aaded998d4c7f835",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "path": "cwt/geometry/berry.py",
+      "sha256": "9917098d6c539e19d714693dffe1df48696e1cdc1c2502228155afdcb044a7ec",
+      "size_bytes": 1760
+    },
+    {
+      "git_blob_oid_sha1": "48c54a8003c2f2c6b78c3800054c2bd7dbac0753",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "path": "cwt/geometry/branch_distance.py",
+      "sha256": "3a87e86f402cb20bad5970eda932ea6fb81888464a55517dd710711faf8f5146",
+      "size_bytes": 1437
+    },
+    {
+      "git_blob_oid_sha1": "3246f649330687a29148f7d1b11d6cb47d228e42",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "path": "cwt/geometry/coherence.py",
+      "sha256": "f217072118a9738a8a1bef70881c6b4fba1721d96f4d0892b5fd1eeb961d483b",
+      "size_bytes": 3029
+    },
+    {
+      "git_blob_oid_sha1": "cb4b525efe29aa8c539c1d5887e169046b9608a6",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "path": "cwt/geometry/psi.py",
+      "sha256": "a3c9f06ded36507a881d3127efb102a56d313d51692c62663316fd7276c909fd",
+      "size_bytes": 1657
+    },
+    {
+      "git_blob_oid_sha1": "ba08b0d4854e6fac3100a575effd5aceba3bd351",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "path": "cwt/geometry/stats.py",
+      "sha256": "071c752ea5f6df9470acebd4af92d4bf3e2de6a4ceffd329f540117e73aa99bf",
+      "size_bytes": 2111
+    },
+    {
+      "git_blob_oid_sha1": "6841719bb8e8e369b75fadbb24f7d76fe0ab29be",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "path": "experiments/independent_response_theorem/PROTOCOL_LOCK.md",
+      "sha256": "1bda9a7cbaf52c13e4d3461a817af712d9ee8469627988a87cc4ad4a0917e2c1",
+      "size_bytes": 7993
+    },
+    {
+      "git_blob_oid_sha1": "7efdec9cc378c1e790024d9dda0b14255d696f30",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "path": "experiments/independent_response_theorem/provenance.py",
+      "sha256": "6ae8ac7066ede02780de4ca1f4c19ce7c927f6d9133ec46406729b8eaee12ced",
+      "size_bytes": 12906
+    },
+    {
+      "git_blob_oid_sha1": "e50c391b7f4f0a4943cccec5ef0c00dd87cb6498",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "path": "experiments/independent_response_theorem/response.py",
+      "sha256": "791c26c7f72e18b94be93fdee0bc581fd2dc5c71afaf48e035792814595ae23e",
+      "size_bytes": 6810
+    },
+    {
+      "git_blob_oid_sha1": "1118980d1c50ecb126b1c6b4b4ea7777f5d61f80",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "path": "experiments/independent_response_theorem/run.py",
+      "sha256": "81cd31fdfea464f9d96009fae65bd799b710c413cc9acbe4522b891b1ee12766",
+      "size_bytes": 15697
+    },
+    {
+      "git_blob_oid_sha1": "ef63f76676207998a47195d708a7637fc2a8a500",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "path": "experiments/independent_response_theorem/theorem.py",
+      "sha256": "2798eade1d8b1975cb742d7058e9bffc73ae4a46b9c705ead1e77ae2d6d1c3cc",
+      "size_bytes": 33604
+    },
+    {
+      "git_blob_oid_sha1": "1caa193b30471fa2e0b586e575a8102f1182068c",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "path": "tests/experiments/test_independent_response_theorem.py",
+      "sha256": "d5932a66a2267bef7c54f00460ac61db5b15cb113bfac7ec04ae6b8501153c3e",
+      "size_bytes": 13015
+    }
+  ],
+  "source_bundle_sha256": "2443cd1e5bb097451fe8abf0585318412fa84f0581a3e39bda44dc9e92b39a00",
+  "source_text_dependencies": {
+    "cwt/cgt/_geom_compat.py": {
+      "git_blob_oid_sha1": "6eaf4fa51497ec8fcfc5bfed4f151fa5e4476e3a",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "d2e21872f982bc3890cb7e32cdfe006379cfd0aeab65b14f2b308fa0ea46a3ea",
+      "size_bytes": 1038
+    },
+    "cwt/cgt/benchmarks.py": {
+      "git_blob_oid_sha1": "7071c327885e8458d2f734b1ea44a2ed52c467c8",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "eb713c61cb8b860c7011f823cdd4f531ba6dace5a63c1d306c6c5b7e974ef6d0",
+      "size_bytes": 11141
+    },
+    "cwt/cgt/continuation.py": {
+      "git_blob_oid_sha1": "74cc5b8b3ff0fec627597f678834d070f137ec6c",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "a4fd16111b2dba5f435c902db7b9a35c08be7b2fa276e430d1c8d132f6a6b8fe",
+      "size_bytes": 11583
+    },
+    "cwt/cgt/loop_protocols.py": {
+      "git_blob_oid_sha1": "51653441df38f01e214eceaf2f6f4f3e25d465f1",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "f5f12a169c0107f7da383a9549136360428ce07a8ecd9f091caf5db5caae5fc7",
+      "size_bytes": 21855
+    },
+    "cwt/cgt/models.py": {
+      "git_blob_oid_sha1": "59b441387fead9f368fa9daa326a2bf1dc0e4d17",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "850babc5a37d29a002d507a0c38f69065881fb429c9c21e91531f213ae68cb70",
+      "size_bytes": 2583
+    },
+    "cwt/geometry/berry.py": {
+      "git_blob_oid_sha1": "d6f3e385cb17c080592a1e94aaded998d4c7f835",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "9917098d6c539e19d714693dffe1df48696e1cdc1c2502228155afdcb044a7ec",
+      "size_bytes": 1760
+    },
+    "cwt/geometry/branch_distance.py": {
+      "git_blob_oid_sha1": "48c54a8003c2f2c6b78c3800054c2bd7dbac0753",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "3a87e86f402cb20bad5970eda932ea6fb81888464a55517dd710711faf8f5146",
+      "size_bytes": 1437
+    },
+    "cwt/geometry/coherence.py": {
+      "git_blob_oid_sha1": "3246f649330687a29148f7d1b11d6cb47d228e42",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "f217072118a9738a8a1bef70881c6b4fba1721d96f4d0892b5fd1eeb961d483b",
+      "size_bytes": 3029
+    },
+    "cwt/geometry/psi.py": {
+      "git_blob_oid_sha1": "cb4b525efe29aa8c539c1d5887e169046b9608a6",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "a3c9f06ded36507a881d3127efb102a56d313d51692c62663316fd7276c909fd",
+      "size_bytes": 1657
+    },
+    "cwt/geometry/stats.py": {
+      "git_blob_oid_sha1": "ba08b0d4854e6fac3100a575effd5aceba3bd351",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "071c752ea5f6df9470acebd4af92d4bf3e2de6a4ceffd329f540117e73aa99bf",
+      "size_bytes": 2111
+    },
+    "experiments/independent_response_theorem/PROTOCOL_LOCK.md": {
+      "git_blob_oid_sha1": "6841719bb8e8e369b75fadbb24f7d76fe0ab29be",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "1bda9a7cbaf52c13e4d3461a817af712d9ee8469627988a87cc4ad4a0917e2c1",
+      "size_bytes": 7993
+    },
+    "experiments/independent_response_theorem/provenance.py": {
+      "git_blob_oid_sha1": "7efdec9cc378c1e790024d9dda0b14255d696f30",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "6ae8ac7066ede02780de4ca1f4c19ce7c927f6d9133ec46406729b8eaee12ced",
+      "size_bytes": 12906
+    },
+    "experiments/independent_response_theorem/response.py": {
+      "git_blob_oid_sha1": "e50c391b7f4f0a4943cccec5ef0c00dd87cb6498",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "791c26c7f72e18b94be93fdee0bc581fd2dc5c71afaf48e035792814595ae23e",
+      "size_bytes": 6810
+    },
+    "experiments/independent_response_theorem/run.py": {
+      "git_blob_oid_sha1": "1118980d1c50ecb126b1c6b4b4ea7777f5d61f80",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "81cd31fdfea464f9d96009fae65bd799b710c413cc9acbe4522b891b1ee12766",
+      "size_bytes": 15697
+    },
+    "experiments/independent_response_theorem/theorem.py": {
+      "git_blob_oid_sha1": "ef63f76676207998a47195d708a7637fc2a8a500",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "2798eade1d8b1975cb742d7058e9bffc73ae4a46b9c705ead1e77ae2d6d1c3cc",
+      "size_bytes": 33604
+    },
+    "tests/experiments/test_independent_response_theorem.py": {
+      "git_blob_oid_sha1": "1caa193b30471fa2e0b586e575a8102f1182068c",
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "d5932a66a2267bef7c54f00460ac61db5b15cb113bfac7ec04ae6b8501153c3e",
+      "size_bytes": 13015
+    }
+  },
+  "source_text_hash_domain": {
+    "bom_policy": "reject UTF-8 BOM",
+    "encoding": "strict UTF-8",
+    "id": "sha256_utf8_lf_v1",
+    "newline_policy": "replace CRLF with LF; reject every remaining bare CR",
+    "other_normalization": "none"
+  },
+  "source_text_hash_domain_id": "sha256_utf8_lf_v1",
+  "summary_canonical_json_sha256": "ac784afb9d30f2fab70a7db3376baedbc2f0e9df3ff487145da027062d55ae36",
+  "two_dimensional_quotient_disclosure": "Where Omega is nonzero, F_R/Omega exists algebraically because any two 2-forms in a two-dimensional parameter chart are pointwise proportional. Comparing it with Q_anti/Phi_anti is implementation consistency, not CGT-predictive evidence."
+}

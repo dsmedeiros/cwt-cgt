@@ -1,0 +1,29 @@
+{
+  "artifact_hash_domain": "sha256_raw_bytes",
+  "generated_claim_artifacts": {
+    "PROVENANCE.json": "44e7dfeb3fa840261782c0779f27d3a885df42a489bc0fbcab269d162367e752",
+    "REPORT.md": "c57dd4abb18370c992b61538c143544f27dc356294332daa8c94f511c118c182"
+  },
+  "inputs": {
+    "PROTOCOL_TEMPLATE.md": "173fd935fecc7aafd1d63efe2e0e2b1f37c8212e7c52295abd0fd7f42e7cb500",
+    "SUBSTRATE_SCREEN.md": "61c5979cf16250770401e02b9021461718f59cd28996c8f658c21665c40f73a5",
+    "__init__.py": "4ae00660f6d68e20a19134a5535169723e41fa8783d4ac9fdf5f94f75aa20dc1",
+    "artifacts.py": "d3691366c1d62f0fca6d64fc083fb2bb188d163336a7a0e8e92f1e2a9f6ee851",
+    "protocol_template.json": "90ae5a638a5ecf17fc97a331cc12a5a723bff8271fda0242bb792de3d88ee905",
+    "protocol_template.schema.json": "84df03711d8eed925d6d1c82cc301a0109f95d00745b5c7d75834e1963d9692f",
+    "run.py": "330ef699c773bb1bcc71af1869031afa2b1c89eee8cac61b0aff01158097bf80",
+    "schema.py": "ed6f1f5495d15ba67b96cee20690da292e454bb3a74cac3427eb4dd24feea3f8",
+    "template_model.py": "21d7fa1affae7dbe89ed69984321b8d502c45f99bece9ea8e6615489292363a6"
+  },
+  "lock_kind": "design_template_only_no_study_or_outcome_lock",
+  "not_a_study_preregistration": true,
+  "not_evidence": true,
+  "outcome_digest": null,
+  "prediction_digest": null,
+  "schema_version": 2,
+  "source_hash_domain": "sha256_utf8_lf_v1: reject BOM/non-UTF8/bare CR; convert CRLF to LF only",
+  "study_authorization_digest": null,
+  "substrate_digest": null,
+  "template_id": "active-loop-confirmation-v2",
+  "template_state": "BLOCKED_NO_SUBSTRATE"
+}

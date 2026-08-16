@@ -140,6 +140,36 @@ def test_metric_only_null_rejection_helper() -> None:
     assert report["abs_correlation"] <= 0.5
 
 
+def test_metric_only_null_rejection_requires_response_variation() -> None:
+    report = metric_only_null_rejection(
+        metric_scores=[1.0, 2.0, 3.0, 4.0],
+        responses=[0.0, 0.0, 0.0, 0.0],
+        max_abs_correlation=0.5,
+    )
+
+    assert report["reject_metric_only"] is False
+    assert report["reason"] == "degenerate_responses"
+    assert np.isnan(report["correlation"])
+
+
+def test_loop_summary_labels_first_fs_step_without_calling_it_kappa1() -> None:
+    angle = 0.3
+    record = _blank_record(
+        psi_traj=[
+            np.array([1.0 + 0.0j, 0.0 + 0.0j]),
+            np.array([np.cos(angle) + 0.0j, np.sin(angle) + 0.0j]),
+        ],
+        omega_tiles=[{"omega": 1.0, "tile_area": 0.5}],
+        curvature_biases=[np.array([0.2, 0.0])],
+    )
+
+    summary = summarize_loop(record)
+
+    assert summary.fs_stats["first_step"] == pytest.approx(angle)
+    assert "kappa1" not in summary.fs_stats
+    assert summary.R_bias / summary.phi_flux == pytest.approx(0.4)
+
+
 def test_scramble_summary_detects_a_zero_and_a_signflip() -> None:
     report = scramble_response_summary(
         baseline_ccw=[0.4, 0.3],
@@ -154,7 +184,7 @@ def test_scramble_summary_detects_a_zero_and_a_signflip() -> None:
     assert report["a_signflip_reversed"] is True
 
 
-def test_noise_threshold_report_marks_oedi_phase_noise_flip() -> None:
+def test_noise_threshold_report_marks_illustrative_synthetic_phase_noise_flip() -> None:
     report = noise_threshold_report(
         s_bar_values=[0.99, 0.95, 0.90, 0.88, 0.84],
         responses=[1.00, 0.95, 0.70, -0.20, -0.45],

@@ -1,0 +1,10 @@
+{
+  "artifact_hash_domain": "sha256_raw_bytes",
+  "files": {
+    "PROVENANCE.json": "44e7dfeb3fa840261782c0779f27d3a885df42a489bc0fbcab269d162367e752",
+    "REPORT.md": "c57dd4abb18370c992b61538c143544f27dc356294332daa8c94f511c118c182",
+    "TEMPLATE_LOCK.json": "d8ead1ea8592013b15de689ad9fc9a531356cfab6d526844a6aefda57514d23c"
+  },
+  "schema_version": 2,
+  "self_hash_excluded_to_keep_the_closure_acyclic": true
+}

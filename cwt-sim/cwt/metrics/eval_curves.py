@@ -105,7 +105,7 @@ def _fs_statistics(psi_traj: Iterable[np.ndarray]) -> dict[str, float]:
         "mean": float("nan"),
         "max": float("nan"),
         "min": float("nan"),
-        "kappa1": float("nan"),
+        "first_step": float("nan"),
     }
     if len(psi_list) < 2:
         return stats
@@ -132,7 +132,7 @@ def _fs_statistics(psi_traj: Iterable[np.ndarray]) -> dict[str, float]:
         stats["max"] = float(arr.max())
         stats["min"] = float(arr.min())
     first = distances[0]
-    stats["kappa1"] = float(first) if math.isfinite(first) else float("nan")
+    stats["first_step"] = float(first) if math.isfinite(first) else float("nan")
     return stats
 
 
@@ -409,7 +409,13 @@ def metric_only_null_rejection(
     max_abs_correlation: float = 0.25,
     min_count: int = 3,
 ) -> dict[str, float | int | bool | str | None]:
-    """Decide whether a metric-only explanation is weak enough to reject."""
+    """Test a specified linear-correlation metric surrogate.
+
+    This helper does not reject every possible metric-only or orientation-null
+    model. It only rejects the supplied scalar metric score as a linear
+    correlation surrogate, and only when both inputs have non-degenerate
+    variation.
+    """
 
     scores = np.asarray(list(metric_scores), dtype=float)
     values = np.asarray(list(responses), dtype=float)
@@ -427,10 +433,26 @@ def metric_only_null_rejection(
 
     x = scores[mask]
     y = values[mask]
-    if float(np.std(x)) <= 1e-15 or float(np.std(y)) <= 1e-15:
-        correlation = 0.0
-    else:
-        correlation = float(np.corrcoef(x, y)[0, 1])
+    metric_std = float(np.std(x))
+    response_std = float(np.std(y))
+    if metric_std <= 1e-15:
+        return {
+            "count": count,
+            "reject_metric_only": False,
+            "correlation": float("nan"),
+            "abs_correlation": float("nan"),
+            "reason": "degenerate_metric_scores",
+        }
+    if response_std <= 1e-15:
+        return {
+            "count": count,
+            "reject_metric_only": False,
+            "correlation": float("nan"),
+            "abs_correlation": float("nan"),
+            "reason": "degenerate_responses",
+        }
+
+    correlation = float(np.corrcoef(x, y)[0, 1])
     abs_corr = abs(correlation)
     reject = bool(abs_corr <= float(max_abs_correlation))
     return {

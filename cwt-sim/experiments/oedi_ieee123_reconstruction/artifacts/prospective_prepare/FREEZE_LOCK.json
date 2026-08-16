@@ -1,0 +1,16 @@
+{
+  "claim_artifact_sha256": {
+    "ACCESS_PLAN.json": "eea76946407c7c85430a43b5542180a07319fdb6d755c06a79e49fdc53ce1e0c",
+    "PROVENANCE.json": "9772de47345846966ae64ddeadaf639730f5726d53d28c20ab430b7810ba51f8",
+    "REPORT.md": "bd4773d4194fb316bdb2ca8065633fa171d40081d23b70cbbe22d15cee430572",
+    "records.json": "83819f92346eebc130cbbaa6a080ca54355d75babcb6cb6dcd2abbde25f86999",
+    "summary.json": "43031f2941adff9b76149cd0971d546cf0a89ec79c474d8743207e194e27ee81"
+  },
+  "confirmation_requires_separately_approved_freeze_lock_file_sha256": true,
+  "confirmation_status": "locked_pending_root_and_adversarial_approval",
+  "freeze_digest_sha256": "2502fd7a938d78a78f29da0d3e643ceb85e62822f2519f39a24fffbff6a51919",
+  "prepared_summary_canonical_json_sha256": "703c44eedf57322ef7cb89aa8967b42f6d03f927c78a6be3de6d98fea4605382",
+  "prepared_summary_file_sha256": "43031f2941adff9b76149cd0971d546cf0a89ec79c474d8743207e194e27ee81",
+  "schema_version": 1,
+  "self_hash_excluded_to_keep_manifest_acyclic": true
+}

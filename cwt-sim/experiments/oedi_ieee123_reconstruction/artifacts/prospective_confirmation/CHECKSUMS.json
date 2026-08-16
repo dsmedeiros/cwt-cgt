@@ -1,0 +1,11 @@
+{
+  "acyclic_detached_manifest": true,
+  "algorithm": "sha256",
+  "files": {
+    "PROVENANCE.json": "1853afb0a8f72417f61865c459bf126d0171e40df0b0858019c9d42668b57873",
+    "REPORT.md": "a17785cb46dd230626eb97d2a7ee5dbc6435c9969a7dc657a7206bb55fc2105f",
+    "records.json": "e3ab6f5b0539ec6a4c88fb3ada9daabc3d9175c0f85f1df517037d4a5ac29fff",
+    "summary.json": "e562e544c7d6c285accb72d63e65b4596c53259cc8a34c354bb2acf8f84bdc4a"
+  },
+  "schema_version": 1
+}

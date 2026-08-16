@@ -105,6 +105,11 @@ def test_gateB_main_writes_topology_artifacts(tmp_path, monkeypatch):
 
     summary_path = output_dir / "summary.json"
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    provenance = summary["provenance"]
+    assert provenance["evidence_tier"] == "internal_synthetic"
+    assert provenance["evaluation_scope"] == "exploratory_same_grid_not_held_out"
+    assert provenance["bootstrap_unit"] == "iid_grid_cells"
+    assert provenance["external_dataset_ingested"] is False
     assert "watts_strogatz_p0" in summary
     summary_entry = summary["watts_strogatz_p0"]
     descriptor = summary_entry.get("graph")
@@ -124,8 +129,23 @@ def test_gateB_main_writes_topology_artifacts(tmp_path, monkeypatch):
 
     graph_summary_path = graph_dir / "summary.json"
     graph_summary = json.loads(graph_summary_path.read_text(encoding="utf-8"))
+    assert graph_summary["evidence_tier"] == "internal_synthetic"
+    assert graph_summary["evaluation_scope"] == "exploratory_same_grid_not_held_out"
+    assert graph_summary["bootstrap_unit"] == "iid_grid_cells"
     assert graph_summary["graph"]["identifier"] == "watts_strogatz_p0"
     assert graph_summary["seed"] == 11
+
+    provenance_path = graph_dir / "PROVENANCE.json"
+    graph_provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    assert graph_provenance["label_construction"].startswith("Post-hoc labels")
+
+    with np.load(graph_dir / "metrics.npz") as bundle:
+        assert bundle["evidence_tier"].item() == "internal_synthetic"
+        assert bundle["bootstrap_unit"].item() == "iid_grid_cells"
+
+    report = (output_dir / "REPORT.md").read_text(encoding="utf-8")
+    assert "not held-out validation" in report
+    assert "Exploratory same-grid AUC" in report
 
     top_tiles_path = graph_dir / "top_omega_tiles.json"
     assert top_tiles_path.exists()

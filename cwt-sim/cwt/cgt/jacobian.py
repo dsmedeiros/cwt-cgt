@@ -192,7 +192,7 @@ def response_metric_trace_and_curvature(
     q_u = dpsi_u - psi0 * np.vdot(psi0, dpsi_u)
     q_v = dpsi_v - psi0 * np.vdot(psi0, dpsi_v)
     metric_trace = float(np.real(np.vdot(q_u, q_u)) + np.real(np.vdot(q_v, q_v)))
-    curvature = float(-2.0 * np.imag(np.vdot(q_u, q_v)))
+    curvature = float(2.0 * np.imag(np.vdot(q_u, q_v)))
     return metric_trace, curvature
 
 

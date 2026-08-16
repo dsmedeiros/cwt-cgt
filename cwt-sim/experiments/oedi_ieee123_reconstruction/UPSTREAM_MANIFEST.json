@@ -1,0 +1,200 @@
+{
+  "dataset_classification": "profiles packaged with an external public test-system dataset; measurement provenance unspecified",
+  "dataset_doi": "10.25984/2228282",
+  "dataset_landing_page": "https://data.openei.org/submissions/5773",
+  "dataset_id": "openedi_oedisi_ieee123",
+  "files": [
+    {
+      "byte_size": 1523,
+      "git_blob_oid": "54e2443b545fdde405988a7535383ea7977647ae",
+      "access_level": "catalogued_verified",
+      "metric_affecting": false,
+      "path": "LICENSE.md",
+      "role": "upstream license",
+      "sha256": "c02828f67504b3e403d3f830ed7f1858353f43088d5c8bd9bc496067de057eec",
+      "usage": "verified_provenance"
+    },
+    {
+      "byte_size": 829,
+      "git_blob_oid": "4720d52ef1233c9b8583cb8e428d2e4a0fa0509d",
+      "access_level": "parsed_metadata",
+      "metric_affecting": true,
+      "path": "sensors.json",
+      "role": "phase-qualified sensor locations",
+      "sha256": "b09796a2532ef5f7d6b630213951f25fa089ab705d61d0b47f60881abf9a6b63",
+      "usage": "historical_and_corrected"
+    },
+    {
+      "byte_size": 15450,
+      "git_blob_oid": "648093ff2ffbe95613ec9582c93119b9e3c94f8c",
+      "access_level": "parsed_metadata",
+      "metric_affecting": true,
+      "path": "qsts/master.dss",
+      "role": "line, switch, inline-transformer, and redirect definitions",
+      "sha256": "889ec3ab8944d5f05a6aa2bafc8af9ef69b3449a1ac4e0c3365cfdb498bdafd8",
+      "usage": "historical_and_corrected"
+    },
+    {
+      "byte_size": 4527,
+      "git_blob_oid": "35c888d1e4d2a64371e47222abe1c77ed1b688f2",
+      "access_level": "parsed_metadata",
+      "metric_affecting": true,
+      "path": "qsts/Buscoords.dss",
+      "role": "plot coordinates containing both physical buses and device labels",
+      "sha256": "cbd402dfb5ccbd8d8c17cfcc4f673316e3bb43ca3096c0f67ee88449643d2785",
+      "usage": "historical_and_corrected"
+    },
+    {
+      "byte_size": 14603,
+      "git_blob_oid": "7d645f9c5dc5bc84d0c7211abc246f621d4ac54c",
+      "access_level": "parsed_metadata",
+      "metric_affecting": true,
+      "path": "qsts/IEEE123LoadsQsts.dss",
+      "role": "load-to-bus, connection, phase, rating, and yearly-shape mapping",
+      "sha256": "8b5b54db2e357d2caf77df17a572d2f9768764171d1fc1980bc3a74642357b11",
+      "usage": "corrected_diagnostics"
+    },
+    {
+      "byte_size": 15385,
+      "git_blob_oid": "38234f8823c9a4cd0fbd99665c1b1a0cda3bb5c9",
+      "access_level": "parsed_metadata",
+      "metric_affecting": true,
+      "path": "qsts/IEEE123LoadShapes.dss",
+      "role": "load-shape identifiers and profile-file mappings",
+      "sha256": "445365614e83e3d31d9a406c5ab831cb9494d6b86d261282dc05bbd0845747f5",
+      "usage": "prospective_metadata_only_prepare"
+    },
+    {
+      "access_level": "catalogued_verified",
+      "byte_size": 11638,
+      "git_blob_oid": "1d0da3f78846ec7545e1c40776fb9f9f3e8817a9",
+      "metric_affecting": false,
+      "path": "qsts/IEEELinecodes.dss",
+      "role": "QSTS source-closure line-impedance definitions",
+      "sha256": "cc1c17c16a3987e5bd1b470a0a2a9e2f5568f09675740a286e70db086865a56c",
+      "usage": "verified_but_not_executed_by_unweighted_primary"
+    },
+    {
+      "byte_size": 1790,
+      "git_blob_oid": "863c6cd22c9ff416b7daa6b561e3dab074a5420b",
+      "access_level": "parsed_metadata",
+      "metric_affecting": true,
+      "path": "qsts/IEEE123Regulators.dss",
+      "role": "redirected regulator transformer connectivity",
+      "sha256": "8c41d5019f5a55caedd3bab6b1f3fa3c0dc72fa0bec8a335e1042df8a4ac4b86",
+      "usage": "corrected_diagnostics"
+    },
+    {
+      "byte_size": 1220,
+      "git_blob_oid": "2a004b19af11d5f6198300cb585ce0c691a47fd2",
+      "access_level": "catalogued_verified_context_only",
+      "metric_affecting": false,
+      "path": "qsts/IEEE123Pv.dss",
+      "role": "PV-system context; hash-verified but not parsed by either runner",
+      "sha256": "c1e58947a4b3504a789164c61a66caf31fc036398a6143ce8f85af51c0d09056",
+      "usage": "verified_context_only_not_parsed_or_metric_affecting"
+    },
+    {
+      "byte_size": 1416,
+      "git_blob_oid": "d505fce9e60fd01aae3986633fd330230a6da129",
+      "access_level": "catalogued_verified",
+      "metric_affecting": false,
+      "path": "qsts/IEEE123PvShapes.dss",
+      "role": "PV yearly-shape file mapping",
+      "sha256": "a5e7724e2aac42fe817b6a9222ac3297b206051cf348868be348c78ee8963261",
+      "usage": "verified_provenance"
+    },
+    {
+      "byte_size": 659088,
+      "git_blob_oid": "bdc2e08b4326a4eaf84195007fc0e5bea952c097",
+      "access_level": "numerically_executed_retrospective",
+      "metric_affecting": true,
+      "path": "profiles/load_profiles/loadshape_S1a.csv",
+      "role": "post-hoc historical load profile S1a",
+      "sha256": "faa14ebb7f7d51d36d155c2c91e785bba552bd99b59c355c111c0fe95e70c796",
+      "usage": "historical_reconstruction"
+    },
+    {
+      "byte_size": 658971,
+      "git_blob_oid": "3ef07af7c71a3cddba23bf93d8c8a4595b3f6ad9",
+      "access_level": "numerically_executed_retrospective",
+      "metric_affecting": true,
+      "path": "profiles/load_profiles/loadshape_S19a.csv",
+      "role": "post-hoc historical load profile S19a",
+      "sha256": "8ffb332d0b0fbb04c07fc686d8b4819fb687f0706fcb161e9ad6b09d377934cf",
+      "usage": "historical_reconstruction"
+    },
+    {
+      "byte_size": 659056,
+      "git_blob_oid": "9ab931e520c4974bf811aa22fd01f21f1f493715",
+      "access_level": "numerically_executed_retrospective",
+      "metric_affecting": true,
+      "path": "profiles/load_profiles/loadshape_S47.csv",
+      "role": "post-hoc historical load profile S47",
+      "sha256": "e6910096a355b4fccbabda337b3c750eb7cf302f0011418bf20c4a9863b51144",
+      "usage": "historical_reconstruction"
+    },
+    {
+      "byte_size": 659046,
+      "git_blob_oid": "c30f1e65e4b6a71b63f22e302d31ec9418a889fd",
+      "access_level": "numerically_executed_retrospective",
+      "metric_affecting": true,
+      "path": "profiles/load_profiles/loadshape_S49a.csv",
+      "role": "post-hoc historical load profile S49a",
+      "sha256": "2dedd72224b38985c1129f5ea1b00c6aee0cc9c19c98665c1166b0b7c0cfa419",
+      "usage": "historical_reconstruction"
+    },
+    {
+      "byte_size": 659004,
+      "git_blob_oid": "9657095c1add8b982d85e0fc9d6553fe79fba43f",
+      "access_level": "numerically_executed_retrospective",
+      "metric_affecting": true,
+      "path": "profiles/load_profiles/loadshape_S65a.csv",
+      "role": "post-hoc historical load profile S65a",
+      "sha256": "e8f2c86464324c7e47639c53ee954bce351eaaa30855fe6b3f642d037ddc1b91",
+      "usage": "historical_reconstruction"
+    },
+    {
+      "byte_size": 425130,
+      "git_blob_oid": "6f72dd919911beba33431cea5f39d2322ce75844",
+      "access_level": "numerically_executed_retrospective",
+      "metric_affecting": true,
+      "path": "profiles/pv_profiles/pvshape_49.csv",
+      "role": "post-hoc historical dimensionless PV shape 49",
+      "sha256": "e62ee36bceda609be64aef7e29436230bc262ada33f40834311d8d7dccbaa128",
+      "usage": "historical_reconstruction"
+    },
+    {
+      "byte_size": 105120,
+      "git_blob_oid": "5048a7aedcf2a308c5a2c6a32c2cb36e810581d4",
+      "access_level": "catalogued_verified_context_only",
+      "metric_affecting": false,
+      "path": "profiles/pv_profiles/temperature.csv",
+      "role": "claimed-ingested constant-temperature series",
+      "sha256": "3aeac74e327c49bb64446a29b7750f175882756a1e2b2a06b083aec43f341fff",
+      "usage": "verified_but_unused"
+    }
+  ],
+  "historical_load_selection": [
+    "S1a",
+    "S19a",
+    "S47",
+    "S49a",
+    "S65a"
+  ],
+  "license": {
+    "copyright": "Copyright 2023 Alliance for Sustainable Energy, LLC",
+    "identifier": "BSD-3-Clause",
+    "path": "LICENSE.md",
+    "raw_url": "https://raw.githubusercontent.com/openEDI/oedisi-ieee123/7c8bcca06708ea2dd54b822821d637814ef08dc4/LICENSE.md",
+    "sha256": "c02828f67504b3e403d3f830ed7f1858353f43088d5c8bd9bc496067de057eec"
+  },
+  "pinned_commit": "7c8bcca06708ea2dd54b822821d637814ef08dc4",
+  "repository_url": "https://github.com/openEDI/oedisi-ieee123",
+  "schema_version": 1,
+  "source_closure_exclusions": [
+    "Snapshot/",
+    "non-QSTS DSS files not imported by qsts/master.dss"
+  ],
+  "selection_status": "retrospective_post_hoc"
+}

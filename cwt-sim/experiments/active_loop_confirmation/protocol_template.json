@@ -1,0 +1,288 @@
+{
+  "analysis_implementation_available": false,
+  "claim_ceiling": {
+    "allowed_if_future_pass": null,
+    "forbidden_generalizations": [
+      "universal_CWT_or_CGT",
+      "topology_or_topological_protection",
+      "passive_ridge",
+      "strict_locality",
+      "population_generalization",
+      "charge_without_calibrated_current_units"
+    ],
+    "template_is_evidence": false,
+    "template_is_study_preregistration": false
+  },
+  "cluster_split": {
+    "assignment_rule": null,
+    "duplicate_detection_rule": null,
+    "independent_unit_kind": null,
+    "minimum_independent_blocks": 20,
+    "partitions": {
+      "calibration": {
+        "alias_ids": null,
+        "cluster_ids": null,
+        "content_sha256": null
+      },
+      "confirmation": {
+        "alias_ids": null,
+        "cluster_ids": null,
+        "content_sha256": null
+      },
+      "reduction_validation": {
+        "alias_ids": null,
+        "cluster_ids": null,
+        "content_sha256": null
+      }
+    },
+    "salt": null
+  },
+  "controls": {
+    "component_and_center_scramble": null,
+    "control_only_comparator": null,
+    "gauge_invariance": null,
+    "metric_only_comparator": null,
+    "omega_orthogonal_nonzero_area_loop": null,
+    "order_counterbalance": null,
+    "response_sensor_reference_injection": null,
+    "retraced_zero_area_sham": null,
+    "zero_geometry_comparator": null
+  },
+  "coordinates": {
+    "connection_convention": "A_i=-i<psi|partial_i psi>",
+    "curvature_convention": "Omega_ij=+2 Im C_ij",
+    "dimension": null,
+    "independently_actuable_controls": null,
+    "normalized_coordinate_rule": "x^i=(lambda^i-lambda_ref^i)/L_i",
+    "reference": null,
+    "right_handed_order": null,
+    "right_handed_orientation_verified": null,
+    "scales": null,
+    "units": null
+  },
+  "geometry_firewall": {
+    "estimator_code_sha256": null,
+    "gap_overlap_gauge_qc": null,
+    "projector_estimator": null,
+    "qgt_estimator": null,
+    "response_signal_access": false,
+    "state_map_revision": null,
+    "state_sensor": null,
+    "state_sensor_distinct_from_response": null,
+    "wilson_estimator": null
+  },
+  "inference": {
+    "all_primary_gates_conjunctive": true,
+    "alternative_hypothesis": "H1: T>0 in the frozen CGT-predicted direction",
+    "confidence_level": 0.99,
+    "duplicate_assignment_rule": null,
+    "exact_enumeration": {
+      "decision_rule": "p<0.01 PASS; p>=0.01 FAIL",
+      "includes_observed_assignment_once": true,
+      "monte_carlo_interval": false,
+      "p_value": "K/|G|"
+    },
+    "fixed_sample_no_interim": true,
+    "method_selection_rule": null,
+    "null_hypothesis": "H0: outcomes are invariant under every admissible assignment in G",
+    "primary_alpha": 0.01,
+    "primary_statistic": "T:=S=sum_bl w_l*mu_l*D_bl",
+    "primary_weights_rule": null,
+    "randomization_group": null,
+    "randomization_seed": null,
+    "randomization_unit": null,
+    "sampled_monte_carlo": {
+      "ad_hoc_extension_allowed": false,
+      "assignment_draw_rule": "independent_uniform_with_replacement_from_G_using_frozen_seed",
+      "decision_rule": "CP99 upper<0.01 PASS; lower>0.01 FAIL; straddle INDETERMINATE",
+      "draws": 999999,
+      "p_value": "(1+K)/(M+1)",
+      "tail_probability_interval": "99% Clopper-Pearson interval for q=P(T_perm>=T_observed)"
+    },
+    "secondary_holm_alpha": 0.05,
+    "strata_rule": null,
+    "ties_rule": null
+  },
+  "lock_and_authorization": {
+    "acyclic_byte_hash_closure_required": true,
+    "clean_index_archive_cross_platform_verification_required": true,
+    "commanded_and_achieved_paths_required": true,
+    "independent_preflight_review_required": true,
+    "qc_code_container_dependencies_seeds_predictions_required": true,
+    "raw_lineage_units_and_diagrams_required": true,
+    "split_waveform_randomization_table_required": true
+  },
+  "physical_time_protocol": {
+    "achieved_path_closure_tolerance": null,
+    "achieved_path_source": null,
+    "control_dynamics_map": null,
+    "dt_ladder": null,
+    "dt_seconds": null,
+    "duration_ladder": null,
+    "duration_seconds": null,
+    "endpoint_rule": null,
+    "heldout_level_index": {
+      "dt": null,
+      "duration": null,
+      "scale": null
+    },
+    "jitter_bound_seconds": null,
+    "latency_bound_seconds": null,
+    "quadrature_rule": null,
+    "scale_ladder": null,
+    "timestamp_units": null,
+    "washout_or_periodic_initialization": null,
+    "waveform_family": null
+  },
+  "prediction_model": {
+    "area_vector_normalization_rule": "unit_Euclidean_norm_before_Frobenius_condition_v1",
+    "calibration_model_family": null,
+    "calibration_uncertainty_method": null,
+    "condition_number_method": "Frobenius_norm_A_times_Frobenius_norm_A_inverse",
+    "declared_frobenius_condition_number": null,
+    "dimension": 3,
+    "fit_partitions": [
+      "calibration"
+    ],
+    "forbid_pointwise_heldout_f_response_over_omega": true,
+    "geometry_uncertainty_method": null,
+    "heldout_oblique_max_abs_cosine": null,
+    "noncoplanar_normals": null,
+    "oblique_heldout_direction": null,
+    "prediction_hash_before_response_unlock": null,
+    "rank_three_area_vector_design": null
+  },
+  "predictor_geometry": {
+    "finite_flux_definition": "Phi(S)=integral_S Omega using frozen integrated-curvature or Wilson estimator",
+    "finite_flux_estimator": null,
+    "geometry_interaction_code_sha256": null,
+    "geometry_interaction_definition": null,
+    "local_approximation_in_remainder": null,
+    "local_vector_area_approximation": "Phi=omega(c).a+O(s^3) for the frozen shrinking-loop family",
+    "mode": null,
+    "omega_equivalence_margin": null,
+    "path_equivalence_margin": null,
+    "state_equivalence_margin": null,
+    "zero_achieved_path_equivalence": null,
+    "zero_omega_equivalence": null,
+    "zero_state_equivalence": null
+  },
+  "quartet": {
+    "assignment_table_sha256": null,
+    "common_physical_clock_verified": null,
+    "coupling_levels": [
+      "on",
+      "zero"
+    ],
+    "exact_zero_coupling_mechanism": null,
+    "matched_achieved_shape_and_duration": null,
+    "negative_path_rule": "gamma_minus(t)=gamma_plus(T-t)",
+    "orientations": [
+      "positive",
+      "negative"
+    ],
+    "same_schedule_sensors_and_hysteresis_at_zero": null
+  },
+  "response_firewall": {
+    "baseline_definition": null,
+    "example_window_ids": null,
+    "forbidden_fields": [
+      "achieved_control_path",
+      "area",
+      "area_vector",
+      "coupling_label",
+      "fitted_coefficient",
+      "geometry_state",
+      "omega",
+      "orientation",
+      "path_order",
+      "phi",
+      "planned_control_path"
+    ],
+    "geometry_mutation_response_bytes_identical": null,
+    "quadrature_semantics": "Q=integral[Y(t)-b(t)]dt with physical timestamps",
+    "reducer_code_sha256": null,
+    "reducer_input_fields": [
+      "pseudonymous_episode_id",
+      "physical_timestamps",
+      "calibrated_response",
+      "predeclared_response_baseline",
+      "response_sensor_qc"
+    ],
+    "response_signal": null,
+    "response_signal_units": null,
+    "response_units": null,
+    "integrated_units_derivation": null,
+    "window_id_semantics": null
+  },
+  "schema_version": 2,
+  "source_specific_freeze_readiness": {
+    "beta_equivalence_margin": null,
+    "beta_interval_definition": null,
+    "calibration_power": null,
+    "comparator_definition": null,
+    "comparator_loss_advantage_margin": null,
+    "condition_number_threshold": null,
+    "current_status": "BLOCKED_NO_SUBSTRATE",
+    "interaction_nondegeneracy_definition": null,
+    "missingness_and_qc_rules": null,
+    "perpendicular_ratio_definition": null,
+    "perpendicular_tensor_margin": null,
+    "physical_response_sesoi": null,
+    "response_lower_bound_definition": null
+  },
+  "stopping_and_recovery": {
+    "authorized_confirmation_executions": 1,
+    "default_retry_allowed": false,
+    "identical_digest_required": true,
+    "incident_ledger_required": true,
+    "independent_reauthorization_required": true,
+    "no_live_process_or_artifact_required": true,
+    "no_outcome_observed_required": true
+  },
+  "substrate": {
+    "identifier": null,
+    "source_qualification": {
+      "achieved_controls_recorded": null,
+      "actually_executed_intervention": null,
+      "commanded_controls_recorded": null,
+      "counterbalanced_orientation": null,
+      "derived_only": null,
+      "external_source": null,
+      "immutable_primary_raw_measurements": null,
+      "immutable_revision": null,
+      "independent_raw_response_recorded": null,
+      "license_identifier": null,
+      "measurement_units_recorded": null,
+      "model_generated": null,
+      "natural_cycle_only": null,
+      "passive_only": null,
+      "physical_measurement": null,
+      "physical_timestamps_recorded": null,
+      "randomized_orientation": null,
+      "raw_file_sha256": null,
+      "raw_manifest_file_count": null,
+      "raw_manifest_sha256": null,
+      "reset_block_ids_recorded": null,
+      "simulated": null
+    }
+  },
+  "tangent_remainder_validation": {
+    "compare_interaction_not_on_only": true,
+    "concatenation_test": null,
+    "cyclic_start_test": null,
+    "derivation_or_memory_kernel_limit": null,
+    "heldout_ladder_level_required": true,
+    "interaction_curvature": "F_R^D=dB^D",
+    "interaction_one_form": "B^D=B^on-B^0",
+    "line_integral_comparison": null,
+    "matched_area_shape_test": null,
+    "minimum_fit_levels_per_ladder": 4,
+    "reversal_test": null,
+    "smooth_reparameterization_test": null,
+    "uniform_remainder_bound": null
+  },
+  "template_id": "active-loop-confirmation-v2",
+  "template_kind": "metadata_only_design_template",
+  "template_state": "BLOCKED_NO_SUBSTRATE"
+}

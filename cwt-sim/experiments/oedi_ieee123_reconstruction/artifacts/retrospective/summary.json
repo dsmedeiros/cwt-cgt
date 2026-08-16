@@ -1,0 +1,597 @@
+{
+  "active_only_diagnostic": {
+    "component_count": 4,
+    "edge_count": 126,
+    "node_count": 130,
+    "nonsensor_betweenness_mean": 0.040824181739879416,
+    "nonsensor_degree_mean": 2.4444444444444446,
+    "sensor_betweenness_mean": 0.015300102599179207,
+    "sensor_degree_mean": 1.6705882352941177
+  },
+  "active_scalar_checks": {
+    "node_count": true,
+    "nonsensor_betweenness_mean": true,
+    "nonsensor_degree_mean": true,
+    "sensor_betweenness_mean": true,
+    "sensor_degree_mean": true
+  },
+  "alpha_interpretation": {
+    "dimensionless_shape_ratio": true,
+    "load_rating_kw_ignored": 35.0,
+    "physical_net_power_balance": false,
+    "pv_greater_equal_0_2_mask_count": 15098,
+    "pv_rating_kva_pmpp_ignored": 50.0,
+    "tautological_mean_zeroing_rule": true,
+    "temperature_verified_but_unused": true
+  },
+  "archived_scalar_checks": {
+    "distance_corr_pearson": true,
+    "distance_corr_spearman": true,
+    "load_profile_pair_count": true,
+    "nonsensor_betweenness_mean": true,
+    "nonsensor_degree_mean": true,
+    "oedi_graph_edges": true,
+    "oedi_graph_nodes": true,
+    "oedi_sensor_coverage_max_hops": true,
+    "oedi_sensor_coverage_mean_hops": true,
+    "oedi_sensor_coverage_median_hops": true,
+    "oedi_sensor_nodes": true,
+    "pv_load_midday_sign_boundary_alpha": true,
+    "sensor_betweenness_mean": true,
+    "sensor_degree_mean": true
+  },
+  "corrected_physical_graph": {
+    "all_line_object_count_including_stubs": 126,
+    "component_count": 1,
+    "connected": true,
+    "edge_count": 129,
+    "include_open_stubs_robustness": {
+      "component_count": 1,
+      "edge_count": 131,
+      "eligible_load_distance_vector_exactly_identical": true,
+      "node_count": 132
+    },
+    "isolate_count": 0,
+    "node_count": 130,
+    "normally_open_switches_excluded": [
+      "Sw7",
+      "Sw8"
+    ],
+    "open_stub_exclusion_ledger": {
+      "Sw7": "151-300_OPEN",
+      "Sw8": "54-94_OPEN"
+    },
+    "open_stub_semantics": "dataset-specific *_OPEN pseudo-terminal convention; the DSS Line objects are executable and are not claimed to be disabled by OpenDSS",
+    "primary_line_object_count": 124,
+    "primary_raw_series_element_count": 132,
+    "sensor_diagnostics_energized_graph": {
+      "nonsensor_betweenness_mean": 0.16731804478897505,
+      "nonsensor_degree_mean": 2.5555555555555554,
+      "nonsensor_node_count": 45,
+      "sensor_betweenness_mean": 0.047335271317829455,
+      "sensor_coverage_max_hops": 3.0,
+      "sensor_coverage_mean_hops": 0.4230769230769231,
+      "sensor_coverage_median_hops": 0.0,
+      "sensor_degree_mean": 1.6823529411764706,
+      "sensor_node_count": 85,
+      "unreachable_node_count": 0
+    },
+    "stub_included_raw_series_element_count": 134,
+    "transformer_connections_added": [
+      "150-150r",
+      "61s-610",
+      "9-9r",
+      "25-25r",
+      "160-160r"
+    ],
+    "transformer_object_count": 8
+  },
+  "corrected_sensor_scalar_checks": {
+    "nonsensor_betweenness_mean": true,
+    "nonsensor_degree_mean": true,
+    "nonsensor_node_count": true,
+    "sensor_betweenness_mean": true,
+    "sensor_coverage_max_hops": true,
+    "sensor_coverage_mean_hops": true,
+    "sensor_coverage_median_hops": true,
+    "sensor_degree_mean": true,
+    "sensor_node_count": true,
+    "unreachable_node_count": true
+  },
+  "dataset_classification": "profiles packaged with an external public test-system dataset; measurement provenance unspecified",
+  "dependent_pair_count": 10,
+  "evidence_tier": "reproducible_external_sample_system_reconstruction",
+  "experiment_id": "oedi_ieee123_reconstruction",
+  "gates": [
+    {
+      "name": "pinned_source_integrity",
+      "requirement": "Git revision and all tracked selected-file SHA-256 digests match",
+      "status": "pass"
+    },
+    {
+      "name": "corrected_sensor_diagnostics_reproduced",
+      "requirement": "130-bus energized-graph coverage, degree, and NetworkX normalized betweenness match the metadata oracle",
+      "status": "pass"
+    },
+    {
+      "name": "archived_vector_reproduced",
+      "requirement": "every archived scalar matches within 1e-12",
+      "status": "pass"
+    },
+    {
+      "name": "historical_parser_defect_exposed",
+      "requirement": "84 isolates and 130 sensor-reachable nodes are reported",
+      "status": "pass"
+    },
+    {
+      "name": "active_subgraph_reversal_reproduced",
+      "requirement": "active-only degree and betweenness reverse the historical interpretation",
+      "status": "pass"
+    },
+    {
+      "name": "corrected_physical_graph_connected",
+      "requirement": "primary 130/129 graph is a connected tree; adding the two executable open stubs gives 132/131 without changing any load-bus distance",
+      "status": "pass"
+    },
+    {
+      "name": "numeric_access_boundary",
+      "requirement": "only five legacy loads and PV49 are numerically opened",
+      "status": "pass"
+    },
+    {
+      "name": "alpha_mask_count_disclosed",
+      "requirement": "the PV>=0.2 mask contains exactly 15,098 quarter-hours",
+      "status": "pass"
+    }
+  ],
+  "historical_parser_metrics": {
+    "distance_corr_pearson": -0.3534135764603952,
+    "distance_corr_spearman": -0.309090909090909,
+    "isolate_count": 84,
+    "isolates": [
+      "150",
+      "610",
+      "s100c",
+      "s102c",
+      "s103c",
+      "s104c",
+      "s106b",
+      "s107b",
+      "s109a",
+      "s10a",
+      "s111a",
+      "s112a",
+      "s113a",
+      "s114a",
+      "s11a",
+      "s12b",
+      "s16c",
+      "s17c",
+      "s19a",
+      "s1a",
+      "s20a",
+      "s22b",
+      "s24c",
+      "s28a",
+      "s29a",
+      "s2b",
+      "s30c",
+      "s31c",
+      "s32c",
+      "s33a",
+      "s34c",
+      "s37a",
+      "s38b",
+      "s39b",
+      "s41c",
+      "s42a",
+      "s43b",
+      "s45a",
+      "s46a",
+      "s49a",
+      "s49b",
+      "s49c",
+      "s4c",
+      "s50c",
+      "s51a",
+      "s52a",
+      "s53a",
+      "s55a",
+      "s56b",
+      "s58b",
+      "s59b",
+      "s5c",
+      "s60a",
+      "s62c",
+      "s63a",
+      "s64b",
+      "s66c",
+      "s68a",
+      "s69a",
+      "s6c",
+      "s70a",
+      "s71a",
+      "s73c",
+      "s74c",
+      "s75c",
+      "s77b",
+      "s79a",
+      "s7a",
+      "s80b",
+      "s82a",
+      "s83c",
+      "s84c",
+      "s85c",
+      "s86b",
+      "s87b",
+      "s88a",
+      "s90b",
+      "s92c",
+      "s94a",
+      "s95b",
+      "s96b",
+      "s98a",
+      "s99b",
+      "s9a"
+    ],
+    "load_profile_pair_count": 10,
+    "nonsensor_betweenness_mean": 0.005207442794350815,
+    "nonsensor_degree_mean": 0.8527131782945736,
+    "oedi_graph_edges": 126,
+    "oedi_graph_nodes": 214,
+    "oedi_sensor_coverage_max_hops": 2.0,
+    "oedi_sensor_coverage_mean_hops": 0.4153846153846154,
+    "oedi_sensor_coverage_median_hops": 0.0,
+    "oedi_sensor_nodes": 85,
+    "pairwise": [
+      {
+        "a": "1a",
+        "b": "19a",
+        "corr": 0.989068565205963,
+        "distance": 5
+      },
+      {
+        "a": "1a",
+        "b": "47",
+        "corr": 0.9970752033172635,
+        "distance": 10
+      },
+      {
+        "a": "1a",
+        "b": "49a",
+        "corr": 0.996191391254564,
+        "distance": 11
+      },
+      {
+        "a": "1a",
+        "b": "65a",
+        "corr": 0.9790644656576601,
+        "distance": 13
+      },
+      {
+        "a": "19a",
+        "b": "47",
+        "corr": 0.9960315020060845,
+        "distance": 7
+      },
+      {
+        "a": "19a",
+        "b": "49a",
+        "corr": 0.9968965661130353,
+        "distance": 8
+      },
+      {
+        "a": "19a",
+        "b": "65a",
+        "corr": 0.9983420838906513,
+        "distance": 12
+      },
+      {
+        "a": "47",
+        "b": "49a",
+        "corr": 0.9971370667481101,
+        "distance": 1
+      },
+      {
+        "a": "47",
+        "b": "65a",
+        "corr": 0.990152370507728,
+        "distance": 17
+      },
+      {
+        "a": "49a",
+        "b": "65a",
+        "corr": 0.9909548317482854,
+        "distance": 18
+      }
+    ],
+    "pv_load_midday_sign_boundary_alpha": 1.1572718540076374,
+    "sensor_betweenness_mean": 0.0055947226086820595,
+    "sensor_degree_mean": 1.6705882352941177,
+    "sensor_reachable_node_count": 130
+  },
+  "historical_selection_count": 5,
+  "independent_profile_count": 5,
+  "load_inventory_count": 91,
+  "mode": "retrospective_post_hoc_reconstruction",
+  "nonlegacy_profile_values_opened": false,
+  "numeric_profile_access_log": [
+    "profiles/load_profiles/loadshape_S1a.csv",
+    "profiles/load_profiles/loadshape_S19a.csv",
+    "profiles/load_profiles/loadshape_S47.csv",
+    "profiles/load_profiles/loadshape_S49a.csv",
+    "profiles/load_profiles/loadshape_S65a.csv",
+    "profiles/pv_profiles/pvshape_49.csv"
+  ],
+  "schema_version": 1,
+  "selected_load_metadata": [
+    {
+      "base_bus": "1",
+      "bus1": "1.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S1a",
+      "phases": 1,
+      "yearly": "loadshape_s1a"
+    },
+    {
+      "base_bus": "19",
+      "bus1": "19.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "kvar": 20.0,
+      "kw": 40.0,
+      "load_id": "S19a",
+      "phases": 1,
+      "yearly": "loadshape_s19a"
+    },
+    {
+      "base_bus": "47",
+      "bus1": "47",
+      "conductors": [],
+      "conn": "wye",
+      "kvar": 75.0,
+      "kw": 105.0,
+      "load_id": "S47",
+      "phases": 3,
+      "yearly": "loadshape_s47"
+    },
+    {
+      "base_bus": "49",
+      "bus1": "49.1",
+      "conductors": [
+        "1"
+      ],
+      "conn": "wye",
+      "kvar": 25.0,
+      "kw": 35.0,
+      "load_id": "S49a",
+      "phases": 1,
+      "yearly": "loadshape_s49a"
+    },
+    {
+      "base_bus": "65",
+      "bus1": "65.1.2",
+      "conductors": [
+        "1",
+        "2"
+      ],
+      "conn": "delta",
+      "kvar": 25.0,
+      "kw": 35.0,
+      "load_id": "S65a",
+      "phases": 1,
+      "yearly": "loadshape_s65a"
+    }
+  ],
+  "source_verification": {
+    "dataset_id": "openedi_oedisi_ieee123",
+    "files": [
+      {
+        "access_level": "catalogued_verified",
+        "byte_size": 1523,
+        "canonical_git_blob_sha256": "c02828f67504b3e403d3f830ed7f1858353f43088d5c8bd9bc496067de057eec",
+        "git_blob_byte_size": 1523,
+        "git_blob_oid": "54e2443b545fdde405988a7535383ea7977647ae",
+        "metric_affecting": false,
+        "path": "LICENSE.md",
+        "sha256": "c02828f67504b3e403d3f830ed7f1858353f43088d5c8bd9bc496067de057eec",
+        "verified": true
+      },
+      {
+        "access_level": "parsed_metadata",
+        "byte_size": 829,
+        "canonical_git_blob_sha256": "b09796a2532ef5f7d6b630213951f25fa089ab705d61d0b47f60881abf9a6b63",
+        "git_blob_byte_size": 829,
+        "git_blob_oid": "4720d52ef1233c9b8583cb8e428d2e4a0fa0509d",
+        "metric_affecting": true,
+        "path": "sensors.json",
+        "sha256": "b09796a2532ef5f7d6b630213951f25fa089ab705d61d0b47f60881abf9a6b63",
+        "verified": true
+      },
+      {
+        "access_level": "parsed_metadata",
+        "byte_size": 15450,
+        "canonical_git_blob_sha256": "889ec3ab8944d5f05a6aa2bafc8af9ef69b3449a1ac4e0c3365cfdb498bdafd8",
+        "git_blob_byte_size": 15450,
+        "git_blob_oid": "648093ff2ffbe95613ec9582c93119b9e3c94f8c",
+        "metric_affecting": true,
+        "path": "qsts/master.dss",
+        "sha256": "889ec3ab8944d5f05a6aa2bafc8af9ef69b3449a1ac4e0c3365cfdb498bdafd8",
+        "verified": true
+      },
+      {
+        "access_level": "parsed_metadata",
+        "byte_size": 4527,
+        "canonical_git_blob_sha256": "cbd402dfb5ccbd8d8c17cfcc4f673316e3bb43ca3096c0f67ee88449643d2785",
+        "git_blob_byte_size": 4527,
+        "git_blob_oid": "35c888d1e4d2a64371e47222abe1c77ed1b688f2",
+        "metric_affecting": true,
+        "path": "qsts/Buscoords.dss",
+        "sha256": "cbd402dfb5ccbd8d8c17cfcc4f673316e3bb43ca3096c0f67ee88449643d2785",
+        "verified": true
+      },
+      {
+        "access_level": "parsed_metadata",
+        "byte_size": 14603,
+        "canonical_git_blob_sha256": "8b5b54db2e357d2caf77df17a572d2f9768764171d1fc1980bc3a74642357b11",
+        "git_blob_byte_size": 14603,
+        "git_blob_oid": "7d645f9c5dc5bc84d0c7211abc246f621d4ac54c",
+        "metric_affecting": true,
+        "path": "qsts/IEEE123LoadsQsts.dss",
+        "sha256": "8b5b54db2e357d2caf77df17a572d2f9768764171d1fc1980bc3a74642357b11",
+        "verified": true
+      },
+      {
+        "access_level": "parsed_metadata",
+        "byte_size": 15385,
+        "canonical_git_blob_sha256": "445365614e83e3d31d9a406c5ab831cb9494d6b86d261282dc05bbd0845747f5",
+        "git_blob_byte_size": 15385,
+        "git_blob_oid": "38234f8823c9a4cd0fbd99665c1b1a0cda3bb5c9",
+        "metric_affecting": true,
+        "path": "qsts/IEEE123LoadShapes.dss",
+        "sha256": "445365614e83e3d31d9a406c5ab831cb9494d6b86d261282dc05bbd0845747f5",
+        "verified": true
+      },
+      {
+        "access_level": "catalogued_verified",
+        "byte_size": 11638,
+        "canonical_git_blob_sha256": "cc1c17c16a3987e5bd1b470a0a2a9e2f5568f09675740a286e70db086865a56c",
+        "git_blob_byte_size": 11638,
+        "git_blob_oid": "1d0da3f78846ec7545e1c40776fb9f9f3e8817a9",
+        "metric_affecting": false,
+        "path": "qsts/IEEELinecodes.dss",
+        "sha256": "cc1c17c16a3987e5bd1b470a0a2a9e2f5568f09675740a286e70db086865a56c",
+        "verified": true
+      },
+      {
+        "access_level": "parsed_metadata",
+        "byte_size": 1790,
+        "canonical_git_blob_sha256": "8c41d5019f5a55caedd3bab6b1f3fa3c0dc72fa0bec8a335e1042df8a4ac4b86",
+        "git_blob_byte_size": 1790,
+        "git_blob_oid": "863c6cd22c9ff416b7daa6b561e3dab074a5420b",
+        "metric_affecting": true,
+        "path": "qsts/IEEE123Regulators.dss",
+        "sha256": "8c41d5019f5a55caedd3bab6b1f3fa3c0dc72fa0bec8a335e1042df8a4ac4b86",
+        "verified": true
+      },
+      {
+        "access_level": "catalogued_verified_context_only",
+        "byte_size": 1220,
+        "canonical_git_blob_sha256": "c1e58947a4b3504a789164c61a66caf31fc036398a6143ce8f85af51c0d09056",
+        "git_blob_byte_size": 1220,
+        "git_blob_oid": "2a004b19af11d5f6198300cb585ce0c691a47fd2",
+        "metric_affecting": false,
+        "path": "qsts/IEEE123Pv.dss",
+        "sha256": "c1e58947a4b3504a789164c61a66caf31fc036398a6143ce8f85af51c0d09056",
+        "verified": true
+      },
+      {
+        "access_level": "catalogued_verified",
+        "byte_size": 1416,
+        "canonical_git_blob_sha256": "a5e7724e2aac42fe817b6a9222ac3297b206051cf348868be348c78ee8963261",
+        "git_blob_byte_size": 1416,
+        "git_blob_oid": "d505fce9e60fd01aae3986633fd330230a6da129",
+        "metric_affecting": false,
+        "path": "qsts/IEEE123PvShapes.dss",
+        "sha256": "a5e7724e2aac42fe817b6a9222ac3297b206051cf348868be348c78ee8963261",
+        "verified": true
+      },
+      {
+        "access_level": "numerically_executed_retrospective",
+        "byte_size": 659088,
+        "canonical_git_blob_sha256": "faa14ebb7f7d51d36d155c2c91e785bba552bd99b59c355c111c0fe95e70c796",
+        "git_blob_byte_size": 659088,
+        "git_blob_oid": "bdc2e08b4326a4eaf84195007fc0e5bea952c097",
+        "metric_affecting": true,
+        "path": "profiles/load_profiles/loadshape_S1a.csv",
+        "sha256": "faa14ebb7f7d51d36d155c2c91e785bba552bd99b59c355c111c0fe95e70c796",
+        "verified": true
+      },
+      {
+        "access_level": "numerically_executed_retrospective",
+        "byte_size": 658971,
+        "canonical_git_blob_sha256": "8ffb332d0b0fbb04c07fc686d8b4819fb687f0706fcb161e9ad6b09d377934cf",
+        "git_blob_byte_size": 658971,
+        "git_blob_oid": "3ef07af7c71a3cddba23bf93d8c8a4595b3f6ad9",
+        "metric_affecting": true,
+        "path": "profiles/load_profiles/loadshape_S19a.csv",
+        "sha256": "8ffb332d0b0fbb04c07fc686d8b4819fb687f0706fcb161e9ad6b09d377934cf",
+        "verified": true
+      },
+      {
+        "access_level": "numerically_executed_retrospective",
+        "byte_size": 659056,
+        "canonical_git_blob_sha256": "e6910096a355b4fccbabda337b3c750eb7cf302f0011418bf20c4a9863b51144",
+        "git_blob_byte_size": 659056,
+        "git_blob_oid": "9ab931e520c4974bf811aa22fd01f21f1f493715",
+        "metric_affecting": true,
+        "path": "profiles/load_profiles/loadshape_S47.csv",
+        "sha256": "e6910096a355b4fccbabda337b3c750eb7cf302f0011418bf20c4a9863b51144",
+        "verified": true
+      },
+      {
+        "access_level": "numerically_executed_retrospective",
+        "byte_size": 659046,
+        "canonical_git_blob_sha256": "2dedd72224b38985c1129f5ea1b00c6aee0cc9c19c98665c1166b0b7c0cfa419",
+        "git_blob_byte_size": 659046,
+        "git_blob_oid": "c30f1e65e4b6a71b63f22e302d31ec9418a889fd",
+        "metric_affecting": true,
+        "path": "profiles/load_profiles/loadshape_S49a.csv",
+        "sha256": "2dedd72224b38985c1129f5ea1b00c6aee0cc9c19c98665c1166b0b7c0cfa419",
+        "verified": true
+      },
+      {
+        "access_level": "numerically_executed_retrospective",
+        "byte_size": 659004,
+        "canonical_git_blob_sha256": "e8f2c86464324c7e47639c53ee954bce351eaaa30855fe6b3f642d037ddc1b91",
+        "git_blob_byte_size": 659004,
+        "git_blob_oid": "9657095c1add8b982d85e0fc9d6553fe79fba43f",
+        "metric_affecting": true,
+        "path": "profiles/load_profiles/loadshape_S65a.csv",
+        "sha256": "e8f2c86464324c7e47639c53ee954bce351eaaa30855fe6b3f642d037ddc1b91",
+        "verified": true
+      },
+      {
+        "access_level": "numerically_executed_retrospective",
+        "byte_size": 425130,
+        "canonical_git_blob_sha256": "e62ee36bceda609be64aef7e29436230bc262ada33f40834311d8d7dccbaa128",
+        "git_blob_byte_size": 425130,
+        "git_blob_oid": "6f72dd919911beba33431cea5f39d2322ce75844",
+        "metric_affecting": true,
+        "path": "profiles/pv_profiles/pvshape_49.csv",
+        "sha256": "e62ee36bceda609be64aef7e29436230bc262ada33f40834311d8d7dccbaa128",
+        "verified": true
+      },
+      {
+        "access_level": "catalogued_verified_context_only",
+        "byte_size": 105120,
+        "canonical_git_blob_sha256": "3aeac74e327c49bb64446a29b7750f175882756a1e2b2a06b083aec43f341fff",
+        "git_blob_byte_size": 105120,
+        "git_blob_oid": "5048a7aedcf2a308c5a2c6a32c2cb36e810581d4",
+        "metric_affecting": false,
+        "path": "profiles/pv_profiles/temperature.csv",
+        "sha256": "3aeac74e327c49bb64446a29b7750f175882756a1e2b2a06b083aec43f341fff",
+        "verified": true
+      }
+    ],
+    "git": {
+      "head": "7c8bcca06708ea2dd54b822821d637814ef08dc4",
+      "origin": "https://github.com/openEDI/oedisi-ieee123",
+      "verified": true
+    },
+    "pinned_commit": "7c8bcca06708ea2dd54b822821d637814ef08dc4",
+    "repository_url": "https://github.com/openEDI/oedisi-ieee123"
+  },
+  "status": "pass",
+  "theory_support": "none",
+  "verified_but_not_numerically_opened": [
+    "profiles/pv_profiles/temperature.csv"
+  ]
+}

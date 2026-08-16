@@ -21,8 +21,8 @@ from cwt.cgt.analysis.phase15_analysis import (
 )
 from cwt.cgt.benchmarks import get_benchmark
 from cwt.cgt.continuation import build_branch_atlas
-from cwt.cgt.loop_protocols import _secondary_value
-from cwt.cgt.models import BranchState, ScanConfig
+from cwt.cgt.loop_protocols import _secondary_value, run_single_loop
+from cwt.cgt.models import BranchState, LoopConfig, ScanConfig
 from cwt.cgt.open_system import observable_operator
 from cwt.cgt.runner import run_benchmark_scan
 from cwt.geometry.mixed_state import phase_alignment_sign, unwrap_phase_sequence
@@ -76,6 +76,21 @@ def test_benchmark_known_key_error() -> None:
     """get_benchmark raises KeyError for an unknown benchmark id."""
     with pytest.raises(KeyError):
         get_benchmark("benchmark_unknown_xyz")
+
+
+@pytest.mark.unit
+def test_benchmark_c_nonzero_flux_does_not_guarantee_response() -> None:
+    """Zero current coupling is a repository-native nondegeneracy counterexample."""
+
+    benchmark = get_benchmark("benchmark_c")
+    config = LoopConfig(current_phase_gain=0.0)
+    ccw = run_single_loop(benchmark, (0.0, 0.0), 0.16, "ccw", config)
+    cw = run_single_loop(benchmark, (0.0, 0.0), 0.16, "cw", config)
+
+    assert abs(ccw["signed_flux"]) > 1.0e-4
+    assert cw["signed_flux"] == pytest.approx(-ccw["signed_flux"])
+    assert ccw["response"] == pytest.approx(0.0, abs=1.0e-15)
+    assert cw["response"] == pytest.approx(0.0, abs=1.0e-15)
 
 
 # ---------------------------------------------------------------------------

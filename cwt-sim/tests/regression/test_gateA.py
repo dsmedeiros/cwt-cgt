@@ -15,7 +15,9 @@ def _mean_ci(values):
     return mean, (mean - margin, mean + margin)
 
 
-def test_gateA_linear_and_orientation():
+def test_gateA_flux_conditioned_construction_consistency():
+    """Gate A covers programmed flux-conditioned behavior, not independent evidence."""
+
     results = run.run_experiment(num_trials=4, grid_size=8, s_min=0.6)
 
     for graph in results.graphs:
@@ -25,12 +27,12 @@ def test_gateA_linear_and_orientation():
         extent_small = extent_map[0.02]
         extent_large = extent_map[0.04]
 
-        slope_small = np.mean(extent_small.slope_samples())
-        slope_large = np.mean(extent_large.slope_samples())
+        response_per_flux_small = np.mean(extent_small.response_per_flux_samples())
+        response_per_flux_large = np.mean(extent_large.response_per_flux_samples())
 
-        assert slope_small != 0.0
+        assert response_per_flux_small != 0.0
 
-        ratio = slope_large / slope_small
+        ratio = response_per_flux_large / response_per_flux_small
         assert abs(ratio - 1.0) <= 0.2
 
         for extent in (extent_small, extent_large):
@@ -43,3 +45,16 @@ def test_gateA_linear_and_orientation():
             ccw_mean = np.mean(extent.ccw_bias())
             cw_mean = np.mean(extent.cw_bias())
             assert np.sign(ccw_mean) == -np.sign(cw_mean)
+
+    payload = results.to_dict()
+    assert payload["evidence_tier"] == "internal_synthetic"
+    assert payload["claim_scope"] == "flux_conditioned_construction_check"
+    assert payload["external_dataset_ingested"] is False
+    sample = payload["graphs"][0]["extents"][0]["samples"][0]["ccw"]
+    assert "observed_response_per_flux" in sample
+    assert "slope" not in sample
+
+    report = run._render_report(results)
+    assert "construction consistency only" in report
+    assert "Observed R/Φ mean" in report
+    assert "κ₁ mean" not in report

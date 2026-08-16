@@ -18,3 +18,8 @@
 *.gif       binary
 *.ico       binary
 *.pdf       binary
+
+# Provenance-locked experiment snapshots carry byte-level SHA-256 records.
+# Preserve their reviewed bytes while retaining textual diffs.
+cwt-sim/experiments/independent_response_theorem/artifacts/** -text !eol diff -whitespace
+cwt-sim/experiments/oedi_ieee123_reconstruction/artifacts/** -text !eol diff -whitespace
