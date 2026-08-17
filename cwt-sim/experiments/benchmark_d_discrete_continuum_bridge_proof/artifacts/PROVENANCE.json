@@ -1,0 +1,178 @@
+{
+  "artifact_kind": "internal_analytic_rational_discrete_continuum_bridge_proof",
+  "clean_cli_local_module_path_set_sha256": "b33b84381569c6c15dd1378b2c81bcdce1f80e8e4d908d8f765f7d9fa1423b33",
+  "clean_cli_local_module_paths": [
+    "cwt/__init__.py",
+    "cwt/cgt/__init__.py",
+    "cwt/cgt/_geom_compat.py",
+    "cwt/cgt/benchmarks.py",
+    "cwt/cgt/continuation.py",
+    "cwt/cgt/loop_protocols.py",
+    "cwt/cgt/models.py",
+    "cwt/cgt/open_system.py",
+    "cwt/cgt/runner.py",
+    "cwt/geometry/berry.py",
+    "cwt/geometry/branch_distance.py",
+    "cwt/geometry/coherence.py",
+    "cwt/geometry/mixed_state.py",
+    "cwt/geometry/psi.py",
+    "cwt/geometry/stats.py",
+    "experiments/__init__.py",
+    "experiments/benchmark_d_discrete_continuum_bridge_proof/__init__.py",
+    "experiments/benchmark_d_discrete_continuum_bridge_proof/adapter.py",
+    "experiments/benchmark_d_discrete_continuum_bridge_proof/artifacts.py",
+    "experiments/benchmark_d_discrete_continuum_bridge_proof/contract.py",
+    "experiments/benchmark_d_discrete_continuum_bridge_proof/exact_math.py",
+    "experiments/benchmark_d_discrete_continuum_bridge_proof/run.py",
+    "experiments/benchmark_d_discrete_continuum_bridge_proof/theorem.py"
+  ],
+  "disposition": "PASS_INTERNAL_ANALYTIC",
+  "evidence_status": "NO_EMPIRICAL_EVIDENCE",
+  "experiment_id": "benchmark_d_discrete_continuum_bridge_proof",
+  "finite_core_regression_scope": "finite_float_core_regression_and_provenance_only_not_uniform_runtime_proof",
+  "finite_core_samples_prove_uniform_runtime_equivalence": false,
+  "no_empirical_or_external_data": true,
+  "no_full_density_or_scheduler_bridge_claim": true,
+  "no_physical_time_or_cgt_alignment_claim": true,
+  "predecessor_context_closure": "recursive_path_bound_ordinary_files_no_symlink_or_reparse",
+  "prior_artifact_context_raw_hashes": {
+    "benchmark_d_lindblad_response_proof": {
+      "CHECKSUMS.json": "546fa95d42a16f2237e75096ae1bd0f6496d347888ae6d634c32d7f0c18ea6ad",
+      "PROVENANCE.json": "02f25fb843553364f08002a385afa97f4645f9fa9c2ce2c47f730540eeed8693",
+      "REPORT.md": "3f919959751b8ed9ade37ff2ec2ebb3f0ca907b7e2aea8ccfc1b11a0b56e643a",
+      "records.json": "4b26806e220cbddee1a2049752ea736ac9feb27b274974aa18634fe01f95126e",
+      "summary.json": "2c7400e822807512e6f6d245d27b5823ca8c90db0c2b11ce6dd4a94db3d4df55"
+    },
+    "benchmark_d_open_response_proof": {
+      "CHECKSUMS.json": "dacefa959753a1b704f662bc99ca3a144ce0f7b3ef15e8ca8c07a214d0febe94",
+      "PROVENANCE.json": "7e1859d43d71799959c30362e42c7ad2fe3f40f7219eaf427ea74d5fea632b9a",
+      "REPORT.md": "1fd6f435fed7c78c31b693fca8bcb140272bd5f0b0c9c9b0f244665c7fb546fb",
+      "records.json": "a0677382117603b3f675bf8bb0c2b1cd18025e9ae6e6e7ca8c3b4aa4d5a982ec",
+      "summary.json": "7dbb9696a3190911d00bb76700459610e2f90a76535bdc1b20864edbbad44ede"
+    }
+  },
+  "raw_artifact_payload_sha256": {
+    "REPORT.md": "516f2a01e7af966a75d69d69d9eba131a832cf5ee4045b31466d83914b75ffb3",
+    "records.json": "2406aceaec525a29a6b517bdb5ef71f7012e648f32e8853549d7c7f186a6a2dd",
+    "summary.json": "ce9eba357d76c56c06fdb434d88a9730779c0f5fc283ef9f985fdb79b1280e0a"
+  },
+  "reproduction_command": "cd cwt-sim && .venv/Scripts/python.exe experiments/benchmark_d_discrete_continuum_bridge_proof/run.py run",
+  "runtime": {
+    "numpy": "2.3.3",
+    "python": "3.11.9",
+    "typer": "0.17.4"
+  },
+  "scale_domain": "positive_rational_s_with_0<s<=1/100",
+  "schema_version": 1,
+  "source_hash_domain": "sha256_utf8_lf_v1",
+  "source_hash_domain_definition": "strict UTF-8 with BOM forbidden; CRLF maps to LF only; remaining bare CR is rejected; no whitespace, Unicode, or other normalization",
+  "source_hashes": {
+    "cwt/__init__.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "5545ff85f06287efef405b4b063a3f0817efa4e9ef3a51326bba27c720ee722c"
+    },
+    "cwt/cgt/__init__.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "95fa221b50dfb5e7006eb64b95864985fedda01201287df7e3e3c7ebe92049c6"
+    },
+    "cwt/cgt/_geom_compat.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "d2e21872f982bc3890cb7e32cdfe006379cfd0aeab65b14f2b308fa0ea46a3ea"
+    },
+    "cwt/cgt/benchmarks.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "eb713c61cb8b860c7011f823cdd4f531ba6dace5a63c1d306c6c5b7e974ef6d0"
+    },
+    "cwt/cgt/continuation.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "a4fd16111b2dba5f435c902db7b9a35c08be7b2fa276e430d1c8d132f6a6b8fe"
+    },
+    "cwt/cgt/loop_protocols.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "f5f12a169c0107f7da383a9549136360428ce07a8ecd9f091caf5db5caae5fc7"
+    },
+    "cwt/cgt/models.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "850babc5a37d29a002d507a0c38f69065881fb429c9c21e91531f213ae68cb70"
+    },
+    "cwt/cgt/open_system.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "2148d7087965bb7193bbd811a535aadbf4db25d71e0b74571ebe6c64f60f778a"
+    },
+    "cwt/cgt/runner.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "cc75438f84a19b9ad2d93c8309f6bd957b174a1d797a16bc57b1a5d4e614d3dc"
+    },
+    "cwt/geometry/berry.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "9917098d6c539e19d714693dffe1df48696e1cdc1c2502228155afdcb044a7ec"
+    },
+    "cwt/geometry/branch_distance.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "3a87e86f402cb20bad5970eda932ea6fb81888464a55517dd710711faf8f5146"
+    },
+    "cwt/geometry/coherence.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "f217072118a9738a8a1bef70881c6b4fba1721d96f4d0892b5fd1eeb961d483b"
+    },
+    "cwt/geometry/mixed_state.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "7f98152a444e17dda7f36b7b9afc1024fc1e46d57df546d21fb460c3bd5ce9b5"
+    },
+    "cwt/geometry/psi.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "a3c9f06ded36507a881d3127efb102a56d313d51692c62663316fd7276c909fd"
+    },
+    "cwt/geometry/stats.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "071c752ea5f6df9470acebd4af92d4bf3e2de6a4ceffd329f540117e73aa99bf"
+    },
+    "experiments/__init__.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "ebafe75c5944d1ed3e1c904b7b728e8fa465320486564affcc86f7591b0c8635"
+    },
+    "experiments/benchmark_d_discrete_continuum_bridge_proof/MODEL_CONTRACT.md": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "8cc58d222ce2571a725c1c794bfbd77a9f57194a1892643af226dc4623824c7c"
+    },
+    "experiments/benchmark_d_discrete_continuum_bridge_proof/__init__.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "3fcc634d6e153fbe4e2bb99b411db72adc83e3a7f68bfca185cf036968b77e13"
+    },
+    "experiments/benchmark_d_discrete_continuum_bridge_proof/adapter.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "3cefe83fdbdf17edb53b69b7477376a9381c51d02f7b4b1a60b7cddf7fb6011b"
+    },
+    "experiments/benchmark_d_discrete_continuum_bridge_proof/artifacts.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "e4a187ad1fae5c56e524679e0703fd86c0789da2ada43a9e135de7b5c49def84"
+    },
+    "experiments/benchmark_d_discrete_continuum_bridge_proof/contract.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "aa7c98a3d310e08d2005d2c1c7452fddcd5fadb65c36fabe362b0b9239f06548"
+    },
+    "experiments/benchmark_d_discrete_continuum_bridge_proof/exact_math.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "dc5849644474e115d090830b0873a4ea690ac765f66f58f777b84d6cd17f2c9c"
+    },
+    "experiments/benchmark_d_discrete_continuum_bridge_proof/run.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "81cfd18476e5c4f7f7d540d8b5722b5fd58f4e3d206c3a5bb6cb21868823d492"
+    },
+    "experiments/benchmark_d_discrete_continuum_bridge_proof/theorem.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "987970d5056fea70af6fd3bff9048d43a2a916c8850ca3f09856ca12caf18654"
+    },
+    "experiments/response_theorem_proof_program/THEOREM.md": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "67fdbf7098c64f5d4e3f35d93b0b98a7578ef7e08242a7e7325e785a5a55937a"
+    },
+    "tests/experiments/test_benchmark_d_discrete_continuum_bridge_proof.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "440d247b23c2f88d94a07fa738c5262d905caeaf8dac4a87fea867cf6e8c43f6"
+    }
+  },
+  "theorem_family_scope": "abstract_exact_fraction_D0_diagonal_population_family",
+  "trajectory_or_finite_ladder_used_for_acceptance": false,
+  "verification_command": "cd cwt-sim && .venv/Scripts/python.exe experiments/benchmark_d_discrete_continuum_bridge_proof/run.py verify"
+}

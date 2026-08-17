@@ -1,0 +1,4792 @@
+[
+  {
+    "name": "algebra",
+    "record_type": "certificate",
+    "value": {
+      "box_jump_generator_l1_bound": {
+        "denominator": 50,
+        "float": 0.98,
+        "fraction": "49/50",
+        "numerator": 49
+      },
+      "closed_loop_exact_gradient_term": "h*d(H*xbar_h)_i",
+      "closed_loop_gradient_curl": {
+        "denominator": 1,
+        "float": 0.0,
+        "fraction": "0/1",
+        "numerator": 0
+      },
+      "continuous_center_F": {
+        "denominator": 235345963257301712101,
+        "float": -122.7502119529289,
+        "fraction": "-28888766872100000000000/235345963257301712101",
+        "numerator": -28888766872100000000000
+      },
+      "fixed_branch_bound_derivation": {
+        "edge_difference_coefficient": {
+          "denominator": 125,
+          "float": 0.008,
+          "fraction": "1/125",
+          "numerator": 1
+        },
+        "inverse_l1_bound": {
+          "denominator": 1,
+          "float": 25.0,
+          "fraction": "25/1",
+          "numerator": 25
+        },
+        "jump_generator_l1_bound": {
+          "denominator": 1,
+          "float": 2.0,
+          "fraction": "2/1",
+          "numerator": 2
+        }
+      },
+      "fixed_branch_difference_bound": "||xbar_h-xbar||_1<=2*h/5",
+      "generator_difference": "A_h-A=-(h/125)*(K^T-I)",
+      "generator_formula_verified": true,
+      "generator_limit_target": "A=(1/5)*(K^T-I)-delta*I",
+      "hF_exact_identity": true,
+      "matrix_identity_max_error": {
+        "denominator": 1,
+        "float": 0.0,
+        "fraction": "0/1",
+        "numerator": 0
+      },
+      "parameter_derivative_bounds": {
+        "R_bias_l1": {
+          "denominator": 1,
+          "float": 2.0,
+          "fraction": "2/1",
+          "numerator": 2
+        },
+        "R_diffusion_l1": {
+          "denominator": 1,
+          "float": 4.0,
+          "fraction": "4/1",
+          "numerator": 4
+        },
+        "R_l1_upper": {
+          "denominator": 1,
+          "float": 2.0,
+          "fraction": "2/1",
+          "numerator": 2
+        },
+        "X_i_rule": "||X_h,i||_1<=5*L_i",
+        "X_ij_rule": "||X_h,ij||_1<=50*L_i*L_j"
+      },
+      "representative_exact_h": {
+        "denominator": 10,
+        "float": 0.1,
+        "fraction": "1/10",
+        "numerator": 1
+      },
+      "representative_hB": [
+        {
+          "denominator": 388946741716856049980345254733309824569345170855369461,
+          "float": -90.69632971185787,
+          "fraction": "-35276041927104801773874515852432074595870415865044850800/388946741716856049980345254733309824569345170855369461",
+          "numerator": -35276041927104801773874515852432074595870415865044850800
+        },
+        {
+          "denominator": 388946741716856049980345254733309824569345170855369461,
+          "float": 3.645199735386452,
+          "fraction": "1417788559985706373013178055378847243960871445600753440/388946741716856049980345254733309824569345170855369461",
+          "numerator": 1417788559985706373013178055378847243960871445600753440
+        }
+      ],
+      "representative_hF": {
+        "denominator": 388946741716856049980345254733309824569345170855369461,
+        "float": -122.23559874807503,
+        "fraction": "-47543137854872795190516526504679750852396068200000000000/388946741716856049980345254733309824569345170855369461",
+        "numerator": -47543137854872795190516526504679750852396068200000000000
+      },
+      "source_generator_error": {
+        "denominator": 1,
+        "float": 0.0,
+        "fraction": "0/1",
+        "numerator": 0
+      },
+      "source_identity": [
+        {
+          "denominator": 1250,
+          "float": 0.0008,
+          "fraction": "1/1250",
+          "numerator": 1
+        },
+        {
+          "denominator": 1250,
+          "float": 0.0008,
+          "fraction": "1/1250",
+          "numerator": 1
+        },
+        {
+          "denominator": 1250,
+          "float": 0.0008,
+          "fraction": "1/1250",
+          "numerator": 1
+        },
+        {
+          "denominator": 1250,
+          "float": 0.0008,
+          "fraction": "1/1250",
+          "numerator": 1
+        },
+        {
+          "denominator": 1250,
+          "float": 0.0008,
+          "fraction": "1/1250",
+          "numerator": 1
+        }
+      ],
+      "uniform_generator_error_bound": "||A_h-A||_1<=49*h/6250",
+      "uniform_generator_error_coefficient": {
+        "denominator": 6250,
+        "float": 0.00784,
+        "fraction": "49/6250",
+        "numerator": 49
+      }
+    }
+  },
+  {
+    "name": "context",
+    "record_type": "certificate",
+    "value": {
+      "legacy_open_point": {
+        "h": "9/50",
+        "off_primary_family": true,
+        "primary_family_q": "9/1250",
+        "q": "1/125",
+        "q_mismatch": "1/1250"
+      },
+      "lindblad_artifacts": {
+        "all_declared_hashes_match": true,
+        "checksums_sha256": "546fa95d42a16f2237e75096ae1bd0f6496d347888ae6d634c32d7f0c18ea6ad",
+        "declared_file_count": 4,
+        "entry_types": {
+          "CHECKSUMS.json": "file",
+          "PROVENANCE.json": "file",
+          "REPORT.md": "file",
+          "records.json": "file",
+          "summary.json": "file"
+        },
+        "raw_file_sha256": {
+          "CHECKSUMS.json": "546fa95d42a16f2237e75096ae1bd0f6496d347888ae6d634c32d7f0c18ea6ad",
+          "PROVENANCE.json": "02f25fb843553364f08002a385afa97f4645f9fa9c2ce2c47f730540eeed8693",
+          "REPORT.md": "3f919959751b8ed9ade37ff2ec2ebb3f0ca907b7e2aea8ccfc1b11a0b56e643a",
+          "records.json": "4b26806e220cbddee1a2049752ea736ac9feb27b274974aa18634fe01f95126e",
+          "summary.json": "2c7400e822807512e6f6d245d27b5823ca8c90db0c2b11ce6dd4a94db3d4df55"
+        },
+        "recursive_inventory_exact": true,
+        "relative_path": "experiments/benchmark_d_lindblad_response_proof/artifacts",
+        "symlink_or_reparse_entries": []
+      },
+      "open_artifacts": {
+        "all_declared_hashes_match": true,
+        "checksums_sha256": "dacefa959753a1b704f662bc99ca3a144ce0f7b3ef15e8ca8c07a214d0febe94",
+        "declared_file_count": 4,
+        "entry_types": {
+          "CHECKSUMS.json": "file",
+          "PROVENANCE.json": "file",
+          "REPORT.md": "file",
+          "records.json": "file",
+          "summary.json": "file"
+        },
+        "raw_file_sha256": {
+          "CHECKSUMS.json": "dacefa959753a1b704f662bc99ca3a144ce0f7b3ef15e8ca8c07a214d0febe94",
+          "PROVENANCE.json": "7e1859d43d71799959c30362e42c7ad2fe3f40f7219eaf427ea74d5fea632b9a",
+          "REPORT.md": "1fd6f435fed7c78c31b693fca8bcb140272bd5f0b0c9c9b0f244665c7fb546fb",
+          "records.json": "a0677382117603b3f675bf8bb0c2b1cd18025e9ae6e6e7ca8c3b4aa4d5a982ec",
+          "summary.json": "7dbb9696a3190911d00bb76700459610e2f90a76535bdc1b20864edbbad44ede"
+        },
+        "recursive_inventory_exact": true,
+        "relative_path": "experiments/benchmark_d_open_response_proof/artifacts",
+        "symlink_or_reparse_entries": []
+      },
+      "roles": {
+        "lindblad": "hash_bound_continuous_target_context_not_new_evidence",
+        "open": "hash_bound_structural_context_off_primary_family_not_numerically_bridged"
+      }
+    }
+  },
+  {
+    "name": "contract_issues",
+    "record_type": "certificate",
+    "value": []
+  },
+  {
+    "name": "core_binding",
+    "record_type": "certificate",
+    "value": {
+      "branch_or_fixed_helper_called": false,
+      "control_points": [
+        [
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          {
+            "denominator": 200,
+            "float": 0.205,
+            "fraction": "41/200",
+            "numerator": 41
+          }
+        ],
+        [
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          {
+            "denominator": 200,
+            "float": 0.245,
+            "fraction": "49/200",
+            "numerator": 49
+          }
+        ],
+        [
+          {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          {
+            "denominator": 200,
+            "float": 0.205,
+            "fraction": "41/200",
+            "numerator": 41
+          }
+        ],
+        [
+          {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          {
+            "denominator": 200,
+            "float": 0.245,
+            "fraction": "49/200",
+            "numerator": 49
+          }
+        ],
+        [
+          {
+            "denominator": 100,
+            "float": 0.03,
+            "fraction": "3/100",
+            "numerator": 3
+          },
+          {
+            "denominator": 40,
+            "float": 0.225,
+            "fraction": "9/40",
+            "numerator": 9
+          }
+        ]
+      ],
+      "h_crosscheck_values_not_proof": [
+        {
+          "denominator": 5,
+          "float": 0.2,
+          "fraction": "1/5",
+          "numerator": 1
+        },
+        {
+          "denominator": 10,
+          "float": 0.1,
+          "fraction": "1/10",
+          "numerator": 1
+        },
+        {
+          "denominator": 20,
+          "float": 0.05,
+          "fraction": "1/20",
+          "numerator": 1
+        }
+      ],
+      "maximum_affine_error": 2.220446049250313e-16,
+      "maximum_deviation_error": 1.1102230246251565e-15,
+      "maximum_kernel_error": 1.1102230246251565e-16,
+      "maximum_kraus_tp_error": 2.220446049250313e-16,
+      "maximum_offdiagonal_output": 0.0,
+      "maximum_projection_delta": 3.3307065725188144e-16,
+      "observable_hermiticity_error": 0.0,
+      "observable_maximum_absolute_error": 0.0,
+      "observable_name": "mean_position",
+      "population_basis_count": 5,
+      "runtime_h_domain": {
+        "maximum": {
+          "denominator": 5,
+          "float": 0.2,
+          "fraction": "1/5",
+          "numerator": 1
+        },
+        "minimum": {
+          "denominator": 1000000000000,
+          "float": 1e-12,
+          "fraction": "1/1000000000000",
+          "numerator": 1
+        }
+      },
+      "semantic_scope": "finite_float_core_regression_and_provenance_only_not_uniform_runtime_proof",
+      "traceless_diagonal_deviation_basis_count": 4,
+      "uniform_family_proof_source": "exact_fraction_symbolic_affine_identity_not_runtime_samples"
+    }
+  },
+  {
+    "name": "core_safety",
+    "record_type": "certificate",
+    "value": {
+      "clip_inactive": true,
+      "clip_support_margin": {
+        "denominator": 200,
+        "float": 0.155,
+        "fraction": "31/200",
+        "numerator": 31
+      },
+      "core_rescale_threshold": {
+        "denominator": 50,
+        "float": 0.98,
+        "fraction": "49/50",
+        "numerator": 49
+      },
+      "formal_maximum_no_jump_loss": {
+        "denominator": 2500,
+        "float": 0.0796,
+        "fraction": "199/2500",
+        "numerator": 199
+      },
+      "formal_no_jump_radicand_floor": {
+        "denominator": 2500,
+        "float": 0.9204,
+        "fraction": "2301/2500",
+        "numerator": 2301
+      },
+      "kernel_minus_minimum": {
+        "denominator": 200,
+        "float": 0.155,
+        "fraction": "31/200",
+        "numerator": 31
+      },
+      "kernel_plus_maximum": {
+        "denominator": 200,
+        "float": 0.295,
+        "fraction": "59/200",
+        "numerator": 59
+      },
+      "maximum_no_jump_loss": {
+        "denominator": 2500,
+        "float": 0.0796,
+        "fraction": "199/2500",
+        "numerator": 199
+      },
+      "no_jump_radicand_floor": {
+        "denominator": 2500,
+        "float": 0.9204,
+        "fraction": "2301/2500",
+        "numerator": 2301
+      },
+      "projection_inactive_required": true,
+      "rescale_inactive": true,
+      "rescale_margin": {
+        "denominator": 2500,
+        "float": 0.9004,
+        "fraction": "2251/2500",
+        "numerator": 2251
+      }
+    }
+  },
+  {
+    "name": "curvature",
+    "record_type": "certificate",
+    "value": {
+      "auxiliary_h_symbol_present": true,
+      "center_limit": {
+        "denominator": 235345963257301712101,
+        "float": -122.7502119529289,
+        "fraction": "-28888766872100000000000/235345963257301712101",
+        "numerator": -28888766872100000000000
+      },
+      "center_limit_matches_formal": true,
+      "curvature_interval": {
+        "lower": {
+          "denominator": 59247533186255775434061992743156729,
+          "float": -132.93483463430567,
+          "fraction": "-7876061026605448950195312500000000000/59247533186255775434061992743156729",
+          "numerator": -7876061026605448950195312500000000000
+        },
+        "upper": {
+          "denominator": 44415389442843585257542657921,
+          "float": -112.03481003178874,
+          "fraction": "-4976069718716896388845862400000/44415389442843585257542657921",
+          "numerator": -4976069718716896388845862400000
+        }
+      },
+      "curvature_numerator_interval": {
+        "lower": {
+          "denominator": 3906250000000000000000000000000000000000000,
+          "float": -3.986291923119602e-19,
+          "fraction": "-1557145282468594501297901/3906250000000000000000000000000000000000000",
+          "numerator": -1557145282468594501297901
+        },
+        "upper": {
+          "denominator": 30517578125000000000000000000000000000000000000,
+          "float": -3.638311097248596e-19,
+          "fraction": "-11103244315333849825142709063/30517578125000000000000000000000000000000000000",
+          "numerator": -11103244315333849825142709063
+        }
+      },
+      "derivative_absolute_upper": {
+        "denominator": 1370101903124073642186952624802710874225595389,
+        "float": 5.67917909685923,
+        "fraction": "7781054088789288957565176690429687500000000000/1370101903124073642186952624802710874225595389",
+        "numerator": 7781054088789288957565176690429687500000000000
+      },
+      "derivative_interval": {
+        "lower": {
+          "denominator": 49599065129328417249365203984301989,
+          "float": 4.655599091847439,
+          "fraction": "230913362572583351198708038156544000/49599065129328417249365203984301989",
+          "numerator": 230913362572583351198708038156544000
+        },
+        "upper": {
+          "denominator": 1370101903124073642186952624802710874225595389,
+          "float": 5.67917909685923,
+          "fraction": "7781054088789288957565176690429687500000000000/1370101903124073642186952624802710874225595389",
+          "numerator": 7781054088789288957565176690429687500000000000
+        }
+      },
+      "determinant_interval": {
+        "lower": {
+          "denominator": 25000000000000,
+          "float": -7.54895284e-06,
+          "fraction": "-188723821/25000000000000",
+          "numerator": -188723821
+        },
+        "upper": {
+          "denominator": 3125000000000000,
+          "float": -7.40001457312e-06,
+          "fraction": "-23125045541/3125000000000000",
+          "numerator": -23125045541
+        }
+      },
+      "effective_edge_interval": {
+        "lower": {
+          "denominator": 625,
+          "float": 0.1984,
+          "fraction": "124/625",
+          "numerator": 124
+        },
+        "upper": {
+          "denominator": 5,
+          "float": 0.2,
+          "fraction": "1/5",
+          "numerator": 1
+        }
+      },
+      "first_h_coefficient": {
+        "denominator": 44415389442843585257542657921,
+        "float": 5.1406126247867805,
+        "fraction": "228322311704703213246688000000/44415389442843585257542657921",
+        "numerator": 228322311704703213246688000000
+      },
+      "first_h_coefficient_matches_formal": true,
+      "formal_center_limit": {
+        "denominator": 235345963257301712101,
+        "float": -122.7502119529289,
+        "fraction": "-28888766872100000000000/235345963257301712101",
+        "numerator": -28888766872100000000000
+      },
+      "formal_first_h_coefficient": {
+        "denominator": 44415389442843585257542657921,
+        "float": 5.1406126247867805,
+        "fraction": "228322311704703213246688000000/44415389442843585257542657921",
+        "numerator": 228322311704703213246688000000
+      },
+      "h_domain": "0<=h<=1/5_for_closed_interval_certificate_primary_requires_h>0",
+      "uniform_error_bound": "abs(hF_h-F_CT)<88*h_by_mean_value_theorem",
+      "uniform_error_coefficient": {
+        "denominator": 1,
+        "float": 88.0,
+        "fraction": "88/1",
+        "numerator": 88
+      }
+    }
+  },
+  {
+    "name": "fixed_time",
+    "record_type": "certificate",
+    "value": {
+      "auxiliary_hB_component_coefficients": {
+        "bias": {
+          "denominator": 1,
+          "float": 640.0,
+          "fraction": "640/1",
+          "numerator": 640
+        },
+        "diffusion": {
+          "denominator": 1,
+          "float": 1280.0,
+          "fraction": "1280/1",
+          "numerator": 1280
+        }
+      },
+      "clock_path_initialization": {
+        "closing_endpoint_processed_once": true,
+        "continuous_exact_xbar_at_common_start": true,
+        "discrete_exact_xbar_h_at_common_start": true,
+        "minus_is_exact_reverse_of_plus": true,
+        "positive_integer_N_with_Nh_equal_T": true,
+        "right_endpoint_update_then_sample": true,
+        "same_uniform_circle_and_affine_clock": true
+      },
+      "contraction": {
+        "delta": {
+          "denominator": 25,
+          "float": 0.04,
+          "fraction": "1/25",
+          "numerator": 1
+        },
+        "product_exponential_rate": {
+          "denominator": 25,
+          "float": 0.04,
+          "fraction": "1/25",
+          "numerator": 1
+        },
+        "product_uses_elapsed_model_time_kh": true,
+        "step_factor_constant": {
+          "denominator": 1,
+          "float": 1.0,
+          "fraction": "1/1",
+          "numerator": 1
+        },
+        "step_factor_h_coefficient": {
+          "denominator": 25,
+          "float": -0.04,
+          "fraction": "-1/25",
+          "numerator": -1
+        }
+      },
+      "exact_circle_extrema": {
+        "bias_maximum": {
+          "denominator": 25,
+          "float": 0.04,
+          "fraction": "1/25",
+          "numerator": 1
+        },
+        "bias_minimum": {
+          "denominator": 50,
+          "float": 0.02,
+          "fraction": "1/50",
+          "numerator": 1
+        },
+        "diffusion_maximum": {
+          "denominator": 200,
+          "float": 0.235,
+          "fraction": "47/200",
+          "numerator": 47
+        },
+        "diffusion_minimum": {
+          "denominator": 200,
+          "float": 0.215,
+          "fraction": "43/200",
+          "numerator": 43
+        },
+        "face_margins": [
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          }
+        ],
+        "inside_box": true,
+        "minimum_face_margin": {
+          "denominator": 100,
+          "float": 0.01,
+          "fraction": "1/100",
+          "numerator": 1
+        },
+        "uniform_domain_minimum_face_margin": {
+          "denominator": 100,
+          "float": 0.01,
+          "fraction": "1/100",
+          "numerator": 1
+        }
+      },
+      "fixed_time_bound": {
+        "circle_pi_coefficient": {
+          "denominator": 1,
+          "float": 120.0,
+          "fraction": "120/1",
+          "numerator": 120
+        },
+        "directed_circle_coefficient": {
+          "denominator": 113,
+          "float": 376.9911504424779,
+          "fraction": "42600/113",
+          "numerator": 42600
+        },
+        "directed_pi_upper": {
+          "denominator": 113,
+          "float": 3.1415929203539825,
+          "fraction": "355/113",
+          "numerator": 355
+        },
+        "duration_power": 1,
+        "outer_h_power": 1,
+        "same_bound_for_each_orientation_and_qanti": true,
+        "scale_power": 1,
+        "time_coefficient": {
+          "denominator": 25,
+          "float": 8.56,
+          "fraction": "214/25",
+          "numerator": 214
+        }
+      },
+      "limits": {
+        "area_relative_joint_conditions": [
+          "s*T_to_infinity",
+          "h*T/s^2_to_0"
+        ],
+        "interchangeability_claimed": false,
+        "primary_order": [
+          "h_to_0_at_fixed_T_s_with_positive_integer_T_over_h",
+          "T_to_infinity",
+          "optional_s_to_0_within_declared_scale_domain"
+        ],
+        "sufficient_joint_conditions": [
+          "T_to_infinity",
+          "h*T_to_0"
+        ]
+      },
+      "local_defect": {
+        "duration_power": -1,
+        "scale_power": 1,
+        "speed_pi_coefficient": {
+          "denominator": 5,
+          "float": 1.2,
+          "fraction": "6/5",
+          "numerator": 6
+        },
+        "static_coefficient": {
+          "denominator": 625,
+          "float": 0.1216,
+          "fraction": "76/625",
+          "numerator": 76
+        }
+      },
+      "response_reducer": {
+        "q_step_power": 1,
+        "q_step_prefactor": {
+          "denominator": 1,
+          "float": 1.0,
+          "fraction": "1/1",
+          "numerator": 1
+        },
+        "qanti_is_half_orientation_difference": true,
+        "raw_sum_is_right_endpoint_centered_readout": true
+      },
+      "scale": {
+        "denominator": 100,
+        "float": 0.01,
+        "fraction": "1/100",
+        "numerator": 1
+      },
+      "scale_domain": {
+        "declared_domain": "positive_rational_s_with_0<s<=1/100",
+        "maximum_inclusive": {
+          "denominator": 100,
+          "float": 0.01,
+          "fraction": "1/100",
+          "numerator": 1
+        },
+        "minimum_exclusive": {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        }
+      },
+      "schema_version": 2,
+      "trajectory_or_finite_ladder_used_for_acceptance": false,
+      "uniform_over_declared_scale_domain": true
+    }
+  },
+  {
+    "name": "refusals",
+    "record_type": "certificate",
+    "value": {
+      "checks": {
+        "R01": true,
+        "R02": true,
+        "R03": true,
+        "R04": true,
+        "R05": true,
+        "R06": true,
+        "R07": true,
+        "R08": true,
+        "R09": true,
+        "R10": true,
+        "R11": true,
+        "R12": true,
+        "R13": true,
+        "R14": true,
+        "R15": true,
+        "R16": true,
+        "R17": true,
+        "R18": true,
+        "R19": true,
+        "R20": true
+      },
+      "complete": true,
+      "mutation_issues": {
+        "claim_inflation": [
+          "claim_ceiling: outside frozen bridge contract"
+        ],
+        "coherent": [
+          "coherent_scale: outside frozen bridge contract"
+        ],
+        "exponential_q": [
+          "depolarizing_rule: outside frozen bridge contract"
+        ],
+        "fixed_q": [
+          "depolarizing_rule: outside frozen bridge contract"
+        ],
+        "helper": [
+          "fixed_point_helper_policy: outside frozen bridge contract"
+        ],
+        "runtime_scope": [
+          "core_regression_scope: outside frozen bridge contract"
+        ],
+        "scale_domain": [
+          "circle_scale: outside frozen bridge contract"
+        ],
+        "site": [
+          "site_potential_scale: outside frozen bridge contract"
+        ],
+        "wrong_center": [
+          "response_centering: outside frozen bridge contract"
+        ],
+        "wrong_clock": [
+          "slow_clock: outside frozen bridge contract"
+        ],
+        "wrong_reverse": [
+          "reversal_convention: outside frozen bridge contract"
+        ],
+        "wrong_scaling": [
+          "response_scaling: outside frozen bridge contract"
+        ],
+        "zero_delta": [
+          "depolarizing_rate: outside frozen bridge contract"
+        ]
+      },
+      "specifications": {
+        "R01": "legacy_dt_9/50_q_1/125_off_family",
+        "R02": "fixed_or_exponential_q_forbidden_as_primary",
+        "R03": "wrong_jump_or_dephasing_h_scaling",
+        "R04": "missing_affine_source_or_K_transpose",
+        "R05": "missing_or_doubled_h_response_scaling",
+        "R06": "wrong_or_iterative_fixed_branch_centering",
+        "R07": "endpoint_reversal_clock_or_path_mismatch",
+        "R08": "incomplete_diagonal_affine_identity",
+        "R09": "active_clip_rescale_or_projection_branch",
+        "R10": "q_h_over_5_mislabeled_as_stationary_floor",
+        "R11": "per_tick_gap_reused_across_h",
+        "R12": "finite_ladder_or_Ns_only_claimed_as_proof",
+        "R13": "unproved_joint_limit_or_limit_interchange",
+        "R14": "omitted_context_or_source_provenance",
+        "R15": "full_density_scheduler_physical_empirical_or_CGT_claim_inflation",
+        "R16": "nonzero_coherent_or_site_scale_or_zero_delta",
+        "R17": "branch_helper_Euler_PSD_or_projection_dependent_theorem",
+        "R18": "finite_core_samples_or_tiny_h_float_claimed_as_uniform_runtime_proof",
+        "R19": "scale_outside_exact_0<s<=1/100_domain",
+        "R20": "nonrecursive_or_link_following_predecessor_context_closure"
+      }
+    }
+  },
+  {
+    "name": "stationary_contraction",
+    "record_type": "certificate",
+    "value": {
+      "analytic_floor_below_sampled_minimum": true,
+      "analytic_stationary_floor": {
+        "denominator": 69,
+        "float": 0.057971014492753624,
+        "fraction": "4/69",
+        "numerator": 4
+      },
+      "delta": {
+        "denominator": 25,
+        "float": 0.04,
+        "fraction": "1/25",
+        "numerator": 1
+      },
+      "fixed_branch_method": "exact_fraction_linear_solve_not_iteration",
+      "floor_derivation": "x_i=e/(e+delta)*(K^T*x)_i+delta/(5*(e+delta)); e<=1/5 and K_ii>=51/100 imply x_i>=4/69",
+      "floor_is_not_q_h_over_5": true,
+      "maximum_exact_stationary_residual": {
+        "denominator": 1,
+        "float": 0.0,
+        "fraction": "0/1",
+        "numerator": 0
+      },
+      "maximum_exact_trace_error": {
+        "denominator": 1,
+        "float": 0.0,
+        "fraction": "0/1",
+        "numerator": 0
+      },
+      "representative_crosscheck_ladder_not_proof": [
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.205,
+            "fraction": "41/200",
+            "numerator": 41
+          },
+          "h": {
+            "denominator": 5,
+            "float": 0.2,
+            "fraction": "1/5",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 15537749099809,
+            "float": 0.18846368809398503,
+            "fraction": "2928301500029/15537749099809",
+            "numerator": 2928301500029
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.245,
+            "fraction": "49/200",
+            "numerator": 49
+          },
+          "h": {
+            "denominator": 5,
+            "float": 0.2,
+            "fraction": "1/5",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 216321985982281,
+            "float": 0.1891412061400564,
+            "fraction": "40915401343301/216321985982281",
+            "numerator": 40915401343301
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.205,
+            "fraction": "41/200",
+            "numerator": 41
+          },
+          "h": {
+            "denominator": 5,
+            "float": 0.2,
+            "fraction": "1/5",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 143530614220905,
+            "float": 0.14837916841325086,
+            "fraction": "21296953179941/143530614220905",
+            "numerator": 21296953179941
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.245,
+            "fraction": "49/200",
+            "numerator": 49
+          },
+          "h": {
+            "denominator": 5,
+            "float": 0.2,
+            "fraction": "1/5",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 220994388340105,
+            "float": 0.15092016941594144,
+            "fraction": "33352510528261/220994388340105",
+            "numerator": 33352510528261
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.03,
+            "fraction": "3/100",
+            "numerator": 3
+          },
+          "diffusion": {
+            "denominator": 40,
+            "float": 0.225,
+            "fraction": "9/40",
+            "numerator": 9
+          },
+          "h": {
+            "denominator": 5,
+            "float": 0.2,
+            "fraction": "1/5",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 176455448682841,
+            "float": 0.16812886831046278,
+            "fraction": "29667254894261/176455448682841",
+            "numerator": 29667254894261
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.205,
+            "fraction": "41/200",
+            "numerator": 41
+          },
+          "h": {
+            "denominator": 10,
+            "float": 0.1,
+            "fraction": "1/10",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 578295286715880061,
+            "float": 0.18843346408880407,
+            "fraction": "108970184142101441/578295286715880061",
+            "numerator": 108970184142101441
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.245,
+            "fraction": "49/200",
+            "numerator": 49
+          },
+          "h": {
+            "denominator": 10,
+            "float": 0.1,
+            "fraction": "1/10",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 895091962837164061,
+            "float": 0.18911410468889023,
+            "fraction": "169274515166171681/895091962837164061",
+            "numerator": 169274515166171681
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.205,
+            "fraction": "41/200",
+            "numerator": 41
+          },
+          "h": {
+            "denominator": 10,
+            "float": 0.1,
+            "fraction": "1/10",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 593614582565439805,
+            "float": 0.14825701034523628,
+            "fraction": "88007523308487521/593614582565439805",
+            "numerator": 88007523308487521
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.245,
+            "fraction": "49/200",
+            "numerator": 49
+          },
+          "h": {
+            "denominator": 10,
+            "float": 0.1,
+            "fraction": "1/10",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 914491106224055005,
+            "float": 0.15080795459441917,
+            "fraction": "137912533224437441/914491106224055005",
+            "numerator": 137912533224437441
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.03,
+            "fraction": "3/100",
+            "numerator": 3
+          },
+          "diffusion": {
+            "denominator": 40,
+            "float": 0.225,
+            "fraction": "9/40",
+            "numerator": 9
+          },
+          "h": {
+            "denominator": 10,
+            "float": 0.1,
+            "fraction": "1/10",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 729956050220037421,
+            "float": 0.1680508421306351,
+            "fraction": "122669728957829441/729956050220037421",
+            "numerator": 122669728957829441
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.205,
+            "fraction": "41/200",
+            "numerator": 41
+          },
+          "h": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 6112457289247741,
+            "float": 0.18841838056413812,
+            "fraction": "1151699303707521/6112457289247741",
+            "numerator": 1151699303707521
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.245,
+            "fraction": "49/200",
+            "numerator": 49
+          },
+          "h": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 6516146994266029,
+            "float": 0.1891005820943736,
+            "fraction": "1232207189628209/6516146994266029",
+            "numerator": 1232207189628209
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.205,
+            "fraction": "41/200",
+            "numerator": 41
+          },
+          "h": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 9543779948531309805,
+            "float": 0.148196066254331,
+            "fraction": "1414350645569301521/9543779948531309805",
+            "numerator": 1414350645569301521
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.245,
+            "fraction": "49/200",
+            "numerator": 49
+          },
+          "h": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 14706658593633125005,
+            "float": 0.15075197788841244,
+            "fraction": "2217057871119811441/14706658593633125005",
+            "numerator": 2217057871119811441
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.03,
+            "fraction": "3/100",
+            "numerator": 3
+          },
+          "diffusion": {
+            "denominator": 40,
+            "float": 0.225,
+            "fraction": "9/40",
+            "numerator": 9
+          },
+          "h": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 11737163884247091421,
+            "float": 0.16801191126804252,
+            "fraction": "1971983337058595441/11737163884247091421",
+            "numerator": 1971983337058595441
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.205,
+            "fraction": "41/200",
+            "numerator": 41
+          },
+          "h": {
+            "denominator": 40,
+            "float": 0.025,
+            "fraction": "1/40",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 149108263807740432061,
+            "float": 0.18841084590374382,
+            "fraction": "28093614115254965441/149108263807740432061",
+            "numerator": 28093614115254965441
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.245,
+            "fraction": "49/200",
+            "numerator": 49
+          },
+          "h": {
+            "denominator": 40,
+            "float": 0.025,
+            "fraction": "1/40",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 230889883959141396061,
+            "float": 0.18909382781141532,
+            "fraction": "43659851960767547681/230889883959141396061",
+            "numerator": 43659851960767547681
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.205,
+            "fraction": "41/200",
+            "numerator": 41
+          },
+          "h": {
+            "denominator": 40,
+            "float": 0.025,
+            "fraction": "1/40",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 153069019254461799805,
+            "float": 0.14816562784660028,
+            "fraction": "22679567341700679521/153069019254461799805",
+            "numerator": 22679567341700679521
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.245,
+            "fraction": "49/200",
+            "numerator": 49
+          },
+          "h": {
+            "denominator": 40,
+            "float": 0.025,
+            "fraction": "1/40",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 235906613935850015005,
+            "float": 0.15072402211389144,
+            "fraction": "35556793695680309441/235906613935850015005",
+            "numerator": 35556793695680309441
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.03,
+            "fraction": "3/100",
+            "numerator": 3
+          },
+          "diffusion": {
+            "denominator": 40,
+            "float": 0.225,
+            "fraction": "9/40",
+            "numerator": 9
+          },
+          "h": {
+            "denominator": 40,
+            "float": 0.025,
+            "fraction": "1/40",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 188258805403535949421,
+            "float": 0.16799246633725778,
+            "fraction": "31626061029445877441/188258805403535949421",
+            "numerator": 31626061029445877441
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        }
+      ],
+      "sampled_box_minimum_component": {
+        "denominator": 153069019254461799805,
+        "float": 0.14816562784660028,
+        "fraction": "22679567341700679521/153069019254461799805",
+        "numerator": 22679567341700679521
+      },
+      "trace_l1_contraction": "1-delta*h",
+      "uniform_generator_inverse_bound": "||A_h^-1||_1<=25",
+      "uniform_resolvent_bound": "h*||(I-M_h)^-1||_1<=25"
+    }
+  },
+  {
+    "name": "contract_exact_primary_family",
+    "observed": [],
+    "record_type": "gate",
+    "requirement": "the abstract exact-Fraction q_h=delta*h family and every frozen field are unchanged",
+    "status": "pass"
+  },
+  {
+    "name": "d0_clip_inactive",
+    "observed": {
+      "clip_inactive": true,
+      "clip_support_margin": {
+        "denominator": 200,
+        "float": 0.155,
+        "fraction": "31/200",
+        "numerator": 31
+      },
+      "core_rescale_threshold": {
+        "denominator": 50,
+        "float": 0.98,
+        "fraction": "49/50",
+        "numerator": 49
+      },
+      "formal_maximum_no_jump_loss": {
+        "denominator": 2500,
+        "float": 0.0796,
+        "fraction": "199/2500",
+        "numerator": 199
+      },
+      "formal_no_jump_radicand_floor": {
+        "denominator": 2500,
+        "float": 0.9204,
+        "fraction": "2301/2500",
+        "numerator": 2301
+      },
+      "kernel_minus_minimum": {
+        "denominator": 200,
+        "float": 0.155,
+        "fraction": "31/200",
+        "numerator": 31
+      },
+      "kernel_plus_maximum": {
+        "denominator": 200,
+        "float": 0.295,
+        "fraction": "59/200",
+        "numerator": 59
+      },
+      "maximum_no_jump_loss": {
+        "denominator": 2500,
+        "float": 0.0796,
+        "fraction": "199/2500",
+        "numerator": 199
+      },
+      "no_jump_radicand_floor": {
+        "denominator": 2500,
+        "float": 0.9204,
+        "fraction": "2301/2500",
+        "numerator": 2301
+      },
+      "projection_inactive_required": true,
+      "rescale_inactive": true,
+      "rescale_margin": {
+        "denominator": 2500,
+        "float": 0.9004,
+        "fraction": "2251/2500",
+        "numerator": 2251
+      }
+    },
+    "record_type": "gate",
+    "requirement": "the complete D0 box is strictly inside every kernel clip boundary",
+    "status": "pass"
+  },
+  {
+    "name": "kraus_cp_tp_uniform",
+    "observed": {
+      "numeric_tp_error": 2.220446049250313e-16,
+      "safety": {
+        "clip_inactive": true,
+        "clip_support_margin": {
+          "denominator": 200,
+          "float": 0.155,
+          "fraction": "31/200",
+          "numerator": 31
+        },
+        "core_rescale_threshold": {
+          "denominator": 50,
+          "float": 0.98,
+          "fraction": "49/50",
+          "numerator": 49
+        },
+        "formal_maximum_no_jump_loss": {
+          "denominator": 2500,
+          "float": 0.0796,
+          "fraction": "199/2500",
+          "numerator": 199
+        },
+        "formal_no_jump_radicand_floor": {
+          "denominator": 2500,
+          "float": 0.9204,
+          "fraction": "2301/2500",
+          "numerator": 2301
+        },
+        "kernel_minus_minimum": {
+          "denominator": 200,
+          "float": 0.155,
+          "fraction": "31/200",
+          "numerator": 31
+        },
+        "kernel_plus_maximum": {
+          "denominator": 200,
+          "float": 0.295,
+          "fraction": "59/200",
+          "numerator": 59
+        },
+        "maximum_no_jump_loss": {
+          "denominator": 2500,
+          "float": 0.0796,
+          "fraction": "199/2500",
+          "numerator": 199
+        },
+        "no_jump_radicand_floor": {
+          "denominator": 2500,
+          "float": 0.9204,
+          "fraction": "2301/2500",
+          "numerator": 2301
+        },
+        "projection_inactive_required": true,
+        "rescale_inactive": true,
+        "rescale_margin": {
+          "denominator": 2500,
+          "float": 0.9004,
+          "fraction": "2251/2500",
+          "numerator": 2251
+        }
+      }
+    },
+    "record_type": "gate",
+    "requirement": "the frozen Kraus map is CP/TP with exact loss and radicand margins",
+    "status": "pass"
+  },
+  {
+    "name": "safety_rescale_inactive",
+    "observed": {
+      "denominator": 2500,
+      "float": 0.9004,
+      "fraction": "2251/2500",
+      "numerator": 2251
+    },
+    "record_type": "gate",
+    "requirement": "the core 0.98 Kraus rescale branch is uniformly inactive",
+    "status": "pass"
+  },
+  {
+    "name": "projection_inactive",
+    "observed": 3.3307065725188144e-16,
+    "record_type": "gate",
+    "requirement": "the PSD/trace projection makes no material change on the tested complete population basis",
+    "status": "pass"
+  },
+  {
+    "name": "finite_core_diagonal_regression",
+    "observed": {
+      "branch_or_fixed_helper_called": false,
+      "control_points": [
+        [
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          {
+            "denominator": 200,
+            "float": 0.205,
+            "fraction": "41/200",
+            "numerator": 41
+          }
+        ],
+        [
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          {
+            "denominator": 200,
+            "float": 0.245,
+            "fraction": "49/200",
+            "numerator": 49
+          }
+        ],
+        [
+          {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          {
+            "denominator": 200,
+            "float": 0.205,
+            "fraction": "41/200",
+            "numerator": 41
+          }
+        ],
+        [
+          {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          {
+            "denominator": 200,
+            "float": 0.245,
+            "fraction": "49/200",
+            "numerator": 49
+          }
+        ],
+        [
+          {
+            "denominator": 100,
+            "float": 0.03,
+            "fraction": "3/100",
+            "numerator": 3
+          },
+          {
+            "denominator": 40,
+            "float": 0.225,
+            "fraction": "9/40",
+            "numerator": 9
+          }
+        ]
+      ],
+      "h_crosscheck_values_not_proof": [
+        {
+          "denominator": 5,
+          "float": 0.2,
+          "fraction": "1/5",
+          "numerator": 1
+        },
+        {
+          "denominator": 10,
+          "float": 0.1,
+          "fraction": "1/10",
+          "numerator": 1
+        },
+        {
+          "denominator": 20,
+          "float": 0.05,
+          "fraction": "1/20",
+          "numerator": 1
+        }
+      ],
+      "maximum_affine_error": 2.220446049250313e-16,
+      "maximum_deviation_error": 1.1102230246251565e-15,
+      "maximum_kernel_error": 1.1102230246251565e-16,
+      "maximum_kraus_tp_error": 2.220446049250313e-16,
+      "maximum_offdiagonal_output": 0.0,
+      "maximum_projection_delta": 3.3307065725188144e-16,
+      "observable_hermiticity_error": 0.0,
+      "observable_maximum_absolute_error": 0.0,
+      "observable_name": "mean_position",
+      "population_basis_count": 5,
+      "runtime_h_domain": {
+        "maximum": {
+          "denominator": 5,
+          "float": 0.2,
+          "fraction": "1/5",
+          "numerator": 1
+        },
+        "minimum": {
+          "denominator": 1000000000000,
+          "float": 1e-12,
+          "fraction": "1/1000000000000",
+          "numerator": 1
+        }
+      },
+      "semantic_scope": "finite_float_core_regression_and_provenance_only_not_uniform_runtime_proof",
+      "traceless_diagonal_deviation_basis_count": 4,
+      "uniform_family_proof_source": "exact_fraction_symbolic_affine_identity_not_runtime_samples"
+    },
+    "record_type": "gate",
+    "requirement": "finite core calls regress the diagonal basis/readout but do not prove uniform runtime equivalence",
+    "status": "pass"
+  },
+  {
+    "name": "exact_generator_source_identity",
+    "observed": {
+      "box_jump_generator_l1_bound": {
+        "denominator": 50,
+        "float": 0.98,
+        "fraction": "49/50",
+        "numerator": 49
+      },
+      "closed_loop_exact_gradient_term": "h*d(H*xbar_h)_i",
+      "closed_loop_gradient_curl": {
+        "denominator": 1,
+        "float": 0.0,
+        "fraction": "0/1",
+        "numerator": 0
+      },
+      "continuous_center_F": {
+        "denominator": 235345963257301712101,
+        "float": -122.7502119529289,
+        "fraction": "-28888766872100000000000/235345963257301712101",
+        "numerator": -28888766872100000000000
+      },
+      "fixed_branch_bound_derivation": {
+        "edge_difference_coefficient": {
+          "denominator": 125,
+          "float": 0.008,
+          "fraction": "1/125",
+          "numerator": 1
+        },
+        "inverse_l1_bound": {
+          "denominator": 1,
+          "float": 25.0,
+          "fraction": "25/1",
+          "numerator": 25
+        },
+        "jump_generator_l1_bound": {
+          "denominator": 1,
+          "float": 2.0,
+          "fraction": "2/1",
+          "numerator": 2
+        }
+      },
+      "fixed_branch_difference_bound": "||xbar_h-xbar||_1<=2*h/5",
+      "generator_difference": "A_h-A=-(h/125)*(K^T-I)",
+      "generator_formula_verified": true,
+      "generator_limit_target": "A=(1/5)*(K^T-I)-delta*I",
+      "hF_exact_identity": true,
+      "matrix_identity_max_error": {
+        "denominator": 1,
+        "float": 0.0,
+        "fraction": "0/1",
+        "numerator": 0
+      },
+      "parameter_derivative_bounds": {
+        "R_bias_l1": {
+          "denominator": 1,
+          "float": 2.0,
+          "fraction": "2/1",
+          "numerator": 2
+        },
+        "R_diffusion_l1": {
+          "denominator": 1,
+          "float": 4.0,
+          "fraction": "4/1",
+          "numerator": 4
+        },
+        "R_l1_upper": {
+          "denominator": 1,
+          "float": 2.0,
+          "fraction": "2/1",
+          "numerator": 2
+        },
+        "X_i_rule": "||X_h,i||_1<=5*L_i",
+        "X_ij_rule": "||X_h,ij||_1<=50*L_i*L_j"
+      },
+      "representative_exact_h": {
+        "denominator": 10,
+        "float": 0.1,
+        "fraction": "1/10",
+        "numerator": 1
+      },
+      "representative_hB": [
+        {
+          "denominator": 388946741716856049980345254733309824569345170855369461,
+          "float": -90.69632971185787,
+          "fraction": "-35276041927104801773874515852432074595870415865044850800/388946741716856049980345254733309824569345170855369461",
+          "numerator": -35276041927104801773874515852432074595870415865044850800
+        },
+        {
+          "denominator": 388946741716856049980345254733309824569345170855369461,
+          "float": 3.645199735386452,
+          "fraction": "1417788559985706373013178055378847243960871445600753440/388946741716856049980345254733309824569345170855369461",
+          "numerator": 1417788559985706373013178055378847243960871445600753440
+        }
+      ],
+      "representative_hF": {
+        "denominator": 388946741716856049980345254733309824569345170855369461,
+        "float": -122.23559874807503,
+        "fraction": "-47543137854872795190516526504679750852396068200000000000/388946741716856049980345254733309824569345170855369461",
+        "numerator": -47543137854872795190516526504679750852396068200000000000
+      },
+      "source_generator_error": {
+        "denominator": 1,
+        "float": 0.0,
+        "fraction": "0/1",
+        "numerator": 0
+      },
+      "source_identity": [
+        {
+          "denominator": 1250,
+          "float": 0.0008,
+          "fraction": "1/1250",
+          "numerator": 1
+        },
+        {
+          "denominator": 1250,
+          "float": 0.0008,
+          "fraction": "1/1250",
+          "numerator": 1
+        },
+        {
+          "denominator": 1250,
+          "float": 0.0008,
+          "fraction": "1/1250",
+          "numerator": 1
+        },
+        {
+          "denominator": 1250,
+          "float": 0.0008,
+          "fraction": "1/1250",
+          "numerator": 1
+        },
+        {
+          "denominator": 1250,
+          "float": 0.0008,
+          "fraction": "1/1250",
+          "numerator": 1
+        }
+      ],
+      "uniform_generator_error_bound": "||A_h-A||_1<=49*h/6250",
+      "uniform_generator_error_coefficient": {
+        "denominator": 6250,
+        "float": 0.00784,
+        "fraction": "49/6250",
+        "numerator": 49
+      }
+    },
+    "record_type": "gate",
+    "requirement": "M_h=I+hA_h and c_h=h(delta/5)1 exactly, with K transpose",
+    "status": "pass"
+  },
+  {
+    "name": "uniform_c2_parameter_control",
+    "observed": {
+      "R_bias_l1": {
+        "denominator": 1,
+        "float": 2.0,
+        "fraction": "2/1",
+        "numerator": 2
+      },
+      "R_diffusion_l1": {
+        "denominator": 1,
+        "float": 4.0,
+        "fraction": "4/1",
+        "numerator": 4
+      },
+      "R_l1_upper": {
+        "denominator": 1,
+        "float": 2.0,
+        "fraction": "2/1",
+        "numerator": 2
+      },
+      "X_i_rule": "||X_h,i||_1<=5*L_i",
+      "X_ij_rule": "||X_h,ij||_1<=50*L_i*L_j"
+    },
+    "record_type": "gate",
+    "requirement": "uniform exact C2 parameter derivative bounds hold on the rational family",
+    "status": "pass"
+  },
+  {
+    "name": "exact_stationary_branch",
+    "observed": {
+      "analytic_floor_below_sampled_minimum": true,
+      "analytic_stationary_floor": {
+        "denominator": 69,
+        "float": 0.057971014492753624,
+        "fraction": "4/69",
+        "numerator": 4
+      },
+      "delta": {
+        "denominator": 25,
+        "float": 0.04,
+        "fraction": "1/25",
+        "numerator": 1
+      },
+      "fixed_branch_method": "exact_fraction_linear_solve_not_iteration",
+      "floor_derivation": "x_i=e/(e+delta)*(K^T*x)_i+delta/(5*(e+delta)); e<=1/5 and K_ii>=51/100 imply x_i>=4/69",
+      "floor_is_not_q_h_over_5": true,
+      "maximum_exact_stationary_residual": {
+        "denominator": 1,
+        "float": 0.0,
+        "fraction": "0/1",
+        "numerator": 0
+      },
+      "maximum_exact_trace_error": {
+        "denominator": 1,
+        "float": 0.0,
+        "fraction": "0/1",
+        "numerator": 0
+      },
+      "representative_crosscheck_ladder_not_proof": [
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.205,
+            "fraction": "41/200",
+            "numerator": 41
+          },
+          "h": {
+            "denominator": 5,
+            "float": 0.2,
+            "fraction": "1/5",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 15537749099809,
+            "float": 0.18846368809398503,
+            "fraction": "2928301500029/15537749099809",
+            "numerator": 2928301500029
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.245,
+            "fraction": "49/200",
+            "numerator": 49
+          },
+          "h": {
+            "denominator": 5,
+            "float": 0.2,
+            "fraction": "1/5",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 216321985982281,
+            "float": 0.1891412061400564,
+            "fraction": "40915401343301/216321985982281",
+            "numerator": 40915401343301
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.205,
+            "fraction": "41/200",
+            "numerator": 41
+          },
+          "h": {
+            "denominator": 5,
+            "float": 0.2,
+            "fraction": "1/5",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 143530614220905,
+            "float": 0.14837916841325086,
+            "fraction": "21296953179941/143530614220905",
+            "numerator": 21296953179941
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.245,
+            "fraction": "49/200",
+            "numerator": 49
+          },
+          "h": {
+            "denominator": 5,
+            "float": 0.2,
+            "fraction": "1/5",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 220994388340105,
+            "float": 0.15092016941594144,
+            "fraction": "33352510528261/220994388340105",
+            "numerator": 33352510528261
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.03,
+            "fraction": "3/100",
+            "numerator": 3
+          },
+          "diffusion": {
+            "denominator": 40,
+            "float": 0.225,
+            "fraction": "9/40",
+            "numerator": 9
+          },
+          "h": {
+            "denominator": 5,
+            "float": 0.2,
+            "fraction": "1/5",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 176455448682841,
+            "float": 0.16812886831046278,
+            "fraction": "29667254894261/176455448682841",
+            "numerator": 29667254894261
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.205,
+            "fraction": "41/200",
+            "numerator": 41
+          },
+          "h": {
+            "denominator": 10,
+            "float": 0.1,
+            "fraction": "1/10",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 578295286715880061,
+            "float": 0.18843346408880407,
+            "fraction": "108970184142101441/578295286715880061",
+            "numerator": 108970184142101441
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.245,
+            "fraction": "49/200",
+            "numerator": 49
+          },
+          "h": {
+            "denominator": 10,
+            "float": 0.1,
+            "fraction": "1/10",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 895091962837164061,
+            "float": 0.18911410468889023,
+            "fraction": "169274515166171681/895091962837164061",
+            "numerator": 169274515166171681
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.205,
+            "fraction": "41/200",
+            "numerator": 41
+          },
+          "h": {
+            "denominator": 10,
+            "float": 0.1,
+            "fraction": "1/10",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 593614582565439805,
+            "float": 0.14825701034523628,
+            "fraction": "88007523308487521/593614582565439805",
+            "numerator": 88007523308487521
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.245,
+            "fraction": "49/200",
+            "numerator": 49
+          },
+          "h": {
+            "denominator": 10,
+            "float": 0.1,
+            "fraction": "1/10",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 914491106224055005,
+            "float": 0.15080795459441917,
+            "fraction": "137912533224437441/914491106224055005",
+            "numerator": 137912533224437441
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.03,
+            "fraction": "3/100",
+            "numerator": 3
+          },
+          "diffusion": {
+            "denominator": 40,
+            "float": 0.225,
+            "fraction": "9/40",
+            "numerator": 9
+          },
+          "h": {
+            "denominator": 10,
+            "float": 0.1,
+            "fraction": "1/10",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 729956050220037421,
+            "float": 0.1680508421306351,
+            "fraction": "122669728957829441/729956050220037421",
+            "numerator": 122669728957829441
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.205,
+            "fraction": "41/200",
+            "numerator": 41
+          },
+          "h": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 6112457289247741,
+            "float": 0.18841838056413812,
+            "fraction": "1151699303707521/6112457289247741",
+            "numerator": 1151699303707521
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.245,
+            "fraction": "49/200",
+            "numerator": 49
+          },
+          "h": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 6516146994266029,
+            "float": 0.1891005820943736,
+            "fraction": "1232207189628209/6516146994266029",
+            "numerator": 1232207189628209
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.205,
+            "fraction": "41/200",
+            "numerator": 41
+          },
+          "h": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 9543779948531309805,
+            "float": 0.148196066254331,
+            "fraction": "1414350645569301521/9543779948531309805",
+            "numerator": 1414350645569301521
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.245,
+            "fraction": "49/200",
+            "numerator": 49
+          },
+          "h": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 14706658593633125005,
+            "float": 0.15075197788841244,
+            "fraction": "2217057871119811441/14706658593633125005",
+            "numerator": 2217057871119811441
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.03,
+            "fraction": "3/100",
+            "numerator": 3
+          },
+          "diffusion": {
+            "denominator": 40,
+            "float": 0.225,
+            "fraction": "9/40",
+            "numerator": 9
+          },
+          "h": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 11737163884247091421,
+            "float": 0.16801191126804252,
+            "fraction": "1971983337058595441/11737163884247091421",
+            "numerator": 1971983337058595441
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.205,
+            "fraction": "41/200",
+            "numerator": 41
+          },
+          "h": {
+            "denominator": 40,
+            "float": 0.025,
+            "fraction": "1/40",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 149108263807740432061,
+            "float": 0.18841084590374382,
+            "fraction": "28093614115254965441/149108263807740432061",
+            "numerator": 28093614115254965441
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.245,
+            "fraction": "49/200",
+            "numerator": 49
+          },
+          "h": {
+            "denominator": 40,
+            "float": 0.025,
+            "fraction": "1/40",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 230889883959141396061,
+            "float": 0.18909382781141532,
+            "fraction": "43659851960767547681/230889883959141396061",
+            "numerator": 43659851960767547681
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.205,
+            "fraction": "41/200",
+            "numerator": 41
+          },
+          "h": {
+            "denominator": 40,
+            "float": 0.025,
+            "fraction": "1/40",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 153069019254461799805,
+            "float": 0.14816562784660028,
+            "fraction": "22679567341700679521/153069019254461799805",
+            "numerator": 22679567341700679521
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 20,
+            "float": 0.05,
+            "fraction": "1/20",
+            "numerator": 1
+          },
+          "diffusion": {
+            "denominator": 200,
+            "float": 0.245,
+            "fraction": "49/200",
+            "numerator": 49
+          },
+          "h": {
+            "denominator": 40,
+            "float": 0.025,
+            "fraction": "1/40",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 235906613935850015005,
+            "float": 0.15072402211389144,
+            "fraction": "35556793695680309441/235906613935850015005",
+            "numerator": 35556793695680309441
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        {
+          "bias": {
+            "denominator": 100,
+            "float": 0.03,
+            "fraction": "3/100",
+            "numerator": 3
+          },
+          "diffusion": {
+            "denominator": 40,
+            "float": 0.225,
+            "fraction": "9/40",
+            "numerator": 9
+          },
+          "h": {
+            "denominator": 40,
+            "float": 0.025,
+            "fraction": "1/40",
+            "numerator": 1
+          },
+          "maximum_residual": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "minimum_component": {
+            "denominator": 188258805403535949421,
+            "float": 0.16799246633725778,
+            "fraction": "31626061029445877441/188258805403535949421",
+            "numerator": 31626061029445877441
+          },
+          "normalization_error": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        }
+      ],
+      "sampled_box_minimum_component": {
+        "denominator": 153069019254461799805,
+        "float": 0.14816562784660028,
+        "fraction": "22679567341700679521/153069019254461799805",
+        "numerator": 22679567341700679521
+      },
+      "trace_l1_contraction": "1-delta*h",
+      "uniform_generator_inverse_bound": "||A_h^-1||_1<=25",
+      "uniform_resolvent_bound": "h*||(I-M_h)^-1||_1<=25"
+    },
+    "record_type": "gate",
+    "requirement": "xbar_h=-A_h^-1 c exactly and the analytic population floor is 4/69",
+    "status": "pass"
+  },
+  {
+    "name": "uniform_contraction_and_resolvent",
+    "observed": {
+      "algebra": {
+        "edge_difference_coefficient": {
+          "denominator": 125,
+          "float": 0.008,
+          "fraction": "1/125",
+          "numerator": 1
+        },
+        "inverse_l1_bound": {
+          "denominator": 1,
+          "float": 25.0,
+          "fraction": "25/1",
+          "numerator": 25
+        },
+        "jump_generator_l1_bound": {
+          "denominator": 1,
+          "float": 2.0,
+          "fraction": "2/1",
+          "numerator": 2
+        }
+      },
+      "stationary": {
+        "analytic_floor_below_sampled_minimum": true,
+        "analytic_stationary_floor": {
+          "denominator": 69,
+          "float": 0.057971014492753624,
+          "fraction": "4/69",
+          "numerator": 4
+        },
+        "delta": {
+          "denominator": 25,
+          "float": 0.04,
+          "fraction": "1/25",
+          "numerator": 1
+        },
+        "fixed_branch_method": "exact_fraction_linear_solve_not_iteration",
+        "floor_derivation": "x_i=e/(e+delta)*(K^T*x)_i+delta/(5*(e+delta)); e<=1/5 and K_ii>=51/100 imply x_i>=4/69",
+        "floor_is_not_q_h_over_5": true,
+        "maximum_exact_stationary_residual": {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        },
+        "maximum_exact_trace_error": {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        },
+        "representative_crosscheck_ladder_not_proof": [
+          {
+            "bias": {
+              "denominator": 100,
+              "float": 0.01,
+              "fraction": "1/100",
+              "numerator": 1
+            },
+            "diffusion": {
+              "denominator": 200,
+              "float": 0.205,
+              "fraction": "41/200",
+              "numerator": 41
+            },
+            "h": {
+              "denominator": 5,
+              "float": 0.2,
+              "fraction": "1/5",
+              "numerator": 1
+            },
+            "maximum_residual": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "minimum_component": {
+              "denominator": 15537749099809,
+              "float": 0.18846368809398503,
+              "fraction": "2928301500029/15537749099809",
+              "numerator": 2928301500029
+            },
+            "normalization_error": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          },
+          {
+            "bias": {
+              "denominator": 100,
+              "float": 0.01,
+              "fraction": "1/100",
+              "numerator": 1
+            },
+            "diffusion": {
+              "denominator": 200,
+              "float": 0.245,
+              "fraction": "49/200",
+              "numerator": 49
+            },
+            "h": {
+              "denominator": 5,
+              "float": 0.2,
+              "fraction": "1/5",
+              "numerator": 1
+            },
+            "maximum_residual": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "minimum_component": {
+              "denominator": 216321985982281,
+              "float": 0.1891412061400564,
+              "fraction": "40915401343301/216321985982281",
+              "numerator": 40915401343301
+            },
+            "normalization_error": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          },
+          {
+            "bias": {
+              "denominator": 20,
+              "float": 0.05,
+              "fraction": "1/20",
+              "numerator": 1
+            },
+            "diffusion": {
+              "denominator": 200,
+              "float": 0.205,
+              "fraction": "41/200",
+              "numerator": 41
+            },
+            "h": {
+              "denominator": 5,
+              "float": 0.2,
+              "fraction": "1/5",
+              "numerator": 1
+            },
+            "maximum_residual": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "minimum_component": {
+              "denominator": 143530614220905,
+              "float": 0.14837916841325086,
+              "fraction": "21296953179941/143530614220905",
+              "numerator": 21296953179941
+            },
+            "normalization_error": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          },
+          {
+            "bias": {
+              "denominator": 20,
+              "float": 0.05,
+              "fraction": "1/20",
+              "numerator": 1
+            },
+            "diffusion": {
+              "denominator": 200,
+              "float": 0.245,
+              "fraction": "49/200",
+              "numerator": 49
+            },
+            "h": {
+              "denominator": 5,
+              "float": 0.2,
+              "fraction": "1/5",
+              "numerator": 1
+            },
+            "maximum_residual": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "minimum_component": {
+              "denominator": 220994388340105,
+              "float": 0.15092016941594144,
+              "fraction": "33352510528261/220994388340105",
+              "numerator": 33352510528261
+            },
+            "normalization_error": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          },
+          {
+            "bias": {
+              "denominator": 100,
+              "float": 0.03,
+              "fraction": "3/100",
+              "numerator": 3
+            },
+            "diffusion": {
+              "denominator": 40,
+              "float": 0.225,
+              "fraction": "9/40",
+              "numerator": 9
+            },
+            "h": {
+              "denominator": 5,
+              "float": 0.2,
+              "fraction": "1/5",
+              "numerator": 1
+            },
+            "maximum_residual": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "minimum_component": {
+              "denominator": 176455448682841,
+              "float": 0.16812886831046278,
+              "fraction": "29667254894261/176455448682841",
+              "numerator": 29667254894261
+            },
+            "normalization_error": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          },
+          {
+            "bias": {
+              "denominator": 100,
+              "float": 0.01,
+              "fraction": "1/100",
+              "numerator": 1
+            },
+            "diffusion": {
+              "denominator": 200,
+              "float": 0.205,
+              "fraction": "41/200",
+              "numerator": 41
+            },
+            "h": {
+              "denominator": 10,
+              "float": 0.1,
+              "fraction": "1/10",
+              "numerator": 1
+            },
+            "maximum_residual": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "minimum_component": {
+              "denominator": 578295286715880061,
+              "float": 0.18843346408880407,
+              "fraction": "108970184142101441/578295286715880061",
+              "numerator": 108970184142101441
+            },
+            "normalization_error": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          },
+          {
+            "bias": {
+              "denominator": 100,
+              "float": 0.01,
+              "fraction": "1/100",
+              "numerator": 1
+            },
+            "diffusion": {
+              "denominator": 200,
+              "float": 0.245,
+              "fraction": "49/200",
+              "numerator": 49
+            },
+            "h": {
+              "denominator": 10,
+              "float": 0.1,
+              "fraction": "1/10",
+              "numerator": 1
+            },
+            "maximum_residual": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "minimum_component": {
+              "denominator": 895091962837164061,
+              "float": 0.18911410468889023,
+              "fraction": "169274515166171681/895091962837164061",
+              "numerator": 169274515166171681
+            },
+            "normalization_error": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          },
+          {
+            "bias": {
+              "denominator": 20,
+              "float": 0.05,
+              "fraction": "1/20",
+              "numerator": 1
+            },
+            "diffusion": {
+              "denominator": 200,
+              "float": 0.205,
+              "fraction": "41/200",
+              "numerator": 41
+            },
+            "h": {
+              "denominator": 10,
+              "float": 0.1,
+              "fraction": "1/10",
+              "numerator": 1
+            },
+            "maximum_residual": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "minimum_component": {
+              "denominator": 593614582565439805,
+              "float": 0.14825701034523628,
+              "fraction": "88007523308487521/593614582565439805",
+              "numerator": 88007523308487521
+            },
+            "normalization_error": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          },
+          {
+            "bias": {
+              "denominator": 20,
+              "float": 0.05,
+              "fraction": "1/20",
+              "numerator": 1
+            },
+            "diffusion": {
+              "denominator": 200,
+              "float": 0.245,
+              "fraction": "49/200",
+              "numerator": 49
+            },
+            "h": {
+              "denominator": 10,
+              "float": 0.1,
+              "fraction": "1/10",
+              "numerator": 1
+            },
+            "maximum_residual": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "minimum_component": {
+              "denominator": 914491106224055005,
+              "float": 0.15080795459441917,
+              "fraction": "137912533224437441/914491106224055005",
+              "numerator": 137912533224437441
+            },
+            "normalization_error": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          },
+          {
+            "bias": {
+              "denominator": 100,
+              "float": 0.03,
+              "fraction": "3/100",
+              "numerator": 3
+            },
+            "diffusion": {
+              "denominator": 40,
+              "float": 0.225,
+              "fraction": "9/40",
+              "numerator": 9
+            },
+            "h": {
+              "denominator": 10,
+              "float": 0.1,
+              "fraction": "1/10",
+              "numerator": 1
+            },
+            "maximum_residual": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "minimum_component": {
+              "denominator": 729956050220037421,
+              "float": 0.1680508421306351,
+              "fraction": "122669728957829441/729956050220037421",
+              "numerator": 122669728957829441
+            },
+            "normalization_error": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          },
+          {
+            "bias": {
+              "denominator": 100,
+              "float": 0.01,
+              "fraction": "1/100",
+              "numerator": 1
+            },
+            "diffusion": {
+              "denominator": 200,
+              "float": 0.205,
+              "fraction": "41/200",
+              "numerator": 41
+            },
+            "h": {
+              "denominator": 20,
+              "float": 0.05,
+              "fraction": "1/20",
+              "numerator": 1
+            },
+            "maximum_residual": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "minimum_component": {
+              "denominator": 6112457289247741,
+              "float": 0.18841838056413812,
+              "fraction": "1151699303707521/6112457289247741",
+              "numerator": 1151699303707521
+            },
+            "normalization_error": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          },
+          {
+            "bias": {
+              "denominator": 100,
+              "float": 0.01,
+              "fraction": "1/100",
+              "numerator": 1
+            },
+            "diffusion": {
+              "denominator": 200,
+              "float": 0.245,
+              "fraction": "49/200",
+              "numerator": 49
+            },
+            "h": {
+              "denominator": 20,
+              "float": 0.05,
+              "fraction": "1/20",
+              "numerator": 1
+            },
+            "maximum_residual": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "minimum_component": {
+              "denominator": 6516146994266029,
+              "float": 0.1891005820943736,
+              "fraction": "1232207189628209/6516146994266029",
+              "numerator": 1232207189628209
+            },
+            "normalization_error": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          },
+          {
+            "bias": {
+              "denominator": 20,
+              "float": 0.05,
+              "fraction": "1/20",
+              "numerator": 1
+            },
+            "diffusion": {
+              "denominator": 200,
+              "float": 0.205,
+              "fraction": "41/200",
+              "numerator": 41
+            },
+            "h": {
+              "denominator": 20,
+              "float": 0.05,
+              "fraction": "1/20",
+              "numerator": 1
+            },
+            "maximum_residual": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "minimum_component": {
+              "denominator": 9543779948531309805,
+              "float": 0.148196066254331,
+              "fraction": "1414350645569301521/9543779948531309805",
+              "numerator": 1414350645569301521
+            },
+            "normalization_error": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          },
+          {
+            "bias": {
+              "denominator": 20,
+              "float": 0.05,
+              "fraction": "1/20",
+              "numerator": 1
+            },
+            "diffusion": {
+              "denominator": 200,
+              "float": 0.245,
+              "fraction": "49/200",
+              "numerator": 49
+            },
+            "h": {
+              "denominator": 20,
+              "float": 0.05,
+              "fraction": "1/20",
+              "numerator": 1
+            },
+            "maximum_residual": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "minimum_component": {
+              "denominator": 14706658593633125005,
+              "float": 0.15075197788841244,
+              "fraction": "2217057871119811441/14706658593633125005",
+              "numerator": 2217057871119811441
+            },
+            "normalization_error": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          },
+          {
+            "bias": {
+              "denominator": 100,
+              "float": 0.03,
+              "fraction": "3/100",
+              "numerator": 3
+            },
+            "diffusion": {
+              "denominator": 40,
+              "float": 0.225,
+              "fraction": "9/40",
+              "numerator": 9
+            },
+            "h": {
+              "denominator": 20,
+              "float": 0.05,
+              "fraction": "1/20",
+              "numerator": 1
+            },
+            "maximum_residual": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "minimum_component": {
+              "denominator": 11737163884247091421,
+              "float": 0.16801191126804252,
+              "fraction": "1971983337058595441/11737163884247091421",
+              "numerator": 1971983337058595441
+            },
+            "normalization_error": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          },
+          {
+            "bias": {
+              "denominator": 100,
+              "float": 0.01,
+              "fraction": "1/100",
+              "numerator": 1
+            },
+            "diffusion": {
+              "denominator": 200,
+              "float": 0.205,
+              "fraction": "41/200",
+              "numerator": 41
+            },
+            "h": {
+              "denominator": 40,
+              "float": 0.025,
+              "fraction": "1/40",
+              "numerator": 1
+            },
+            "maximum_residual": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "minimum_component": {
+              "denominator": 149108263807740432061,
+              "float": 0.18841084590374382,
+              "fraction": "28093614115254965441/149108263807740432061",
+              "numerator": 28093614115254965441
+            },
+            "normalization_error": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          },
+          {
+            "bias": {
+              "denominator": 100,
+              "float": 0.01,
+              "fraction": "1/100",
+              "numerator": 1
+            },
+            "diffusion": {
+              "denominator": 200,
+              "float": 0.245,
+              "fraction": "49/200",
+              "numerator": 49
+            },
+            "h": {
+              "denominator": 40,
+              "float": 0.025,
+              "fraction": "1/40",
+              "numerator": 1
+            },
+            "maximum_residual": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "minimum_component": {
+              "denominator": 230889883959141396061,
+              "float": 0.18909382781141532,
+              "fraction": "43659851960767547681/230889883959141396061",
+              "numerator": 43659851960767547681
+            },
+            "normalization_error": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          },
+          {
+            "bias": {
+              "denominator": 20,
+              "float": 0.05,
+              "fraction": "1/20",
+              "numerator": 1
+            },
+            "diffusion": {
+              "denominator": 200,
+              "float": 0.205,
+              "fraction": "41/200",
+              "numerator": 41
+            },
+            "h": {
+              "denominator": 40,
+              "float": 0.025,
+              "fraction": "1/40",
+              "numerator": 1
+            },
+            "maximum_residual": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "minimum_component": {
+              "denominator": 153069019254461799805,
+              "float": 0.14816562784660028,
+              "fraction": "22679567341700679521/153069019254461799805",
+              "numerator": 22679567341700679521
+            },
+            "normalization_error": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          },
+          {
+            "bias": {
+              "denominator": 20,
+              "float": 0.05,
+              "fraction": "1/20",
+              "numerator": 1
+            },
+            "diffusion": {
+              "denominator": 200,
+              "float": 0.245,
+              "fraction": "49/200",
+              "numerator": 49
+            },
+            "h": {
+              "denominator": 40,
+              "float": 0.025,
+              "fraction": "1/40",
+              "numerator": 1
+            },
+            "maximum_residual": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "minimum_component": {
+              "denominator": 235906613935850015005,
+              "float": 0.15072402211389144,
+              "fraction": "35556793695680309441/235906613935850015005",
+              "numerator": 35556793695680309441
+            },
+            "normalization_error": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          },
+          {
+            "bias": {
+              "denominator": 100,
+              "float": 0.03,
+              "fraction": "3/100",
+              "numerator": 3
+            },
+            "diffusion": {
+              "denominator": 40,
+              "float": 0.225,
+              "fraction": "9/40",
+              "numerator": 9
+            },
+            "h": {
+              "denominator": 40,
+              "float": 0.025,
+              "fraction": "1/40",
+              "numerator": 1
+            },
+            "maximum_residual": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "minimum_component": {
+              "denominator": 188258805403535949421,
+              "float": 0.16799246633725778,
+              "fraction": "31626061029445877441/188258805403535949421",
+              "numerator": 31626061029445877441
+            },
+            "normalization_error": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          }
+        ],
+        "sampled_box_minimum_component": {
+          "denominator": 153069019254461799805,
+          "float": 0.14816562784660028,
+          "fraction": "22679567341700679521/153069019254461799805",
+          "numerator": 22679567341700679521
+        },
+        "trace_l1_contraction": "1-delta*h",
+        "uniform_generator_inverse_bound": "||A_h^-1||_1<=25",
+        "uniform_resolvent_bound": "h*||(I-M_h)^-1||_1<=25"
+      }
+    },
+    "record_type": "gate",
+    "requirement": "the population map contracts by 1-delta*h and has the uniform inverse/fixed-branch bounds",
+    "status": "pass"
+  },
+  {
+    "name": "exact_hB_gradient_identity",
+    "observed": [
+      {
+        "denominator": 388946741716856049980345254733309824569345170855369461,
+        "float": -90.69632971185787,
+        "fraction": "-35276041927104801773874515852432074595870415865044850800/388946741716856049980345254733309824569345170855369461",
+        "numerator": -35276041927104801773874515852432074595870415865044850800
+      },
+      {
+        "denominator": 388946741716856049980345254733309824569345170855369461,
+        "float": 3.645199735386452,
+        "fraction": "1417788559985706373013178055378847243960871445600753440/388946741716856049980345254733309824569345170855369461",
+        "numerator": 1417788559985706373013178055378847243960871445600753440
+      }
+    ],
+    "record_type": "gate",
+    "requirement": "hB_h=B_CT(a_h)+h d(H xbar_h) exactly",
+    "status": "pass"
+  },
+  {
+    "name": "closed_loop_gradient_cancellation",
+    "observed": {
+      "denominator": 1,
+      "float": 0.0,
+      "fraction": "0/1",
+      "numerator": 0
+    },
+    "record_type": "gate",
+    "requirement": "the exact-gradient correction has zero curl and zero closed-loop integral",
+    "status": "pass"
+  },
+  {
+    "name": "exact_hF_identity",
+    "observed": {
+      "denominator": 388946741716856049980345254733309824569345170855369461,
+      "float": -122.23559874807503,
+      "fraction": "-47543137854872795190516526504679750852396068200000000000/388946741716856049980345254733309824569345170855369461",
+      "numerator": -47543137854872795190516526504679750852396068200000000000
+    },
+    "record_type": "gate",
+    "requirement": "hF_h equals the continuous generator curvature at a_h=a(1-delta*h)",
+    "status": "pass"
+  },
+  {
+    "name": "curvature_sign_interval",
+    "observed": {
+      "curvature": {
+        "lower": {
+          "denominator": 59247533186255775434061992743156729,
+          "float": -132.93483463430567,
+          "fraction": "-7876061026605448950195312500000000000/59247533186255775434061992743156729",
+          "numerator": -7876061026605448950195312500000000000
+        },
+        "upper": {
+          "denominator": 44415389442843585257542657921,
+          "float": -112.03481003178874,
+          "fraction": "-4976069718716896388845862400000/44415389442843585257542657921",
+          "numerator": -4976069718716896388845862400000
+        }
+      },
+      "numerator": {
+        "lower": {
+          "denominator": 3906250000000000000000000000000000000000000,
+          "float": -3.986291923119602e-19,
+          "fraction": "-1557145282468594501297901/3906250000000000000000000000000000000000000",
+          "numerator": -1557145282468594501297901
+        },
+        "upper": {
+          "denominator": 30517578125000000000000000000000000000000000000,
+          "float": -3.638311097248596e-19,
+          "fraction": "-11103244315333849825142709063/30517578125000000000000000000000000000000000000",
+          "numerator": -11103244315333849825142709063
+        }
+      }
+    },
+    "record_type": "gate",
+    "requirement": "directed exact intervals certify hF_h<0 for the entire h domain",
+    "status": "pass"
+  },
+  {
+    "name": "center_limit_oracle",
+    "observed": {
+      "first": {
+        "denominator": 44415389442843585257542657921,
+        "float": 5.1406126247867805,
+        "fraction": "228322311704703213246688000000/44415389442843585257542657921",
+        "numerator": 228322311704703213246688000000
+      },
+      "limit": {
+        "denominator": 235345963257301712101,
+        "float": -122.7502119529289,
+        "fraction": "-28888766872100000000000/235345963257301712101",
+        "numerator": -28888766872100000000000
+      }
+    },
+    "record_type": "gate",
+    "requirement": "the recomputed h->0 fraction and first h coefficient equal the independent formal oracles",
+    "status": "pass"
+  },
+  {
+    "name": "curvature_error_bound",
+    "observed": {
+      "denominator": 1370101903124073642186952624802710874225595389,
+      "float": 5.67917909685923,
+      "fraction": "7781054088789288957565176690429687500000000000/1370101903124073642186952624802710874225595389",
+      "numerator": 7781054088789288957565176690429687500000000000
+    },
+    "record_type": "gate",
+    "requirement": "the mean-value theorem gives the uniform strict bound |hF_h-F_CT|<88h",
+    "status": "pass"
+  },
+  {
+    "name": "response_units_and_h_scaling",
+    "observed": {
+      "centering": "instantaneous_exact_xbar_h",
+      "scaling": "Q_h=h*S_h_where_S_h=sum_right_endpoint_centered_readout",
+      "units": "mean_position_index_times_model_time"
+    },
+    "record_type": "gate",
+    "requirement": "the reducer uses h-scaled centered right-endpoint sums in model-time units",
+    "status": "pass"
+  },
+  {
+    "name": "loop_clock_reversal_endpoint_contract",
+    "observed": {
+      "auxiliary_hB_component_coefficients": {
+        "bias": {
+          "denominator": 1,
+          "float": 640.0,
+          "fraction": "640/1",
+          "numerator": 640
+        },
+        "diffusion": {
+          "denominator": 1,
+          "float": 1280.0,
+          "fraction": "1280/1",
+          "numerator": 1280
+        }
+      },
+      "clock_path_initialization": {
+        "closing_endpoint_processed_once": true,
+        "continuous_exact_xbar_at_common_start": true,
+        "discrete_exact_xbar_h_at_common_start": true,
+        "minus_is_exact_reverse_of_plus": true,
+        "positive_integer_N_with_Nh_equal_T": true,
+        "right_endpoint_update_then_sample": true,
+        "same_uniform_circle_and_affine_clock": true
+      },
+      "contraction": {
+        "delta": {
+          "denominator": 25,
+          "float": 0.04,
+          "fraction": "1/25",
+          "numerator": 1
+        },
+        "product_exponential_rate": {
+          "denominator": 25,
+          "float": 0.04,
+          "fraction": "1/25",
+          "numerator": 1
+        },
+        "product_uses_elapsed_model_time_kh": true,
+        "step_factor_constant": {
+          "denominator": 1,
+          "float": 1.0,
+          "fraction": "1/1",
+          "numerator": 1
+        },
+        "step_factor_h_coefficient": {
+          "denominator": 25,
+          "float": -0.04,
+          "fraction": "-1/25",
+          "numerator": -1
+        }
+      },
+      "exact_circle_extrema": {
+        "bias_maximum": {
+          "denominator": 25,
+          "float": 0.04,
+          "fraction": "1/25",
+          "numerator": 1
+        },
+        "bias_minimum": {
+          "denominator": 50,
+          "float": 0.02,
+          "fraction": "1/50",
+          "numerator": 1
+        },
+        "diffusion_maximum": {
+          "denominator": 200,
+          "float": 0.235,
+          "fraction": "47/200",
+          "numerator": 47
+        },
+        "diffusion_minimum": {
+          "denominator": 200,
+          "float": 0.215,
+          "fraction": "43/200",
+          "numerator": 43
+        },
+        "face_margins": [
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          }
+        ],
+        "inside_box": true,
+        "minimum_face_margin": {
+          "denominator": 100,
+          "float": 0.01,
+          "fraction": "1/100",
+          "numerator": 1
+        },
+        "uniform_domain_minimum_face_margin": {
+          "denominator": 100,
+          "float": 0.01,
+          "fraction": "1/100",
+          "numerator": 1
+        }
+      },
+      "fixed_time_bound": {
+        "circle_pi_coefficient": {
+          "denominator": 1,
+          "float": 120.0,
+          "fraction": "120/1",
+          "numerator": 120
+        },
+        "directed_circle_coefficient": {
+          "denominator": 113,
+          "float": 376.9911504424779,
+          "fraction": "42600/113",
+          "numerator": 42600
+        },
+        "directed_pi_upper": {
+          "denominator": 113,
+          "float": 3.1415929203539825,
+          "fraction": "355/113",
+          "numerator": 355
+        },
+        "duration_power": 1,
+        "outer_h_power": 1,
+        "same_bound_for_each_orientation_and_qanti": true,
+        "scale_power": 1,
+        "time_coefficient": {
+          "denominator": 25,
+          "float": 8.56,
+          "fraction": "214/25",
+          "numerator": 214
+        }
+      },
+      "limits": {
+        "area_relative_joint_conditions": [
+          "s*T_to_infinity",
+          "h*T/s^2_to_0"
+        ],
+        "interchangeability_claimed": false,
+        "primary_order": [
+          "h_to_0_at_fixed_T_s_with_positive_integer_T_over_h",
+          "T_to_infinity",
+          "optional_s_to_0_within_declared_scale_domain"
+        ],
+        "sufficient_joint_conditions": [
+          "T_to_infinity",
+          "h*T_to_0"
+        ]
+      },
+      "local_defect": {
+        "duration_power": -1,
+        "scale_power": 1,
+        "speed_pi_coefficient": {
+          "denominator": 5,
+          "float": 1.2,
+          "fraction": "6/5",
+          "numerator": 6
+        },
+        "static_coefficient": {
+          "denominator": 625,
+          "float": 0.1216,
+          "fraction": "76/625",
+          "numerator": 76
+        }
+      },
+      "response_reducer": {
+        "q_step_power": 1,
+        "q_step_prefactor": {
+          "denominator": 1,
+          "float": 1.0,
+          "fraction": "1/1",
+          "numerator": 1
+        },
+        "qanti_is_half_orientation_difference": true,
+        "raw_sum_is_right_endpoint_centered_readout": true
+      },
+      "scale": {
+        "denominator": 100,
+        "float": 0.01,
+        "fraction": "1/100",
+        "numerator": 1
+      },
+      "scale_domain": {
+        "declared_domain": "positive_rational_s_with_0<s<=1/100",
+        "maximum_inclusive": {
+          "denominator": 100,
+          "float": 0.01,
+          "fraction": "1/100",
+          "numerator": 1
+        },
+        "minimum_exclusive": {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        }
+      },
+      "schema_version": 2,
+      "trajectory_or_finite_ladder_used_for_acceptance": false,
+      "uniform_over_declared_scale_domain": true
+    },
+    "record_type": "gate",
+    "requirement": "right endpoints, one closing endpoint, a common affine clock, and exact reversal are frozen",
+    "status": "pass"
+  },
+  {
+    "name": "qanti_and_did_factors",
+    "observed": {
+      "did": "ordinary_scaled_orientation_difference=2*Qanti_h",
+      "qanti": "Qanti_h=(Q_h_plus-Q_h_minus)/2"
+    },
+    "record_type": "gate",
+    "requirement": "Qanti is the half difference and the ordinary orientation difference is exactly 2Qanti",
+    "status": "pass"
+  },
+  {
+    "name": "fixed_time_bridge_bound",
+    "observed": {
+      "certificate": {
+        "auxiliary_hB_component_coefficients": {
+          "bias": {
+            "denominator": 1,
+            "float": 640.0,
+            "fraction": "640/1",
+            "numerator": 640
+          },
+          "diffusion": {
+            "denominator": 1,
+            "float": 1280.0,
+            "fraction": "1280/1",
+            "numerator": 1280
+          }
+        },
+        "clock_path_initialization": {
+          "closing_endpoint_processed_once": true,
+          "continuous_exact_xbar_at_common_start": true,
+          "discrete_exact_xbar_h_at_common_start": true,
+          "minus_is_exact_reverse_of_plus": true,
+          "positive_integer_N_with_Nh_equal_T": true,
+          "right_endpoint_update_then_sample": true,
+          "same_uniform_circle_and_affine_clock": true
+        },
+        "contraction": {
+          "delta": {
+            "denominator": 25,
+            "float": 0.04,
+            "fraction": "1/25",
+            "numerator": 1
+          },
+          "product_exponential_rate": {
+            "denominator": 25,
+            "float": 0.04,
+            "fraction": "1/25",
+            "numerator": 1
+          },
+          "product_uses_elapsed_model_time_kh": true,
+          "step_factor_constant": {
+            "denominator": 1,
+            "float": 1.0,
+            "fraction": "1/1",
+            "numerator": 1
+          },
+          "step_factor_h_coefficient": {
+            "denominator": 25,
+            "float": -0.04,
+            "fraction": "-1/25",
+            "numerator": -1
+          }
+        },
+        "exact_circle_extrema": {
+          "bias_maximum": {
+            "denominator": 25,
+            "float": 0.04,
+            "fraction": "1/25",
+            "numerator": 1
+          },
+          "bias_minimum": {
+            "denominator": 50,
+            "float": 0.02,
+            "fraction": "1/50",
+            "numerator": 1
+          },
+          "diffusion_maximum": {
+            "denominator": 200,
+            "float": 0.235,
+            "fraction": "47/200",
+            "numerator": 47
+          },
+          "diffusion_minimum": {
+            "denominator": 200,
+            "float": 0.215,
+            "fraction": "43/200",
+            "numerator": 43
+          },
+          "face_margins": [
+            {
+              "denominator": 100,
+              "float": 0.01,
+              "fraction": "1/100",
+              "numerator": 1
+            },
+            {
+              "denominator": 100,
+              "float": 0.01,
+              "fraction": "1/100",
+              "numerator": 1
+            },
+            {
+              "denominator": 100,
+              "float": 0.01,
+              "fraction": "1/100",
+              "numerator": 1
+            },
+            {
+              "denominator": 100,
+              "float": 0.01,
+              "fraction": "1/100",
+              "numerator": 1
+            }
+          ],
+          "inside_box": true,
+          "minimum_face_margin": {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          "uniform_domain_minimum_face_margin": {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          }
+        },
+        "fixed_time_bound": {
+          "circle_pi_coefficient": {
+            "denominator": 1,
+            "float": 120.0,
+            "fraction": "120/1",
+            "numerator": 120
+          },
+          "directed_circle_coefficient": {
+            "denominator": 113,
+            "float": 376.9911504424779,
+            "fraction": "42600/113",
+            "numerator": 42600
+          },
+          "directed_pi_upper": {
+            "denominator": 113,
+            "float": 3.1415929203539825,
+            "fraction": "355/113",
+            "numerator": 355
+          },
+          "duration_power": 1,
+          "outer_h_power": 1,
+          "same_bound_for_each_orientation_and_qanti": true,
+          "scale_power": 1,
+          "time_coefficient": {
+            "denominator": 25,
+            "float": 8.56,
+            "fraction": "214/25",
+            "numerator": 214
+          }
+        },
+        "limits": {
+          "area_relative_joint_conditions": [
+            "s*T_to_infinity",
+            "h*T/s^2_to_0"
+          ],
+          "interchangeability_claimed": false,
+          "primary_order": [
+            "h_to_0_at_fixed_T_s_with_positive_integer_T_over_h",
+            "T_to_infinity",
+            "optional_s_to_0_within_declared_scale_domain"
+          ],
+          "sufficient_joint_conditions": [
+            "T_to_infinity",
+            "h*T_to_0"
+          ]
+        },
+        "local_defect": {
+          "duration_power": -1,
+          "scale_power": 1,
+          "speed_pi_coefficient": {
+            "denominator": 5,
+            "float": 1.2,
+            "fraction": "6/5",
+            "numerator": 6
+          },
+          "static_coefficient": {
+            "denominator": 625,
+            "float": 0.1216,
+            "fraction": "76/625",
+            "numerator": 76
+          }
+        },
+        "response_reducer": {
+          "q_step_power": 1,
+          "q_step_prefactor": {
+            "denominator": 1,
+            "float": 1.0,
+            "fraction": "1/1",
+            "numerator": 1
+          },
+          "qanti_is_half_orientation_difference": true,
+          "raw_sum_is_right_endpoint_centered_readout": true
+        },
+        "scale": {
+          "denominator": 100,
+          "float": 0.01,
+          "fraction": "1/100",
+          "numerator": 1
+        },
+        "scale_domain": {
+          "declared_domain": "positive_rational_s_with_0<s<=1/100",
+          "maximum_inclusive": {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          "minimum_exclusive": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        },
+        "schema_version": 2,
+        "trajectory_or_finite_ladder_used_for_acceptance": false,
+        "uniform_over_declared_scale_domain": true
+      },
+      "recomputation_issues": []
+    },
+    "record_type": "gate",
+    "requirement": "every fixed-T premise is exactly recomputed and the bound uses no fitted trajectory gate",
+    "status": "pass"
+  },
+  {
+    "name": "scale_domain_uniform_containment",
+    "observed": {
+      "extrema": {
+        "bias_maximum": {
+          "denominator": 25,
+          "float": 0.04,
+          "fraction": "1/25",
+          "numerator": 1
+        },
+        "bias_minimum": {
+          "denominator": 50,
+          "float": 0.02,
+          "fraction": "1/50",
+          "numerator": 1
+        },
+        "diffusion_maximum": {
+          "denominator": 200,
+          "float": 0.235,
+          "fraction": "47/200",
+          "numerator": 47
+        },
+        "diffusion_minimum": {
+          "denominator": 200,
+          "float": 0.215,
+          "fraction": "43/200",
+          "numerator": 43
+        },
+        "face_margins": [
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          }
+        ],
+        "inside_box": true,
+        "minimum_face_margin": {
+          "denominator": 100,
+          "float": 0.01,
+          "fraction": "1/100",
+          "numerator": 1
+        },
+        "uniform_domain_minimum_face_margin": {
+          "denominator": 100,
+          "float": 0.01,
+          "fraction": "1/100",
+          "numerator": 1
+        }
+      },
+      "scale": {
+        "denominator": 100,
+        "float": 0.01,
+        "fraction": "1/100",
+        "numerator": 1
+      }
+    },
+    "record_type": "gate",
+    "requirement": "all rational 0<s<=1/100 loops remain in the box with uniform constants",
+    "status": "pass"
+  },
+  {
+    "name": "iterated_and_joint_limit_scope",
+    "observed": {
+      "auxiliary_hB_component_coefficients": {
+        "bias": {
+          "denominator": 1,
+          "float": 640.0,
+          "fraction": "640/1",
+          "numerator": 640
+        },
+        "diffusion": {
+          "denominator": 1,
+          "float": 1280.0,
+          "fraction": "1280/1",
+          "numerator": 1280
+        }
+      },
+      "clock_path_initialization": {
+        "closing_endpoint_processed_once": true,
+        "continuous_exact_xbar_at_common_start": true,
+        "discrete_exact_xbar_h_at_common_start": true,
+        "minus_is_exact_reverse_of_plus": true,
+        "positive_integer_N_with_Nh_equal_T": true,
+        "right_endpoint_update_then_sample": true,
+        "same_uniform_circle_and_affine_clock": true
+      },
+      "contraction": {
+        "delta": {
+          "denominator": 25,
+          "float": 0.04,
+          "fraction": "1/25",
+          "numerator": 1
+        },
+        "product_exponential_rate": {
+          "denominator": 25,
+          "float": 0.04,
+          "fraction": "1/25",
+          "numerator": 1
+        },
+        "product_uses_elapsed_model_time_kh": true,
+        "step_factor_constant": {
+          "denominator": 1,
+          "float": 1.0,
+          "fraction": "1/1",
+          "numerator": 1
+        },
+        "step_factor_h_coefficient": {
+          "denominator": 25,
+          "float": -0.04,
+          "fraction": "-1/25",
+          "numerator": -1
+        }
+      },
+      "exact_circle_extrema": {
+        "bias_maximum": {
+          "denominator": 25,
+          "float": 0.04,
+          "fraction": "1/25",
+          "numerator": 1
+        },
+        "bias_minimum": {
+          "denominator": 50,
+          "float": 0.02,
+          "fraction": "1/50",
+          "numerator": 1
+        },
+        "diffusion_maximum": {
+          "denominator": 200,
+          "float": 0.235,
+          "fraction": "47/200",
+          "numerator": 47
+        },
+        "diffusion_minimum": {
+          "denominator": 200,
+          "float": 0.215,
+          "fraction": "43/200",
+          "numerator": 43
+        },
+        "face_margins": [
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          }
+        ],
+        "inside_box": true,
+        "minimum_face_margin": {
+          "denominator": 100,
+          "float": 0.01,
+          "fraction": "1/100",
+          "numerator": 1
+        },
+        "uniform_domain_minimum_face_margin": {
+          "denominator": 100,
+          "float": 0.01,
+          "fraction": "1/100",
+          "numerator": 1
+        }
+      },
+      "fixed_time_bound": {
+        "circle_pi_coefficient": {
+          "denominator": 1,
+          "float": 120.0,
+          "fraction": "120/1",
+          "numerator": 120
+        },
+        "directed_circle_coefficient": {
+          "denominator": 113,
+          "float": 376.9911504424779,
+          "fraction": "42600/113",
+          "numerator": 42600
+        },
+        "directed_pi_upper": {
+          "denominator": 113,
+          "float": 3.1415929203539825,
+          "fraction": "355/113",
+          "numerator": 355
+        },
+        "duration_power": 1,
+        "outer_h_power": 1,
+        "same_bound_for_each_orientation_and_qanti": true,
+        "scale_power": 1,
+        "time_coefficient": {
+          "denominator": 25,
+          "float": 8.56,
+          "fraction": "214/25",
+          "numerator": 214
+        }
+      },
+      "limits": {
+        "area_relative_joint_conditions": [
+          "s*T_to_infinity",
+          "h*T/s^2_to_0"
+        ],
+        "interchangeability_claimed": false,
+        "primary_order": [
+          "h_to_0_at_fixed_T_s_with_positive_integer_T_over_h",
+          "T_to_infinity",
+          "optional_s_to_0_within_declared_scale_domain"
+        ],
+        "sufficient_joint_conditions": [
+          "T_to_infinity",
+          "h*T_to_0"
+        ]
+      },
+      "local_defect": {
+        "duration_power": -1,
+        "scale_power": 1,
+        "speed_pi_coefficient": {
+          "denominator": 5,
+          "float": 1.2,
+          "fraction": "6/5",
+          "numerator": 6
+        },
+        "static_coefficient": {
+          "denominator": 625,
+          "float": 0.1216,
+          "fraction": "76/625",
+          "numerator": 76
+        }
+      },
+      "response_reducer": {
+        "q_step_power": 1,
+        "q_step_prefactor": {
+          "denominator": 1,
+          "float": 1.0,
+          "fraction": "1/1",
+          "numerator": 1
+        },
+        "qanti_is_half_orientation_difference": true,
+        "raw_sum_is_right_endpoint_centered_readout": true
+      },
+      "scale": {
+        "denominator": 100,
+        "float": 0.01,
+        "fraction": "1/100",
+        "numerator": 1
+      },
+      "scale_domain": {
+        "declared_domain": "positive_rational_s_with_0<s<=1/100",
+        "maximum_inclusive": {
+          "denominator": 100,
+          "float": 0.01,
+          "fraction": "1/100",
+          "numerator": 1
+        },
+        "minimum_exclusive": {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        }
+      },
+      "schema_version": 2,
+      "trajectory_or_finite_ladder_used_for_acceptance": false,
+      "uniform_over_declared_scale_domain": true
+    },
+    "record_type": "gate",
+    "requirement": "only the proved iterated limit and explicitly sufficient joint conditions are claimed",
+    "status": "pass"
+  },
+  {
+    "name": "legacy_context_off_family",
+    "observed": {
+      "h": "9/50",
+      "off_primary_family": true,
+      "primary_family_q": "9/1250",
+      "q": "1/125",
+      "q_mismatch": "1/1250"
+    },
+    "record_type": "gate",
+    "requirement": "the existing h=9/50,q=1/125 open proof is explicitly off the rational primary family",
+    "status": "pass"
+  },
+  {
+    "name": "context_artifact_hash_closure",
+    "observed": {
+      "legacy_open_point": {
+        "h": "9/50",
+        "off_primary_family": true,
+        "primary_family_q": "9/1250",
+        "q": "1/125",
+        "q_mismatch": "1/1250"
+      },
+      "lindblad_artifacts": {
+        "all_declared_hashes_match": true,
+        "checksums_sha256": "546fa95d42a16f2237e75096ae1bd0f6496d347888ae6d634c32d7f0c18ea6ad",
+        "declared_file_count": 4,
+        "entry_types": {
+          "CHECKSUMS.json": "file",
+          "PROVENANCE.json": "file",
+          "REPORT.md": "file",
+          "records.json": "file",
+          "summary.json": "file"
+        },
+        "raw_file_sha256": {
+          "CHECKSUMS.json": "546fa95d42a16f2237e75096ae1bd0f6496d347888ae6d634c32d7f0c18ea6ad",
+          "PROVENANCE.json": "02f25fb843553364f08002a385afa97f4645f9fa9c2ce2c47f730540eeed8693",
+          "REPORT.md": "3f919959751b8ed9ade37ff2ec2ebb3f0ca907b7e2aea8ccfc1b11a0b56e643a",
+          "records.json": "4b26806e220cbddee1a2049752ea736ac9feb27b274974aa18634fe01f95126e",
+          "summary.json": "2c7400e822807512e6f6d245d27b5823ca8c90db0c2b11ce6dd4a94db3d4df55"
+        },
+        "recursive_inventory_exact": true,
+        "relative_path": "experiments/benchmark_d_lindblad_response_proof/artifacts",
+        "symlink_or_reparse_entries": []
+      },
+      "open_artifacts": {
+        "all_declared_hashes_match": true,
+        "checksums_sha256": "dacefa959753a1b704f662bc99ca3a144ce0f7b3ef15e8ca8c07a214d0febe94",
+        "declared_file_count": 4,
+        "entry_types": {
+          "CHECKSUMS.json": "file",
+          "PROVENANCE.json": "file",
+          "REPORT.md": "file",
+          "records.json": "file",
+          "summary.json": "file"
+        },
+        "raw_file_sha256": {
+          "CHECKSUMS.json": "dacefa959753a1b704f662bc99ca3a144ce0f7b3ef15e8ca8c07a214d0febe94",
+          "PROVENANCE.json": "7e1859d43d71799959c30362e42c7ad2fe3f40f7219eaf427ea74d5fea632b9a",
+          "REPORT.md": "1fd6f435fed7c78c31b693fca8bcb140272bd5f0b0c9c9b0f244665c7fb546fb",
+          "records.json": "a0677382117603b3f675bf8bb0c2b1cd18025e9ae6e6e7ca8c3b4aa4d5a982ec",
+          "summary.json": "7dbb9696a3190911d00bb76700459610e2f90a76535bdc1b20864edbbad44ede"
+        },
+        "recursive_inventory_exact": true,
+        "relative_path": "experiments/benchmark_d_open_response_proof/artifacts",
+        "symlink_or_reparse_entries": []
+      },
+      "roles": {
+        "lindblad": "hash_bound_continuous_target_context_not_new_evidence",
+        "open": "hash_bound_structural_context_off_primary_family_not_numerically_bridged"
+      }
+    },
+    "record_type": "gate",
+    "requirement": "both recursive path-bound prior bundles are exact ordinary-file closures",
+    "status": "pass"
+  },
+  {
+    "name": "refusal_matrix_complete",
+    "observed": {
+      "checks": {
+        "R01": true,
+        "R02": true,
+        "R03": true,
+        "R04": true,
+        "R05": true,
+        "R06": true,
+        "R07": true,
+        "R08": true,
+        "R09": true,
+        "R10": true,
+        "R11": true,
+        "R12": true,
+        "R13": true,
+        "R14": true,
+        "R15": true,
+        "R16": true,
+        "R17": true,
+        "R18": true,
+        "R19": true,
+        "R20": true
+      },
+      "complete": true,
+      "mutation_issues": {
+        "claim_inflation": [
+          "claim_ceiling: outside frozen bridge contract"
+        ],
+        "coherent": [
+          "coherent_scale: outside frozen bridge contract"
+        ],
+        "exponential_q": [
+          "depolarizing_rule: outside frozen bridge contract"
+        ],
+        "fixed_q": [
+          "depolarizing_rule: outside frozen bridge contract"
+        ],
+        "helper": [
+          "fixed_point_helper_policy: outside frozen bridge contract"
+        ],
+        "runtime_scope": [
+          "core_regression_scope: outside frozen bridge contract"
+        ],
+        "scale_domain": [
+          "circle_scale: outside frozen bridge contract"
+        ],
+        "site": [
+          "site_potential_scale: outside frozen bridge contract"
+        ],
+        "wrong_center": [
+          "response_centering: outside frozen bridge contract"
+        ],
+        "wrong_clock": [
+          "slow_clock: outside frozen bridge contract"
+        ],
+        "wrong_reverse": [
+          "reversal_convention: outside frozen bridge contract"
+        ],
+        "wrong_scaling": [
+          "response_scaling: outside frozen bridge contract"
+        ],
+        "zero_delta": [
+          "depolarizing_rate: outside frozen bridge contract"
+        ]
+      },
+      "specifications": {
+        "R01": "legacy_dt_9/50_q_1/125_off_family",
+        "R02": "fixed_or_exponential_q_forbidden_as_primary",
+        "R03": "wrong_jump_or_dephasing_h_scaling",
+        "R04": "missing_affine_source_or_K_transpose",
+        "R05": "missing_or_doubled_h_response_scaling",
+        "R06": "wrong_or_iterative_fixed_branch_centering",
+        "R07": "endpoint_reversal_clock_or_path_mismatch",
+        "R08": "incomplete_diagonal_affine_identity",
+        "R09": "active_clip_rescale_or_projection_branch",
+        "R10": "q_h_over_5_mislabeled_as_stationary_floor",
+        "R11": "per_tick_gap_reused_across_h",
+        "R12": "finite_ladder_or_Ns_only_claimed_as_proof",
+        "R13": "unproved_joint_limit_or_limit_interchange",
+        "R14": "omitted_context_or_source_provenance",
+        "R15": "full_density_scheduler_physical_empirical_or_CGT_claim_inflation",
+        "R16": "nonzero_coherent_or_site_scale_or_zero_delta",
+        "R17": "branch_helper_Euler_PSD_or_projection_dependent_theorem",
+        "R18": "finite_core_samples_or_tiny_h_float_claimed_as_uniform_runtime_proof",
+        "R19": "scale_outside_exact_0<s<=1/100_domain",
+        "R20": "nonrecursive_or_link_following_predecessor_context_closure"
+      }
+    },
+    "record_type": "gate",
+    "requirement": "every frozen refusal case is represented and fails closed",
+    "status": "pass"
+  },
+  {
+    "name": "claim_ceiling",
+    "observed": "exact rational bridge on the authored five-state D0 diagonal invariant population sector and mean-position readout in uncalibrated model-time only; no full-density, scheduler, physical, empirical, CGT-alignment, general-CWT, topology, or population claim",
+    "record_type": "gate",
+    "requirement": "the disposition is internal analytic only and makes no empirical/full-density/CGT claim",
+    "status": "pass"
+  }
+]
