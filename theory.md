@@ -785,7 +785,7 @@ R_{\rm anti}(\gamma)=\oint_\gamma B^{(R)}+r_\gamma
 \]
 Deriving that reduction and a deterministic or stochastic rate for $r_\gamma$ remains open for the unconstrained full CWT scheduler. Sections 36.2–36.4 separate the explicit benchmark-C fixed-tick recurrence, a general finite-dimensional uniformly contractive class theorem, and a named five-state core open-system specialization. The last item proves the reduction for one authored Benchmark D channel/readout, but still does not establish a physical-time scheduler law or an external response. For a specified shrinking-loop family with nonzero leading flux, the CGT law additionally requires non-degenerate coupling/readout, $r_\gamma=o(\Phi_\gamma)$, and $\int_{S_\gamma}(dB^{(R)}-\kappa_1\Omega)=o(\Phi_\gamma)$. Only then does $R_{\rm anti}=\kappa_1\Phi_\gamma+o(\Phi_\gamma)$, or $\Delta R_\gamma=2\kappa_1\Phi_\gamma+o(\Phi_\gamma)$. An evidentiary test must compute $\Phi_\gamma$ independently and measure a response whose definition contains no $\Phi$, $\Omega$, or loop orientation.
 
-The named Benchmark D results now include both the fixed-tick core specialization in Section 36.4 and the separately scoped continuous affine Lindblad specialization in Section 36.4a. They close their declared authored core models only; the unconstrained full scheduler and external response remain open.
+The named Benchmark D results now include the fixed-tick core specialization in Section 36.4, the separately scoped continuous affine Lindblad specialization in Section 36.4a, and the exact rational step-size bridge between their D0 diagonal population sectors in Section 36.4b. They close only their declared authored invariant-subspace models; the unconstrained full scheduler, a full-density continuum limit, and external response remain open.
 
 ### 36.1 Evidence status
 
@@ -904,6 +904,46 @@ F_{bd}=\partial_bB_d-\partial_dB_b
 A directed exact-rational polynomial enclosure proves negative curvature and negative CCW line integral for the radius-$0.01$ circle, whose exact extrema have margin $0.01$ to every box face. The slow clock is frozen as $u=t/T$, $\lambda_+(t)=\gamma_+(u)$, and $\lambda_-(t)=\lambda_+(T-t)=\gamma_+(1-u)$ for $0\le t\le T$; the resulting $2\pi s/T$ speed and $(2\pi)^2s/T^2$ acceleration bounds are part of the gate. Variation of constants yields $|Q_{\rm anti}(T)-L(s)|\le C(s)/T$ with theorem-derived $C(s)$; the conservative frozen rule $T_0=2^{\lceil\log_2(4C/L_{\min})\rceil}$ gives $T_0=1{,}048{,}576$. Fixed-scale and joint shrinking-scale ladders are certified from the bound, with each joint relative bound at most half its predecessor; no Euler/PSD trajectory or fitted slope is used for acceptance. Generator rates are inverse model-time, $T$ is model-time, the readout is a dimensionless mean-position index, and $Q$ is readout times model-time. External clock/readout calibration is absent, so no physical-time interpretation is claimed.
 
 An auxiliary smooth positive-real D0 projective map, constructed from the closed-form distribution rather than the core eigenvector helper, has exactly $\Omega_{bd}=0$ because the state and its derivatives are real. It is channel-equivalent only because $p$ and $\theta$ are inactive under zero coherent/site terms; it is not the current core helper `BranchState` geometry. Its coexistence with nonzero $F_{bd}$ is only a no-universal-alignment control. The result is `PASS_INTERNAL_ANALYTIC` / `NO_EMPIRICAL_EVIDENCE` for this authored five-state generator/readout. It is not a derived CWT continuum limit, a calibrated physical-time validation, or CGT alignment evidence. Tracked Phase 11 remains a historical exploratory scaffold using finite Euler stepping, PSD projection, cached finite-step branch densities, and mean/final-sample responses; this theorem supersedes only its narrow Benchmark-D analytic interpretation and does not validate Phase 11 fits.
+
+### 36.4b Exact rational bridge on the D0 diagonal sector
+
+The isolated harness at `cwt-sim/experiments/benchmark_d_discrete_continuum_bridge_proof/` proves a step-size bridge between newly specified members of the discrete core family and the continuous affine generator above. It does not bridge the historical discrete point, whose $h=9/50$ and $q=1/125$ are off the primary scaling $q_h=h/25$ because $h/25=9/1250$. For rational $0<h\le1/5$, define
+\[
+E_h(x)=(1-h/25)\left[I+\frac h5(K^T-I)\right]x+\frac h{125}{\bf1}
+=M_hx+c_h.
+\]
+Then exactly
+\[
+M_h=I+hA_h,
+\qquad
+A_h=\frac15\left(1-\frac h{25}\right)(K^T-I)-\frac1{25}I,
+\]
+so the effective continuous edge rate is $a_h=(1/5)(1-h/25)$. This is an abstract exact-rational diagonal-population family. Finite core calls at the four box corners and center, three representable $h$ values, and complete diagonal/traceless-diagonal bases are provenance/regression only; they do not prove uniform runtime equivalence. The uniform result follows from the exact symbolic affine identity. The runtime adapter refuses $h<10^{-12}$ before float underflow. The exact loss bound is $199/2500$, the no-jump radicand is at least $2301/2500$, and clip, rescale, and projection branches are inactive. No full-density or full-superoperator limit is claimed.
+
+The exact fixed branch is $\bar x_h=-A_h^{-1}c$, with $\|\bar x_h-\bar x\|_1\le2h/5$, contraction $1-h/25$, and $h\|(I-M_h)^{-1}\|_1\le25$. For the same centered mean-position readout, the discrete and continuous one-forms obey
+\[
+hB_{h,i}=B_{{\rm CT},i}(a_h)+h\,\partial_i(H\bar x_h).
+\]
+The correction is an exact gradient, so its closed-loop integral and curl vanish and
+\[
+hF_{h,bd}=F_{{\rm CT},bd}(a_h).
+\]
+At the center the $h\to0$ limit is the exact continuous fraction in Section 36.4a, the first coefficient is
+\[
+\frac{228322311704703213246688000000}
+{44415389442843585257542657921}\approx5.14061262478678,
+\]
+and a directed rational derivative enclosure proves $|hF_h-F_{\rm CT}|<88h$ throughout $0<h\le1/5$. A finite $h$ ladder is only a regression cross-check, not the proof.
+
+For exact rational $0<s\le1/100$, every centered circle remains in the D0 box; at $s=1/100$ its extrema leave exactly $1/100$ to every face. For a common affine clock, right endpoints, exact reverse, and equilibrium initialization, with $N=T/h$ an integer, define the raw sum $S_h^\pm=\sum_n H[x_n-\bar x_h(\lambda_n)]$ and scaled response $Q_h^\pm=hS_h^\pm$. Then
+\[
+|Q_{h}^{\pm}-Q_{\rm CT}^{\pm}|
+\le h\left[\frac{214}{25}T+120\pi s\right]
+\le h\left[\frac{214}{25}T+\frac{42600}{113}s\right],
+\]
+and the same bound holds for the half-difference $Q_{\rm anti}$. Exact structured records recompute the bound coefficients, defect, integer clock, two initializations, contraction product, reversal/endpoints/common path, and $Q_h=hS_h$; formula prose cannot self-attest PASS. The primary result is the iterated order $h\to0$ at fixed $T,s$, then $T\to\infty$, followed only optionally by $s\to0$ within the declared scale domain. The proof does not commute these limits. It gives $hT\to0$ as a sufficient joint condition, with $sT\to\infty$ and $hT/s^2\to0$ additionally required for area-relative shrinking. Time is uncalibrated model-time and $Q$ has mean-position-index times model-time units. Both predecessor artifact bundles are recursively path-bound ordinary-file closures; nested additions, omissions, substitutions, symlinks, and reparse entries are rejected.
+
+This bridge is `PASS_INTERNAL_ANALYTIC` / `NO_EMPIRICAL_EVIDENCE` for the authored D0 diagonal population/readout family only. It is not a bridge for the older off-family artifact, not a full-density or scheduler continuum limit, not calibrated physical dynamics, and not evidence for CGT alignment or CWT generally.
 
 ### 36.5 Current coefficient decomposition is approximate
 
@@ -1073,7 +1113,7 @@ Two representations that yield the same projective state produce identical CGT a
 
 Current tracked evidence supports the following ranking.
 
-The named Benchmark D continuous core specialization has exact trace-norm decay, a true rational fixed branch, exact nonzero $F_{bd}$, and a theorem-derived directed-interval/$C(s)/T$ orientation-sign certificate. Like the discrete specialization and general proof fixtures, it is `PASS_INTERNAL_ANALYTIC` / `NO_EMPIRICAL_EVIDENCE`; it is not a derived CWT continuum, physical validation, or CGT alignment support.
+The named Benchmark D continuous core specialization has exact trace-norm decay, a true rational fixed branch, exact nonzero $F_{bd}$, and a theorem-derived directed-interval/$C(s)/T$ orientation-sign certificate. The rational bridge specialization additionally proves $hB_h=B_{\rm CT}(a_h)+h\,d(H\bar x_h)$, $hF_h=F_{\rm CT}(a_h)$, and a fixed-$T$ $O(hT+hs)$ response bound on the D0 diagonal sector. Like the discrete specialization and general proof fixtures, both are `PASS_INTERNAL_ANALYTIC` / `NO_EMPIRICAL_EVIDENCE`; neither is a full-density/scheduler continuum limit, physical validation, or CGT alignment support.
 
 **Analytic/executable support:** CGT metric/Wilson estimator identities and sign convention; QP-1 $S^2$ Chern/flux magnitude, sign, quotient-boundary behavior, and open varying gap; a separate synthetic Qi–Wu–Zhang periodic-torus check; the benchmark-C `current_phase_gain=0` nondegeneracy counterexample; the locked benchmark-C fixed-tick theorem $Q=\oint B^{(R)}+O(1/m)$; and the finite-dimensional uniform-contraction theorem $Q_c=\oint B_c+O(1/N)$ with its exact arbitrary-one-form realizability/no-go result. The contraction theorem supplies a response one-form for its declared class but also proves that smooth contraction alone cannot align response curvature with independently chosen projective $\Omega$. It has authored counterexamples and a three-dimensional deliberately aligned oracle/positive implementation control only: `PASS_INTERNAL_ANALYTIC` / `NO_EMPIRICAL_EVIDENCE`. The benchmark-C item remains a selected internal discovery/analytic corollary, not independent empirical validation, a physical-time result, or external evidence; its $F_R/\Omega$ comparison is only a tautological 2D quotient/implementation-consistency check.
 
@@ -1083,6 +1123,6 @@ The named Benchmark D continuous core specialization has exact trace-norm decay,
 
 **Open:** proving that a concrete non-toy CWT update satisfies the uniform contraction/smooth-branch hypotheses; any independently predictive or externally validated CGT-flux/readout alignment; any universal or externally nonzero \(\kappa_1\); external passive ridge prediction; general orientation-null rejection; noise threshold/robustness; direct \(\Omega\)-bias actuation; a derived continuous-time CWT limit/action with units; and full-stack locality.
 
-The open scheduler item above means extension beyond the isolated authored Benchmark D core specializations, with branch/reset/noise control; those narrow discrete and continuous model results themselves are now analytic/executable.
+The open scheduler item above means extension beyond the isolated authored Benchmark D core specializations, with full-density branch/reset/noise control. The narrow discrete, continuous, and rational diagonal-sector bridge results themselves are analytic/executable, but they do not establish that broader continuum limit.
 
 See `cwt-sim/cgt_benchmarks/reports/CWT-CGT_Proof_Status_v1.md` for the claim/evidence/proof-obligation matrix.
