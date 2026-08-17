@@ -1,0 +1,446 @@
+{
+  "artifact_kind": "internal_analytic_curvature_identity_audit",
+  "canonical_registry": {
+    "case_dispositions": [
+      {
+        "case_id": "T0",
+        "disposition": "COMMON_ORIGIN_PULLBACK_THEOREM_PASS"
+      },
+      {
+        "case_id": "QP1",
+        "disposition": "SAME_CURVATURE_CALIBRATION_ONLY"
+      },
+      {
+        "case_id": "BC",
+        "disposition": "SAME_PRIMITIVE_MANIFOLD_DIFFERENT_CONNECTIONS_DERIVED_MIXED_HESSIAN"
+      },
+      {
+        "case_id": "BD",
+        "disposition": "SAME_MODEL_ZERO_SET_OBSTRUCTION"
+      },
+      {
+        "case_id": "FUTURE",
+        "disposition": "ALIGNMENT_TEST_REQUIREMENTS_FROZEN_NO_CURRENT_PASS"
+      },
+      {
+        "case_id": "SCOPE",
+        "disposition": "PASS_INTERNAL_ANALYTIC_NO_EMPIRICAL_EVIDENCE"
+      }
+    ],
+    "case_dispositions_sha256": "c9207a95b0950e2d1631f414befb7a5b2648cafcbe5c82168e5a09fa9b42c14d",
+    "gate_ownership": [
+      {
+        "case_id": "T0",
+        "gate_names": [
+          "common_origin_branch_tangent_equivalence",
+          "local_exact_potential_scope",
+          "global_period_and_chern_obstructions",
+          "alignment_refusal_matrix"
+        ]
+      },
+      {
+        "case_id": "QP1",
+        "gate_names": [
+          "qp1_same_operator_projector",
+          "qp1_exact_connection_curvature_gap",
+          "qp1_kubo_sign_and_antisymmetrization",
+          "qp1_patch_transition_and_chern",
+          "qp1_spectral_regression_only"
+        ]
+      },
+      {
+        "case_id": "BC",
+        "gate_names": [
+          "benchmark_c_core_branch_binding",
+          "benchmark_c_exact_berry_pullback",
+          "benchmark_c_exact_response_pullback",
+          "benchmark_c_exact_response_decomposition",
+          "benchmark_c_center_oracle_and_nonconstant_quotient",
+          "benchmark_c_gain_and_relaxation_nulls",
+          "benchmark_c_numerical_regressions_only",
+          "benchmark_c_cycle_sum_scope"
+        ]
+      },
+      {
+        "case_id": "BD",
+        "gate_names": [
+          "benchmark_d_shared_model_provenance",
+          "benchmark_d_exact_stationary_positive_no_floor",
+          "benchmark_d_real_projective_lift_zero_curvature",
+          "benchmark_d_exact_nonzero_response",
+          "benchmark_d_zero_set_obstruction",
+          "benchmark_d_mixed_state_scope"
+        ]
+      },
+      {
+        "case_id": "FUTURE",
+        "gate_names": [
+          "future_alignment_fail_closed"
+        ]
+      },
+      {
+        "case_id": "SCOPE",
+        "gate_names": [
+          "claim_ceiling"
+        ]
+      }
+    ],
+    "gate_ownership_sha256": "6e8836720371306c53a79d2c4374f4f633b113c3abece13dc45f149f7a830377",
+    "schema_version": 1
+  },
+  "clean_cli_local_module_path_set_sha256": "2c0cbf263182f921a98b5e6ff059c609103560d09196aa59e6ca061c69a20660",
+  "clean_cli_local_module_paths": [
+    "cwt/__init__.py",
+    "cwt/cgt/__init__.py",
+    "cwt/cgt/_geom_compat.py",
+    "cwt/cgt/benchmarks.py",
+    "cwt/cgt/continuation.py",
+    "cwt/cgt/geometry.py",
+    "cwt/cgt/lindblad.py",
+    "cwt/cgt/loop_protocols.py",
+    "cwt/cgt/models.py",
+    "cwt/cgt/open_system.py",
+    "cwt/cgt/runner.py",
+    "cwt/geometry/berry.py",
+    "cwt/geometry/branch_distance.py",
+    "cwt/geometry/coherence.py",
+    "cwt/geometry/curvature.py",
+    "cwt/geometry/mixed_state.py",
+    "cwt/geometry/psi.py",
+    "cwt/geometry/stats.py",
+    "cwt/operator/L_map.py",
+    "experiments/__init__.py",
+    "experiments/benchmark_d_lindblad_response_proof/__init__.py",
+    "experiments/benchmark_d_lindblad_response_proof/adapter.py",
+    "experiments/benchmark_d_lindblad_response_proof/certificates.py",
+    "experiments/benchmark_d_lindblad_response_proof/contract.py",
+    "experiments/benchmark_d_lindblad_response_proof/exact_math.py",
+    "experiments/curvature_identity_audit/__init__.py",
+    "experiments/curvature_identity_audit/artifacts.py",
+    "experiments/curvature_identity_audit/benchmark_c.py",
+    "experiments/curvature_identity_audit/benchmark_d.py",
+    "experiments/curvature_identity_audit/classifier.py",
+    "experiments/curvature_identity_audit/common_origin.py",
+    "experiments/curvature_identity_audit/contract.py",
+    "experiments/curvature_identity_audit/exact.py",
+    "experiments/curvature_identity_audit/qp1.py",
+    "experiments/curvature_identity_audit/run.py",
+    "experiments/curvature_identity_audit/theorem.py",
+    "experiments/independent_response_theorem/__init__.py",
+    "experiments/independent_response_theorem/response.py",
+    "experiments/independent_response_theorem/theorem.py"
+  ],
+  "disposition": "PASS_INTERNAL_ANALYTIC",
+  "evidence_status": "NO_EMPIRICAL_EVIDENCE",
+  "experiment_id": "curvature_identity_audit",
+  "no_empirical_or_external_data": true,
+  "no_general_alignment_claim": true,
+  "no_physical_or_universal_cwt_claim": true,
+  "numerical_regressions_used_as_analytic_proof": false,
+  "predecessor_artifact_inventories": {
+    "benchmark_c_independent_response": {
+      "closure": "recursive_path_and_type_bound_no_symlink_or_reparse",
+      "entries": {
+        "PROVENANCE.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "e8cf6a19102a75a627a1454ec7256c92f8291c24c2610451d9969cc6c373adfc",
+          "type": "file"
+        },
+        "PROVENANCE_CORRECTION.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "53628affed3feadf7d5d21d43287b9652303c950fe7797a9375ee82c51382851",
+          "type": "file"
+        },
+        "PROVENANCE_CORRECTION.sha256": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "4b35f031c266525d19015001518df19d3a38481f0e81a7e5b367c09ea2ce5479",
+          "type": "file"
+        },
+        "REPORT.md": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "64a90b357af34648f16c42dc671c473b0099c1e89b6fe1cea3916470430415a3",
+          "type": "file"
+        },
+        "records.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "9d9abe277daf305014e52a7ace0517fb72f31037da630545521dd3daf125e2f7",
+          "type": "file"
+        },
+        "summary.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "afc8923bd9c15de461c8b18a58c7249fc082bac2e746a668204a37b1d9d02b63",
+          "type": "file"
+        }
+      },
+      "entry_count": 6,
+      "inventory_sha256": "5d687be8391709df56fae29ea99cc54c6318f138e264f2003534d62b137180b0"
+    },
+    "benchmark_d_lindblad_response": {
+      "closure": "recursive_path_and_type_bound_no_symlink_or_reparse",
+      "entries": {
+        "CHECKSUMS.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "546fa95d42a16f2237e75096ae1bd0f6496d347888ae6d634c32d7f0c18ea6ad",
+          "type": "file"
+        },
+        "PROVENANCE.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "02f25fb843553364f08002a385afa97f4645f9fa9c2ce2c47f730540eeed8693",
+          "type": "file"
+        },
+        "REPORT.md": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "3f919959751b8ed9ade37ff2ec2ebb3f0ca907b7e2aea8ccfc1b11a0b56e643a",
+          "type": "file"
+        },
+        "records.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "4b26806e220cbddee1a2049752ea736ac9feb27b274974aa18634fe01f95126e",
+          "type": "file"
+        },
+        "summary.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "2c7400e822807512e6f6d245d27b5823ca8c90db0c2b11ce6dd4a94db3d4df55",
+          "type": "file"
+        }
+      },
+      "entry_count": 5,
+      "inventory_sha256": "504b7ccc0b2f968b92a3b0fc0729684ff45e851aab77603c63a01414d675d0a0"
+    },
+    "generic_response_theorem": {
+      "closure": "recursive_path_and_type_bound_no_symlink_or_reparse",
+      "entries": {
+        "CHECKSUMS.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "bc9aabe7d75b97675de9fad57e97875bc5261588e640f59364a7a02deecdc6a1",
+          "type": "file"
+        },
+        "PROVENANCE.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "77dfebc8d785b7895b11136c9acf9347c75487b7ddacf9ab0e115e53d8a87ae8",
+          "type": "file"
+        },
+        "REPORT.md": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "ad406ae27d3013ca2e0cb89061cf9d1aec884b47efddec8454b104e1d920373b",
+          "type": "file"
+        },
+        "records.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "646294266b40e43d93fe553b41363ee6693a0913507419ac304a4849ed5f36ad",
+          "type": "file"
+        },
+        "summary.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "c064f4f02d7a61de7b53e4e737be5db09e521e176e9e5c3e833575e1d6354022",
+          "type": "file"
+        }
+      },
+      "entry_count": 5,
+      "inventory_sha256": "cf283fc2a1f4e1b1b209f2ff3e3636fc798b211e669a1f96d816a8c5621dfed5"
+    }
+  },
+  "predecessor_nonmutation_evidence": {
+    "after_inventory_sha256": {
+      "benchmark_c_independent_response": "5d687be8391709df56fae29ea99cc54c6318f138e264f2003534d62b137180b0",
+      "benchmark_d_lindblad_response": "504b7ccc0b2f968b92a3b0fc0729684ff45e851aab77603c63a01414d675d0a0",
+      "generic_response_theorem": "cf283fc2a1f4e1b1b209f2ff3e3636fc798b211e669a1f96d816a8c5621dfed5"
+    },
+    "before_inventory_sha256": {
+      "benchmark_c_independent_response": "5d687be8391709df56fae29ea99cc54c6318f138e264f2003534d62b137180b0",
+      "benchmark_d_lindblad_response": "504b7ccc0b2f968b92a3b0fc0729684ff45e851aab77603c63a01414d675d0a0",
+      "generic_response_theorem": "cf283fc2a1f4e1b1b209f2ff3e3636fc798b211e669a1f96d816a8c5621dfed5"
+    },
+    "method": "recursive_raw_inventory_before_and_after_payload_construction",
+    "unchanged": true
+  },
+  "raw_artifact_payload_sha256": {
+    "REPORT.md": "8e7ba19addc008b8334a47dd04e36ca121081207686489ffb9a1f88e24de0337",
+    "records.json": "3ddcb420e608f1c54e4fa6ce73c0ee3344d9a851ebbf1ee1216e030ec1c0aebd",
+    "summary.json": "7ad31c6335b907fbed65bfe1c2f1c91b150bfa4256ca36ec56d6a6d93bf4d199"
+  },
+  "reproduction_command": "cd cwt-sim && .venv/Scripts/python.exe experiments/curvature_identity_audit/run.py run",
+  "runtime": {
+    "numpy": "2.3.3",
+    "python": "3.11.9",
+    "typer": "0.17.4"
+  },
+  "schema_version": 1,
+  "source_hash_domain": "sha256_utf8_lf_v1",
+  "source_hash_domain_definition": "strict UTF-8 with BOM forbidden; CRLF maps to LF only; remaining bare CR is rejected; no whitespace, Unicode, or other normalization",
+  "source_hashes": {
+    "cwt/__init__.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "5545ff85f06287efef405b4b063a3f0817efa4e9ef3a51326bba27c720ee722c"
+    },
+    "cwt/cgt/__init__.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "95fa221b50dfb5e7006eb64b95864985fedda01201287df7e3e3c7ebe92049c6"
+    },
+    "cwt/cgt/_geom_compat.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "d2e21872f982bc3890cb7e32cdfe006379cfd0aeab65b14f2b308fa0ea46a3ea"
+    },
+    "cwt/cgt/benchmarks.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "eb713c61cb8b860c7011f823cdd4f531ba6dace5a63c1d306c6c5b7e974ef6d0"
+    },
+    "cwt/cgt/continuation.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "a4fd16111b2dba5f435c902db7b9a35c08be7b2fa276e430d1c8d132f6a6b8fe"
+    },
+    "cwt/cgt/geometry.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "5ae00ab863fe09f471fa33c28e16dad4504621618d5bfe1a936264ebcbcad1bd"
+    },
+    "cwt/cgt/lindblad.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "e5d4ac531ba6a4142c9e27f8e1bbc17abf62419d535359f4168fab6424fbb9eb"
+    },
+    "cwt/cgt/loop_protocols.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "f5f12a169c0107f7da383a9549136360428ce07a8ecd9f091caf5db5caae5fc7"
+    },
+    "cwt/cgt/models.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "850babc5a37d29a002d507a0c38f69065881fb429c9c21e91531f213ae68cb70"
+    },
+    "cwt/cgt/open_system.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "2148d7087965bb7193bbd811a535aadbf4db25d71e0b74571ebe6c64f60f778a"
+    },
+    "cwt/cgt/runner.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "cc75438f84a19b9ad2d93c8309f6bd957b174a1d797a16bc57b1a5d4e614d3dc"
+    },
+    "cwt/geometry/berry.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "9917098d6c539e19d714693dffe1df48696e1cdc1c2502228155afdcb044a7ec"
+    },
+    "cwt/geometry/branch_distance.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "3a87e86f402cb20bad5970eda932ea6fb81888464a55517dd710711faf8f5146"
+    },
+    "cwt/geometry/coherence.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "f217072118a9738a8a1bef70881c6b4fba1721d96f4d0892b5fd1eeb961d483b"
+    },
+    "cwt/geometry/curvature.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "2a9a45b1f56f199511267de1cc687c721ddecd7945b35a4c176ba2fdc85cdc8a"
+    },
+    "cwt/geometry/mixed_state.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "7f98152a444e17dda7f36b7b9afc1024fc1e46d57df546d21fb460c3bd5ce9b5"
+    },
+    "cwt/geometry/psi.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "a3c9f06ded36507a881d3127efb102a56d313d51692c62663316fd7276c909fd"
+    },
+    "cwt/geometry/stats.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "071c752ea5f6df9470acebd4af92d4bf3e2de6a4ceffd329f540117e73aa99bf"
+    },
+    "cwt/operator/L_map.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "7ad57c12e372cb412239a1a05899f1653f1c1a7fcaaafc42c471e5b9e3363ef2"
+    },
+    "experiments/__init__.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "ebafe75c5944d1ed3e1c904b7b728e8fa465320486564affcc86f7591b0c8635"
+    },
+    "experiments/benchmark_d_lindblad_response_proof/__init__.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "2a5c988a641bc11128b2fac256af14c29838344fe0ce5d54d974a0f92db1e512"
+    },
+    "experiments/benchmark_d_lindblad_response_proof/adapter.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "d3f687dedbc1b09d1db54e76dd7c16b1925be8b496e8446fa4f3937a4ed990ab"
+    },
+    "experiments/benchmark_d_lindblad_response_proof/certificates.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "5c6fc3407d65675c825a7de4344010e971bcbd90dd7a9133b48a20d4887af435"
+    },
+    "experiments/benchmark_d_lindblad_response_proof/contract.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "54c36f1e8953360096cdfe9daf76ed939f8b3a3603b2a72cf834e336f0e42a0c"
+    },
+    "experiments/benchmark_d_lindblad_response_proof/exact_math.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "81750bf90bf1337c7e2daea042915ebdf93fb0d2e3b571f6d216d67be51862d9"
+    },
+    "experiments/curvature_identity_audit/MODEL_CONTRACT.md": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "405ae8afc1232b8a9f50c9afba1171918f85105ca06f008fc2bccf79e2b52a70"
+    },
+    "experiments/curvature_identity_audit/__init__.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "20178b9cda02a3b729785e17c835314f82f619f6dfba9c4c7c3e2a0204220526"
+    },
+    "experiments/curvature_identity_audit/artifacts.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "258e55e8c938c49bd344b60c989ff160adedb7122af0c9631088bcb812df8ac2"
+    },
+    "experiments/curvature_identity_audit/benchmark_c.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "9b570fcaa47e875514fa83a3d7eb3433cb778da9b86c6280705eff85e3b6cca2"
+    },
+    "experiments/curvature_identity_audit/benchmark_d.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "94d7b66fdbfd632d958b1b8d8909a28a791e8dc8d6949c6570a902a3eb403e68"
+    },
+    "experiments/curvature_identity_audit/classifier.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "0c28bad0f75b808cff25e32a8d8f9a9308f340cd2e897d71aaf19be46bcc3d3e"
+    },
+    "experiments/curvature_identity_audit/common_origin.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "2acc91dd7d7c1932ffd8e9fd9559c1fd53d84178addb299ccdb26df632971419"
+    },
+    "experiments/curvature_identity_audit/contract.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "35073a92b7fc7af97f8cc4c852afff5c3adbe84f1b389f9eeb0df01f894aea7a"
+    },
+    "experiments/curvature_identity_audit/exact.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "326ef471f25c3cee1a714e6bc4d26421b6c7608a68cd35a8ebd7807ab4484a62"
+    },
+    "experiments/curvature_identity_audit/qp1.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "09608b788624668fdc01b056da4678535435734b793ffa3b5027a397e2fbac94"
+    },
+    "experiments/curvature_identity_audit/run.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "da49069bccbd29c7c379bb9fd03832a5838852794049d056401d602f6e814f20"
+    },
+    "experiments/curvature_identity_audit/theorem.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "9653b5de534ddecbb7cd0d7d0206d5cd83126b0705e8a180b98b80da3bf7385e"
+    },
+    "experiments/independent_response_theorem/PROTOCOL_LOCK.md": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "1bda9a7cbaf52c13e4d3461a817af712d9ee8469627988a87cc4ad4a0917e2c1"
+    },
+    "experiments/independent_response_theorem/__init__.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "e49c1c467b7b4c3e3936e4728cf3255d014ed1052ff6cbca79038e4c1f1888e2"
+    },
+    "experiments/independent_response_theorem/response.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "791c26c7f72e18b94be93fdee0bc581fd2dc5c71afaf48e035792814595ae23e"
+    },
+    "experiments/independent_response_theorem/theorem.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "2798eade1d8b1975cb742d7058e9bffc73ae4a46b9c705ead1e77ae2d6d1c3cc"
+    },
+    "experiments/response_theorem_proof_program/THEOREM.md": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "67fdbf7098c64f5d4e3f35d93b0b98a7578ef7e08242a7e7325e785a5a55937a"
+    },
+    "tests/experiments/test_curvature_identity_audit.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "c5abaa71a1c5e3ac9ff20086b99d3466240bd80cef6f1b975d5e2ae3785ef26d"
+    }
+  },
+  "verification_command": "cd cwt-sim && .venv/Scripts/python.exe experiments/curvature_identity_audit/run.py verify"
+}

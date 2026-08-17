@@ -1,0 +1,740 @@
+{
+  "all_gates_pass": true,
+  "canonical_registry": {
+    "case_dispositions": [
+      {
+        "case_id": "T0",
+        "disposition": "COMMON_ORIGIN_PULLBACK_THEOREM_PASS"
+      },
+      {
+        "case_id": "QP1",
+        "disposition": "SAME_CURVATURE_CALIBRATION_ONLY"
+      },
+      {
+        "case_id": "BC",
+        "disposition": "SAME_PRIMITIVE_MANIFOLD_DIFFERENT_CONNECTIONS_DERIVED_MIXED_HESSIAN"
+      },
+      {
+        "case_id": "BD",
+        "disposition": "SAME_MODEL_ZERO_SET_OBSTRUCTION"
+      },
+      {
+        "case_id": "FUTURE",
+        "disposition": "ALIGNMENT_TEST_REQUIREMENTS_FROZEN_NO_CURRENT_PASS"
+      },
+      {
+        "case_id": "SCOPE",
+        "disposition": "PASS_INTERNAL_ANALYTIC_NO_EMPIRICAL_EVIDENCE"
+      }
+    ],
+    "case_dispositions_sha256": "c9207a95b0950e2d1631f414befb7a5b2648cafcbe5c82168e5a09fa9b42c14d",
+    "gate_ownership": [
+      {
+        "case_id": "T0",
+        "gate_names": [
+          "common_origin_branch_tangent_equivalence",
+          "local_exact_potential_scope",
+          "global_period_and_chern_obstructions",
+          "alignment_refusal_matrix"
+        ]
+      },
+      {
+        "case_id": "QP1",
+        "gate_names": [
+          "qp1_same_operator_projector",
+          "qp1_exact_connection_curvature_gap",
+          "qp1_kubo_sign_and_antisymmetrization",
+          "qp1_patch_transition_and_chern",
+          "qp1_spectral_regression_only"
+        ]
+      },
+      {
+        "case_id": "BC",
+        "gate_names": [
+          "benchmark_c_core_branch_binding",
+          "benchmark_c_exact_berry_pullback",
+          "benchmark_c_exact_response_pullback",
+          "benchmark_c_exact_response_decomposition",
+          "benchmark_c_center_oracle_and_nonconstant_quotient",
+          "benchmark_c_gain_and_relaxation_nulls",
+          "benchmark_c_numerical_regressions_only",
+          "benchmark_c_cycle_sum_scope"
+        ]
+      },
+      {
+        "case_id": "BD",
+        "gate_names": [
+          "benchmark_d_shared_model_provenance",
+          "benchmark_d_exact_stationary_positive_no_floor",
+          "benchmark_d_real_projective_lift_zero_curvature",
+          "benchmark_d_exact_nonzero_response",
+          "benchmark_d_zero_set_obstruction",
+          "benchmark_d_mixed_state_scope"
+        ]
+      },
+      {
+        "case_id": "FUTURE",
+        "gate_names": [
+          "future_alignment_fail_closed"
+        ]
+      },
+      {
+        "case_id": "SCOPE",
+        "gate_names": [
+          "claim_ceiling"
+        ]
+      }
+    ],
+    "gate_ownership_sha256": "6e8836720371306c53a79d2c4374f4f633b113c3abece13dc45f149f7a830377",
+    "schema_version": 1
+  },
+  "case_dispositions": {
+    "BC": "SAME_PRIMITIVE_MANIFOLD_DIFFERENT_CONNECTIONS_DERIVED_MIXED_HESSIAN",
+    "BD": "SAME_MODEL_ZERO_SET_OBSTRUCTION",
+    "FUTURE": "ALIGNMENT_TEST_REQUIREMENTS_FROZEN_NO_CURRENT_PASS",
+    "QP1": "SAME_CURVATURE_CALIBRATION_ONLY",
+    "SCOPE": "PASS_INTERNAL_ANALYTIC_NO_EMPIRICAL_EVIDENCE",
+    "T0": "COMMON_ORIGIN_PULLBACK_THEOREM_PASS"
+  },
+  "claim_ceiling": "internal authored QP-1 calibration and Benchmark-C/Benchmark-D analytic identity audit only; not universal CWT, physical response, empirical evidence, or a general CGT-response alignment law",
+  "disposition": "PASS_INTERNAL_ANALYTIC",
+  "evidence_status": "NO_EMPIRICAL_EVIDENCE",
+  "experiment_id": "curvature_identity_audit",
+  "failed_gates": [],
+  "gates": [
+    {
+      "name": "common_origin_branch_tangent_equivalence",
+      "natural_status": "pass",
+      "observed": {
+        "alignment_coefficient": "kappa in C^infty(Lambda;R)",
+        "ambient_equality_not_required": true,
+        "berry_connection_pullback": "A_Lambda=sigma^*P^*a_B in Omega^1(U)",
+        "berry_pullback": "Omega=dA_Lambda=sigma^*(P^*omega_FS)",
+        "berry_two_form": "omega_FS in Omega^2(CP^(n-1))",
+        "branch_graph": "sigma:Lambda->N",
+        "branch_tangent_form": "for every lambda and v,w in T_lambda Lambda, d beta_R_(sigma(lambda))(d sigma v,d sigma w)-kappa(lambda) omega_FS_(P(sigma(lambda)))(d(P sigma)v,d(P sigma)w)=0",
+        "local_berry_connection": "a_B in Omega^1(V) with d a_B=omega_FS on a gauge patch V",
+        "necessary": true,
+        "necessary_and_sufficient_condition": "sigma^*(d beta_R)-kappa sigma^*(P^*omega_FS)=0",
+        "off_branch_normal_components_unconstrained": true,
+        "projective_map": "P:N->CP^(n-1)",
+        "response_one_form": "beta_R in Omega^1(N)",
+        "response_one_form_pullback": "B_R=sigma^*beta_R in Omega^1(Lambda)",
+        "response_pullback": "F_R=dB_R=sigma^*(d beta_R)",
+        "sufficient": true
+      },
+      "requirement": "alignment is exactly equality of the pulled-back two-forms on every branch tangent pair",
+      "status": "pass"
+    },
+    {
+      "name": "local_exact_potential_scope",
+      "natural_status": "pass",
+      "observed": {
+        "chern_flux_required": true,
+        "constant_kappa_local_statement": "for constant kappa, F_R=kappa*Omega iff d(B_R-kappa*A_Lambda)=0; only on a contractible branch chart does this imply B_R-kappa*A_Lambda=d chi",
+        "global_chern_obstruction": "nonzero pulled-back Chern flux forbids one global smooth A_Lambda; if B_R is global and kappa is a nonzero constant, integral_closed_surface dB_R=0 conflicts with kappa integral Omega",
+        "global_scope_id": "periods_and_nonzero_chern_flux_checked",
+        "global_smooth_connection_claimed": false,
+        "local_scope_id": "constant_kappa_contractible_gauge_patch_only",
+        "noncontractible_period_condition": "all pulled-back periods integral_gamma(B_R-kappa*A_Lambda) must vanish before an exact chi exists",
+        "periods_required": true,
+        "variable_kappa_warning": "d(B_R-kappa*A_Lambda)=F_R-kappa*Omega-dkappa wedge A_Lambda; the constant-kappa potential statement cannot be reused"
+      },
+      "requirement": "the local exact-potential statement is restricted to constant kappa on a contractible gauge patch",
+      "status": "pass"
+    },
+    {
+      "name": "global_period_and_chern_obstructions",
+      "natural_status": "pass",
+      "observed": {
+        "chern_flux_required": true,
+        "constant_kappa_local_statement": "for constant kappa, F_R=kappa*Omega iff d(B_R-kappa*A_Lambda)=0; only on a contractible branch chart does this imply B_R-kappa*A_Lambda=d chi",
+        "global_chern_obstruction": "nonzero pulled-back Chern flux forbids one global smooth A_Lambda; if B_R is global and kappa is a nonzero constant, integral_closed_surface dB_R=0 conflicts with kappa integral Omega",
+        "global_scope_id": "periods_and_nonzero_chern_flux_checked",
+        "global_smooth_connection_claimed": false,
+        "local_scope_id": "constant_kappa_contractible_gauge_patch_only",
+        "noncontractible_period_condition": "all pulled-back periods integral_gamma(B_R-kappa*A_Lambda) must vanish before an exact chi exists",
+        "periods_required": true,
+        "variable_kappa_warning": "d(B_R-kappa*A_Lambda)=F_R-kappa*Omega-dkappa wedge A_Lambda; the constant-kappa potential statement cannot be reused"
+      },
+      "requirement": "noncontractible periods and nonzero Chern flux are explicit global obstructions",
+      "status": "pass"
+    },
+    {
+      "name": "alignment_refusal_matrix",
+      "natural_status": "pass",
+      "observed": {
+        "all_refused": true,
+        "refused": {
+          "auxiliary_state_substitution": true,
+          "finite_limit_to_ontology_upgrade": true,
+          "pointwise_F_over_Omega_fit": true,
+          "separately_authored_readout_called_same_origin": true,
+          "two_dimensional_quotient_as_prediction": true,
+          "unfrozen_tensor_or_coordinate_map": true
+        },
+        "two_dimensional_reason": "the two-form space is one-dimensional, so a pointwise quotient is algebraic and has no held-out tensor-direction content"
+      },
+      "requirement": "pointwise fitting, 2D quotient tautology, unfrozen maps, auxiliary states, and ontology upgrades are refused",
+      "status": "pass"
+    },
+    {
+      "name": "qp1_same_operator_projector",
+      "natural_status": "pass",
+      "observed": {
+        "classification": "SAME_CURVATURE_CALIBRATION_ONLY",
+        "operator_id": "cwt.operator.L_map.qp1_builder"
+      },
+      "requirement": "the state projector and Kubo perturbations derive from the same Hermitian QP-1 operator",
+      "status": "pass"
+    },
+    {
+      "name": "qp1_exact_connection_curvature_gap",
+      "natural_status": "pass",
+      "observed": {
+        "connection": "A_x=2*pi*sin(pi*y/2)^2;A_y=0",
+        "curvature": "Omega_xy=-pi^2*sin(pi*y)",
+        "gap": [
+          "1/5",
+          "3/5"
+        ]
+      },
+      "requirement": "A, Omega, and the positive spectral gap are analytic on the declared chart",
+      "status": "pass"
+    },
+    {
+      "name": "qp1_kubo_sign_and_antisymmetrization",
+      "natural_status": "pass",
+      "observed": {
+        "conventional": "K_[xy]=-Omega_xy",
+        "factor": "K_xy-K_yx=2*K_[xy]",
+        "positive": "K_[xy]=(K_xy-K_yx)/2=+Omega_xy"
+      },
+      "requirement": "+dH gives +Omega, -dH gives -Omega, and full antisymmetrization is twice the half convention",
+      "status": "pass"
+    },
+    {
+      "name": "qp1_patch_transition_and_chern",
+      "natural_status": "pass",
+      "observed": {
+        "chern_number": -1,
+        "transition": "psi_S=exp(-i*2*pi*x)psi_N;A_S=A_N-2*pi*dx"
+      },
+      "requirement": "the north/south transition yields Chern number -1 and forbids a global smooth connection",
+      "status": "pass"
+    },
+    {
+      "name": "qp1_spectral_regression_only",
+      "natural_status": "pass",
+      "observed": {
+        "maximum_conventional_negative_sign_error": 3.182645258448247e-10,
+        "maximum_eigen_residual": 1.6683261160542004e-16,
+        "maximum_positive_sign_error": 3.182645258448247e-10,
+        "maximum_projector_error": 6.164347964881811e-16,
+        "minimum_sampled_gap": 0.19999999999999973,
+        "points": [
+          {
+            "analytic_omega": -5.801207912921211,
+            "gap": 0.46180339887498945,
+            "negative_force_half_antisymmetrized": 5.8012079126673,
+            "point": [
+              0.13,
+              0.2
+            ],
+            "positive_force_full_antisymmetrized": -11.6024158253346,
+            "positive_force_half_antisymmetrized": -5.8012079126673,
+            "projector_error": 2.6657250631844453e-16
+          },
+          {
+            "analytic_omega": -9.869604401089358,
+            "gap": 0.19999999999999973,
+            "negative_force_half_antisymmetrized": 9.869604400976018,
+            "point": [
+              0.13,
+              0.5
+            ],
+            "positive_force_full_antisymmetrized": -19.739208801952035,
+            "positive_force_half_antisymmetrized": -9.869604400976018,
+            "projector_error": 6.164347964881811e-16
+          },
+          {
+            "analytic_omega": -5.801207912921212,
+            "gap": 0.46180339887498933,
+            "negative_force_half_antisymmetrized": 5.801207913239477,
+            "point": [
+              0.13,
+              0.8
+            ],
+            "positive_force_full_antisymmetrized": -11.602415826478953,
+            "positive_force_half_antisymmetrized": -5.801207913239477,
+            "projector_error": 4.45716575854049e-16
+          }
+        ],
+        "role": "numerical_spectral_implementation_regression_not_proof"
+      },
+      "requirement": "numerical eigensystem evaluation cross-checks but does not establish the exact identity",
+      "status": "pass"
+    },
+    {
+      "name": "benchmark_c_core_branch_binding",
+      "natural_status": "pass",
+      "observed": {
+        "maximum_kernel_error": 0.0,
+        "maximum_phase_error": 0.0,
+        "maximum_probability_error": 5.551115123125783e-17,
+        "points": [
+          [
+            -0.3,
+            -0.2
+          ],
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.3,
+            0.2
+          ]
+        ]
+      },
+      "requirement": "the analytic p, theta, and K formulas equal the core Benchmark-C C0 branch on the frozen patch",
+      "status": "pass"
+    },
+    {
+      "name": "benchmark_c_exact_berry_pullback",
+      "natural_status": "pass",
+      "observed": {
+        "identity_error": {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        },
+        "omega": {
+          "denominator": 48,
+          "float": 0.14583333333333334,
+          "fraction": "7/48",
+          "numerator": 7
+        }
+      },
+      "requirement": "A=sum p dtheta and Omega=dA reproduce the exact 7/48 center value",
+      "status": "pass"
+    },
+    {
+      "name": "benchmark_c_exact_response_pullback",
+      "natural_status": "pass",
+      "observed": {
+        "gradient": [
+          {
+            "denominator": 175000,
+            "float": 0.048805714285714286,
+            "fraction": "8541/175000",
+            "numerator": 8541
+          },
+          {
+            "denominator": 56000000,
+            "float": 0.08146333928571428,
+            "fraction": "4561947/56000000",
+            "numerator": 4561947
+          }
+        ],
+        "response": {
+          "denominator": 2800000,
+          "float": -0.07935107142857142,
+          "fraction": "-222183/2800000",
+          "numerator": -222183
+        }
+      },
+      "requirement": "beta=-(1-alpha)/alpha H.dtheta and F=d beta reproduce the exact center response jet",
+      "status": "pass"
+    },
+    {
+      "name": "benchmark_c_exact_response_decomposition",
+      "natural_status": "pass",
+      "observed": {
+        "decomposition": {
+          "response_curvature_J_xK_dK": {
+            "center": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "gradient": [
+              {
+                "denominator": 40000,
+                "float": 0.049725,
+                "fraction": "1989/40000",
+                "numerator": 1989
+              },
+              {
+                "denominator": 40000,
+                "float": 0.061425,
+                "fraction": "2457/40000",
+                "numerator": 2457
+              }
+            ]
+          },
+          "response_curvature_J_xp_dp": {
+            "center": {
+              "denominator": 2800000,
+              "float": -0.07935107142857142,
+              "fraction": "-222183/2800000",
+              "numerator": -222183
+            },
+            "gradient": [
+              {
+                "denominator": 1400000,
+                "float": -0.0009192857142857143,
+                "fraction": "-1287/1400000",
+                "numerator": -1287
+              },
+              {
+                "denominator": 56000000,
+                "float": 0.020038339285714284,
+                "fraction": "1122147/56000000",
+                "numerator": 1122147
+              }
+            ]
+          },
+          "response_curvature_J_xx_dtheta": {
+            "center": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "gradient": [
+              {
+                "denominator": 1,
+                "float": 0.0,
+                "fraction": "0/1",
+                "numerator": 0
+              },
+              {
+                "denominator": 1,
+                "float": 0.0,
+                "fraction": "0/1",
+                "numerator": 0
+              }
+            ]
+          },
+          "response_curvature_d2theta": {
+            "center": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "gradient": [
+              {
+                "denominator": 1,
+                "float": 0.0,
+                "fraction": "0/1",
+                "numerator": 0
+              },
+              {
+                "denominator": 1,
+                "float": 0.0,
+                "fraction": "0/1",
+                "numerator": 0
+              }
+            ]
+          }
+        },
+        "residual": {
+          "center": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "gradient": [
+            {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          ]
+        }
+      },
+      "requirement": "d beta_R=-m dJ_x wedge dtheta with dJ_x=J_xp dp+J_xx dtheta+J_xK dK; d2theta and symmetric J_xx cancel while mixed J_xp/J_xK remain",
+      "status": "pass"
+    },
+    {
+      "name": "benchmark_c_center_oracle_and_nonconstant_quotient",
+      "natural_status": "pass",
+      "observed": {
+        "gradient": [
+          {
+            "denominator": 43750000,
+            "float": 1.2466156114285714,
+            "fraction": "54539433/43750000",
+            "numerator": 54539433
+          },
+          {
+            "denominator": 21875000,
+            "float": 0.5284976914285714,
+            "fraction": "11560887/21875000",
+            "numerator": 11560887
+          }
+        ],
+        "quotient": {
+          "denominator": 1225000,
+          "float": -0.5441216326530612,
+          "fraction": "-666549/1225000",
+          "numerator": -666549
+        }
+      },
+      "requirement": "the exact quotient has the reviewed center value and nonzero exact gradient, so it is not constant",
+      "status": "pass"
+    },
+    {
+      "name": "benchmark_c_gain_and_relaxation_nulls",
+      "natural_status": "pass",
+      "observed": {
+        "alpha_one": {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        },
+        "gain_scaling": true,
+        "gain_zero": {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        }
+      },
+      "requirement": "gain=0 and alpha=1 null response while Omega persists, and response scales exactly with gain",
+      "status": "pass"
+    },
+    {
+      "name": "benchmark_c_numerical_regressions_only",
+      "natural_status": "pass",
+      "observed": {
+        "derivative_step": 1e-05,
+        "projective_absolute_error": 1.1618345174824185e-11,
+        "projective_curvature": 0.145833333321715,
+        "response_absolute_error": 2.670724752462661e-12,
+        "response_curvature": -0.0793510714259007,
+        "role": "finite_difference_and_wilson_implementation_regressions_not_proof",
+        "wilson_absolute_error": 2.3980947783108775e-10,
+        "wilson_curvature_density": 0.14583333357314282,
+        "wilson_minimum_overlap": {
+          "log_overlaps": {
+            "0->i": -5.770641743895979e-10,
+            "i->ij": -1.8633398175134826e-09,
+            "ij->j": -5.771022550393646e-10,
+            "j->0": -1.863048828058186e-09
+          },
+          "min_overlap": 0.9999999981366602,
+          "overlaps": {
+            "0->i": 0.9999999994229358,
+            "i->ij": 0.9999999981366602,
+            "ij->j": 0.9999999994228977,
+            "j->0": 0.9999999981369512
+          },
+          "phases": {
+            "0->i": -8.087758443904384e-22,
+            "i->ij": 1.8623971526334204e-21,
+            "ij->j": 3.347186350627495e-21,
+            "j->0": 1.4583333357270274e-09
+          }
+        }
+      },
+      "requirement": "finite differences and Wilson flux cross-check the analytic proof without supplying it",
+      "status": "pass"
+    },
+    {
+      "name": "benchmark_c_cycle_sum_scope",
+      "natural_status": "pass",
+      "observed": {
+        "legacy_mean_promoted": false,
+        "scope": "fixed_tick_cycle_sum_not_legacy_mean"
+      },
+      "requirement": "the theorem uses a fixed-tick cycle sum; the legacy sample mean is not promoted to the same response",
+      "status": "pass"
+    },
+    {
+      "name": "benchmark_d_shared_model_provenance",
+      "natural_status": "pass",
+      "observed": {
+        "identity": "42be734288ba94acb3f247a86184abce4fd2633c914e7e10888dbb3097b280b5",
+        "observable_error": 0.0
+      },
+      "requirement": "geometry and response use the identical exact A, c, and named mean-position O identity",
+      "status": "pass"
+    },
+    {
+      "name": "benchmark_d_exact_stationary_positive_no_floor",
+      "natural_status": "pass",
+      "observed": {
+        "lower_bound": {
+          "denominator": 69,
+          "float": 0.057971014492753624,
+          "fraction": "4/69",
+          "numerator": 4
+        },
+        "residual": [
+          {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        ],
+        "trace": {
+          "denominator": 1,
+          "float": 1.0,
+          "fraction": "1/1",
+          "numerator": 1
+        }
+      },
+      "requirement": "xbar=-A^-1c is exact, normalized, uniformly positive, and encoded without floor/clip/repair",
+      "status": "pass"
+    },
+    {
+      "name": "benchmark_d_real_projective_lift_zero_curvature",
+      "natural_status": "pass",
+      "observed": {
+        "omega": "0/1",
+        "regression": {
+          "maximum_imaginary_component": 0.0,
+          "metric_trace": 3.6781502238308854,
+          "normalization_error": 0.0,
+          "projective_curvature": 0.0,
+          "role": "real_lift_finite_difference_regression_not_proof"
+        }
+      },
+      "requirement": "the actual smooth positive stationary lift is real and normalized, hence A=Omega=0 exactly",
+      "status": "pass"
+    },
+    {
+      "name": "benchmark_d_exact_nonzero_response",
+      "natural_status": "pass",
+      "observed": {
+        "denominator": 235345963257301712101,
+        "float": -122.7502119529289,
+        "fraction": "-28888766872100000000000/235345963257301712101",
+        "numerator": -28888766872100000000000
+      },
+      "requirement": "the identical exact A,c,O model has the formal nonzero response curvature",
+      "status": "pass"
+    },
+    {
+      "name": "benchmark_d_zero_set_obstruction",
+      "natural_status": "pass",
+      "observed": {
+        "omega": "0/1",
+        "response": {
+          "denominator": 235345963257301712101,
+          "float": -122.7502119529289,
+          "fraction": "-28888766872100000000000/235345963257301712101",
+          "numerator": -28888766872100000000000
+        }
+      },
+      "requirement": "Omega=0 with F!=0 rules out a finite scalar F=kappa*Omega and every frozen zero-preserving homogeneous linear tensor map for this encoding/readout",
+      "status": "pass"
+    },
+    {
+      "name": "benchmark_d_mixed_state_scope",
+      "natural_status": "pass",
+      "observed": "rho=diag(xbar) is a separate commuting full-rank density family; its Uhlmann link unitaries and loop holonomy are identity, hence phase zero",
+      "requirement": "the diagonal mixed-state Uhlmann-null statement is separate from the projective proof",
+      "status": "pass"
+    },
+    {
+      "name": "future_alignment_fail_closed",
+      "natural_status": "pass",
+      "observed": {
+        "current_audit_supplies_future_alignment_pass": false,
+        "future_status": "NOT_INSTANTIATED",
+        "heldout_oblique_direction_required": true,
+        "minimum_full_rank_area_directions": 3,
+        "pointwise_division_forbidden": true,
+        "tensor_map_frozen_before_response": true
+      },
+      "requirement": "a future positive CWT alignment test needs >=3 full-rank directions and held-out oblique prediction",
+      "status": "pass"
+    },
+    {
+      "name": "claim_ceiling",
+      "natural_status": "pass",
+      "observed": {
+        "claim_ceiling": "internal authored QP-1 calibration and Benchmark-C/Benchmark-D analytic identity audit only; not universal CWT, physical response, empirical evidence, or a general CGT-response alignment law",
+        "issues": []
+      },
+      "requirement": "the result is internal analytic only, with no empirical, physical, universal-CWT, or alignment upgrade",
+      "status": "pass"
+    }
+  ],
+  "metrics": {
+    "benchmark_c_omega_center": {
+      "denominator": 48,
+      "float": 0.14583333333333334,
+      "fraction": "7/48",
+      "numerator": 7
+    },
+    "benchmark_c_quotient_gradient": [
+      {
+        "denominator": 43750000,
+        "float": 1.2466156114285714,
+        "fraction": "54539433/43750000",
+        "numerator": 54539433
+      },
+      {
+        "denominator": 21875000,
+        "float": 0.5284976914285714,
+        "fraction": "11560887/21875000",
+        "numerator": 11560887
+      }
+    ],
+    "benchmark_c_response_center": {
+      "denominator": 2800000,
+      "float": -0.07935107142857142,
+      "fraction": "-222183/2800000",
+      "numerator": -222183
+    },
+    "benchmark_d_projective_curvature": "0/1",
+    "benchmark_d_response_curvature": {
+      "denominator": 235345963257301712101,
+      "float": -122.7502119529289,
+      "fraction": "-28888766872100000000000/235345963257301712101",
+      "numerator": -28888766872100000000000
+    },
+    "qp1_chern_number": -1
+  }
+}
