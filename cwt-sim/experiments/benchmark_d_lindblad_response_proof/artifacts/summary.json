@@ -1,0 +1,1029 @@
+{
+  "all_gates_pass": true,
+  "case_dispositions": {
+    "C1": "D0_CORE_BINDING_PASS",
+    "C10": "AFFINE_SOURCE_REQUIRED_PASS",
+    "C11": "BENCHMARK_C_TRUE_STATIONARY_NULL_PASS",
+    "C12": "RIGOROUS_DYNAMIC_SIGN_CERTIFICATE_PASS",
+    "C13": "ZERO_OMEGA_NONZERO_RESPONSE_NO_GO_PASS",
+    "C2": "AFFINE_LINDBLAD_IDENTITY_PASS",
+    "C3": "UNIFORM_CONTRACTION_AND_INVERSE_PASS",
+    "C4": "TRUE_STATIONARY_BRANCH_PASS",
+    "C5": "EXACT_RESPONSE_CURVATURE_PASS",
+    "C6": "ORIENTATION_AND_FACTOR_TWO_PASS",
+    "C7": "IDENTITY_READOUT_NULL_PASS",
+    "C8": "READOUT_COVARIANCE_PASS",
+    "C9": "INVALID_MODEL_VARIANTS_REFUSED"
+  },
+  "claim_ceiling": "internal authored Benchmark D five-state Lindblad generator and mean-position readout only; not a derived CWT continuum limit, CGT alignment law, physical model, or empirical evidence",
+  "contract": {
+    "actual_dephasing": {
+      "float": 0.3,
+      "fraction": "3/10"
+    },
+    "benchmark_id": "benchmark_d",
+    "box": {
+      "bias_max": {
+        "float": 0.05,
+        "fraction": "1/20"
+      },
+      "bias_min": {
+        "float": 0.01,
+        "fraction": "1/100"
+      },
+      "diffusion_max": {
+        "float": 0.245,
+        "fraction": "49/200"
+      },
+      "diffusion_min": {
+        "float": 0.205,
+        "fraction": "41/200"
+      }
+    },
+    "branch_id": "D0",
+    "center_bias": {
+      "float": 0.03,
+      "fraction": "3/100"
+    },
+    "center_diffusion": {
+      "float": 0.225,
+      "fraction": "9/40"
+    },
+    "circle_scale": {
+      "float": 0.01,
+      "fraction": "1/100"
+    },
+    "claim_ceiling": "internal authored Benchmark D five-state Lindblad generator and mean-position readout only; not a derived CWT continuum limit, CGT alignment law, physical model, or empirical evidence",
+    "coherence_switch_floor": {
+      "float": 0.2,
+      "fraction": "1/5"
+    },
+    "coherent_scale": {
+      "float": 0.0,
+      "fraction": "0/1"
+    },
+    "control_names": [
+      "b",
+      "d"
+    ],
+    "dephasing_values": [
+      {
+        "float": 0.3,
+        "fraction": "3/10"
+      }
+    ],
+    "depolarizing_rate": {
+      "float": 0.04,
+      "fraction": "1/25"
+    },
+    "disposition": "PASS_INTERNAL_ANALYTIC",
+    "dt": {
+      "float": 0.02,
+      "fraction": "1/50"
+    },
+    "duration_units": "model_time",
+    "edge_jump_scale": {
+      "float": 0.2,
+      "fraction": "1/5"
+    },
+    "endpoint_convention": "closed_circle_no_duplicated_time_endpoint",
+    "evidence_status": "NO_EMPIRICAL_EVIDENCE",
+    "experiment_id": "benchmark_d_lindblad_response_proof",
+    "flow_backend": "analytic_interval_certificate_no_trajectory",
+    "generator_rate_units": "inverse_model_time",
+    "initialization": "instantaneous_equilibrium_at_u=0",
+    "integrated_response_units": "mean_position_index_times_model_time",
+    "integration_steps": 30,
+    "node_count": 5,
+    "observable_name": "mean_position",
+    "physical_time_calibration_status": "absent_requires_external_clock_and_readout_calibration",
+    "positive_orientation": "counterclockwise_in_db_wedge_dd",
+    "readout_units": "dimensionless_mean_position_index",
+    "response_definition": "Q=integral_0^T Tr[O(rho-rho_bar)]d(model_time)",
+    "reversal_convention": "gamma_cw(u)=gamma_ccw(1-u)",
+    "scan_mesh": 9,
+    "site_potential_scale": {
+      "float": 0.0,
+      "fraction": "0/1"
+    },
+    "slow_drive_clock_definition": "u=t/T;lambda_plus(t)=gamma_plus(u);lambda_minus(t)=lambda_plus(T-t)=gamma_plus(1-u);0<=t<=T",
+    "slow_drive_clock_id": "uniform_affine_normalized_clock_v1",
+    "time_domain": "uncalibrated_continuous_model_time"
+  },
+  "disposition": "PASS_INTERNAL_ANALYTIC",
+  "evidence_status": "NO_EMPIRICAL_EVIDENCE",
+  "experiment_id": "benchmark_d_lindblad_response_proof",
+  "failed_gates": [],
+  "gates": [
+    {
+      "name": "explicit_contract",
+      "observed": [],
+      "requirement": "all reviewed model, clock, path, readout, and scope fields equal the frozen contract",
+      "status": "pass"
+    },
+    {
+      "name": "d0_core_kernel_and_readout",
+      "observed": {
+        "all_config_fields_explicit_and_equal": true,
+        "clipping_inactive_on_box": true,
+        "config": {
+          "coherence_switch_floor": 0.2,
+          "coherent_scale": 0.0,
+          "dephasing_values": [
+            0.3
+          ],
+          "depolarizing_rate": 0.04,
+          "dt": 0.02,
+          "edge_jump_scale": 0.2,
+          "integration_steps": 30,
+          "scan_mesh": 9,
+          "site_potential_scale": 0.0
+        },
+        "core_benchmark_id": "benchmark_d",
+        "core_branch_id": "D0",
+        "core_helper_probability_used_by_theorem_generator": false,
+        "lower_clip_support_margin": 0.135,
+        "maximum_core_helper_p_vs_explicit_smooth_d0_map_difference": 0.2276412383085632,
+        "maximum_kernel_error": 1.1102230246251565e-16,
+        "maximum_phase_error": 0.0,
+        "minimum_interior_hold_probability": 0.51,
+        "minimum_positive_transition_rate": 0.155,
+        "observable_hermiticity_error": 0.0,
+        "observable_maximum_absolute_error": 0.0,
+        "observable_name": "mean_position",
+        "probability_scope": "zero coherent/site terms make the Lindblad generator independent of p/theta; the auxiliary smooth closed-form D0 map is channel-equivalent but is not the current core helper BranchState geometry and is used only for the projective no-go control",
+        "upper_clip_support_margin": 0.165
+      },
+      "requirement": "explicit D0 K, named mean_position operator, every config field, and inactive clips match core",
+      "status": "pass"
+    },
+    {
+      "name": "affine_population_generator",
+      "observed": 0.04,
+      "requirement": "the exact diagonal model is A=(1/5)(K^T-I)-(1/25)I with source (1/125)1",
+      "status": "pass"
+    },
+    {
+      "name": "diagonal_invariant_subspace_core_equivalence",
+      "observed": {
+        "affine_source_required_norm": 0.04,
+        "control_point_count": 5,
+        "control_point_errors": [
+          {
+            "bias": 0.01,
+            "diffusion": 0.205,
+            "maximum_diagonal_rhs_error": 2.7755575615628914e-17,
+            "maximum_superoperator_deviation_error": 5.551115123125783e-17
+          },
+          {
+            "bias": 0.01,
+            "diffusion": 0.245,
+            "maximum_diagonal_rhs_error": 1.3877787807814457e-17,
+            "maximum_superoperator_deviation_error": 2.7755575615628914e-17
+          },
+          {
+            "bias": 0.05,
+            "diffusion": 0.205,
+            "maximum_diagonal_rhs_error": 1.3877787807814457e-17,
+            "maximum_superoperator_deviation_error": 1.3877787807814457e-17
+          },
+          {
+            "bias": 0.05,
+            "diffusion": 0.245,
+            "maximum_diagonal_rhs_error": 6.938893903907228e-18,
+            "maximum_superoperator_deviation_error": 4.163336342344337e-17
+          },
+          {
+            "bias": 0.03,
+            "diffusion": 0.225,
+            "maximum_diagonal_rhs_error": 1.3877787807814457e-17,
+            "maximum_superoperator_deviation_error": 5.551115123125783e-17
+          }
+        ],
+        "control_points": [
+          [
+            0.01,
+            0.205
+          ],
+          [
+            0.01,
+            0.245
+          ],
+          [
+            0.05,
+            0.205
+          ],
+          [
+            0.05,
+            0.245
+          ],
+          [
+            0.03,
+            0.225
+          ]
+        ],
+        "core_rhs_function": "cwt.cgt.lindblad.lindblad_rhs",
+        "core_superoperator_function": "cwt.cgt.lindblad.lindblad_superoperator",
+        "diagonal_population_basis_count": 5,
+        "maximum_affine_source_error": 0.0,
+        "maximum_diagonal_rhs_error": 2.7755575615628914e-17,
+        "maximum_offdiagonal_rhs_error": 0.0,
+        "maximum_superoperator_deviation_error": 5.551115123125783e-17,
+        "maximum_trace_preservation_error": 2.0816681711721685e-17,
+        "semantic_scope": "complete_diagonal_invariant_subspace_not_full_superoperator",
+        "traceless_diagonal_deviation_basis_count": 4
+      },
+      "requirement": "core RHS/superoperator agree on the complete diagonal invariant subspace at four corners and center",
+      "status": "pass"
+    },
+    {
+      "name": "trace_norm_contraction",
+      "observed": {
+        "M": {
+          "denominator": 1,
+          "float": 1.0,
+          "fraction": "1/1",
+          "numerator": 1
+        },
+        "inverse_bound_KJ": {
+          "denominator": 1,
+          "float": 25.0,
+          "fraction": "25/1",
+          "numerator": 25
+        },
+        "norm": "trace_norm_on_traceless_Hermitian_matrices",
+        "proof": "jump-plus-dephasing evolution is CPTP and trace-norm contractive; depolarization factors every traceless deviation by exp(-t/25)",
+        "propagator_bound": "||U(t,s)||_1<=exp(-(t-s)/25)",
+        "tau": {
+          "denominator": 1,
+          "float": 25.0,
+          "fraction": "25/1",
+          "numerator": 25
+        }
+      },
+      "requirement": "uniform traceless-Hermitian trace-norm propagator bound has M=1 and tau=25",
+      "status": "pass"
+    },
+    {
+      "name": "frozen_inverse_bound",
+      "observed": {
+        "denominator": 1,
+        "float": 25.0,
+        "fraction": "25/1",
+        "numerator": 25
+      },
+      "requirement": "the branch inverse is uniformly bounded by K_J<=25 in the declared norm",
+      "status": "pass"
+    },
+    {
+      "name": "exact_stationary_branch",
+      "observed": {
+        "center_stationary_population": [
+          {
+            "denominator": 1116709,
+            "float": 0.167973035052104,
+            "fraction": "187577/1116709",
+            "numerator": 187577
+          },
+          {
+            "denominator": 14517217,
+            "float": 0.18680887666003754,
+            "fraction": "2711945/14517217",
+            "numerator": 2711945
+          },
+          {
+            "denominator": 1116709,
+            "float": 0.19791100456788652,
+            "fraction": "221009/1116709",
+            "numerator": 221009
+          },
+          {
+            "denominator": 188723821,
+            "float": 0.2102866124144445,
+            "fraction": "39686093/188723821",
+            "numerator": 39686093
+          },
+          {
+            "denominator": 188723821,
+            "float": 0.23702047130552745,
+            "fraction": "44731409/188723821",
+            "numerator": 44731409
+          }
+        ],
+        "floor_derivation": "x_i=(5/6)(K^T x)_i+1/30 and K_ii>=51/100 imply x_i>=(1/30)/(1-(5/6)(51/100))=4/69",
+        "maximum_exact_stationary_residual": {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        },
+        "maximum_exact_trace_error": {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        },
+        "sampled_box_minimum_component": {
+          "denominator": 153438205,
+          "float": 0.14813521182680675,
+          "fraction": "22729601/153438205",
+          "numerator": 22729601
+        },
+        "uniform_floor_below_sampled_minimum": true,
+        "uniform_full_rank_floor": {
+          "denominator": 69,
+          "float": 0.057971014492753624,
+          "fraction": "4/69",
+          "numerator": 4
+        }
+      },
+      "requirement": "the exact affine linear solve is normalized and stationary without Euler projection",
+      "status": "pass"
+    },
+    {
+      "name": "uniform_full_rank_floor",
+      "observed": {
+        "center_stationary_population": [
+          {
+            "denominator": 1116709,
+            "float": 0.167973035052104,
+            "fraction": "187577/1116709",
+            "numerator": 187577
+          },
+          {
+            "denominator": 14517217,
+            "float": 0.18680887666003754,
+            "fraction": "2711945/14517217",
+            "numerator": 2711945
+          },
+          {
+            "denominator": 1116709,
+            "float": 0.19791100456788652,
+            "fraction": "221009/1116709",
+            "numerator": 221009
+          },
+          {
+            "denominator": 188723821,
+            "float": 0.2102866124144445,
+            "fraction": "39686093/188723821",
+            "numerator": 39686093
+          },
+          {
+            "denominator": 188723821,
+            "float": 0.23702047130552745,
+            "fraction": "44731409/188723821",
+            "numerator": 44731409
+          }
+        ],
+        "floor_derivation": "x_i=(5/6)(K^T x)_i+1/30 and K_ii>=51/100 imply x_i>=(1/30)/(1-(5/6)(51/100))=4/69",
+        "maximum_exact_stationary_residual": {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        },
+        "maximum_exact_trace_error": {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        },
+        "sampled_box_minimum_component": {
+          "denominator": 153438205,
+          "float": 0.14813521182680675,
+          "fraction": "22729601/153438205",
+          "numerator": 22729601
+        },
+        "uniform_floor_below_sampled_minimum": true,
+        "uniform_full_rank_floor": {
+          "denominator": 69,
+          "float": 0.057971014492753624,
+          "fraction": "4/69",
+          "numerator": 4
+        }
+      },
+      "requirement": "every fixed population component is at least the analytic floor 4/69 on the box",
+      "status": "pass"
+    },
+    {
+      "name": "exact_center_oracle",
+      "observed": {
+        "derivative_bias_of_B_diffusion": {
+          "denominator": 44415389442843585257542657921,
+          "float": 116.26874005962343,
+          "fraction": "5164121369776923516308000000000/44415389442843585257542657921",
+          "numerator": 5164121369776923516308000000000
+        },
+        "derivative_diffusion_of_B_bias": {
+          "denominator": 44415389442843585257542657921,
+          "float": 239.01895201255232,
+          "fraction": "10616119837857853810408000000000/44415389442843585257542657921",
+          "numerator": 10616119837857853810408000000000
+        },
+        "matches_formal_fraction": true,
+        "response_curvature_bd": {
+          "denominator": 235345963257301712101,
+          "float": -122.7502119529289,
+          "fraction": "-28888766872100000000000/235345963257301712101",
+          "numerator": -28888766872100000000000
+        },
+        "response_one_form_bias": {
+          "denominator": 3059497522344922257313,
+          "float": -91.36434386789688,
+          "fraction": "-279528983694499988000000/3059497522344922257313",
+          "numerator": -279528983694499988000000
+        },
+        "response_one_form_diffusion": {
+          "denominator": 235345963257301712101,
+          "float": 3.6825063585878666,
+          "fraction": "866663006163000000000/235345963257301712101",
+          "numerator": 866663006163000000000
+        },
+        "stationary_population": [
+          {
+            "denominator": 1116709,
+            "float": 0.167973035052104,
+            "fraction": "187577/1116709",
+            "numerator": 187577
+          },
+          {
+            "denominator": 14517217,
+            "float": 0.18680887666003754,
+            "fraction": "2711945/14517217",
+            "numerator": 2711945
+          },
+          {
+            "denominator": 1116709,
+            "float": 0.19791100456788652,
+            "fraction": "221009/1116709",
+            "numerator": 221009
+          },
+          {
+            "denominator": 188723821,
+            "float": 0.2102866124144445,
+            "fraction": "39686093/188723821",
+            "numerator": 39686093
+          },
+          {
+            "denominator": 188723821,
+            "float": 0.23702047130552745,
+            "fraction": "44731409/188723821",
+            "numerator": 44731409
+          }
+        ]
+      },
+      "requirement": "the center stationary solve, one-form, derivatives, and F_bd reproduce the formal fraction",
+      "status": "pass"
+    },
+    {
+      "name": "nonzero_response_curvature",
+      "observed": {
+        "denominator": 235345963257301712101,
+        "float": -122.7502119529289,
+        "fraction": "-28888766872100000000000/235345963257301712101",
+        "numerator": -28888766872100000000000
+      },
+      "requirement": "F_bd is finite, nonzero, and negative in the frozen orientation",
+      "status": "pass"
+    },
+    {
+      "name": "circle_orientation_reversal",
+      "observed": {
+        "analytic_bias_extrema": [
+          {
+            "denominator": 50,
+            "float": 0.02,
+            "fraction": "1/50",
+            "numerator": 1
+          },
+          {
+            "denominator": 25,
+            "float": 0.04,
+            "fraction": "1/25",
+            "numerator": 1
+          }
+        ],
+        "analytic_diffusion_extrema": [
+          {
+            "denominator": 200,
+            "float": 0.215,
+            "fraction": "43/200",
+            "numerator": 43
+          },
+          {
+            "denominator": 200,
+            "float": 0.235,
+            "fraction": "47/200",
+            "numerator": 47
+          }
+        ],
+        "analytic_extrema_inside_box": true,
+        "duplicate_endpoint_stored": false,
+        "every_sampled_loop_point_inside_box": true,
+        "exact_face_margins": [
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          },
+          {
+            "denominator": 100,
+            "float": 0.01,
+            "fraction": "1/100",
+            "numerator": 1
+          }
+        ],
+        "exact_reverse_maximum_error": 0.0,
+        "ordinary_difference_in_differences": "Q_ccw-Q_cw=2*Qanti",
+        "parameterization": "gamma_ccw(u)=c+s(cos(2*pi*u),sin(2*pi*u)), u in [0,1)",
+        "qanti_definition": "(Q_ccw-Q_cw)/2",
+        "reverse": "gamma_cw(u)=gamma_ccw(1-u)",
+        "right_handed_area_sign": "positive_ccw_db_wedge_dd",
+        "sample_count_for_contract_check": 256,
+        "sampling_role": "diagnostic_only_not_domain_acceptance"
+      },
+      "requirement": "CW is the exact reverse, no endpoint is duplicated, and exact circle extrema have 1/100 box margins",
+      "status": "pass"
+    },
+    {
+      "name": "qanti_and_did_factor_two",
+      "observed": {
+        "did": "Q_ccw-Q_cw=2*Qanti",
+        "qanti": "(Q_ccw-Q_cw)/2"
+      },
+      "requirement": "orientation-odd Qanti uses the half difference and ordinary DID equals 2 Qanti",
+      "status": "pass"
+    },
+    {
+      "name": "identity_readout_null",
+      "observed": {
+        "denominator": 1,
+        "float": 0.0,
+        "fraction": "0/1",
+        "numerator": 0
+      },
+      "requirement": "the identity readout has exactly zero response curvature",
+      "status": "pass"
+    },
+    {
+      "name": "linear_readout_covariance",
+      "observed": {
+        "-2": {
+          "denominator": 235345963257301712101,
+          "float": 245.5004239058578,
+          "fraction": "57777533744200000000000/235345963257301712101",
+          "numerator": 57777533744200000000000
+        },
+        "3": {
+          "denominator": 235345963257301712101,
+          "float": -368.25063585878667,
+          "fraction": "-86666300616300000000000/235345963257301712101",
+          "numerator": -86666300616300000000000
+        }
+      },
+      "requirement": "sign reversal and scaling of the readout scale F_bd exactly",
+      "status": "pass"
+    },
+    {
+      "name": "zero_depolarization_refused",
+      "observed": [
+        "CONTRACT_MISMATCH:depolarizing_rate",
+        "DEPOLARIZING_RATE_NOT_POSITIVE"
+      ],
+      "requirement": "zero depolarization cannot receive the contraction certificate",
+      "status": "pass"
+    },
+    {
+      "name": "coherent_or_gauge_variant_refused",
+      "observed": {
+        "coherent": [
+          "CONTRACT_MISMATCH:coherent_scale",
+          "NONZERO_HAMILTONIAN_OR_SITE_GAUGE_OUT_OF_SCOPE"
+        ],
+        "site_gauge": [
+          "CONTRACT_MISMATCH:site_potential_scale",
+          "NONZERO_HAMILTONIAN_OR_SITE_GAUGE_OUT_OF_SCOPE"
+        ]
+      },
+      "requirement": "nonzero coherent or site-potential variants are outside this specialization",
+      "status": "pass"
+    },
+    {
+      "name": "euler_projection_backend_refused",
+      "observed": [
+        "CONTRACT_MISMATCH:flow_backend",
+        "EULER_OR_PROJECTION_BACKEND_FORBIDDEN"
+      ],
+      "requirement": "Euler plus PSD projection is forbidden on the theorem path",
+      "status": "pass"
+    },
+    {
+      "name": "clock_reversal_initialization_mutations_refused",
+      "observed": {
+        "clock": [
+          "CONTRACT_MISMATCH:dt"
+        ],
+        "initialization": [
+          "CONTRACT_MISMATCH:initialization"
+        ],
+        "nonuniform_clock": [
+          "CONTRACT_MISMATCH:slow_drive_clock_definition",
+          "CONTRACT_MISMATCH:slow_drive_clock_id"
+        ],
+        "reversal": [
+          "CONTRACT_MISMATCH:reversal_convention"
+        ]
+      },
+      "requirement": "wrong timing, reversal, and initialization contracts fail closed",
+      "status": "pass"
+    },
+    {
+      "name": "affine_source_omission_refused",
+      "observed": {
+        "denominator": 25,
+        "float": 0.04,
+        "fraction": "1/25",
+        "numerator": 1
+      },
+      "requirement": "the depolarizing affine source is nonzero and may not be omitted",
+      "status": "pass"
+    },
+    {
+      "name": "benchmark_c_unital_stationary_null",
+      "observed": {
+        "fixed_density": "I/3",
+        "maximum_centered_readout_absolute_value": 0.0,
+        "maximum_fixed_rhs_error": 1.5612511283791264e-17,
+        "response_curvature_exact_fraction": "0/1"
+      },
+      "requirement": "Benchmark C has true stationary I/3 and zero response under this specialization",
+      "status": "pass"
+    },
+    {
+      "name": "uniform_affine_slow_drive_clock",
+      "observed": {
+        "bound_role": "the affine u=t/T clock converts normalized speed and acceleration bounds to the 1/T and 1/T^2 model-time factors used by C(s)/T",
+        "clock_id": "uniform_affine_normalized_clock_v1",
+        "definition": "u=t/T;lambda_plus(t)=gamma_plus(u);lambda_minus(t)=lambda_plus(T-t)=gamma_plus(1-u);0<=t<=T"
+      },
+      "requirement": "the C(s)/T proof uses the frozen affine u=t/T clock and its exact reverse",
+      "status": "pass"
+    },
+    {
+      "name": "rigorous_curvature_and_line_interval",
+      "observed": {
+        "curvature": {
+          "lower": {
+            "denominator": 758885704077880338334544914067761,
+            "float": -304.84979543545535,
+            "fraction": "-231346151647033345167910252640000000/758885704077880338334544914067761",
+            "numerator": -231346151647033345167910252640000000
+          },
+          "upper": {
+            "denominator": 1999918603603171204868532860348401,
+            "float": -40.043082104643396,
+            "fraction": "-80082904846685555091669947360000000/1999918603603171204868532860348401",
+            "numerator": -80082904846685555091669947360000000
+          }
+        },
+        "line": {
+          "lower": {
+            "denominator": 85754084560800478231803575289656993,
+            "float": -0.09577139591113863,
+            "fraction": "-8212788383469683753460813968720000/85754084560800478231803575289656993",
+            "numerator": -8212788383469683753460813968720000
+          },
+          "upper": {
+            "denominator": 105995685990968073858032241598465253,
+            "float": -0.012579572019666274,
+            "fraction": "-1333380365697314492276304623544000/105995685990968073858032241598465253",
+            "numerator": -1333380365697314492276304623544000
+          }
+        }
+      },
+      "requirement": "directed exact-rational intervals certify negative curvature and CCW line integral",
+      "status": "pass"
+    },
+    {
+      "name": "analytic_remainder_certificate",
+      "observed": {
+        "C": {
+          "denominator": 66499611004100438703980451819258363776827421659452118224285149,
+          "float": 2873.1439807630827,
+          "fraction": "191062957079517628080604857631345423561187100991596377258592000000/66499611004100438703980451819258363776827421659452118224285149",
+          "numerator": 191062957079517628080604857631345423561187100991596377258592000000
+        },
+        "T0": 1048576,
+        "rule": "T0=2^ceil(log2(4*C(s)/L_min(s)))"
+      },
+      "requirement": "the C(s)/T bound and reviewed power-of-two T0 rule certify sign before any trajectory",
+      "status": "pass"
+    },
+    {
+      "name": "fixed_and_joint_ladders_certified",
+      "observed": {
+        "fixed": [
+          {
+            "duration": 1048576,
+            "negative_sign_certified": true,
+            "response_interval": {
+              "lower": {
+                "denominator": 34047800834099424616437991331460282253735639889639484530833996288,
+                "float": -0.0985114395329296,
+                "fraction": "-3354097873097615491186632170710056529091878148133106042658816875/34047800834099424616437991331460282253735639889639484530833996288",
+                "numerator": -3354097873097615491186632170710056529091878148133106042658816875
+              },
+              "upper": {
+                "denominator": 3608920005894223481994617524942939322231731459938595904410132102577561180154826646513475297498980864,
+                "float": -0.00983952839787531,
+                "fraction": "-35510070883656542350977839545200203159458128247426504872243666559454546647321100274824892533687625/3608920005894223481994617524942939322231731459938595904410132102577561180154826646513475297498980864",
+                "numerator": -35510070883656542350977839545200203159458128247426504872243666559454546647321100274824892533687625
+              }
+            }
+          },
+          {
+            "duration": 2097152,
+            "negative_sign_certified": true,
+            "response_interval": {
+              "lower": {
+                "denominator": 68095601668198849232875982662920564507471279779278969061667992576,
+                "float": -0.09714141772203412,
+                "fraction": "-6614903286683747765537031500779807675585520407110159166734336875/68095601668198849232875982662920564507471279779278969061667992576",
+                "numerator": -6614903286683747765537031500779807675585520407110159166734336875
+              },
+              "upper": {
+                "denominator": 7217840011788446963989235049885878644463462919877191808820264205155122360309653293026950594997961728,
+                "float": -0.011209550208770793,
+                "fraction": "-80908740011017362544088694772480233785656714503981511918224257370519785704388004775537825938359625/7217840011788446963989235049885878644463462919877191808820264205155122360309653293026950594997961728",
+                "numerator": -80908740011017362544088694772480233785656714503981511918224257370519785704388004775537825938359625
+              }
+            }
+          },
+          {
+            "duration": 4194304,
+            "negative_sign_certified": true,
+            "response_interval": {
+              "lower": {
+                "denominator": 136191203336397698465751965325841129014942559558557938123335985152,
+                "float": -0.09645640681658638,
+                "fraction": "-13136514113856012314237830160919309968572804925064265414885376875/136191203336397698465751965325841129014942559558557938123335985152",
+                "numerator": -13136514113856012314237830160919309968572804925064265414885376875
+              },
+              "upper": {
+                "denominator": 14435680023576893927978470099771757288926925839754383617640528410310244720619306586053901189995923456,
+                "float": -0.011894561114218534,
+                "fraction": "-171706078265739002930310405227040295038053887017091526010185438992650263818521813776963692747703625/14435680023576893927978470099771757288926925839754383617640528410310244720619306586053901189995923456",
+                "numerator": -171706078265739002930310405227040295038053887017091526010185438992650263818521813776963692747703625
+              }
+            }
+          },
+          {
+            "duration": 8388608,
+            "negative_sign_certified": true,
+            "response_interval": {
+              "lower": {
+                "denominator": 272382406672795396931503930651682258029885119117115876246671970304,
+                "float": -0.09611390136386251,
+                "fraction": "-26179735768200541411639427481198314554547373960972477911187456875/272382406672795396931503930651682258029885119117115876246671970304",
+                "numerator": -26179735768200541411639427481198314554547373960972477911187456875
+              },
+              "upper": {
+                "denominator": 28871360047153787855956940199543514577853851679508767235281056820620489441238613172107802379991846912,
+                "float": -0.012237066566942404,
+                "fraction": "-353300754775182283702753826136160417542848232043311554194107802236911220046789431779815426366391625/28871360047153787855956940199543514577853851679508767235281056820620489441238613172107802379991846912",
+                "numerator": -353300754775182283702753826136160417542848232043311554194107802236911220046789431779815426366391625
+              }
+            }
+          }
+        ],
+        "joint": [
+          {
+            "duration": 1048576,
+            "negative_sign_certified": true,
+            "remainder_over_line_lower": {
+              "denominator": 40354372557654062393876315757582249445509854450271117374204969609835768050726137333967051915264,
+              "float": 0.21781691916921478,
+              "fraction": "8789865105514913637451569495182068859324851563669779709988377112542837697551825978567147440875/40354372557654062393876315757582249445509854450271117374204969609835768050726137333967051915264",
+              "numerator": 8789865105514913637451569495182068859324851563669779709988377112542837697551825978567147440875
+            },
+            "response_interval": {
+              "lower": {
+                "denominator": 34047800834099424616437991331460282253735639889639484530833996288,
+                "float": -0.0985114395329296,
+                "fraction": "-3354097873097615491186632170710056529091878148133106042658816875/34047800834099424616437991331460282253735639889639484530833996288",
+                "numerator": -3354097873097615491186632170710056529091878148133106042658816875
+              },
+              "upper": {
+                "denominator": 3608920005894223481994617524942939322231731459938595904410132102577561180154826646513475297498980864,
+                "float": -0.00983952839787531,
+                "fraction": "-35510070883656542350977839545200203159458128247426504872243666559454546647321100274824892533687625/3608920005894223481994617524942939322231731459938595904410132102577561180154826646513475297498980864",
+                "numerator": -35510070883656542350977839545200203159458128247426504872243666559454546647321100274824892533687625
+              }
+            },
+            "s_times_T_over_tau": {
+              "denominator": 625,
+              "float": 419.4304,
+              "fraction": "262144/625",
+              "numerator": 262144
+            },
+            "scale": {
+              "denominator": 100,
+              "float": 0.01,
+              "fraction": "1/100",
+              "numerator": 1
+            }
+          },
+          {
+            "duration": 4194304,
+            "negative_sign_certified": true,
+            "remainder_over_line_lower": {
+              "denominator": 7234025953935898344611834797894837394221894096217960691951285755362627578270400775192576,
+              "float": 0.036304452556728116,
+              "fraction": "262627352038805650811786105490680154436049180286457655910951141142473921545051741791875/7234025953935898344611834797894837394221894096217960691951285755362627578270400775192576",
+              "numerator": 262627352038805650811786105490680154436049180286457655910951141142473921545051741791875
+            },
+            "response_interval": {
+              "lower": {
+                "denominator": 48327404977851583239447015878769263659174108236546185560064,
+                "float": -0.015212508454987565,
+                "fraction": "-735181056833175303440941787907145284263267398954353705625/48327404977851583239447015878769263659174108236546185560064",
+                "numerator": -735181056833175303440941787907145284263267398954353705625
+              },
+              "upper": {
+                "denominator": 151244344274036894667920121636331831755302991009389235998627801424368352924953322041653395456,
+                "float": -0.0057617018964902095,
+                "fraction": "-871424825237136586725006086550519654973230614491437879505041826777519207090668629175087625/151244344274036894667920121636331831755302991009389235998627801424368352924953322041653395456",
+                "numerator": -871424825237136586725006086550519654973230614491437879505041826777519207090668629175087625
+              }
+            },
+            "s_times_T_over_tau": {
+              "denominator": 625,
+              "float": 838.8608,
+              "fraction": "524288/625",
+              "numerator": 524288
+            },
+            "scale": {
+              "denominator": 200,
+              "float": 0.005,
+              "fraction": "1/200",
+              "numerator": 1
+            }
+          },
+          {
+            "duration": 16777216,
+            "negative_sign_certified": true,
+            "remainder_over_line_lower": {
+              "denominator": 11021828139088754526612499173251668989538115390256367865272735177303411464371961567520542783941742952448,
+              "float": 0.011359783401086457,
+              "fraction": "125205580344048072798741066025286109250133256244650594550714376503569122375222796161520705168631446275/11021828139088754526612499173251668989538115390256367865272735177303411464371961567520542783941742952448",
+              "numerator": 125205580344048072798741066025286109250133256244650594550714376503569122375222796161520705168631446275
+            },
+            "response_interval": {
+              "lower": {
+                "denominator": 427578633197202166848508743581282327003165627005215038610434280905901080576,
+                "float": -0.0030188478696463895,
+                "fraction": "-1290794845933688795533434083367163229052225109907598971348409492840059375/427578633197202166848508743581282327003165627005215038610434280905901080576",
+                "numerator": -1290794845933688795533434083367163229052225109907598971348409492840059375
+              },
+              "upper": {
+                "denominator": 32235552008448903195807375638897367127219117834451121341783863211117898610073761729342132808354053413444517888,
+                "float": -0.0019014255402505288,
+                "fraction": "-61293501892938973802702389353148403701619899503815909647811367004499113173731655588894499193098752222223125/32235552008448903195807375638897367127219117834451121341783863211117898610073761729342132808354053413444517888",
+                "numerator": -61293501892938973802702389353148403701619899503815909647811367004499113173731655588894499193098752222223125
+              }
+            },
+            "s_times_T_over_tau": {
+              "denominator": 625,
+              "float": 1677.7216,
+              "fraction": "1048576/625",
+              "numerator": 1048576
+            },
+            "scale": {
+              "denominator": 400,
+              "float": 0.0025,
+              "fraction": "1/400",
+              "numerator": 1
+            }
+          },
+          {
+            "duration": 67108864,
+            "negative_sign_certified": true,
+            "remainder_over_line_lower": {
+              "denominator": 5639235511799547494338585435465516940082611433375996153892840532315435089930998185810844575569692065792,
+              "float": 0.004552167726233954,
+              "fraction": "25670745897446313688764104108421510484622573500436359836961490568214341431576690246593840777663621875/5639235511799547494338585435465516940082611433375996153892840532315435089930998185810844575569692065792",
+              "numerator": 25670745897446313688764104108421510484622573500436359836961490568214341431576690246593840777663621875
+            },
+            "response_interval": {
+              "lower": {
+                "denominator": 995784319652461443117465627671665324202475835019592154501099306669192511488,
+                "float": -0.0006738888542753493,
+                "fraction": "-671047954275955490142634838782391192448530929326784010049496973757250625/995784319652461443117465627671665324202475835019592154501099306669192511488",
+                "numerator": -671047954275955490142634838782391192448530929326784010049496973757250625
+              },
+              "upper": {
+                "denominator": 10448039690639372281218714308074775561902407203821451092831893991500658001370913110777726757646898340823040,
+                "float": -0.0005372840199804579,
+                "fraction": "-5613564765902101180649821331357095429597988859875559794055879041747220748499421495564250734792028443917/10448039690639372281218714308074775561902407203821451092831893991500658001370913110777726757646898340823040",
+                "numerator": -5613564765902101180649821331357095429597988859875559794055879041747220748499421495564250734792028443917
+              }
+            },
+            "s_times_T_over_tau": {
+              "denominator": 625,
+              "float": 3355.4432,
+              "fraction": "2097152/625",
+              "numerator": 2097152
+            },
+            "scale": {
+              "denominator": 800,
+              "float": 0.00125,
+              "fraction": "1/800",
+              "numerator": 1
+            }
+          }
+        ]
+      },
+      "requirement": "fixed-scale T and joint s/T ladders are certified with every relative bound at most half its predecessor",
+      "status": "pass"
+    },
+    {
+      "name": "smooth_positive_real_projective_state",
+      "observed": {
+        "all_sampled_psi_components_real": true,
+        "channel_equivalence_reason": "p and theta are inactive because coherent_scale=site_potential_scale=0",
+        "channel_equivalent_under_frozen_generator": true,
+        "closed_form_population": "p_j proportional to ((d+b)/(d-b))^j",
+        "exact_zero_reason": "the normalized state and both parameter derivatives are real",
+        "is_current_core_helper_branch_state_geometry": false,
+        "minimum_exact_corner_probability": 0.05837752108828143,
+        "numerical_projective_curvature_bd": 0.0,
+        "projective_curvature_bd_exact_fraction": "0/1",
+        "projective_metric_trace": 38.04028669502538,
+        "psi_norm_error": 0.0,
+        "scope_note": "auxiliary no-universal-alignment map only; not the current core helper BranchState geometry",
+        "state_map": "auxiliary psi_j=sqrt(p_j)>0 with p_j proportional to ((d+b)/(d-b))^j",
+        "stationary_eigenvector_helper_used": false
+      },
+      "requirement": "the explicit positive-real normalized D0 state map is smooth on the frozen box",
+      "status": "pass"
+    },
+    {
+      "name": "omega_zero_response_nonzero",
+      "observed": {
+        "F_bd": {
+          "denominator": 235345963257301712101,
+          "float": -122.7502119529289,
+          "fraction": "-28888766872100000000000/235345963257301712101",
+          "numerator": -28888766872100000000000
+        },
+        "omega": "0/1"
+      },
+      "requirement": "Omega_bd=0 exactly while the separately computed response F_bd is nonzero",
+      "status": "pass"
+    }
+  ],
+  "metrics": {
+    "exact_response_curvature_float": -122.7502119529289,
+    "exact_response_curvature_fraction": "-28888766872100000000000/235345963257301712101",
+    "primary_duration_T0": 1048576,
+    "primary_line_magnitude_lower": {
+      "denominator": 105995685990968073858032241598465253,
+      "float": 0.012579572019666274,
+      "fraction": "1333380365697314492276304623544000/105995685990968073858032241598465253",
+      "numerator": 1333380365697314492276304623544000
+    },
+    "primary_remainder_C": {
+      "denominator": 66499611004100438703980451819258363776827421659452118224285149,
+      "float": 2873.1439807630827,
+      "fraction": "191062957079517628080604857631345423561187100991596377258592000000/66499611004100438703980451819258363776827421659452118224285149",
+      "numerator": 191062957079517628080604857631345423561187100991596377258592000000
+    },
+    "primary_scale": {
+      "denominator": 100,
+      "float": 0.01,
+      "fraction": "1/100",
+      "numerator": 1
+    },
+    "projective_curvature_exact_fraction": "0/1",
+    "uniform_full_rank_floor": {
+      "denominator": 69,
+      "float": 0.057971014492753624,
+      "fraction": "4/69",
+      "numerator": 4
+    }
+  },
+  "schema_version": 1
+}
