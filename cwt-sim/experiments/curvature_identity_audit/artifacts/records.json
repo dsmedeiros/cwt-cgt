@@ -1,0 +1,1437 @@
+[
+  {
+    "record_type": "contract",
+    "value": {
+      "alignment_coefficient_type": "kappa in C^infty(Lambda;R)",
+      "benchmark_c_branch_id": "C0",
+      "benchmark_c_current_gain": {
+        "denominator": 20,
+        "float": 0.45,
+        "fraction": "9/20",
+        "numerator": 9
+      },
+      "benchmark_c_id": "benchmark_c",
+      "benchmark_c_phase_relaxation": {
+        "denominator": 20,
+        "float": 0.35,
+        "fraction": "7/20",
+        "numerator": 7
+      },
+      "benchmark_c_response_statistic": "fixed_tick_cycle_sum_not_legacy_mean",
+      "benchmark_d_branch_id": "D0_exact_affine_stationary_branch",
+      "benchmark_d_generator": "A=(1/5)(K^T-I)-(1/25)I",
+      "benchmark_d_id": "benchmark_d",
+      "benchmark_d_mixed_state_scope": "commuting_diagonal_uhlmann_statement_separate",
+      "benchmark_d_observable": "O=diag(1,2,3,4,5)",
+      "benchmark_d_projective_encoding": "psi_j=sqrt(xbar_j),theta_j=0",
+      "benchmark_d_source": "c=(1/125)1",
+      "berry_connection_convention": "A_i=-i<psi|partial_i psi>",
+      "claim_ceiling": "internal authored QP-1 calibration and Benchmark-C/Benchmark-D analytic identity audit only; not universal CWT, physical response, empirical evidence, or a general CGT-response alignment law",
+      "disposition": "PASS_INTERNAL_ANALYTIC",
+      "evidence_status": "NO_EMPIRICAL_EVIDENCE",
+      "experiment_id": "curvature_identity_audit",
+      "fitted_or_pointwise_normalization_allowed": false,
+      "future_heldout_oblique_required": true,
+      "future_minimum_full_rank_area_directions": 3,
+      "future_pointwise_division_forbidden": true,
+      "future_tensor_map_must_be_frozen": true,
+      "global_obstruction_scope": "periods_and_nonzero_chern_flux_checked",
+      "limit_or_ontology_upgrade_allowed": false,
+      "local_potential_scope": "constant_kappa_contractible_gauge_patch_only",
+      "parameter_orientation": "first_coordinate_wedge_second_coordinate",
+      "projective_curvature_convention": "Omega_ij=+2 Im<C_i|C_j>=partial_i A_j-partial_j A_i",
+      "pullback_condition": "sigma^*(d beta_R)-kappa sigma^*(P^*omega_FS)=0",
+      "qp1_chern_number": -1,
+      "qp1_conventional_force_sign": "O_i=-partial_i H",
+      "qp1_gap_minimum": {
+        "denominator": 5,
+        "float": 0.2,
+        "fraction": "1/5",
+        "numerator": 1
+      },
+      "qp1_observable_sign": "O_i=+partial_i H",
+      "qp1_operator_id": "cwt.operator.L_map.qp1_builder",
+      "qp1_scope": "same_operator_kubo_qgt_calibration_only",
+      "response_curvature_convention": "F_ij=partial_i beta_j-partial_j beta_i",
+      "two_dimensional_quotient_is_predictive": false,
+      "unfrozen_tensor_map_allowed": false
+    }
+  },
+  {
+    "name": "common_origin",
+    "record_type": "certificate",
+    "value": {
+      "alignment_coefficient": "kappa in C^infty(Lambda;R)",
+      "ambient_equality_not_required": true,
+      "berry_connection_pullback": "A_Lambda=sigma^*P^*a_B in Omega^1(U)",
+      "berry_pullback": "Omega=dA_Lambda=sigma^*(P^*omega_FS)",
+      "berry_two_form": "omega_FS in Omega^2(CP^(n-1))",
+      "branch_graph": "sigma:Lambda->N",
+      "branch_tangent_form": "for every lambda and v,w in T_lambda Lambda, d beta_R_(sigma(lambda))(d sigma v,d sigma w)-kappa(lambda) omega_FS_(P(sigma(lambda)))(d(P sigma)v,d(P sigma)w)=0",
+      "local_berry_connection": "a_B in Omega^1(V) with d a_B=omega_FS on a gauge patch V",
+      "necessary": true,
+      "necessary_and_sufficient_condition": "sigma^*(d beta_R)-kappa sigma^*(P^*omega_FS)=0",
+      "off_branch_normal_components_unconstrained": true,
+      "projective_map": "P:N->CP^(n-1)",
+      "response_one_form": "beta_R in Omega^1(N)",
+      "response_one_form_pullback": "B_R=sigma^*beta_R in Omega^1(Lambda)",
+      "response_pullback": "F_R=dB_R=sigma^*(d beta_R)",
+      "sufficient": true
+    }
+  },
+  {
+    "name": "obstructions",
+    "record_type": "certificate",
+    "value": {
+      "chern_flux_required": true,
+      "constant_kappa_local_statement": "for constant kappa, F_R=kappa*Omega iff d(B_R-kappa*A_Lambda)=0; only on a contractible branch chart does this imply B_R-kappa*A_Lambda=d chi",
+      "global_chern_obstruction": "nonzero pulled-back Chern flux forbids one global smooth A_Lambda; if B_R is global and kappa is a nonzero constant, integral_closed_surface dB_R=0 conflicts with kappa integral Omega",
+      "global_scope_id": "periods_and_nonzero_chern_flux_checked",
+      "global_smooth_connection_claimed": false,
+      "local_scope_id": "constant_kappa_contractible_gauge_patch_only",
+      "noncontractible_period_condition": "all pulled-back periods integral_gamma(B_R-kappa*A_Lambda) must vanish before an exact chi exists",
+      "periods_required": true,
+      "variable_kappa_warning": "d(B_R-kappa*A_Lambda)=F_R-kappa*Omega-dkappa wedge A_Lambda; the constant-kappa potential statement cannot be reused"
+    }
+  },
+  {
+    "name": "refusals",
+    "record_type": "certificate",
+    "value": {
+      "all_refused": true,
+      "refused": {
+        "auxiliary_state_substitution": true,
+        "finite_limit_to_ontology_upgrade": true,
+        "pointwise_F_over_Omega_fit": true,
+        "separately_authored_readout_called_same_origin": true,
+        "two_dimensional_quotient_as_prediction": true,
+        "unfrozen_tensor_or_coordinate_map": true
+      },
+      "two_dimensional_reason": "the two-form space is one-dimensional, so a pointwise quotient is algebraic and has no held-out tensor-direction content"
+    }
+  },
+  {
+    "name": "future",
+    "record_type": "certificate",
+    "value": {
+      "current_audit_supplies_future_alignment_pass": false,
+      "future_status": "NOT_INSTANTIATED",
+      "heldout_oblique_direction_required": true,
+      "minimum_full_rank_area_directions": 3,
+      "pointwise_division_forbidden": true,
+      "tensor_map_frozen_before_response": true
+    }
+  },
+  {
+    "name": "qp1",
+    "record_type": "certificate",
+    "value": {
+      "chern_integral": "integral_[0,1]x[0,1] Omega=-2*pi",
+      "chern_number": -1,
+      "classification": "SAME_CURVATURE_CALIBRATION_ONLY",
+      "connection_north": "A_x=2*pi*sin(pi*y/2)^2;A_y=0",
+      "conventional_observable": "O_i=-partial_i H",
+      "conventional_observable_result": "K_[xy]=-Omega_xy",
+      "curvature": "Omega_xy=-pi^2*sin(pi*y)",
+      "eigenvalues": "mu_0=1;mu_1=1-[2/5+(1/5)cos(2*pi*y)]",
+      "finite_speed_response_claimed": false,
+      "full_antisymmetrization": "K_xy-K_yx=2*K_[xy]",
+      "gap_interval": [
+        "1/5",
+        "3/5"
+      ],
+      "global_smooth_connection_exists": false,
+      "kubo_definition": "K_ij[O]=2 Im <u0|O_i|u1><u1|partial_j H|u0>/(mu0-mu1)^2",
+      "live_cwt_response_claimed": false,
+      "north_south_transition": "psi_S=exp(-i*2*pi*x)psi_N;A_S=A_N-2*pi*dx",
+      "operator_id": "cwt.operator.L_map.qp1_builder",
+      "positive_observable": "O_i=+partial_i H",
+      "positive_observable_result": "K_[xy]=(K_xy-K_yx)/2=+Omega_xy",
+      "projector": "P=|psi><psi| is the dominant projector of the same Hermitian H",
+      "regression": {
+        "maximum_conventional_negative_sign_error": 3.182645258448247e-10,
+        "maximum_eigen_residual": 1.6683261160542004e-16,
+        "maximum_positive_sign_error": 3.182645258448247e-10,
+        "maximum_projector_error": 6.164347964881811e-16,
+        "minimum_sampled_gap": 0.19999999999999973,
+        "points": [
+          {
+            "analytic_omega": -5.801207912921211,
+            "gap": 0.46180339887498945,
+            "negative_force_half_antisymmetrized": 5.8012079126673,
+            "point": [
+              0.13,
+              0.2
+            ],
+            "positive_force_full_antisymmetrized": -11.6024158253346,
+            "positive_force_half_antisymmetrized": -5.8012079126673,
+            "projector_error": 2.6657250631844453e-16
+          },
+          {
+            "analytic_omega": -9.869604401089358,
+            "gap": 0.19999999999999973,
+            "negative_force_half_antisymmetrized": 9.869604400976018,
+            "point": [
+              0.13,
+              0.5
+            ],
+            "positive_force_full_antisymmetrized": -19.739208801952035,
+            "positive_force_half_antisymmetrized": -9.869604400976018,
+            "projector_error": 6.164347964881811e-16
+          },
+          {
+            "analytic_omega": -5.801207912921212,
+            "gap": 0.46180339887498933,
+            "negative_force_half_antisymmetrized": 5.801207913239477,
+            "point": [
+              0.13,
+              0.8
+            ],
+            "positive_force_full_antisymmetrized": -11.602415826478953,
+            "positive_force_half_antisymmetrized": -5.801207913239477,
+            "projector_error": 4.45716575854049e-16
+          }
+        ],
+        "role": "numerical_spectral_implementation_regression_not_proof"
+      },
+      "same_operator_and_projector": true,
+      "scope": "same_operator_kubo_qgt_calibration_only",
+      "state": "psi=(cos(pi*y/2),exp(i*2*pi*x)sin(pi*y/2))"
+    }
+  },
+  {
+    "name": "benchmark_c",
+    "record_type": "certificate",
+    "value": {
+      "alpha": {
+        "denominator": 20,
+        "float": 0.35,
+        "fraction": "7/20",
+        "numerator": 7
+      },
+      "alpha_one_response": {
+        "denominator": 1,
+        "float": 0.0,
+        "fraction": "0/1",
+        "numerator": 0
+      },
+      "berry_connection": "A_i=sum_j p_j partial_i theta_j",
+      "berry_curvature": "Omega_uv=sum_j[(partial_u p_j)(partial_v theta_j)-(partial_v p_j)(partial_u theta_j)]",
+      "center": {
+        "J_xx_is_symmetric_hessian": true,
+        "berry_connection_curvature_identity_error": {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        },
+        "decomposition": {
+          "response_curvature_J_xK_dK": {
+            "center": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "gradient": [
+              {
+                "denominator": 40000,
+                "float": 0.049725,
+                "fraction": "1989/40000",
+                "numerator": 1989
+              },
+              {
+                "denominator": 40000,
+                "float": 0.061425,
+                "fraction": "2457/40000",
+                "numerator": 2457
+              }
+            ]
+          },
+          "response_curvature_J_xp_dp": {
+            "center": {
+              "denominator": 2800000,
+              "float": -0.07935107142857142,
+              "fraction": "-222183/2800000",
+              "numerator": -222183
+            },
+            "gradient": [
+              {
+                "denominator": 1400000,
+                "float": -0.0009192857142857143,
+                "fraction": "-1287/1400000",
+                "numerator": -1287
+              },
+              {
+                "denominator": 56000000,
+                "float": 0.020038339285714284,
+                "fraction": "1122147/56000000",
+                "numerator": 1122147
+              }
+            ]
+          },
+          "response_curvature_J_xx_dtheta": {
+            "center": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "gradient": [
+              {
+                "denominator": 1,
+                "float": 0.0,
+                "fraction": "0/1",
+                "numerator": 0
+              },
+              {
+                "denominator": 1,
+                "float": 0.0,
+                "fraction": "0/1",
+                "numerator": 0
+              }
+            ]
+          },
+          "response_curvature_d2theta": {
+            "center": {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            "gradient": [
+              {
+                "denominator": 1,
+                "float": 0.0,
+                "fraction": "0/1",
+                "numerator": 0
+              },
+              {
+                "denominator": 1,
+                "float": 0.0,
+                "fraction": "0/1",
+                "numerator": 0
+              }
+            ]
+          }
+        },
+        "decomposition_residual": {
+          "center": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "gradient": [
+            {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          ]
+        },
+        "omega_center": {
+          "denominator": 48,
+          "float": 0.14583333333333334,
+          "fraction": "7/48",
+          "numerator": 7
+        },
+        "omega_gradient": [
+          {
+            "denominator": 12000,
+            "float": 0.24441666666666667,
+            "fraction": "2933/12000",
+            "numerator": 2933
+          },
+          {
+            "denominator": 72000,
+            "float": -0.008069444444444445,
+            "fraction": "-581/72000",
+            "numerator": -581
+          }
+        ],
+        "phase_gradient_center": [
+          {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        ],
+        "phase_gradient_total_derivative_formula": "dJ_x=J_xp dp+J_xx dtheta+J_xK dK",
+        "quotient_center": {
+          "denominator": 1225000,
+          "float": -0.5441216326530612,
+          "fraction": "-666549/1225000",
+          "numerator": -666549
+        },
+        "quotient_gradient": [
+          {
+            "denominator": 43750000,
+            "float": 1.2466156114285714,
+            "fraction": "54539433/43750000",
+            "numerator": 54539433
+          },
+          {
+            "denominator": 21875000,
+            "float": 0.5284976914285714,
+            "fraction": "11560887/21875000",
+            "numerator": 11560887
+          }
+        ],
+        "quotient_gradient_nonzero": true,
+        "response_curvature_center": {
+          "denominator": 2800000,
+          "float": -0.07935107142857142,
+          "fraction": "-222183/2800000",
+          "numerator": -222183
+        },
+        "response_curvature_gradient": [
+          {
+            "denominator": 175000,
+            "float": 0.048805714285714286,
+            "fraction": "8541/175000",
+            "numerator": 8541
+          },
+          {
+            "denominator": 56000000,
+            "float": 0.08146333928571428,
+            "fraction": "4561947/56000000",
+            "numerator": 4561947
+          }
+        ],
+        "response_exterior_derivative_formula": "d beta_R=-m dJ_x wedge dtheta",
+        "theta_hessian_antisymmetric_residual": [
+          {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        ],
+        "theta_mixed_hessian_uv": [
+          {
+            "denominator": 20,
+            "float": 0.45,
+            "fraction": "9/20",
+            "numerator": 9
+          },
+          {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          {
+            "denominator": 20,
+            "float": -0.45,
+            "fraction": "-9/20",
+            "numerator": -9
+          }
+        ],
+        "theta_mixed_hessian_vu": [
+          {
+            "denominator": 20,
+            "float": 0.45,
+            "fraction": "9/20",
+            "numerator": 9
+          },
+          {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          {
+            "denominator": 20,
+            "float": -0.45,
+            "fraction": "-9/20",
+            "numerator": -9
+          }
+        ]
+      },
+      "classification": "SAME_PRIMITIVE_MANIFOLD_DIFFERENT_CONNECTIONS_DERIVED_MIXED_HESSIAN",
+      "core_branch_regression": {
+        "maximum_kernel_error": 0.0,
+        "maximum_phase_error": 0.0,
+        "maximum_probability_error": 5.551115123125783e-17,
+        "points": [
+          [
+            -0.3,
+            -0.2
+          ],
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.3,
+            0.2
+          ]
+        ]
+      },
+      "exact_branch": {
+        "kernel": "k_plus=9/50+u/10;k_minus=9/50-u/10",
+        "logits": [
+          "17u/20+v/2",
+          "-7u/10+7uv/20",
+          "-11v/20-uv/4"
+        ],
+        "phase": "theta=(phi,0,-phi);phi=7v/10+9uv/20+3u/20",
+        "probability": "p_j=exp(z_j)/sum_k exp(z_k)"
+      },
+      "finite_difference_or_wilson_used_as_analytic_acceptance": false,
+      "gain": {
+        "denominator": 20,
+        "float": 0.45,
+        "fraction": "9/20",
+        "numerator": 9
+      },
+      "gain_double_response": {
+        "denominator": 1400000,
+        "float": -0.15870214285714285,
+        "fraction": "-222183/1400000",
+        "numerator": -222183
+      },
+      "gain_scaling_exact": true,
+      "gain_zero_response": {
+        "denominator": 1,
+        "float": 0.0,
+        "fraction": "0/1",
+        "numerator": 0
+      },
+      "legacy_mean_is_same_curvature_response": false,
+      "mixed_hessian_identity": "d beta_R=-m dJ_x wedge dtheta with dJ_x=J_xp dp+J_xx dtheta+J_xK dK; d^2theta=0 and symmetric J_xx cancel, while mixed J_xp/J_xK terms remain",
+      "numerical_regressions": {
+        "derivative_step": 1e-05,
+        "projective_absolute_error": 1.1618345174824185e-11,
+        "projective_curvature": 0.145833333321715,
+        "response_absolute_error": 2.670724752462661e-12,
+        "response_curvature": -0.0793510714259007,
+        "role": "finite_difference_and_wilson_implementation_regressions_not_proof",
+        "wilson_absolute_error": 2.3980947783108775e-10,
+        "wilson_curvature_density": 0.14583333357314282,
+        "wilson_minimum_overlap": {
+          "log_overlaps": {
+            "0->i": -5.770641743895979e-10,
+            "i->ij": -1.8633398175134826e-09,
+            "ij->j": -5.771022550393646e-10,
+            "j->0": -1.863048828058186e-09
+          },
+          "min_overlap": 0.9999999981366602,
+          "overlaps": {
+            "0->i": 0.9999999994229358,
+            "i->ij": 0.9999999981366602,
+            "ij->j": 0.9999999994228977,
+            "j->0": 0.9999999981369512
+          },
+          "phases": {
+            "0->i": -8.087758443904384e-22,
+            "i->ij": 1.8623971526334204e-21,
+            "ij->j": 3.347186350627495e-21,
+            "j->0": 1.4583333357270274e-09
+          }
+        }
+      },
+      "omega_independent_of_gain_and_alpha": true,
+      "primitive_graph": "lambda=(u,v)->(p(lambda),theta(lambda),K(lambda))",
+      "response_connection": "beta_i=-(1-alpha)/alpha H_a partial_i theta^a",
+      "response_curvature": "F_uv=-(1-alpha)/alpha[(partial_u H_a)(partial_v theta^a)-(partial_v H_a)(partial_u theta^a)]",
+      "response_readout": "J=directed circulation(p,x,K;gain);H=partial_x J|x=theta",
+      "response_statistic_scope": "fixed_tick_cycle_sum_not_legacy_mean"
+    }
+  },
+  {
+    "name": "benchmark_d",
+    "record_type": "certificate",
+    "value": {
+      "arbitrary_nonlinear_or_affine_omega_only_map_ruled_out": false,
+      "auxiliary_or_authored_constant_state_used": false,
+      "berry_connection": "A_i=-i<psi|partial_i psi>=-(i/2)partial_i sum_j xbar_j=0",
+      "branch": "xbar(b,d)=-A(b,d)^(-1)c",
+      "center_lift_maximum_imaginary_component": 0.0,
+      "center_lift_norm_error": 0.0,
+      "center_stationary_population": [
+        {
+          "denominator": 1116709,
+          "float": 0.167973035052104,
+          "fraction": "187577/1116709",
+          "numerator": 187577
+        },
+        {
+          "denominator": 14517217,
+          "float": 0.18680887666003754,
+          "fraction": "2711945/14517217",
+          "numerator": 2711945
+        },
+        {
+          "denominator": 1116709,
+          "float": 0.19791100456788652,
+          "fraction": "221009/1116709",
+          "numerator": 221009
+        },
+        {
+          "denominator": 188723821,
+          "float": 0.2102866124144445,
+          "fraction": "39686093/188723821",
+          "numerator": 39686093
+        },
+        {
+          "denominator": 188723821,
+          "float": 0.23702047130552745,
+          "fraction": "44731409/188723821",
+          "numerator": 44731409
+        }
+      ],
+      "center_stationary_residual": [
+        {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        },
+        {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        },
+        {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        },
+        {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        },
+        {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        }
+      ],
+      "center_trace": {
+        "denominator": 1,
+        "float": 1.0,
+        "fraction": "1/1",
+        "numerator": 1
+      },
+      "classification": "SAME_MODEL_ZERO_SET_OBSTRUCTION",
+      "encoding_clip_applied": false,
+      "encoding_probability_floor_applied": false,
+      "encoding_projection_or_normalization_repair_applied": false,
+      "finite_scalar_kappa_exists_at_center": false,
+      "finite_step_branch_used": false,
+      "geometry_model_identity_sha256": "42be734288ba94acb3f247a86184abce4fd2633c914e7e10888dbb3097b280b5",
+      "mixed_density_statement": "rho=diag(xbar) is a separate commuting full-rank density family; its Uhlmann link unitaries and loop holonomy are identity, hence phase zero",
+      "mixed_density_used_to_prove_projective_zero": false,
+      "model_identity_sha256": "42be734288ba94acb3f247a86184abce4fd2633c914e7e10888dbb3097b280b5",
+      "model_payload": {
+        "affine_source_center": [
+          "1/125",
+          "1/125",
+          "1/125",
+          "1/125",
+          "1/125"
+        ],
+        "affine_source_formula": "c=(1/125)1",
+        "generator_center": [
+          [
+            "-91/1000",
+            "39/1000",
+            "0/1",
+            "0/1",
+            "0/1"
+          ],
+          [
+            "51/1000",
+            "-13/100",
+            "39/1000",
+            "0/1",
+            "0/1"
+          ],
+          [
+            "0/1",
+            "51/1000",
+            "-13/100",
+            "39/1000",
+            "0/1"
+          ],
+          [
+            "0/1",
+            "0/1",
+            "51/1000",
+            "-13/100",
+            "39/1000"
+          ],
+          [
+            "0/1",
+            "0/1",
+            "0/1",
+            "51/1000",
+            "-79/1000"
+          ]
+        ],
+        "generator_formula": "A=(1/5)(K^T-I)-(1/25)I",
+        "observable_diagonal": [
+          "1/1",
+          "2/1",
+          "3/1",
+          "4/1",
+          "5/1"
+        ],
+        "observable_formula": "O=diag(1,2,3,4,5)"
+      },
+      "named_core_observable_error": 0.0,
+      "obstruction_scope": "finite_scalar_or_frozen_zero_preserving_homogeneous_linear_tensor_map",
+      "projective_curvature": "Omega_bd=dA=0 exactly for the smooth positive real lift",
+      "projective_curvature_fraction": "0/1",
+      "projective_encoding": "psi_j=sqrt(xbar_j),theta_j=0",
+      "projective_encoding_is_mixed_density": false,
+      "projective_regression": {
+        "maximum_imaginary_component": 0.0,
+        "metric_trace": 3.6781502238308854,
+        "normalization_error": 0.0,
+        "projective_curvature": 0.0,
+        "role": "real_lift_finite_difference_regression_not_proof"
+      },
+      "response_curvature_nonzero": true,
+      "response_fraction_matches_formal": true,
+      "response_model_identity_sha256": "42be734288ba94acb3f247a86184abce4fd2633c914e7e10888dbb3097b280b5",
+      "response_oracle": {
+        "derivative_bias_of_B_diffusion": {
+          "denominator": 44415389442843585257542657921,
+          "float": 116.26874005962343,
+          "fraction": "5164121369776923516308000000000/44415389442843585257542657921",
+          "numerator": 5164121369776923516308000000000
+        },
+        "derivative_diffusion_of_B_bias": {
+          "denominator": 44415389442843585257542657921,
+          "float": 239.01895201255232,
+          "fraction": "10616119837857853810408000000000/44415389442843585257542657921",
+          "numerator": 10616119837857853810408000000000
+        },
+        "matches_formal_fraction": true,
+        "response_curvature_bd": {
+          "denominator": 235345963257301712101,
+          "float": -122.7502119529289,
+          "fraction": "-28888766872100000000000/235345963257301712101",
+          "numerator": -28888766872100000000000
+        },
+        "response_one_form_bias": {
+          "denominator": 3059497522344922257313,
+          "float": -91.36434386789688,
+          "fraction": "-279528983694499988000000/3059497522344922257313",
+          "numerator": -279528983694499988000000
+        },
+        "response_one_form_diffusion": {
+          "denominator": 235345963257301712101,
+          "float": 3.6825063585878666,
+          "fraction": "866663006163000000000/235345963257301712101",
+          "numerator": 866663006163000000000
+        },
+        "stationary_population": [
+          {
+            "denominator": 1116709,
+            "float": 0.167973035052104,
+            "fraction": "187577/1116709",
+            "numerator": 187577
+          },
+          {
+            "denominator": 14517217,
+            "float": 0.18680887666003754,
+            "fraction": "2711945/14517217",
+            "numerator": 2711945
+          },
+          {
+            "denominator": 1116709,
+            "float": 0.19791100456788652,
+            "fraction": "221009/1116709",
+            "numerator": 221009
+          },
+          {
+            "denominator": 188723821,
+            "float": 0.2102866124144445,
+            "fraction": "39686093/188723821",
+            "numerator": 39686093
+          },
+          {
+            "denominator": 188723821,
+            "float": 0.23702047130552745,
+            "fraction": "44731409/188723821",
+            "numerator": 44731409
+          }
+        ]
+      },
+      "same_A_c_O_provenance": true,
+      "uniform_lower_bound_derivation": "x_i=(5/6)(K^T x)_i+1/30 and K_ii>=51/100 imply x_i>=(1/30)/(1-(5/6)(51/100))=4/69",
+      "uniform_positive_lower_bound": {
+        "denominator": 69,
+        "float": 0.057971014492753624,
+        "fraction": "4/69",
+        "numerator": 4
+      },
+      "zero_preserving_homogeneous_linear_tensor_map_can_match": false,
+      "zero_set_obstruction": "Omega_bd=0 and F_bd!=0, so no finite scalar F=kappa*Omega and no frozen zero-preserving homogeneous linear tensor map can reproduce this encoding/readout response"
+    }
+  },
+  {
+    "name": "common_origin_branch_tangent_equivalence",
+    "natural_status": "pass",
+    "observed": {
+      "alignment_coefficient": "kappa in C^infty(Lambda;R)",
+      "ambient_equality_not_required": true,
+      "berry_connection_pullback": "A_Lambda=sigma^*P^*a_B in Omega^1(U)",
+      "berry_pullback": "Omega=dA_Lambda=sigma^*(P^*omega_FS)",
+      "berry_two_form": "omega_FS in Omega^2(CP^(n-1))",
+      "branch_graph": "sigma:Lambda->N",
+      "branch_tangent_form": "for every lambda and v,w in T_lambda Lambda, d beta_R_(sigma(lambda))(d sigma v,d sigma w)-kappa(lambda) omega_FS_(P(sigma(lambda)))(d(P sigma)v,d(P sigma)w)=0",
+      "local_berry_connection": "a_B in Omega^1(V) with d a_B=omega_FS on a gauge patch V",
+      "necessary": true,
+      "necessary_and_sufficient_condition": "sigma^*(d beta_R)-kappa sigma^*(P^*omega_FS)=0",
+      "off_branch_normal_components_unconstrained": true,
+      "projective_map": "P:N->CP^(n-1)",
+      "response_one_form": "beta_R in Omega^1(N)",
+      "response_one_form_pullback": "B_R=sigma^*beta_R in Omega^1(Lambda)",
+      "response_pullback": "F_R=dB_R=sigma^*(d beta_R)",
+      "sufficient": true
+    },
+    "record_type": "gate",
+    "requirement": "alignment is exactly equality of the pulled-back two-forms on every branch tangent pair",
+    "status": "pass"
+  },
+  {
+    "name": "local_exact_potential_scope",
+    "natural_status": "pass",
+    "observed": {
+      "chern_flux_required": true,
+      "constant_kappa_local_statement": "for constant kappa, F_R=kappa*Omega iff d(B_R-kappa*A_Lambda)=0; only on a contractible branch chart does this imply B_R-kappa*A_Lambda=d chi",
+      "global_chern_obstruction": "nonzero pulled-back Chern flux forbids one global smooth A_Lambda; if B_R is global and kappa is a nonzero constant, integral_closed_surface dB_R=0 conflicts with kappa integral Omega",
+      "global_scope_id": "periods_and_nonzero_chern_flux_checked",
+      "global_smooth_connection_claimed": false,
+      "local_scope_id": "constant_kappa_contractible_gauge_patch_only",
+      "noncontractible_period_condition": "all pulled-back periods integral_gamma(B_R-kappa*A_Lambda) must vanish before an exact chi exists",
+      "periods_required": true,
+      "variable_kappa_warning": "d(B_R-kappa*A_Lambda)=F_R-kappa*Omega-dkappa wedge A_Lambda; the constant-kappa potential statement cannot be reused"
+    },
+    "record_type": "gate",
+    "requirement": "the local exact-potential statement is restricted to constant kappa on a contractible gauge patch",
+    "status": "pass"
+  },
+  {
+    "name": "global_period_and_chern_obstructions",
+    "natural_status": "pass",
+    "observed": {
+      "chern_flux_required": true,
+      "constant_kappa_local_statement": "for constant kappa, F_R=kappa*Omega iff d(B_R-kappa*A_Lambda)=0; only on a contractible branch chart does this imply B_R-kappa*A_Lambda=d chi",
+      "global_chern_obstruction": "nonzero pulled-back Chern flux forbids one global smooth A_Lambda; if B_R is global and kappa is a nonzero constant, integral_closed_surface dB_R=0 conflicts with kappa integral Omega",
+      "global_scope_id": "periods_and_nonzero_chern_flux_checked",
+      "global_smooth_connection_claimed": false,
+      "local_scope_id": "constant_kappa_contractible_gauge_patch_only",
+      "noncontractible_period_condition": "all pulled-back periods integral_gamma(B_R-kappa*A_Lambda) must vanish before an exact chi exists",
+      "periods_required": true,
+      "variable_kappa_warning": "d(B_R-kappa*A_Lambda)=F_R-kappa*Omega-dkappa wedge A_Lambda; the constant-kappa potential statement cannot be reused"
+    },
+    "record_type": "gate",
+    "requirement": "noncontractible periods and nonzero Chern flux are explicit global obstructions",
+    "status": "pass"
+  },
+  {
+    "name": "alignment_refusal_matrix",
+    "natural_status": "pass",
+    "observed": {
+      "all_refused": true,
+      "refused": {
+        "auxiliary_state_substitution": true,
+        "finite_limit_to_ontology_upgrade": true,
+        "pointwise_F_over_Omega_fit": true,
+        "separately_authored_readout_called_same_origin": true,
+        "two_dimensional_quotient_as_prediction": true,
+        "unfrozen_tensor_or_coordinate_map": true
+      },
+      "two_dimensional_reason": "the two-form space is one-dimensional, so a pointwise quotient is algebraic and has no held-out tensor-direction content"
+    },
+    "record_type": "gate",
+    "requirement": "pointwise fitting, 2D quotient tautology, unfrozen maps, auxiliary states, and ontology upgrades are refused",
+    "status": "pass"
+  },
+  {
+    "name": "qp1_same_operator_projector",
+    "natural_status": "pass",
+    "observed": {
+      "classification": "SAME_CURVATURE_CALIBRATION_ONLY",
+      "operator_id": "cwt.operator.L_map.qp1_builder"
+    },
+    "record_type": "gate",
+    "requirement": "the state projector and Kubo perturbations derive from the same Hermitian QP-1 operator",
+    "status": "pass"
+  },
+  {
+    "name": "qp1_exact_connection_curvature_gap",
+    "natural_status": "pass",
+    "observed": {
+      "connection": "A_x=2*pi*sin(pi*y/2)^2;A_y=0",
+      "curvature": "Omega_xy=-pi^2*sin(pi*y)",
+      "gap": [
+        "1/5",
+        "3/5"
+      ]
+    },
+    "record_type": "gate",
+    "requirement": "A, Omega, and the positive spectral gap are analytic on the declared chart",
+    "status": "pass"
+  },
+  {
+    "name": "qp1_kubo_sign_and_antisymmetrization",
+    "natural_status": "pass",
+    "observed": {
+      "conventional": "K_[xy]=-Omega_xy",
+      "factor": "K_xy-K_yx=2*K_[xy]",
+      "positive": "K_[xy]=(K_xy-K_yx)/2=+Omega_xy"
+    },
+    "record_type": "gate",
+    "requirement": "+dH gives +Omega, -dH gives -Omega, and full antisymmetrization is twice the half convention",
+    "status": "pass"
+  },
+  {
+    "name": "qp1_patch_transition_and_chern",
+    "natural_status": "pass",
+    "observed": {
+      "chern_number": -1,
+      "transition": "psi_S=exp(-i*2*pi*x)psi_N;A_S=A_N-2*pi*dx"
+    },
+    "record_type": "gate",
+    "requirement": "the north/south transition yields Chern number -1 and forbids a global smooth connection",
+    "status": "pass"
+  },
+  {
+    "name": "qp1_spectral_regression_only",
+    "natural_status": "pass",
+    "observed": {
+      "maximum_conventional_negative_sign_error": 3.182645258448247e-10,
+      "maximum_eigen_residual": 1.6683261160542004e-16,
+      "maximum_positive_sign_error": 3.182645258448247e-10,
+      "maximum_projector_error": 6.164347964881811e-16,
+      "minimum_sampled_gap": 0.19999999999999973,
+      "points": [
+        {
+          "analytic_omega": -5.801207912921211,
+          "gap": 0.46180339887498945,
+          "negative_force_half_antisymmetrized": 5.8012079126673,
+          "point": [
+            0.13,
+            0.2
+          ],
+          "positive_force_full_antisymmetrized": -11.6024158253346,
+          "positive_force_half_antisymmetrized": -5.8012079126673,
+          "projector_error": 2.6657250631844453e-16
+        },
+        {
+          "analytic_omega": -9.869604401089358,
+          "gap": 0.19999999999999973,
+          "negative_force_half_antisymmetrized": 9.869604400976018,
+          "point": [
+            0.13,
+            0.5
+          ],
+          "positive_force_full_antisymmetrized": -19.739208801952035,
+          "positive_force_half_antisymmetrized": -9.869604400976018,
+          "projector_error": 6.164347964881811e-16
+        },
+        {
+          "analytic_omega": -5.801207912921212,
+          "gap": 0.46180339887498933,
+          "negative_force_half_antisymmetrized": 5.801207913239477,
+          "point": [
+            0.13,
+            0.8
+          ],
+          "positive_force_full_antisymmetrized": -11.602415826478953,
+          "positive_force_half_antisymmetrized": -5.801207913239477,
+          "projector_error": 4.45716575854049e-16
+        }
+      ],
+      "role": "numerical_spectral_implementation_regression_not_proof"
+    },
+    "record_type": "gate",
+    "requirement": "numerical eigensystem evaluation cross-checks but does not establish the exact identity",
+    "status": "pass"
+  },
+  {
+    "name": "benchmark_c_core_branch_binding",
+    "natural_status": "pass",
+    "observed": {
+      "maximum_kernel_error": 0.0,
+      "maximum_phase_error": 0.0,
+      "maximum_probability_error": 5.551115123125783e-17,
+      "points": [
+        [
+          -0.3,
+          -0.2
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.3,
+          0.2
+        ]
+      ]
+    },
+    "record_type": "gate",
+    "requirement": "the analytic p, theta, and K formulas equal the core Benchmark-C C0 branch on the frozen patch",
+    "status": "pass"
+  },
+  {
+    "name": "benchmark_c_exact_berry_pullback",
+    "natural_status": "pass",
+    "observed": {
+      "identity_error": {
+        "denominator": 1,
+        "float": 0.0,
+        "fraction": "0/1",
+        "numerator": 0
+      },
+      "omega": {
+        "denominator": 48,
+        "float": 0.14583333333333334,
+        "fraction": "7/48",
+        "numerator": 7
+      }
+    },
+    "record_type": "gate",
+    "requirement": "A=sum p dtheta and Omega=dA reproduce the exact 7/48 center value",
+    "status": "pass"
+  },
+  {
+    "name": "benchmark_c_exact_response_pullback",
+    "natural_status": "pass",
+    "observed": {
+      "gradient": [
+        {
+          "denominator": 175000,
+          "float": 0.048805714285714286,
+          "fraction": "8541/175000",
+          "numerator": 8541
+        },
+        {
+          "denominator": 56000000,
+          "float": 0.08146333928571428,
+          "fraction": "4561947/56000000",
+          "numerator": 4561947
+        }
+      ],
+      "response": {
+        "denominator": 2800000,
+        "float": -0.07935107142857142,
+        "fraction": "-222183/2800000",
+        "numerator": -222183
+      }
+    },
+    "record_type": "gate",
+    "requirement": "beta=-(1-alpha)/alpha H.dtheta and F=d beta reproduce the exact center response jet",
+    "status": "pass"
+  },
+  {
+    "name": "benchmark_c_exact_response_decomposition",
+    "natural_status": "pass",
+    "observed": {
+      "decomposition": {
+        "response_curvature_J_xK_dK": {
+          "center": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "gradient": [
+            {
+              "denominator": 40000,
+              "float": 0.049725,
+              "fraction": "1989/40000",
+              "numerator": 1989
+            },
+            {
+              "denominator": 40000,
+              "float": 0.061425,
+              "fraction": "2457/40000",
+              "numerator": 2457
+            }
+          ]
+        },
+        "response_curvature_J_xp_dp": {
+          "center": {
+            "denominator": 2800000,
+            "float": -0.07935107142857142,
+            "fraction": "-222183/2800000",
+            "numerator": -222183
+          },
+          "gradient": [
+            {
+              "denominator": 1400000,
+              "float": -0.0009192857142857143,
+              "fraction": "-1287/1400000",
+              "numerator": -1287
+            },
+            {
+              "denominator": 56000000,
+              "float": 0.020038339285714284,
+              "fraction": "1122147/56000000",
+              "numerator": 1122147
+            }
+          ]
+        },
+        "response_curvature_J_xx_dtheta": {
+          "center": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "gradient": [
+            {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          ]
+        },
+        "response_curvature_d2theta": {
+          "center": {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          "gradient": [
+            {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            },
+            {
+              "denominator": 1,
+              "float": 0.0,
+              "fraction": "0/1",
+              "numerator": 0
+            }
+          ]
+        }
+      },
+      "residual": {
+        "center": {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        },
+        "gradient": [
+          {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          },
+          {
+            "denominator": 1,
+            "float": 0.0,
+            "fraction": "0/1",
+            "numerator": 0
+          }
+        ]
+      }
+    },
+    "record_type": "gate",
+    "requirement": "d beta_R=-m dJ_x wedge dtheta with dJ_x=J_xp dp+J_xx dtheta+J_xK dK; d2theta and symmetric J_xx cancel while mixed J_xp/J_xK remain",
+    "status": "pass"
+  },
+  {
+    "name": "benchmark_c_center_oracle_and_nonconstant_quotient",
+    "natural_status": "pass",
+    "observed": {
+      "gradient": [
+        {
+          "denominator": 43750000,
+          "float": 1.2466156114285714,
+          "fraction": "54539433/43750000",
+          "numerator": 54539433
+        },
+        {
+          "denominator": 21875000,
+          "float": 0.5284976914285714,
+          "fraction": "11560887/21875000",
+          "numerator": 11560887
+        }
+      ],
+      "quotient": {
+        "denominator": 1225000,
+        "float": -0.5441216326530612,
+        "fraction": "-666549/1225000",
+        "numerator": -666549
+      }
+    },
+    "record_type": "gate",
+    "requirement": "the exact quotient has the reviewed center value and nonzero exact gradient, so it is not constant",
+    "status": "pass"
+  },
+  {
+    "name": "benchmark_c_gain_and_relaxation_nulls",
+    "natural_status": "pass",
+    "observed": {
+      "alpha_one": {
+        "denominator": 1,
+        "float": 0.0,
+        "fraction": "0/1",
+        "numerator": 0
+      },
+      "gain_scaling": true,
+      "gain_zero": {
+        "denominator": 1,
+        "float": 0.0,
+        "fraction": "0/1",
+        "numerator": 0
+      }
+    },
+    "record_type": "gate",
+    "requirement": "gain=0 and alpha=1 null response while Omega persists, and response scales exactly with gain",
+    "status": "pass"
+  },
+  {
+    "name": "benchmark_c_numerical_regressions_only",
+    "natural_status": "pass",
+    "observed": {
+      "derivative_step": 1e-05,
+      "projective_absolute_error": 1.1618345174824185e-11,
+      "projective_curvature": 0.145833333321715,
+      "response_absolute_error": 2.670724752462661e-12,
+      "response_curvature": -0.0793510714259007,
+      "role": "finite_difference_and_wilson_implementation_regressions_not_proof",
+      "wilson_absolute_error": 2.3980947783108775e-10,
+      "wilson_curvature_density": 0.14583333357314282,
+      "wilson_minimum_overlap": {
+        "log_overlaps": {
+          "0->i": -5.770641743895979e-10,
+          "i->ij": -1.8633398175134826e-09,
+          "ij->j": -5.771022550393646e-10,
+          "j->0": -1.863048828058186e-09
+        },
+        "min_overlap": 0.9999999981366602,
+        "overlaps": {
+          "0->i": 0.9999999994229358,
+          "i->ij": 0.9999999981366602,
+          "ij->j": 0.9999999994228977,
+          "j->0": 0.9999999981369512
+        },
+        "phases": {
+          "0->i": -8.087758443904384e-22,
+          "i->ij": 1.8623971526334204e-21,
+          "ij->j": 3.347186350627495e-21,
+          "j->0": 1.4583333357270274e-09
+        }
+      }
+    },
+    "record_type": "gate",
+    "requirement": "finite differences and Wilson flux cross-check the analytic proof without supplying it",
+    "status": "pass"
+  },
+  {
+    "name": "benchmark_c_cycle_sum_scope",
+    "natural_status": "pass",
+    "observed": {
+      "legacy_mean_promoted": false,
+      "scope": "fixed_tick_cycle_sum_not_legacy_mean"
+    },
+    "record_type": "gate",
+    "requirement": "the theorem uses a fixed-tick cycle sum; the legacy sample mean is not promoted to the same response",
+    "status": "pass"
+  },
+  {
+    "name": "benchmark_d_shared_model_provenance",
+    "natural_status": "pass",
+    "observed": {
+      "identity": "42be734288ba94acb3f247a86184abce4fd2633c914e7e10888dbb3097b280b5",
+      "observable_error": 0.0
+    },
+    "record_type": "gate",
+    "requirement": "geometry and response use the identical exact A, c, and named mean-position O identity",
+    "status": "pass"
+  },
+  {
+    "name": "benchmark_d_exact_stationary_positive_no_floor",
+    "natural_status": "pass",
+    "observed": {
+      "lower_bound": {
+        "denominator": 69,
+        "float": 0.057971014492753624,
+        "fraction": "4/69",
+        "numerator": 4
+      },
+      "residual": [
+        {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        },
+        {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        },
+        {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        },
+        {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        },
+        {
+          "denominator": 1,
+          "float": 0.0,
+          "fraction": "0/1",
+          "numerator": 0
+        }
+      ],
+      "trace": {
+        "denominator": 1,
+        "float": 1.0,
+        "fraction": "1/1",
+        "numerator": 1
+      }
+    },
+    "record_type": "gate",
+    "requirement": "xbar=-A^-1c is exact, normalized, uniformly positive, and encoded without floor/clip/repair",
+    "status": "pass"
+  },
+  {
+    "name": "benchmark_d_real_projective_lift_zero_curvature",
+    "natural_status": "pass",
+    "observed": {
+      "omega": "0/1",
+      "regression": {
+        "maximum_imaginary_component": 0.0,
+        "metric_trace": 3.6781502238308854,
+        "normalization_error": 0.0,
+        "projective_curvature": 0.0,
+        "role": "real_lift_finite_difference_regression_not_proof"
+      }
+    },
+    "record_type": "gate",
+    "requirement": "the actual smooth positive stationary lift is real and normalized, hence A=Omega=0 exactly",
+    "status": "pass"
+  },
+  {
+    "name": "benchmark_d_exact_nonzero_response",
+    "natural_status": "pass",
+    "observed": {
+      "denominator": 235345963257301712101,
+      "float": -122.7502119529289,
+      "fraction": "-28888766872100000000000/235345963257301712101",
+      "numerator": -28888766872100000000000
+    },
+    "record_type": "gate",
+    "requirement": "the identical exact A,c,O model has the formal nonzero response curvature",
+    "status": "pass"
+  },
+  {
+    "name": "benchmark_d_zero_set_obstruction",
+    "natural_status": "pass",
+    "observed": {
+      "omega": "0/1",
+      "response": {
+        "denominator": 235345963257301712101,
+        "float": -122.7502119529289,
+        "fraction": "-28888766872100000000000/235345963257301712101",
+        "numerator": -28888766872100000000000
+      }
+    },
+    "record_type": "gate",
+    "requirement": "Omega=0 with F!=0 rules out a finite scalar F=kappa*Omega and every frozen zero-preserving homogeneous linear tensor map for this encoding/readout",
+    "status": "pass"
+  },
+  {
+    "name": "benchmark_d_mixed_state_scope",
+    "natural_status": "pass",
+    "observed": "rho=diag(xbar) is a separate commuting full-rank density family; its Uhlmann link unitaries and loop holonomy are identity, hence phase zero",
+    "record_type": "gate",
+    "requirement": "the diagonal mixed-state Uhlmann-null statement is separate from the projective proof",
+    "status": "pass"
+  },
+  {
+    "name": "future_alignment_fail_closed",
+    "natural_status": "pass",
+    "observed": {
+      "current_audit_supplies_future_alignment_pass": false,
+      "future_status": "NOT_INSTANTIATED",
+      "heldout_oblique_direction_required": true,
+      "minimum_full_rank_area_directions": 3,
+      "pointwise_division_forbidden": true,
+      "tensor_map_frozen_before_response": true
+    },
+    "record_type": "gate",
+    "requirement": "a future positive CWT alignment test needs >=3 full-rank directions and held-out oblique prediction",
+    "status": "pass"
+  },
+  {
+    "name": "claim_ceiling",
+    "natural_status": "pass",
+    "observed": {
+      "claim_ceiling": "internal authored QP-1 calibration and Benchmark-C/Benchmark-D analytic identity audit only; not universal CWT, physical response, empirical evidence, or a general CGT-response alignment law",
+      "issues": []
+    },
+    "record_type": "gate",
+    "requirement": "the result is internal analytic only, with no empirical, physical, universal-CWT, or alignment upgrade",
+    "status": "pass"
+  }
+]

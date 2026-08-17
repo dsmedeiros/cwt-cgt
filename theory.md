@@ -945,6 +945,32 @@ and the same bound holds for the half-difference $Q_{\rm anti}$. Exact structure
 
 This bridge is `PASS_INTERNAL_ANALYTIC` / `NO_EMPIRICAL_EVIDENCE` for the authored D0 diagonal population/readout family only. It is not a bridge for the older off-family artifact, not a full-density or scheduler continuum limit, not calibrated physical dynamics, and not evidence for CGT alignment or CWT generally.
 
+### 36.4c Same-primitives curvature identity audit
+
+The isolated audit at `cwt-sim/experiments/curvature_identity_audit/` now separates four logically distinct relations between projective curvature and response curvature. On a frozen branch graph \(\sigma:\Lambda\to N\), define the pulled-back response one-form \(B_R=\sigma^*\beta_R\) and, on a projective gauge patch with Berry connection \(a_B\), define \(A_\Lambda=\sigma^*P^*a_B\). For a typed smooth real scalar \(\kappa\in C^\infty(\Lambda)\), exact local common-origin alignment is precisely
+\[
+\sigma^*(d\beta_R)-\kappa\,\sigma^*P^*\omega_{\rm FS}=0
+\]
+on every branch-tangent pair. This restricted equality is necessary and sufficient; ambient-form equality is not. Pointwise division of two nonzero 2-forms in a two-dimensional chart, an unfrozen tensor map, or a fitted coefficient is not an independent test. For constant \(\kappa\), equality is equivalent to \(d(B_R-\kappa A_\Lambda)=0\); only on a contractible branch chart does that imply \(B_R-\kappa A_\Lambda=d\chi\). Variable \(\kappa\) adds \(-d\kappa\wedge A_\Lambda\), while periods of the pulled-back form and pulled-back Chern class obstruct a global exact potential or global smooth connection.
+
+QP-1 is an exact `SAME_CURVATURE_CALIBRATION_ONLY` case. The Hermitian operator, spectral projector, and independently declared \(O_i=+\partial_iH\) give the repository convention \(A_i=-i\langle\psi|\partial_i\psi\rangle\), \(\Omega_{ij}=+2\operatorname{Im}\mathcal C_{ij}\), and a half-antisymmetrized Kubo coefficient equal to \(+\Omega\). The conventional \(-\partial_iH\) observable reverses the sign, and full antisymmetrization is exactly twice the half form. The north/south gauges differ by the frozen transition function, the sphere flux is \(-2\pi\), and the Chern number is \(-1\). This calibrates sign, factor, patching, and spectral evaluation only; it is not a finite-speed pumped response or a live CWT readout.
+
+Benchmark C is `SAME_PRIMITIVE_MANIFOLD_DIFFERENT_CONNECTIONS_DERIVED_MIXED_HESSIAN`. Its Berry connection and response one-form are derived analytically from the same frozen rational \(p(u,v)\), \(\theta(u,v)\), circulation kernel, \(\alpha=7/20\), and gain \(9/20\), but they are different pullback connections. With \(m=(1-\alpha)/\alpha\), the exact decomposition is \(d\beta_R=-m\,dJ_x\wedge d\theta\), where \(dJ_x=J_{xp}\,dp+J_{xx}\,d\theta+J_{xK}\,dK\). The \(d^2\theta\) term and symmetric \(J_{xx}\) contraction cancel; the mixed \(J_{xp}\) and \(J_{xK}\) terms remain. At the center the \(J_{xp}\) contribution is \(-222183/2800000\), while the \(J_{xK}\) contribution is zero there but has nonzero exact gradient \((1989/40000,2457/40000)\). At the frozen center,
+\[
+\Omega_{uv}=\frac7{48},\qquad
+F_{uv}=-\frac{222183}{2800000},\qquad
+\frac{F_{uv}}{\Omega_{uv}}=-\frac{666549}{1225000},
+\]
+and the exact quotient gradient has two nonzero components. Zero gain or \(\alpha=1\) kills response curvature while preserving projective curvature, and response curvature scales with gain. Thus even a shared primitive manifold does not make the two curvatures identical or fix a constant proportionality.
+
+Benchmark D is `SAME_MODEL_ZERO_SET_OBSTRUCTION`. Here the projective lift is not an auxiliary authored reference: it is the actual exact stationary branch \(\bar x=-A^{-1}c\), encoded as \(\psi_j=\sqrt{\bar x_j}\) with \(\theta_j=0\), using the same frozen \(A,c\), and mean-position readout as the response calculation. Positivity holds uniformly without a floor, clip, projection, or repair. The normalized lift is smooth and real, so its projective connection and curvature vanish exactly, while
+\[
+F_{bd}=-\frac{28888766872100000000000}{235345963257301712101}\ne0.
+\]
+This zero-set mismatch rules out any finite scalar relation \(F=\kappa\Omega\) and any frozen zero-preserving homogeneous linear tensor map for this declared encoding/readout. It does not rule out arbitrary nonlinear or affine \(\Omega\)-only maps. The projective pure-state encoding is not the mixed density matrix; the separately noted trivial holonomy of a commuting diagonal mixed-state family is not used in this proof.
+
+The audit disposition is `PASS_INTERNAL_ANALYTIC` / `NO_EMPIRICAL_EVIDENCE`. It strengthens the exact classification of the repository's curvature relations but supplies no universal CWT identity, physical mechanism, empirical support, or CGT-response validation. A future positive alignment test must freeze its tensor map and coefficient without held-out response, use at least three full-rank area directions, and predict a held-out oblique direction.
+
 ### 36.5 Current coefficient decomposition is approximate
 
 The earlier scalar decomposition
