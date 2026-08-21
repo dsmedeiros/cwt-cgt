@@ -354,7 +354,7 @@
     },
     "experiments/constitutive_map_3d_proof/artifacts.py": {
       "hash_domain": "sha256_utf8_lf_v1",
-      "sha256": "d5b08df106595057c48fa8a72564a3fecef0f2b2a5ece87bbbbb4b0ed2904289"
+      "sha256": "259adc7d8103f326d68f2cf2b1514debcd9d271c2ffe80d1cf3238da0d480922"
     },
     "experiments/constitutive_map_3d_proof/bc3_core_regression.py": {
       "hash_domain": "sha256_utf8_lf_v1",
@@ -426,7 +426,7 @@
     },
     "experiments/constitutive_map_3d_proof/run.py": {
       "hash_domain": "sha256_utf8_lf_v1",
-      "sha256": "1f1deef36d694c04379c60a1039b4242417f598003a1bd2066b089b94a799117"
+      "sha256": "234d3a239427861df458bcb0b8000c5c40fb9533404cadadd90247d26ee2b4b1"
     },
     "experiments/constitutive_map_3d_proof/theorem.py": {
       "hash_domain": "sha256_utf8_lf_v1",
@@ -462,7 +462,7 @@
     },
     "tests/experiments/test_constitutive_map_3d_proof.py": {
       "hash_domain": "sha256_utf8_lf_v1",
-      "sha256": "c2b5e6ef3782183bbac6ee8d40940319956deea399ffa7259c03571be96670b0"
+      "sha256": "e62c9987dffaaa6ae227ac98a161bdc508bb6ca87fdb4cad4e703604f19e3efc"
     }
   },
   "verification_command": "cd cwt-sim && .venv/Scripts/python.exe experiments/constitutive_map_3d_proof/run.py verify"

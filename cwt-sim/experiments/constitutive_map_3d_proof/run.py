@@ -15,6 +15,7 @@ if str(SIM_ROOT) not in sys.path:
 
 from experiments.constitutive_map_3d_proof.artifacts import (  # noqa: E402
     ArtifactGenerationRefused,
+    artifact_access_guard,
     require_semantic_pass,
     verify_artifacts,
     write_artifacts,
@@ -32,9 +33,10 @@ app = typer.Typer(
 
 @app.command()
 def status() -> None:
-    """Print the fail-closed analytic disposition without writing artifacts."""
+    """Recover guarded publication state, then print the analytic disposition."""
 
-    summary, records = execute_program()
+    with artifact_access_guard():
+        summary, records = execute_program()
     try:
         require_semantic_pass(summary, records)
     except ArtifactGenerationRefused as exc:

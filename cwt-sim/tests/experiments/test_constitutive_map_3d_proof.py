@@ -7,7 +7,13 @@ import copy
 import inspect
 import json
 import math
+import os
 import shutil
+import subprocess
+import sys
+import threading
+import time
+from contextlib import contextmanager
 from dataclasses import replace
 from fractions import Fraction
 from pathlib import Path
@@ -21,12 +27,16 @@ from cwt.operator.L_map import qp1_eigenvalues
 from experiments.constitutive_map_3d_proof import artifacts, response_oracle, run as proof_run
 from experiments.constitutive_map_3d_proof.artifacts import (
     ArtifactGenerationRefused,
+    ArtifactTransactionCrash,
     ArtifactVerificationError,
+    artifact_transaction_paths,
     canonical_source_text_bytes,
     expected_artifact_bytes,
     material_source_relative_paths,
     predecessor_inventories,
     preflight_artifact_destination,
+    read_artifact_generation,
+    recover_artifact_transaction,
     recursive_raw_inventory,
     render_report,
     require_semantic_pass,
@@ -911,6 +921,53 @@ def test_natural_gate_set_matches_exact_ownership(natural_inputs) -> None:
     assert set(natural) == {name for _, names in case_gate_ownership() for name in names}
 
 
+def _transaction_generation(label: str) -> dict[str, bytes]:
+    payloads = {
+        "PROVENANCE.json": artifacts.strict_json_bytes({"generation": label, "kind": "provenance"}),
+        "REPORT.md": f"# generation {label}\n".encode(),
+        "records.json": artifacts.strict_json_bytes([{"generation": label}]),
+        "summary.json": artifacts.strict_json_bytes({"generation": label}),
+    }
+    checksums = {
+        "files": {name: artifacts.sha256_bytes(payload) for name, payload in sorted(payloads.items())},
+        "hash_domain": "sha256_raw_bytes_v1",
+        "schema_version": 1,
+    }
+    return {"CHECKSUMS.json": artifacts.strict_json_bytes(checksums), **payloads}
+
+
+def _install_transaction_generation(destination: Path, generation: dict[str, bytes]) -> None:
+    destination.mkdir()
+    for name, payload in generation.items():
+        (destination / name).write_bytes(payload)
+
+
+def _transaction_auxiliaries(destination: Path) -> tuple[Path, ...]:
+    paths = artifact_transaction_paths(destination)
+    return (
+        paths.journal,
+        paths.journal_temp,
+        paths.stage,
+        paths.backup,
+    )
+
+
+class _InjectAt:
+    def __init__(self, checkpoint: str, exception_type: type[BaseException]) -> None:
+        self.checkpoint = checkpoint
+        self.exception_type = exception_type
+        self.seen: list[str] = []
+
+    def __call__(self, checkpoint: str) -> None:
+        self.seen.append(checkpoint)
+        if checkpoint == self.checkpoint:
+            raise self.exception_type(checkpoint)
+
+
+def _transaction_tree_snapshot(parent: Path) -> dict[str, object]:
+    return recursive_raw_inventory(parent, trust_anchor=parent)
+
+
 def test_canonical_source_hash_domain_is_lf_only() -> None:
     assert canonical_source_text_bytes(b"alpha\r\nbeta\r\n") == b"alpha\nbeta\n"
     assert canonical_source_text_bytes(b"alpha\nbeta\n") == b"alpha\nbeta\n"
@@ -1013,6 +1070,785 @@ def test_artifact_destination_refuses_source_predecessor_and_nested_content(
     with pytest.raises(ArtifactGenerationRefused, match="nonordinary"):
         artifacts.write_artifacts(destination)
     assert recursive_raw_inventory(destination, trust_anchor=tmp_path) == before
+
+
+def test_public_write_status_verify_and_read_share_transaction_lock(
+    monkeypatch,
+    tmp_path: Path,
+    program_result,
+) -> None:
+    destination = tmp_path / "artifacts"
+    generation = _transaction_generation("shared-lock")
+    acquired: list[Path] = []
+    canonical_lock = artifacts._artifact_process_lock
+
+    @contextmanager
+    def recording_lock(paths, *, timeout_seconds=30.0):
+        acquired.append(paths.target)
+        with canonical_lock(paths, timeout_seconds=timeout_seconds):
+            yield
+
+    monkeypatch.setattr(artifacts, "_artifact_process_lock", recording_lock)
+    monkeypatch.setattr(artifacts, "predecessor_inventories", lambda: {})
+    monkeypatch.setattr(
+        artifacts,
+        "expected_artifact_bytes",
+        lambda **_kwargs: generation,
+    )
+    artifacts.write_artifacts(destination)
+    assert read_artifact_generation(destination) == generation
+    monkeypatch.setattr(
+        artifacts,
+        "_verify_artifacts_unlocked",
+        lambda _output: {"status": "PASS_INTERNAL_ANALYTIC"},
+    )
+    assert verify_artifacts(destination)["status"] == "PASS_INTERNAL_ANALYTIC"
+
+    monkeypatch.setattr(proof_run, "execute_program", lambda: program_result)
+    status = CliRunner().invoke(proof_run.app, ["status"])
+    assert status.exit_code == 0, status.stdout
+    assert acquired[:3] == [destination.resolve()] * 3
+    assert acquired[3] == artifacts.ARTIFACTS_DIR.resolve()
+
+
+def test_publication_scope_is_guarded_api_only_and_status_discloses_recovery() -> None:
+    guard_doc = inspect.getdoc(artifacts.artifact_access_guard) or ""
+    status_doc = inspect.getdoc(proof_run.status) or ""
+    assert "Arbitrary filesystem readers" in guard_doc
+    assert "outside the atomic" in guard_doc
+    assert "publication contract" in guard_doc
+    assert "Recover guarded publication state" in status_doc
+
+
+@pytest.mark.parametrize(
+    "checkpoint",
+    [
+        "after_stage_write_CHECKSUMS.json",
+        "after_stage_write_PROVENANCE.json",
+        "after_stage_write_REPORT.md",
+        "after_stage_write_records.json",
+        "after_stage_write_summary.json",
+        "after_stage_fsync",
+        "after_staging_verify",
+        "before_journal_prepared",
+        "after_journal_temp_fsync_prepared",
+        "after_journal_prepared",
+        "before_old_to_backup",
+        "after_old_to_backup",
+        "before_journal_old_moved",
+        "after_journal_temp_fsync_old_moved",
+        "after_journal_old_moved",
+        "before_new_to_target",
+        "after_new_to_target",
+        "before_journal_new_published",
+        "after_journal_temp_fsync_new_published",
+        "after_journal_new_published",
+        "after_target_verify",
+        "before_journal_verified",
+        "after_journal_temp_fsync_verified",
+    ],
+)
+def test_transaction_failures_roll_back_old_generation_and_clean_auxiliaries(
+    tmp_path: Path,
+    checkpoint: str,
+) -> None:
+    destination = tmp_path / "artifacts"
+    old = _transaction_generation("old")
+    new = _transaction_generation("new")
+    _install_transaction_generation(destination, old)
+    injection = _InjectAt(checkpoint, OSError)
+    with pytest.raises(OSError, match=checkpoint):
+        artifacts._publish_artifact_mapping(
+            destination,
+            new,
+            fault_injector=injection,
+        )
+    assert read_artifact_generation(destination) == old
+    assert checkpoint in injection.seen
+    assert not any(path.exists() for path in _transaction_auxiliaries(destination))
+
+
+@pytest.mark.parametrize("checkpoint", ["after_journal_verified", "before_cleanup"])
+def test_failure_after_durable_verified_journal_commits_new_generation(
+    tmp_path: Path,
+    checkpoint: str,
+) -> None:
+    destination = tmp_path / "artifacts"
+    old = _transaction_generation("old")
+    new = _transaction_generation("new")
+    _install_transaction_generation(destination, old)
+    with pytest.raises(OSError, match=checkpoint):
+        artifacts._publish_artifact_mapping(
+            destination,
+            new,
+            fault_injector=_InjectAt(checkpoint, OSError),
+        )
+    assert read_artifact_generation(destination) == new
+    assert not any(path.exists() for path in _transaction_auxiliaries(destination))
+
+
+@pytest.mark.parametrize(
+    ("checkpoint", "expected_label"),
+    [
+        ("after_stage_write_CHECKSUMS.json", "old"),
+        ("after_stage_write_summary.json", "old"),
+        ("after_staging_verify", "old"),
+        ("before_journal_prepared", "old"),
+        ("after_journal_temp_fsync_prepared", "old"),
+        ("after_journal_prepared", "old"),
+        ("before_old_to_backup", "old"),
+        ("after_old_to_backup", "old"),
+        ("before_journal_old_moved", "old"),
+        ("after_journal_temp_fsync_old_moved", "old"),
+        ("after_journal_old_moved", "old"),
+        ("before_new_to_target", "old"),
+        ("after_new_to_target", "new"),
+        ("before_journal_new_published", "new"),
+        ("after_journal_temp_fsync_new_published", "new"),
+        ("after_journal_new_published", "new"),
+        ("after_target_verify", "new"),
+        ("before_journal_verified", "new"),
+        ("after_journal_temp_fsync_verified", "new"),
+        ("after_journal_verified", "new"),
+        ("before_cleanup", "new"),
+        ("after_cleanup", "new"),
+    ],
+)
+def test_transaction_crash_recovery_selects_one_complete_generation(
+    tmp_path: Path,
+    checkpoint: str,
+    expected_label: str,
+) -> None:
+    destination = tmp_path / "artifacts"
+    old = _transaction_generation("old")
+    new = _transaction_generation("new")
+    _install_transaction_generation(destination, old)
+    with pytest.raises(ArtifactTransactionCrash, match=checkpoint):
+        artifacts._publish_artifact_mapping(
+            destination,
+            new,
+            fault_injector=_InjectAt(checkpoint, ArtifactTransactionCrash),
+        )
+    recover_artifact_transaction(destination)
+    expected = old if expected_label == "old" else new
+    assert read_artifact_generation(destination) == expected
+    assert not any(path.exists() for path in _transaction_auxiliaries(destination))
+
+
+@pytest.mark.parametrize(
+    ("checkpoint", "publishes_new"),
+    [
+        ("after_stage_write_CHECKSUMS.json", False),
+        ("after_stage_write_PROVENANCE.json", False),
+        ("after_stage_write_REPORT.md", False),
+        ("after_stage_write_records.json", False),
+        ("after_stage_write_summary.json", False),
+        ("after_stage_fsync", False),
+        ("after_staging_verify", False),
+        ("before_journal_prepared", False),
+        ("after_journal_temp_fsync_prepared", False),
+        ("after_journal_prepared", True),
+        ("before_new_to_target", True),
+        ("after_new_to_target", True),
+        ("before_journal_new_published", True),
+        ("after_journal_temp_fsync_new_published", True),
+        ("after_journal_new_published", True),
+        ("after_target_verify", True),
+        ("before_journal_verified", True),
+        ("after_journal_temp_fsync_verified", True),
+        ("after_journal_verified", True),
+        ("before_cleanup", True),
+        ("after_cleanup", True),
+    ],
+)
+def test_initial_publication_crash_recovers_or_cleanly_rolls_back_at_every_checkpoint(
+    tmp_path: Path,
+    checkpoint: str,
+    publishes_new: bool,
+) -> None:
+    destination = tmp_path / "artifacts"
+    new = _transaction_generation("initial")
+    with pytest.raises(ArtifactTransactionCrash, match=checkpoint):
+        artifacts._publish_artifact_mapping(
+            destination,
+            new,
+            fault_injector=_InjectAt(checkpoint, ArtifactTransactionCrash),
+        )
+    recover_artifact_transaction(destination)
+    if publishes_new:
+        assert read_artifact_generation(destination) == new
+    else:
+        assert not destination.exists()
+    assert not any(path.exists() for path in _transaction_auxiliaries(destination))
+
+
+_BACKUP_CLEANUP_CHECKPOINTS = tuple(
+    checkpoint
+    for name in (
+        "summary.json",
+        "records.json",
+        "REPORT.md",
+        "PROVENANCE.json",
+        "CHECKSUMS.json",
+    )
+    for checkpoint in (
+        f"before_cleanup_backup_unlink_{name}",
+        f"after_cleanup_backup_unlink_{name}",
+    )
+) + ("before_cleanup_backup_rmdir", "after_cleanup_backup_rmdir")
+
+
+@pytest.mark.parametrize("checkpoint", _BACKUP_CLEANUP_CHECKPOINTS)
+@pytest.mark.parametrize("exception_type", [ArtifactTransactionCrash, OSError])
+def test_partial_obsolete_backup_cleanup_is_idempotent_and_preserves_new_target(
+    tmp_path: Path,
+    checkpoint: str,
+    exception_type: type[BaseException],
+) -> None:
+    destination = tmp_path / "artifacts"
+    old = _transaction_generation("old")
+    new = _transaction_generation("new")
+    _install_transaction_generation(destination, old)
+    with pytest.raises(exception_type, match=checkpoint):
+        artifacts._publish_artifact_mapping(
+            destination,
+            new,
+            fault_injector=_InjectAt(checkpoint, exception_type),
+        )
+    assert artifacts._read_complete_artifact_generation(destination) == new
+    recover_artifact_transaction(destination)
+    assert read_artifact_generation(destination) == new
+    assert not any(path.exists() for path in _transaction_auxiliaries(destination))
+
+
+def test_concurrent_reader_blocks_and_never_observes_absent_or_mixed_generation(
+    tmp_path: Path,
+) -> None:
+    destination = tmp_path / "artifacts"
+    old = _transaction_generation("old")
+    new = _transaction_generation("new")
+    _install_transaction_generation(destination, old)
+    writer_paused = threading.Event()
+    release_writer = threading.Event()
+    reader_done = threading.Event()
+    failures: list[BaseException] = []
+    observed: list[dict[str, bytes]] = []
+
+    def pause_after_backup(checkpoint: str) -> None:
+        if checkpoint == "after_old_to_backup":
+            writer_paused.set()
+            assert release_writer.wait(timeout=5)
+
+    def writer() -> None:
+        try:
+            artifacts._publish_artifact_mapping(
+                destination,
+                new,
+                fault_injector=pause_after_backup,
+            )
+        except BaseException as exc:  # pragma: no cover - asserted below
+            failures.append(exc)
+
+    def reader() -> None:
+        try:
+            observed.append(read_artifact_generation(destination))
+        except BaseException as exc:  # pragma: no cover - asserted below
+            failures.append(exc)
+        finally:
+            reader_done.set()
+
+    writer_thread = threading.Thread(target=writer)
+    writer_thread.start()
+    assert writer_paused.wait(timeout=5)
+    reader_thread = threading.Thread(target=reader)
+    reader_thread.start()
+    time.sleep(0.05)
+    assert not reader_done.is_set()
+    release_writer.set()
+    writer_thread.join(timeout=5)
+    reader_thread.join(timeout=5)
+    assert not writer_thread.is_alive() and not reader_thread.is_alive()
+    assert failures == []
+    assert observed == [new]
+
+
+def test_competing_writers_are_serialized(tmp_path: Path) -> None:
+    destination = tmp_path / "artifacts"
+    old = _transaction_generation("old")
+    first = _transaction_generation("first")
+    second = _transaction_generation("second")
+    _install_transaction_generation(destination, old)
+    first_paused = threading.Event()
+    release_first = threading.Event()
+    second_done = threading.Event()
+    failures: list[BaseException] = []
+
+    def pause_first(checkpoint: str) -> None:
+        if checkpoint == "after_staging_verify":
+            first_paused.set()
+            assert release_first.wait(timeout=5)
+
+    def publish(mapping: dict[str, bytes], injector=None) -> None:
+        try:
+            artifacts._publish_artifact_mapping(
+                destination,
+                mapping,
+                fault_injector=injector,
+            )
+        except BaseException as exc:  # pragma: no cover - asserted below
+            failures.append(exc)
+
+    first_thread = threading.Thread(target=publish, args=(first, pause_first))
+    first_thread.start()
+    assert first_paused.wait(timeout=5)
+    second_thread = threading.Thread(
+        target=lambda: (publish(second), second_done.set()),
+    )
+    second_thread.start()
+    time.sleep(0.05)
+    assert not second_done.is_set()
+    release_first.set()
+    first_thread.join(timeout=5)
+    second_thread.join(timeout=5)
+    assert failures == []
+    assert read_artifact_generation(destination) == second
+
+
+def test_different_targets_in_one_parent_serialize_without_journal_cross_contamination(
+    tmp_path: Path,
+) -> None:
+    first_destination = tmp_path / "first-artifacts"
+    second_destination = tmp_path / "second-artifacts"
+    first = _transaction_generation("first")
+    second = _transaction_generation("second")
+    first_paths = artifact_transaction_paths(first_destination)
+    second_paths = artifact_transaction_paths(second_destination)
+    assert artifacts._artifact_lock_key(first_paths.target) == artifacts._artifact_lock_key(
+        second_paths.target
+    )
+    assert first_paths.journal == second_paths.journal
+    first_paused = threading.Event()
+    release_first = threading.Event()
+    second_done = threading.Event()
+    failures: list[BaseException] = []
+
+    def pause_first(checkpoint: str) -> None:
+        if checkpoint == "after_journal_prepared":
+            first_paused.set()
+            assert release_first.wait(timeout=5)
+
+    def publish_first() -> None:
+        try:
+            artifacts._publish_artifact_mapping(
+                first_destination,
+                first,
+                fault_injector=pause_first,
+            )
+        except BaseException as exc:  # pragma: no cover - asserted below
+            failures.append(exc)
+
+    def publish_second() -> None:
+        try:
+            artifacts._publish_artifact_mapping(second_destination, second)
+        except BaseException as exc:  # pragma: no cover - asserted below
+            failures.append(exc)
+        finally:
+            second_done.set()
+
+    first_thread = threading.Thread(target=publish_first)
+    first_thread.start()
+    assert first_paused.wait(timeout=5)
+    second_thread = threading.Thread(target=publish_second)
+    second_thread.start()
+    time.sleep(0.05)
+    assert not second_done.is_set()
+    release_first.set()
+    first_thread.join(timeout=5)
+    second_thread.join(timeout=5)
+    assert not first_thread.is_alive() and not second_thread.is_alive()
+    assert failures == []
+    assert read_artifact_generation(first_destination) == first
+    assert read_artifact_generation(second_destination) == second
+    assert not any(path.exists() for path in _transaction_auxiliaries(first_destination))
+
+
+def test_different_target_request_recovers_parent_journal_before_new_publication(
+    tmp_path: Path,
+) -> None:
+    first_destination = tmp_path / "first-artifacts"
+    second_destination = tmp_path / "second-artifacts"
+    first_old = _transaction_generation("first-old")
+    first_new = _transaction_generation("first-new")
+    second = _transaction_generation("second")
+    _install_transaction_generation(first_destination, first_old)
+    with pytest.raises(ArtifactTransactionCrash, match="after_old_to_backup"):
+        artifacts._publish_artifact_mapping(
+            first_destination,
+            first_new,
+            fault_injector=_InjectAt("after_old_to_backup", ArtifactTransactionCrash),
+        )
+    assert not first_destination.exists()
+    artifacts._publish_artifact_mapping(second_destination, second)
+    assert read_artifact_generation(first_destination) == first_old
+    assert read_artifact_generation(second_destination) == second
+    assert not any(path.exists() for path in _transaction_auxiliaries(first_destination))
+
+
+def test_process_lock_blocks_while_live_and_releases_when_owner_process_dies(
+    tmp_path: Path,
+) -> None:
+    destination = tmp_path / "artifacts"
+    paths = artifact_transaction_paths(destination)
+    script = f"""
+import time
+from pathlib import Path
+from experiments.constitutive_map_3d_proof.artifacts import (
+    _artifact_process_lock,
+    artifact_transaction_paths,
+)
+paths = artifact_transaction_paths(Path({str(destination)!r}))
+with _artifact_process_lock(paths, timeout_seconds=5.0):
+    print('LOCKED', flush=True)
+    time.sleep(60)
+"""
+    environment = os.environ.copy()
+    environment["PYTHONDONTWRITEBYTECODE"] = "1"
+    environment["PYTHONPATH"] = str(artifacts.SIM_ROOT)
+    process = subprocess.Popen(
+        [sys.executable, "-B", "-c", script],
+        cwd=artifacts.SIM_ROOT,
+        env=environment,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        assert process.stdout is not None
+        assert process.stdout.readline().strip() == "LOCKED"
+        with pytest.raises(ArtifactVerificationError, match="timed out"):
+            with artifacts._artifact_process_lock(paths, timeout_seconds=0.05):
+                raise AssertionError("live lock was stolen")
+        process.kill()
+        process.wait(timeout=5)
+        with artifacts._artifact_process_lock(paths, timeout_seconds=1.0):
+            pass
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait(timeout=5)
+    assert not any(path.exists() for path in _transaction_auxiliaries(destination))
+
+
+def _windows_short_directory_alias(path: Path) -> Path:
+    if os.name != "nt":
+        pytest.skip("DOS short-path alias is a Windows-only regression")
+    import ctypes
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    get_short_path = kernel32.GetShortPathNameW
+    get_short_path.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32]
+    get_short_path.restype = ctypes.c_uint32
+    required = get_short_path(os.fspath(path), None, 0)
+    if required == 0:
+        pytest.skip(f"host does not expose a DOS short path: {ctypes.get_last_error()}")
+    buffer = ctypes.create_unicode_buffer(required)
+    written = get_short_path(os.fspath(path), buffer, required)
+    if written == 0 or written >= required:
+        pytest.skip("host could not materialize a DOS short-path alias")
+    alias = Path(buffer.value)
+    if os.path.normcase(os.fspath(alias)) == os.path.normcase(os.fspath(path)):
+        pytest.skip("host has no distinct DOS short-path spelling")
+    assert os.path.samefile(alias, path)
+    return alias
+
+
+@pytest.mark.parametrize("existing_target", [False, True])
+def test_windows_long_and_short_parent_aliases_share_one_physical_lock(
+    tmp_path: Path,
+    existing_target: bool,
+) -> None:
+    long_destination = tmp_path / "artifacts"
+    if existing_target:
+        _install_transaction_generation(
+            long_destination,
+            _transaction_generation("existing"),
+        )
+    short_destination = (
+        _windows_short_directory_alias(long_destination)
+        if existing_target
+        else _windows_short_directory_alias(tmp_path) / "artifacts"
+    )
+    if existing_target:
+        assert os.path.samefile(long_destination, short_destination)
+        assert short_destination.name.casefold() != long_destination.name.casefold()
+    long_paths = artifact_transaction_paths(long_destination)
+    short_paths = artifact_transaction_paths(short_destination)
+    assert long_paths == short_paths
+    long_key = artifacts._artifact_lock_key(long_paths.target)
+    short_key = artifacts._artifact_lock_key(short_paths.target)
+    assert long_key == short_key
+    assert artifacts._windows_mutex_name(long_key).startswith("Global\\")
+    acquired = threading.Event()
+    failures: list[BaseException] = []
+
+    def contender() -> None:
+        try:
+            with artifacts._artifact_process_lock(short_paths, timeout_seconds=2.0):
+                acquired.set()
+        except BaseException as exc:  # pragma: no cover - asserted below
+            failures.append(exc)
+
+    with artifacts._artifact_process_lock(long_paths, timeout_seconds=2.0):
+        thread = threading.Thread(target=contender)
+        thread.start()
+        time.sleep(0.05)
+        assert not acquired.is_set()
+    thread.join(timeout=3)
+    assert not thread.is_alive()
+    assert failures == []
+    assert acquired.is_set()
+
+
+def test_full_short_target_alias_recovers_target_absent_crash_via_fixed_parent_journal(
+    tmp_path: Path,
+) -> None:
+    long_destination = tmp_path / "artifacts"
+    old = _transaction_generation("old")
+    new = _transaction_generation("new")
+    _install_transaction_generation(long_destination, old)
+    short_destination = _windows_short_directory_alias(long_destination)
+    assert short_destination.name.casefold() != long_destination.name.casefold()
+    long_paths = artifact_transaction_paths(long_destination)
+    short_paths = artifact_transaction_paths(short_destination)
+    assert long_paths == short_paths
+
+    with pytest.raises(ArtifactTransactionCrash, match="after_old_to_backup"):
+        artifacts._publish_artifact_mapping(
+            long_destination,
+            new,
+            fault_injector=_InjectAt("after_old_to_backup", ArtifactTransactionCrash),
+        )
+    assert not long_destination.exists()
+    assert not short_destination.exists()
+    assert recover_artifact_transaction(short_destination) == "ROLLED_BACK_OLD"
+    assert read_artifact_generation(short_destination) == old
+    assert read_artifact_generation(long_destination) == old
+    assert not any(path.exists() for path in _transaction_auxiliaries(long_destination))
+
+
+@pytest.mark.parametrize("reserved_leaf", artifacts._RESERVED_TRANSACTION_LEAVES)
+@pytest.mark.parametrize("existing_target", [False, True])
+@pytest.mark.parametrize(
+    "spelling",
+    ["canonical", "case_variant"] if os.name == "nt" else ["canonical"],
+)
+def test_reserved_transaction_targets_are_refused_by_every_public_api_without_mutation(
+    tmp_path: Path,
+    monkeypatch,
+    reserved_leaf: str,
+    existing_target: bool,
+    spelling: str,
+) -> None:
+    parent = tmp_path / f"case-{existing_target}-{spelling}"
+    parent.mkdir()
+    (parent / "sentinel.txt").write_bytes(b"preserve\n")
+    leaf = reserved_leaf if spelling == "canonical" else reserved_leaf.swapcase()
+    destination = parent / leaf
+    if existing_target:
+        _install_transaction_generation(destination, _transaction_generation("preserve"))
+    before = _transaction_tree_snapshot(parent)
+    generation = _transaction_generation("refused")
+    injection = _InjectAt("before_stage_write_CHECKSUMS.json", ArtifactTransactionCrash)
+    operations = (
+        lambda: artifact_transaction_paths(destination),
+        lambda: recover_artifact_transaction(destination),
+        lambda: read_artifact_generation(destination),
+        lambda: verify_artifacts(destination),
+        lambda: artifacts.write_artifacts(destination),
+        lambda: artifacts._publish_artifact_mapping(
+            destination,
+            generation,
+            fault_injector=injection,
+        ),
+    )
+    for operation in operations:
+        with pytest.raises(ArtifactVerificationError, match="reserved transaction"):
+            operation()
+        assert _transaction_tree_snapshot(parent) == before
+    assert injection.seen == []
+
+    @contextmanager
+    def reserved_status_guard():
+        with artifacts.artifact_access_guard(destination):
+            yield
+
+    with monkeypatch.context() as context:
+        context.setattr(proof_run, "artifact_access_guard", reserved_status_guard)
+        status = CliRunner().invoke(proof_run.app, ["status"])
+    assert status.exit_code != 0
+    assert isinstance(status.exception, ArtifactVerificationError)
+    assert "reserved transaction" in str(status.exception)
+    assert _transaction_tree_snapshot(parent) == before
+
+
+@pytest.mark.parametrize("reserved_leaf", artifacts._RESERVED_TRANSACTION_LEAVES)
+def test_reserved_transaction_target_short_alias_is_refused_without_mutation(
+    tmp_path: Path,
+    reserved_leaf: str,
+) -> None:
+    parent = tmp_path / "short-alias"
+    parent.mkdir()
+    (parent / "sentinel.txt").write_bytes(b"preserve\n")
+    long_destination = parent / reserved_leaf
+    _install_transaction_generation(long_destination, _transaction_generation("preserve"))
+    short_destination = _windows_short_directory_alias(long_destination)
+    assert short_destination.name.casefold() != long_destination.name.casefold()
+    before = _transaction_tree_snapshot(parent)
+    operations = (
+        lambda: artifact_transaction_paths(short_destination),
+        lambda: recover_artifact_transaction(short_destination),
+        lambda: read_artifact_generation(short_destination),
+        lambda: verify_artifacts(short_destination),
+        lambda: artifacts.write_artifacts(short_destination),
+        lambda: artifacts._publish_artifact_mapping(
+            short_destination,
+            _transaction_generation("refused"),
+            fault_injector=_InjectAt(
+                "before_stage_write_CHECKSUMS.json",
+                ArtifactTransactionCrash,
+            ),
+        ),
+    )
+    for operation in operations:
+        with pytest.raises(ArtifactVerificationError, match="reserved transaction"):
+            operation()
+        assert _transaction_tree_snapshot(parent) == before
+
+
+@pytest.mark.parametrize("reserved_leaf", artifacts._RESERVED_TRANSACTION_LEAVES)
+def test_journal_target_name_cannot_claim_reserved_transaction_namespace(
+    tmp_path: Path,
+    reserved_leaf: str,
+) -> None:
+    paths = artifact_transaction_paths(tmp_path / "artifacts")
+    record = artifacts._journal_record(
+        paths,
+        artifacts._artifact_hash_manifest(_transaction_generation("new")),
+        state="prepared",
+        had_old_target=False,
+    )
+    record["target_name"] = reserved_leaf.swapcase() if os.name == "nt" else reserved_leaf
+    with pytest.raises(ArtifactVerificationError, match="reserved namespace"):
+        artifacts._validate_journal(paths, artifacts.strict_json_bytes(record))
+
+
+@pytest.mark.parametrize("entry_name", ["journal", "stage", "backup"])
+def test_transaction_reparse_entries_fail_closed(
+    tmp_path: Path,
+    entry_name: str,
+) -> None:
+    destination = tmp_path / "artifacts"
+    generation = _transaction_generation("preserve")
+    _install_transaction_generation(destination, generation)
+    paths = artifact_transaction_paths(destination)
+    external = tmp_path / f"external-{entry_name}"
+    external.mkdir()
+    entry = getattr(paths, entry_name)
+    try:
+        entry.symlink_to(external, target_is_directory=True)
+    except OSError as exc:
+        pytest.skip(f"host cannot create required transaction symlink: {exc}")
+    with pytest.raises(ArtifactVerificationError, match="link/reparse"):
+        recover_artifact_transaction(destination)
+    assert artifacts._read_complete_artifact_generation(destination) == generation
+    assert external.is_dir()
+
+
+def test_malformed_and_foreign_transaction_journals_fail_closed(tmp_path: Path) -> None:
+    for name, payload in (
+        ("malformed", b"{}\n"),
+        ("foreign", None),
+    ):
+        root = tmp_path / name
+        root.mkdir()
+        destination = root / "artifacts"
+        generation = _transaction_generation("preserve")
+        _install_transaction_generation(destination, generation)
+        paths = artifact_transaction_paths(destination)
+        if payload is None:
+            manifest = artifacts._artifact_hash_manifest(_transaction_generation("new"))
+            record = artifacts._journal_record(
+                paths,
+                manifest,
+                state="prepared",
+                had_old_target=True,
+            )
+            record["target_name"] = "../foreign"
+            payload = artifacts.strict_json_bytes(record)
+        paths.journal.write_bytes(payload)
+        with pytest.raises(ArtifactVerificationError, match="journal"):
+            recover_artifact_transaction(destination)
+        assert artifacts._read_complete_artifact_generation(destination) == generation
+
+
+def test_fsync_and_replace_failure_roll_back_without_mixed_generation(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    destination = tmp_path / "artifacts"
+    old = _transaction_generation("old")
+    new = _transaction_generation("new")
+    _install_transaction_generation(destination, old)
+    paths = artifact_transaction_paths(destination)
+    canonical_sync = artifacts._sync_file
+    failed_sync = False
+
+    def fail_stage_sync(handle) -> None:
+        nonlocal failed_sync
+        if str(handle.name).startswith(str(paths.stage)) and not failed_sync:
+            failed_sync = True
+            raise OSError("injected fsync failure")
+        canonical_sync(handle)
+
+    with monkeypatch.context() as context:
+        context.setattr(artifacts, "_sync_file", fail_stage_sync)
+        with pytest.raises(OSError, match="fsync"):
+            artifacts._publish_artifact_mapping(destination, new)
+    assert read_artifact_generation(destination) == old
+    assert not any(path.exists() for path in _transaction_auxiliaries(destination))
+
+    canonical_replace = artifacts._durable_replace
+    failed_replace = False
+
+    def fail_new_publish(source: Path, target: Path) -> None:
+        nonlocal failed_replace
+        if source == paths.stage and target == paths.target and not failed_replace:
+            failed_replace = True
+            raise OSError("injected replace failure")
+        canonical_replace(source, target)
+
+    with monkeypatch.context() as context:
+        context.setattr(artifacts, "_durable_replace", fail_new_publish)
+        with pytest.raises(OSError, match="replace"):
+            artifacts._publish_artifact_mapping(destination, new)
+    assert read_artifact_generation(destination) == old
+    assert not any(path.exists() for path in _transaction_auxiliaries(destination))
+
+
+def test_successful_transaction_leaves_no_auxiliaries_in_artifacts_or_provenance(
+    tmp_path: Path,
+) -> None:
+    destination = tmp_path / "artifacts"
+    generation = _transaction_generation("committed")
+    artifacts._publish_artifact_mapping(destination, generation)
+    assert read_artifact_generation(destination) == generation
+    assert {path.name for path in destination.iterdir()} == artifacts.EXPECTED_ARTIFACT_NAMES
+    assert not any(path.exists() for path in _transaction_auxiliaries(destination))
+    provenance_text = generation["PROVENANCE.json"].decode("utf-8")
+    assert ".lock" not in provenance_text
+    assert ".journal" not in provenance_text
+    assert ".stage" not in provenance_text
+    assert ".backup" not in provenance_text
 
 
 def test_semantic_validator_rejects_claim_registry_case_and_gate_mutations(
