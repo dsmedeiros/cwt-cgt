@@ -1,0 +1,461 @@
+{
+  "case_dispositions": {
+    "BC3": "SAME_MODEL_KINETIC_CONTROL_GEOMETRY_KERNEL_SEPARATION",
+    "QP3": "SAME_OPERATOR_SAME_CONNECTION_FULL_RANK_CALIBRATION_ONLY",
+    "REFUSALS": "INELIGIBLE_AND_CIRCULAR_CONTROLS_REFUSED",
+    "SCOPE": "PASS_INTERNAL_ANALYTIC_NO_EMPIRICAL_EVIDENCE_MODEL_SPECIFIC_ONLY"
+  },
+  "claim_ceiling": "internal synthetic Benchmark-C kinetic-control derivation and experiment-local QP3 same-operator calibration only; not universal or full CWT, physical response, empirical evidence, or a general CGT-response alignment law",
+  "contract": {
+    "auxiliary_branch_allowed": false,
+    "bc3_alpha_bounds": [
+      {
+        "denominator": 10,
+        "float": 0.3,
+        "fraction": "3/10",
+        "numerator": 3
+      },
+      {
+        "denominator": 5,
+        "float": 0.4,
+        "fraction": "2/5",
+        "numerator": 2
+      }
+    ],
+    "bc3_area_vector": [
+      1,
+      2,
+      2
+    ],
+    "bc3_benchmark_id": "benchmark_c",
+    "bc3_branch_id": "C0",
+    "bc3_clock": "right_endpoint_update_then_sample",
+    "bc3_contraction_max": {
+      "denominator": 10,
+      "float": 0.7,
+      "fraction": "7/10",
+      "numerator": 7
+    },
+    "bc3_disposition": "SAME_MODEL_KINETIC_CONTROL_GEOMETRY_KERNEL_SEPARATION",
+    "bc3_fixed_scale_steps_per_edge": [
+      64,
+      128,
+      256,
+      512
+    ],
+    "bc3_formula": "eta=J_x dot dtheta;m=(1-alpha)/alpha;beta=-m*eta;F=alpha^-2*dalpha wedge eta-m*deta",
+    "bc3_gain": {
+      "denominator": 20,
+      "float": 0.45,
+      "fraction": "9/20",
+      "numerator": 9
+    },
+    "bc3_heldout_center": [
+      {
+        "denominator": 25,
+        "float": 0.12,
+        "fraction": "3/25",
+        "numerator": 3
+      },
+      {
+        "denominator": 25,
+        "float": 0.08,
+        "fraction": "2/25",
+        "numerator": 2
+      },
+      {
+        "denominator": 3,
+        "float": 0.3333333333333333,
+        "fraction": "1/3",
+        "numerator": 1
+      }
+    ],
+    "bc3_initialization": "equilibrium_at_stored_initial_control",
+    "bc3_reverse": "exact_reverse_of_stored_forward_controls",
+    "bc3_scales": [
+      {
+        "denominator": 400,
+        "float": 0.0025,
+        "fraction": "1/400",
+        "numerator": 1
+      },
+      {
+        "denominator": 800,
+        "float": 0.00125,
+        "fraction": "1/800",
+        "numerator": 1
+      },
+      {
+        "denominator": 1600,
+        "float": 0.000625,
+        "fraction": "1/1600",
+        "numerator": 1
+      },
+      {
+        "denominator": 3200,
+        "float": 0.0003125,
+        "fraction": "1/3200",
+        "numerator": 1
+      }
+    ],
+    "bc3_steps_per_edge": [
+      1024,
+      4096,
+      16384,
+      65536
+    ],
+    "bc3_tangent_1": [
+      2,
+      -1,
+      0
+    ],
+    "bc3_tangent_2": [
+      2,
+      0,
+      -1
+    ],
+    "bc3_u_bounds": [
+      {
+        "denominator": 20,
+        "float": 0.05,
+        "fraction": "1/20",
+        "numerator": 1
+      },
+      {
+        "denominator": 20,
+        "float": 0.15,
+        "fraction": "3/20",
+        "numerator": 3
+      }
+    ],
+    "bc3_update_rule": "x_next=x+alpha*(theta-x)",
+    "bc3_v_bounds": [
+      {
+        "denominator": 20,
+        "float": 0.05,
+        "fraction": "1/20",
+        "numerator": 1
+      },
+      {
+        "denominator": 20,
+        "float": 0.15,
+        "fraction": "3/20",
+        "numerator": 3
+      }
+    ],
+    "berry_curvature_convention": "Omega_ij=+2 Im<C_i|C_j>",
+    "claim_ceiling": "internal synthetic Benchmark-C kinetic-control derivation and experiment-local QP3 same-operator calibration only; not universal or full CWT, physical response, empirical evidence, or a general CGT-response alignment law",
+    "disposition": "PASS_INTERNAL_ANALYTIC",
+    "evidence_status": "NO_EMPIRICAL_EVIDENCE",
+    "experiment_id": "constitutive_map_3d_proof",
+    "gain_as_control_allowed": false,
+    "geometry_fed_response_allowed": false,
+    "heldout_response_fit_allowed": false,
+    "pointwise_fit_allowed": false,
+    "qp3_centers": [
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        1
+      ]
+    ],
+    "qp3_chern_number": 1,
+    "qp3_conventional_observable": "O_i=-partial_i_H",
+    "qp3_disposition": "SAME_OPERATOR_SAME_CONNECTION_FULL_RANK_CALIBRATION_ONLY",
+    "qp3_domain": "R3_without_origin_declared_contractible_tubes_around_frozen_points",
+    "qp3_eigenvalues": [
+      {
+        "denominator": 1,
+        "float": 1.0,
+        "fraction": "1/1",
+        "numerator": 1
+      },
+      {
+        "denominator": 5,
+        "float": 0.6,
+        "fraction": "3/5",
+        "numerator": 3
+      }
+    ],
+    "qp3_gap": {
+      "denominator": 5,
+      "float": 0.4,
+      "fraction": "2/5",
+      "numerator": 2
+    },
+    "qp3_hamiltonian": "H=3/5*I+2/5*P_plus",
+    "qp3_heldout": [
+      {
+        "denominator": 3,
+        "float": 0.3333333333333333,
+        "fraction": "1/3",
+        "numerator": 1
+      },
+      {
+        "denominator": 3,
+        "float": 0.6666666666666666,
+        "fraction": "2/3",
+        "numerator": 2
+      },
+      {
+        "denominator": 3,
+        "float": 0.6666666666666666,
+        "fraction": "2/3",
+        "numerator": 2
+      }
+    ],
+    "qp3_heldout_density": {
+      "denominator": 2,
+      "float": 0.5,
+      "fraction": "1/2",
+      "numerator": 1
+    },
+    "qp3_positive_observable": "O_i=+partial_i_H",
+    "qp3_projector": "P_plus=(I+n_dot_sigma)/2;n=lambda/abs(lambda)",
+    "relation_scope": "MODEL_SPECIFIC_RELATIONS_ONLY",
+    "response_curvature_convention": "F_ij=partial_i beta_j-partial_j beta_i",
+    "two_form_vector_order": [
+      "F_v_alpha",
+      "F_alpha_u",
+      "F_u_v"
+    ],
+    "universal_claim_allowed": false
+  },
+  "disposition": "PASS_INTERNAL_ANALYTIC",
+  "evidence_status": "NO_EMPIRICAL_EVIDENCE",
+  "experiment_id": "constitutive_map_3d_proof",
+  "failed_gates": [],
+  "formal_disposition": "PASS_INTERNAL_ANALYTIC",
+  "gate_count": 17,
+  "indeterminate_gates": [],
+  "metrics": {
+    "bc3_directed_density_intervals": [
+      {
+        "lower": -0.15669244673936378,
+        "upper": -0.15669244673759902,
+        "width": 1.7647550087929176e-12
+      },
+      {
+        "lower": -0.1553783500795216,
+        "upper": -0.15537835007598108,
+        "width": 3.54052898110524e-12
+      },
+      {
+        "lower": -0.15468859515069092,
+        "upper": -0.15468859514352232,
+        "width": 7.168599047702173e-12
+      },
+      {
+        "lower": -0.15433556775283697,
+        "upper": -0.15433556773831253,
+        "width": 1.4524437208507379e-11
+      }
+    ],
+    "bc3_heldout_density_regression": -0.15397709724237776,
+    "bc3_prediction_lock_sha256": "95eb55a19b970c1e6f3a6197b7438a3b89d5df8b9077d301c4c643290a9085e1",
+    "bc3_scalar_non_authoritative_diagnostic": {
+      "assessment": {
+        "authority": "NON_AUTHORITATIVE_DIAGNOSTIC",
+        "development_selected_density_ceiling": 1e-06,
+        "diagnostic_status": "PASS_NONAUTHORITATIVE_REGRESSION",
+        "rows": [
+          {
+            "density_distance_to_authoritative_interval": 1.4355738819915587e-12,
+            "diagnostic_status": "PASS_NONAUTHORITATIVE_REGRESSION",
+            "record_matches_recomputation": true,
+            "row_index": 0
+          },
+          {
+            "density_distance_to_authoritative_interval": 9.493655861447792e-12,
+            "diagnostic_status": "PASS_NONAUTHORITATIVE_REGRESSION",
+            "record_matches_recomputation": true,
+            "row_index": 1
+          },
+          {
+            "density_distance_to_authoritative_interval": 2.031236567834327e-10,
+            "diagnostic_status": "PASS_NONAUTHORITATIVE_REGRESSION",
+            "record_matches_recomputation": true,
+            "row_index": 2
+          },
+          {
+            "density_distance_to_authoritative_interval": 1.8187337941233395e-08,
+            "diagnostic_status": "PASS_NONAUTHORITATIVE_REGRESSION",
+            "record_matches_recomputation": true,
+            "row_index": 3
+          }
+        ],
+        "unioned_into_authoritative_interval": false,
+        "used_by_formal_pass": false
+      },
+      "policy": {
+        "authority": "NON_AUTHORITATIVE_DIAGNOSTIC",
+        "development_selected_density_ceiling": 1e-06,
+        "unioned_into_authoritative_interval": false,
+        "used_by_formal_pass": false
+      },
+      "rows": [
+        {
+          "authority": "NON_AUTHORITATIVE_DIAGNOSTIC",
+          "density": -0.15669244674079935,
+          "density_distance_to_authoritative_interval": 1.4355738819915587e-12,
+          "density_inside_authoritative_interval": false,
+          "density_signed_residual_from_interval_midpoint": -2.3179513863880175e-12,
+          "development_selected_density_ceiling": 1e-06,
+          "diagnostic_status": "PASS_NONAUTHORITATIVE_REGRESSION",
+          "evaluates_different_float_control_and_libm_path": true,
+          "q_anti": -9.79327792129996e-07,
+          "q_distance_to_authoritative_interval": 8.972620010264803e-18,
+          "q_inside_authoritative_interval": false,
+          "q_signed_residual_from_interval_midpoint": -1.4487228013363926e-17,
+          "unioned_into_authoritative_interval": false,
+          "used_by_formal_pass": false
+        },
+        {
+          "authority": "NON_AUTHORITATIVE_DIAGNOSTIC",
+          "density": -0.15537835006648743,
+          "density_distance_to_authoritative_interval": 9.493655861447792e-12,
+          "density_inside_authoritative_interval": false,
+          "density_signed_residual_from_interval_midpoint": 1.126393422978822e-11,
+          "development_selected_density_ceiling": 1e-06,
+          "diagnostic_status": "PASS_NONAUTHORITATIVE_REGRESSION",
+          "evaluates_different_float_control_and_libm_path": true,
+          "q_anti": -2.427786719788866e-07,
+          "q_distance_to_authoritative_interval": 1.4833876247027748e-17,
+          "q_inside_authoritative_interval": false,
+          "q_signed_residual_from_interval_midpoint": 1.7599862336286666e-17,
+          "unioned_into_authoritative_interval": false,
+          "used_by_formal_pass": false
+        },
+        {
+          "authority": "NON_AUTHORITATIVE_DIAGNOSTIC",
+          "density": -0.15468859535381457,
+          "density_distance_to_authoritative_interval": 2.031236567834327e-10,
+          "density_inside_authoritative_interval": false,
+          "density_signed_residual_from_interval_midpoint": -2.0670795630728378e-10,
+          "development_selected_density_ceiling": 1e-06,
+          "diagnostic_status": "PASS_NONAUTHORITATIVE_REGRESSION",
+          "evaluates_different_float_control_and_libm_path": true,
+          "q_anti": -6.042523256008382e-08,
+          "q_distance_to_authoritative_interval": 7.934518929422594e-17,
+          "q_inside_authoritative_interval": false,
+          "q_signed_residual_from_interval_midpoint": -8.07452950513679e-17,
+          "unioned_into_authoritative_interval": false,
+          "used_by_formal_pass": false
+        },
+        {
+          "authority": "NON_AUTHORITATIVE_DIAGNOSTIC",
+          "density": -0.1543355495509746,
+          "density_distance_to_authoritative_interval": 1.8187337941233395e-08,
+          "density_inside_authoritative_interval": false,
+          "density_signed_residual_from_interval_midpoint": 1.8194600159837648e-08,
+          "development_selected_density_ceiling": 1e-06,
+          "diagnostic_status": "PASS_NONAUTHORITATIVE_REGRESSION",
+          "evaluates_different_float_control_and_libm_path": true,
+          "q_anti": -1.5071831010837363e-08,
+          "q_distance_to_authoritative_interval": 1.7761072227611616e-15,
+          "q_inside_authoritative_interval": false,
+          "q_signed_residual_from_interval_midpoint": 1.776816420948585e-15,
+          "unioned_into_authoritative_interval": false,
+          "used_by_formal_pass": false
+        }
+      ]
+    },
+    "qp3_center_rank": 3,
+    "qp3_heldout_density": 0.4999999999999995
+  },
+  "publication_blockers": [],
+  "registry": {
+    "case_dispositions": [
+      {
+        "case_id": "BC3",
+        "disposition": "SAME_MODEL_KINETIC_CONTROL_GEOMETRY_KERNEL_SEPARATION"
+      },
+      {
+        "case_id": "QP3",
+        "disposition": "SAME_OPERATOR_SAME_CONNECTION_FULL_RANK_CALIBRATION_ONLY"
+      },
+      {
+        "case_id": "REFUSALS",
+        "disposition": "INELIGIBLE_AND_CIRCULAR_CONTROLS_REFUSED"
+      },
+      {
+        "case_id": "SCOPE",
+        "disposition": "PASS_INTERNAL_ANALYTIC_NO_EMPIRICAL_EVIDENCE_MODEL_SPECIFIC_ONLY"
+      }
+    ],
+    "case_dispositions_sha256": "dcfa502591eab92410654c6599de4ea08219d5e06b918884797b490fbc292f55",
+    "claims_cases_sha256": "911cc98661ed0221c39990832793a1d4d3cfe50447fe98148632d88af42dad7c",
+    "gate_ownership": [
+      {
+        "case_id": "BC3",
+        "gate_names": [
+          "bc3_contract_and_domain",
+          "bc3_local_c0_and_predecessor_binding",
+          "bc3_dynamics_contraction_and_conventions",
+          "bc3_exact_factorization_and_covariance",
+          "bc3_directed_interval_nonzero_margins",
+          "bc3_geometry_rank1_and_alpha_fiber_separation",
+          "bc3_prediction_lock_and_heldout_split",
+          "bc3_response_oracle_firewall",
+          "bc3_generic_ladder_and_nulls"
+        ]
+      },
+      {
+        "case_id": "QP3",
+        "gate_names": [
+          "qp3_same_operator_projector_and_gap",
+          "qp3_monopole_geometry",
+          "qp3_kubo_sign_and_factor",
+          "qp3_rank3_centers_and_heldout",
+          "qp3_gauge_coordinate_closure_and_chern",
+          "qp3_constant_projector_and_nonscalar_refusals"
+        ]
+      },
+      {
+        "case_id": "REFUSALS",
+        "gate_names": [
+          "ineligible_and_circular_control_matrix"
+        ]
+      },
+      {
+        "case_id": "SCOPE",
+        "gate_names": [
+          "claim_ceiling_and_evidence_scope"
+        ]
+      }
+    ],
+    "gate_ownership_sha256": "a54ee7ef9b3dbd6856025fa5d61ad517fb8ae7415650adc2beda5ad1612f99bd",
+    "ordered_gate_names": [
+      "bc3_contract_and_domain",
+      "bc3_local_c0_and_predecessor_binding",
+      "bc3_dynamics_contraction_and_conventions",
+      "bc3_exact_factorization_and_covariance",
+      "bc3_directed_interval_nonzero_margins",
+      "bc3_geometry_rank1_and_alpha_fiber_separation",
+      "bc3_prediction_lock_and_heldout_split",
+      "bc3_response_oracle_firewall",
+      "bc3_generic_ladder_and_nulls",
+      "qp3_same_operator_projector_and_gap",
+      "qp3_monopole_geometry",
+      "qp3_kubo_sign_and_factor",
+      "qp3_rank3_centers_and_heldout",
+      "qp3_gauge_coordinate_closure_and_chern",
+      "qp3_constant_projector_and_nonscalar_refusals",
+      "ineligible_and_circular_control_matrix",
+      "claim_ceiling_and_evidence_scope"
+    ],
+    "ordered_gate_names_sha256": "3abf916a18741dc404282634902666a5bf9c2b5ddfcfbf90c25d850da391b828",
+    "schema_version": 2
+  },
+  "relation_scope": "MODEL_SPECIFIC_RELATIONS_ONLY"
+}

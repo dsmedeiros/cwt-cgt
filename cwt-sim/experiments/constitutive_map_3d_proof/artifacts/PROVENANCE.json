@@ -1,0 +1,469 @@
+{
+  "artifact_kind": "internal_analytic_constitutive_map_3d_proof",
+  "canonical_registry": {
+    "case_dispositions": [
+      {
+        "case_id": "BC3",
+        "disposition": "SAME_MODEL_KINETIC_CONTROL_GEOMETRY_KERNEL_SEPARATION"
+      },
+      {
+        "case_id": "QP3",
+        "disposition": "SAME_OPERATOR_SAME_CONNECTION_FULL_RANK_CALIBRATION_ONLY"
+      },
+      {
+        "case_id": "REFUSALS",
+        "disposition": "INELIGIBLE_AND_CIRCULAR_CONTROLS_REFUSED"
+      },
+      {
+        "case_id": "SCOPE",
+        "disposition": "PASS_INTERNAL_ANALYTIC_NO_EMPIRICAL_EVIDENCE_MODEL_SPECIFIC_ONLY"
+      }
+    ],
+    "case_dispositions_sha256": "dcfa502591eab92410654c6599de4ea08219d5e06b918884797b490fbc292f55",
+    "claims_cases_sha256": "911cc98661ed0221c39990832793a1d4d3cfe50447fe98148632d88af42dad7c",
+    "gate_ownership": [
+      {
+        "case_id": "BC3",
+        "gate_names": [
+          "bc3_contract_and_domain",
+          "bc3_local_c0_and_predecessor_binding",
+          "bc3_dynamics_contraction_and_conventions",
+          "bc3_exact_factorization_and_covariance",
+          "bc3_directed_interval_nonzero_margins",
+          "bc3_geometry_rank1_and_alpha_fiber_separation",
+          "bc3_prediction_lock_and_heldout_split",
+          "bc3_response_oracle_firewall",
+          "bc3_generic_ladder_and_nulls"
+        ]
+      },
+      {
+        "case_id": "QP3",
+        "gate_names": [
+          "qp3_same_operator_projector_and_gap",
+          "qp3_monopole_geometry",
+          "qp3_kubo_sign_and_factor",
+          "qp3_rank3_centers_and_heldout",
+          "qp3_gauge_coordinate_closure_and_chern",
+          "qp3_constant_projector_and_nonscalar_refusals"
+        ]
+      },
+      {
+        "case_id": "REFUSALS",
+        "gate_names": [
+          "ineligible_and_circular_control_matrix"
+        ]
+      },
+      {
+        "case_id": "SCOPE",
+        "gate_names": [
+          "claim_ceiling_and_evidence_scope"
+        ]
+      }
+    ],
+    "gate_ownership_sha256": "a54ee7ef9b3dbd6856025fa5d61ad517fb8ae7415650adc2beda5ad1612f99bd",
+    "ordered_gate_names": [
+      "bc3_contract_and_domain",
+      "bc3_local_c0_and_predecessor_binding",
+      "bc3_dynamics_contraction_and_conventions",
+      "bc3_exact_factorization_and_covariance",
+      "bc3_directed_interval_nonzero_margins",
+      "bc3_geometry_rank1_and_alpha_fiber_separation",
+      "bc3_prediction_lock_and_heldout_split",
+      "bc3_response_oracle_firewall",
+      "bc3_generic_ladder_and_nulls",
+      "qp3_same_operator_projector_and_gap",
+      "qp3_monopole_geometry",
+      "qp3_kubo_sign_and_factor",
+      "qp3_rank3_centers_and_heldout",
+      "qp3_gauge_coordinate_closure_and_chern",
+      "qp3_constant_projector_and_nonscalar_refusals",
+      "ineligible_and_circular_control_matrix",
+      "claim_ceiling_and_evidence_scope"
+    ],
+    "ordered_gate_names_sha256": "3abf916a18741dc404282634902666a5bf9c2b5ddfcfbf90c25d850da391b828",
+    "schema_version": 2
+  },
+  "claim_ceiling": "internal synthetic Benchmark-C kinetic-control derivation and experiment-local QP3 same-operator calibration only; not universal or full CWT, physical response, empirical evidence, or a general CGT-response alignment law",
+  "clean_cli_local_module_path_set_sha256": "28fd6e882d722be0b44068a6766ec686fcc10aca6110ea84bb83323677e133a9",
+  "clean_cli_local_module_paths": [
+    "cwt/__init__.py",
+    "cwt/cgt/__init__.py",
+    "cwt/cgt/_geom_compat.py",
+    "cwt/cgt/benchmarks.py",
+    "cwt/cgt/continuation.py",
+    "cwt/cgt/loop_protocols.py",
+    "cwt/cgt/models.py",
+    "cwt/cgt/runner.py",
+    "cwt/geometry/berry.py",
+    "cwt/geometry/branch_distance.py",
+    "cwt/geometry/coherence.py",
+    "cwt/geometry/psi.py",
+    "cwt/geometry/stats.py",
+    "experiments/__init__.py",
+    "experiments/constitutive_map_3d_proof/__init__.py",
+    "experiments/constitutive_map_3d_proof/artifacts.py",
+    "experiments/constitutive_map_3d_proof/bc3_core_regression.py",
+    "experiments/constitutive_map_3d_proof/bc3_interval_model.py",
+    "experiments/constitutive_map_3d_proof/bc3_lattice.py",
+    "experiments/constitutive_map_3d_proof/bc3_midpoint_prediction.py",
+    "experiments/constitutive_map_3d_proof/bc3_primitives.py",
+    "experiments/constitutive_map_3d_proof/bc3_remainder.py",
+    "experiments/constitutive_map_3d_proof/benchmark_c_alpha.py",
+    "experiments/constitutive_map_3d_proof/binary64_interval.py",
+    "experiments/constitutive_map_3d_proof/classifier.py",
+    "experiments/constitutive_map_3d_proof/contract.py",
+    "experiments/constitutive_map_3d_proof/exact.py",
+    "experiments/constitutive_map_3d_proof/firewall.py",
+    "experiments/constitutive_map_3d_proof/pipeline.py",
+    "experiments/constitutive_map_3d_proof/qp1_ambient.py",
+    "experiments/constitutive_map_3d_proof/qp1_geometry.py",
+    "experiments/constitutive_map_3d_proof/qp1_kubo.py",
+    "experiments/constitutive_map_3d_proof/response_oracle.py",
+    "experiments/constitutive_map_3d_proof/run.py",
+    "experiments/constitutive_map_3d_proof/theorem.py"
+  ],
+  "disposition": "PASS_INTERNAL_ANALYTIC",
+  "evidence_status": "NO_EMPIRICAL_EVIDENCE",
+  "experiment_id": "constitutive_map_3d_proof",
+  "formal_disposition": "PASS_INTERNAL_ANALYTIC",
+  "no_empirical_or_external_data": true,
+  "no_general_alignment_claim": true,
+  "no_physical_or_universal_cwt_claim": true,
+  "numerical_regressions_used_as_analytic_proof": false,
+  "predecessor_artifact_inventories": {
+    "curvature_identity_audit": {
+      "closure": "recursive_path_and_type_bound_no_symlink_or_reparse",
+      "entries": {
+        "CHECKSUMS.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "a87163ec960ae70f39d9a020a383e07bb2cae94f1d25564cec8eb473c5f8dd23",
+          "type": "file"
+        },
+        "PROVENANCE.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "8c947672309dc48708b65e005106883ddae3666868112ff9c0298b17efa0c1ff",
+          "type": "file"
+        },
+        "REPORT.md": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "8e7ba19addc008b8334a47dd04e36ca121081207686489ffb9a1f88e24de0337",
+          "type": "file"
+        },
+        "records.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "3ddcb420e608f1c54e4fa6ce73c0ee3344d9a851ebbf1ee1216e030ec1c0aebd",
+          "type": "file"
+        },
+        "summary.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "7ad31c6335b907fbed65bfe1c2f1c91b150bfa4256ca36ec56d6a6d93bf4d199",
+          "type": "file"
+        }
+      },
+      "entry_count": 5,
+      "inventory_sha256": "01333a0414fb82eeb73e8b9a072f7ed43815afd6af9497ec1672f6870cd0d85c"
+    },
+    "independent_response_theorem": {
+      "closure": "recursive_path_and_type_bound_no_symlink_or_reparse",
+      "entries": {
+        "PROVENANCE.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "e8cf6a19102a75a627a1454ec7256c92f8291c24c2610451d9969cc6c373adfc",
+          "type": "file"
+        },
+        "PROVENANCE_CORRECTION.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "53628affed3feadf7d5d21d43287b9652303c950fe7797a9375ee82c51382851",
+          "type": "file"
+        },
+        "PROVENANCE_CORRECTION.sha256": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "4b35f031c266525d19015001518df19d3a38481f0e81a7e5b367c09ea2ce5479",
+          "type": "file"
+        },
+        "REPORT.md": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "64a90b357af34648f16c42dc671c473b0099c1e89b6fe1cea3916470430415a3",
+          "type": "file"
+        },
+        "records.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "9d9abe277daf305014e52a7ace0517fb72f31037da630545521dd3daf125e2f7",
+          "type": "file"
+        },
+        "summary.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "afc8923bd9c15de461c8b18a58c7249fc082bac2e746a668204a37b1d9d02b63",
+          "type": "file"
+        }
+      },
+      "entry_count": 6,
+      "inventory_sha256": "5d687be8391709df56fae29ea99cc54c6318f138e264f2003534d62b137180b0"
+    },
+    "response_theorem_proof_program": {
+      "closure": "recursive_path_and_type_bound_no_symlink_or_reparse",
+      "entries": {
+        "CHECKSUMS.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "bc9aabe7d75b97675de9fad57e97875bc5261588e640f59364a7a02deecdc6a1",
+          "type": "file"
+        },
+        "PROVENANCE.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "77dfebc8d785b7895b11136c9acf9347c75487b7ddacf9ab0e115e53d8a87ae8",
+          "type": "file"
+        },
+        "REPORT.md": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "ad406ae27d3013ca2e0cb89061cf9d1aec884b47efddec8454b104e1d920373b",
+          "type": "file"
+        },
+        "records.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "646294266b40e43d93fe553b41363ee6693a0913507419ac304a4849ed5f36ad",
+          "type": "file"
+        },
+        "summary.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "c064f4f02d7a61de7b53e4e737be5db09e521e176e9e5c3e833575e1d6354022",
+          "type": "file"
+        }
+      },
+      "entry_count": 5,
+      "inventory_sha256": "cf283fc2a1f4e1b1b209f2ff3e3636fc798b211e669a1f96d816a8c5621dfed5"
+    }
+  },
+  "predecessor_nonmutation_evidence": {
+    "after_inventory_sha256": {
+      "curvature_identity_audit": "01333a0414fb82eeb73e8b9a072f7ed43815afd6af9497ec1672f6870cd0d85c",
+      "independent_response_theorem": "5d687be8391709df56fae29ea99cc54c6318f138e264f2003534d62b137180b0",
+      "response_theorem_proof_program": "cf283fc2a1f4e1b1b209f2ff3e3636fc798b211e669a1f96d816a8c5621dfed5"
+    },
+    "before_inventory_sha256": {
+      "curvature_identity_audit": "01333a0414fb82eeb73e8b9a072f7ed43815afd6af9497ec1672f6870cd0d85c",
+      "independent_response_theorem": "5d687be8391709df56fae29ea99cc54c6318f138e264f2003534d62b137180b0",
+      "response_theorem_proof_program": "cf283fc2a1f4e1b1b209f2ff3e3636fc798b211e669a1f96d816a8c5621dfed5"
+    },
+    "method": "recursive_raw_inventory_before_and_after_payload_construction",
+    "unchanged": true
+  },
+  "publication_blockers": [],
+  "raw_artifact_payload_sha256": {
+    "REPORT.md": "73874c9d3b86eeaba17bdd51857133bf9695bc7ed22a9b4f10d016814523ae29",
+    "records.json": "d8bc0ca24088fceec15eb438153de891f271ff600cc927ae0040b92cdb154044",
+    "summary.json": "5c13085713fe56cdb11f37baba2786c01c42aa6b247a0e48a9fc0a45445c7bef"
+  },
+  "relation_scope": "MODEL_SPECIFIC_RELATIONS_ONLY",
+  "reproduction_command": "cd cwt-sim && .venv/Scripts/python.exe experiments/constitutive_map_3d_proof/run.py run",
+  "reviewed_clean_cli_local_module_path_set_sha256": "28fd6e882d722be0b44068a6766ec686fcc10aca6110ea84bb83323677e133a9",
+  "reviewed_material_source_path_set_sha256": "2ef61bdd1074b04fc88e5df350bdc5f7712520fae22bbaa0a2e05da0b2e69dec",
+  "reviewed_predecessor_role_paths": [
+    [
+      "curvature_identity_audit",
+      "experiments/curvature_identity_audit/artifacts"
+    ],
+    [
+      "independent_response_theorem",
+      "experiments/independent_response_theorem/artifacts"
+    ],
+    [
+      "response_theorem_proof_program",
+      "experiments/response_theorem_proof_program/artifacts"
+    ]
+  ],
+  "reviewed_predecessor_role_paths_sha256": "39d440db38af4cd4d30bf5a233404eb6c5e76eedabaf7056ce1f123893b6c4d8",
+  "runtime": {
+    "numpy": "2.3.3",
+    "python": "3.11.9",
+    "typer": "0.17.4"
+  },
+  "scalar_diagnostic_policy": {
+    "authority": "NON_AUTHORITATIVE_DIAGNOSTIC",
+    "development_selected_density_ceiling": 1e-06,
+    "unioned_into_authoritative_interval": false,
+    "used_by_formal_pass": false
+  },
+  "scalar_diagnostic_status": "PASS_NONAUTHORITATIVE_REGRESSION",
+  "schema_version": 1,
+  "source_hash_domain": "sha256_utf8_lf_v1",
+  "source_hash_domain_definition": "strict UTF-8 with BOM forbidden; CRLF maps to LF only; remaining bare CR is rejected; no whitespace, Unicode, or other normalization",
+  "source_hashes": {
+    "cwt/__init__.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "5545ff85f06287efef405b4b063a3f0817efa4e9ef3a51326bba27c720ee722c"
+    },
+    "cwt/cgt/__init__.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "95fa221b50dfb5e7006eb64b95864985fedda01201287df7e3e3c7ebe92049c6"
+    },
+    "cwt/cgt/_geom_compat.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "d2e21872f982bc3890cb7e32cdfe006379cfd0aeab65b14f2b308fa0ea46a3ea"
+    },
+    "cwt/cgt/benchmarks.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "eb713c61cb8b860c7011f823cdd4f531ba6dace5a63c1d306c6c5b7e974ef6d0"
+    },
+    "cwt/cgt/continuation.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "a4fd16111b2dba5f435c902db7b9a35c08be7b2fa276e430d1c8d132f6a6b8fe"
+    },
+    "cwt/cgt/loop_protocols.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "f5f12a169c0107f7da383a9549136360428ce07a8ecd9f091caf5db5caae5fc7"
+    },
+    "cwt/cgt/models.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "850babc5a37d29a002d507a0c38f69065881fb429c9c21e91531f213ae68cb70"
+    },
+    "cwt/cgt/runner.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "cc75438f84a19b9ad2d93c8309f6bd957b174a1d797a16bc57b1a5d4e614d3dc"
+    },
+    "cwt/geometry/berry.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "9917098d6c539e19d714693dffe1df48696e1cdc1c2502228155afdcb044a7ec"
+    },
+    "cwt/geometry/branch_distance.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "3a87e86f402cb20bad5970eda932ea6fb81888464a55517dd710711faf8f5146"
+    },
+    "cwt/geometry/coherence.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "f217072118a9738a8a1bef70881c6b4fba1721d96f4d0892b5fd1eeb961d483b"
+    },
+    "cwt/geometry/psi.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "a3c9f06ded36507a881d3127efb102a56d313d51692c62663316fd7276c909fd"
+    },
+    "cwt/geometry/stats.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "071c752ea5f6df9470acebd4af92d4bf3e2de6a4ceffd329f540117e73aa99bf"
+    },
+    "experiments/__init__.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "ebafe75c5944d1ed3e1c904b7b728e8fa465320486564affcc86f7591b0c8635"
+    },
+    "experiments/constitutive_map_3d_proof/MODEL_CONTRACT.md": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "4f4ec9e26f51fc578d035eca5c42e7029bbcb3de8325f827683f22443a57be5e"
+    },
+    "experiments/constitutive_map_3d_proof/__init__.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "7e1b4400e0e6dd649b662ac76859c11772e27a671decbe643606bfdba05760c4"
+    },
+    "experiments/constitutive_map_3d_proof/artifacts.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "259adc7d8103f326d68f2cf2b1514debcd9d271c2ffe80d1cf3238da0d480922"
+    },
+    "experiments/constitutive_map_3d_proof/bc3_core_regression.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "10b9b426e7ad9d69b352dfcc6e2491daeaba12d2d68ea7d579c422c74d3b4381"
+    },
+    "experiments/constitutive_map_3d_proof/bc3_interval_model.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "3457b4a25b22b939948162e9b1cb9bf190d74ab9d762f4d04ca49f80748240d0"
+    },
+    "experiments/constitutive_map_3d_proof/bc3_lattice.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "5304622c9cbd731d97dc3b35d86022d0d2bfb4782cde4174e069e7202b39966a"
+    },
+    "experiments/constitutive_map_3d_proof/bc3_midpoint_prediction.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "c8ada42ba81107a50cade330a541da7f928d10cc7ed598531e27c80ce5edcab8"
+    },
+    "experiments/constitutive_map_3d_proof/bc3_primitives.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "d268526df93719418931688ea28672596329ea697b35d6f5bc34bedd4dab8604"
+    },
+    "experiments/constitutive_map_3d_proof/bc3_remainder.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "a4c1b43b5a04691cf55d4e08c75a78bea35760bc74fe83d7d9ee43959d978b18"
+    },
+    "experiments/constitutive_map_3d_proof/benchmark_c_alpha.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "947403e54ef6ca284dc4da92723ce08c75a723088a02eb1778ecb11f52131214"
+    },
+    "experiments/constitutive_map_3d_proof/binary64_interval.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "17f73afca6be1606c3bfa2e83e01bbb0121e524385f4c4d65608cf25818d2338"
+    },
+    "experiments/constitutive_map_3d_proof/classifier.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "5373e1993d8ed3cfe8a4e7ed80e73d126b0b7c4bcd9f538ff82a8c3f557ad78c"
+    },
+    "experiments/constitutive_map_3d_proof/contract.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "6fb1b4747a410cbffbed026b143226817a0e452d2eaa06f342a486965ec18e00"
+    },
+    "experiments/constitutive_map_3d_proof/exact.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "1ac6f085f4b5c878045235da371f95e35b9e731495f56d8f5593a024d765deaa"
+    },
+    "experiments/constitutive_map_3d_proof/firewall.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "df09e719def07b8b69debaa0e1354461a72ac710bd97edd20462b4003183e88f"
+    },
+    "experiments/constitutive_map_3d_proof/pipeline.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "a7c9ab5a843275fd51f437581447bc2357e5468a244167a4856e3d82a4ad71cc"
+    },
+    "experiments/constitutive_map_3d_proof/qp1_ambient.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "47c187c1e8683f9beb514ee63cb264c058c7a672253686f85dd5d426902f6fb6"
+    },
+    "experiments/constitutive_map_3d_proof/qp1_geometry.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "458951bce3093a3a2f6ae02f909cbed48dbf8293e30d4aa157b51006320ea4bf"
+    },
+    "experiments/constitutive_map_3d_proof/qp1_kubo.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "97333f0f3d44e34d3a2d17fcc1124a5ebf68b98a2df896256fbf30ef44f49884"
+    },
+    "experiments/constitutive_map_3d_proof/response_oracle.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "48305d5a4ffb2187aef69d5baebe1d3609ffce6d820edd172705a59431f22c77"
+    },
+    "experiments/constitutive_map_3d_proof/run.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "234d3a239427861df458bcb0b8000c5c40fb9533404cadadd90247d26ee2b4b1"
+    },
+    "experiments/constitutive_map_3d_proof/theorem.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "48e1e8f66bee3ecb5eb4350e3c0661e4b4dcaf113bdc891faae4e6329341481a"
+    },
+    "experiments/curvature_identity_audit/MODEL_CONTRACT.md": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "405ae8afc1232b8a9f50c9afba1171918f85105ca06f008fc2bccf79e2b52a70"
+    },
+    "experiments/curvature_identity_audit/benchmark_c.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "9b570fcaa47e875514fa83a3d7eb3433cb778da9b86c6280705eff85e3b6cca2"
+    },
+    "experiments/curvature_identity_audit/common_origin.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "2acc91dd7d7c1932ffd8e9fd9559c1fd53d84178addb299ccdb26df632971419"
+    },
+    "experiments/curvature_identity_audit/qp1.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "09608b788624668fdc01b056da4678535435734b793ffa3b5027a397e2fbac94"
+    },
+    "experiments/independent_response_theorem/PROTOCOL_LOCK.md": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "1bda9a7cbaf52c13e4d3461a817af712d9ee8469627988a87cc4ad4a0917e2c1"
+    },
+    "experiments/response_theorem_proof_program/THEOREM.md": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "67fdbf7098c64f5d4e3f35d93b0b98a7578ef7e08242a7e7325e785a5a55937a"
+    },
+    "experiments/response_theorem_proof_program/forms.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "779ce59632041b30771067012823074f92bcfad6f0e82c8d6f5d1e8a1568080f"
+    },
+    "tests/experiments/test_constitutive_map_3d_proof.py": {
+      "hash_domain": "sha256_utf8_lf_v1",
+      "sha256": "e62c9987dffaaa6ae227ac98a161bdc508bb6ca87fdb4cad4e703604f19e3efc"
+    }
+  },
+  "verification_command": "cd cwt-sim && .venv/Scripts/python.exe experiments/constitutive_map_3d_proof/run.py verify"
+}
