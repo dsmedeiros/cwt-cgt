@@ -55,6 +55,8 @@ positive-inference criterion is refused before prediction lock or oracle use.
 The reviewed callable and exact Fraction result schema are bound independently, and
 G8/G9 compare oracle B/F to separately frozen formal values. Independent record digests
 prevent a patched runtime certificate producer from redefining its acceptance reference.
+Deterministic provenance binds the canonical `requirements.test.txt` dependency policy;
+installed Python and Typer versions are excluded from artifact acceptance bytes.
 
 ## Gates
 

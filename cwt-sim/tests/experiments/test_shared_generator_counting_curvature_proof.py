@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import inspect
 import json
+import platform
 import tempfile
 import threading
 import time
@@ -11,6 +12,7 @@ from fractions import Fraction
 from pathlib import Path
 
 import pytest
+import typer
 from typer.testing import CliRunner
 
 from experiments.shared_generator_counting_curvature_proof import (
@@ -816,6 +818,119 @@ def test_expected_artifact_mapping_is_exact_canonical_and_strict_lf() -> None:
     assert all(b"\r" not in payload for payload in expected.values())
     for name in ("CHECKSUMS.json", "PROVENANCE.json", "records.json", "summary.json"):
         assert json.loads(expected[name].decode("utf-8"))
+
+
+def test_live_python_and_typer_versions_do_not_change_artifact_acceptance(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    destination = tmp_path / "artifacts"
+    write_artifacts(destination)
+    before = expected_artifact_bytes()
+
+    monkeypatch.setattr(platform, "python_version", lambda: "0.0-forged-runtime")
+    monkeypatch.setattr(typer, "__version__", "999.0-forged-runtime", raising=False)
+
+    after = expected_artifact_bytes()
+    assert after == before
+    provenance = json.loads(after["PROVENANCE.json"].decode("utf-8"))
+    assert "runtime" not in provenance
+    assert provenance["dependency_policy"]["live_python_version_in_acceptance_bytes"] is False
+    assert provenance["dependency_policy"]["live_typer_version_in_acceptance_bytes"] is False
+    assert verify_artifacts(destination)["status"] == "PASS_INTERNAL_ANALYTIC"
+
+
+def test_dependency_policy_hash_drift_refuses_artifact_acceptance(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    policy = artifact_module.dependency_policy_record()
+    assert policy["sha256"] == artifact_module.REVIEWED_DEPENDENCY_POLICY_SHA256
+    monkeypatch.setattr(artifact_module, "REVIEWED_DEPENDENCY_POLICY_SHA256", "0" * 64)
+    with pytest.raises(
+        ArtifactVerificationError,
+        match="dependency-policy source hash differs from reviewed identity",
+    ):
+        expected_artifact_bytes()
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "./requirements.test.txt",
+        "subdir/../requirements.test.txt",
+        "requirements.test.txt/..",
+        "C:/requirements.test.txt",
+        "requirements\\test.txt",
+    ],
+)
+def test_dependency_policy_path_is_exact_reviewed_lexical_path(
+    monkeypatch: pytest.MonkeyPatch, path: str
+) -> None:
+    monkeypatch.setattr(artifact_module, "DEPENDENCY_POLICY_PATH", path)
+    with pytest.raises(ArtifactVerificationError, match="dependency policy path"):
+        artifact_module.dependency_policy_record()
+
+
+@pytest.mark.parametrize("mutation", ["missing", "extra", "forged"], ids=str)
+def test_dependency_policy_record_has_independent_closed_consumer_validation(
+    mutation: str,
+) -> None:
+    record = artifact_module.dependency_policy_record()
+    if mutation == "missing":
+        record.pop("sha256")
+    elif mutation == "extra":
+        record["runtime"] = {"python": "forged"}
+    else:
+        record["authority"] = "FORGED_ONLY"
+    with pytest.raises(ArtifactVerificationError, match="dependency policy"):
+        artifact_module.validate_dependency_policy_record(record)
+
+
+def test_expected_artifacts_reject_monkeypatched_dependency_policy_producer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        artifact_module,
+        "dependency_policy_record",
+        lambda: {"authority": "FORGED_ONLY"},
+    )
+    with pytest.raises(ArtifactVerificationError, match="dependency policy"):
+        expected_artifact_bytes()
+
+
+def test_consumer_path_gate_survives_exact_record_producer_monkeypatch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    reviewed_record = artifact_module.dependency_policy_record()
+    monkeypatch.setattr(artifact_module, "DEPENDENCY_POLICY_PATH", "./requirements.test.txt")
+    monkeypatch.setattr(
+        artifact_module,
+        "dependency_policy_record",
+        lambda: copy.deepcopy(reviewed_record),
+    )
+    with pytest.raises(ArtifactVerificationError, match="dependency policy path"):
+        expected_artifact_bytes()
+
+
+@pytest.mark.parametrize("mutation", ["missing", "extra", "forged"], ids=str)
+def test_disk_verifier_independently_rejects_dependency_policy_record_mutation(
+    tmp_path: Path, mutation: str
+) -> None:
+    expected = expected_artifact_bytes()
+    destination = tmp_path / mutation
+    destination.mkdir()
+    for name, payload in expected.items():
+        (destination / name).write_bytes(payload)
+    provenance_path = destination / "PROVENANCE.json"
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    if mutation == "missing":
+        provenance.pop("dependency_policy")
+    elif mutation == "extra":
+        provenance["dependency_policy"]["runtime"] = {"python": "forged"}
+    else:
+        provenance["dependency_policy"]["authority"] = "FORGED_ONLY"
+    provenance_path.write_bytes(artifact_module.strict_json_bytes(provenance))
+    with pytest.raises(ArtifactVerificationError, match="dependency policy"):
+        verify_artifacts(destination)
 
 
 def test_transactional_write_and_verify_temporary_generation(tmp_path: Path) -> None:

@@ -163,6 +163,14 @@ reviewed canonical-byte digest, so a patched runtime producer cannot redefine
 its own acceptance reference. In particular, the T1 tangent-Gram and SLD-metric
 determinants are parsed as exact fractions and must be strictly positive.
 
+Deterministic artifact provenance binds the canonical bytes of the repository's
+`requirements.test.txt` dependency declaration. Installed Python and Typer
+versions are deliberately excluded from artifact acceptance bytes: they are
+environment diagnostics, not proof identity or verification authority.
+The exact lexical policy path, closed record schema, field types and values, and
+an independently reviewed canonical record digest are checked by both artifact
+construction and disk verification.
+
 ## G0-G13
 
 - **G0:** exact configuration, full control box, and no runtime defaults.

@@ -276,6 +276,29 @@
     "experiments/shared_generator_counting_curvature_proof/run.py",
     "experiments/shared_generator_counting_curvature_proof/theorem.py"
   ],
+  "dependency_policy": {
+    "authority": "deterministic_source_bound_dependency_declaration",
+    "declared_requirements": [
+      "numpy>=1.24",
+      "scipy>=1.10",
+      "networkx>=3.1",
+      "pandas>=2.0",
+      "matplotlib>=3.7",
+      "pytest>=7.4",
+      "pydantic>=2.4",
+      "pyyaml>=6.0",
+      "typer>=0.9",
+      "black==24.10.0",
+      "mypy==1.11.2",
+      "ruff==0.7.3"
+    ],
+    "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+    "live_python_version_in_acceptance_bytes": false,
+    "live_typer_version_in_acceptance_bytes": false,
+    "path": "requirements.test.txt",
+    "sha256": "11cc1302a3896ed8af355bcfad65bc7aeec70ceeac2cec2c3a70ea456c507539"
+  },
+  "dependency_policy_record_sha256": "9bb568329235a52d9e9fb0adad92c378c1ea672569633b4269b6992b534b2a7c",
   "disposition": "PASS_INTERNAL_ANALYTIC",
   "empirical_or_physical_evidence": false,
   "evidence_status": "NO_EMPIRICAL_EVIDENCE",
@@ -288,7 +311,7 @@
   "oracle_capability_canonical_payload_authenticated": true,
   "oracle_exact_Fraction_schema_and_callable_identity_bound": true,
   "payload_sha256": {
-    "REPORT.md": "d723a04965209ec85cea75242fa0ee3660533dc72fd21e76ac8403a3537c83fc",
+    "REPORT.md": "0b0bf3b2e198c5dadc7b2c8c0d6a30ba8674fc250f5d37c09f931fa7d3a05760",
     "records.json": "7eac7b80a094ff9cd6736f36da69b262131971b8278301f045dbc98a62e3ca3f",
     "summary.json": "c050c2e7c75630f93e0245f951c616a23ddb5c2f8d1629703a3126c2ec69aecc"
   },
@@ -413,10 +436,6 @@
   "relation_scope": "MODEL_SPECIFIC_RELATIONS_ONLY",
   "reverse_count_B_and_F_recomputed_independently": true,
   "run_command": "cd cwt-sim && .venv/Scripts/python.exe experiments/shared_generator_counting_curvature_proof/run.py run",
-  "runtime": {
-    "python": "3.11.9",
-    "typer": "0.17.4"
-  },
   "same_curvature_or_frozen_zero_preserving_homogeneous_Omega_map_claimed": false,
   "schema_version": 1,
   "source_hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
@@ -575,7 +594,7 @@
     },
     "experiments/shared_generator_counting_curvature_proof/MODEL_CONTRACT.md": {
       "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
-      "sha256": "d9e0c08c80df0ebcd88e8c753b25c70ae01da0faed6c3c17bd597ae2dbec20ad"
+      "sha256": "89f61b5c963555e44353781bfb5d56deff43549ac9fa039330a14be42446eafc"
     },
     "experiments/shared_generator_counting_curvature_proof/__init__.py": {
       "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
@@ -583,7 +602,7 @@
     },
     "experiments/shared_generator_counting_curvature_proof/artifacts.py": {
       "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
-      "sha256": "934a2b5fbe097c465660afcf1b2213796c5602a7bf58b2b9596ebe914832129e"
+      "sha256": "c75aa4d8615b3cf2440c363d99d267512274c77cf7d41cff959402ab3489fbad"
     },
     "experiments/shared_generator_counting_curvature_proof/contract.py": {
       "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
@@ -631,7 +650,7 @@
     },
     "tests/experiments/test_shared_generator_counting_curvature_proof.py": {
       "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
-      "sha256": "072e65c485613cbb7dd2a9cbdcc4d27fae254de9d4a94580d42e489b520218fb"
+      "sha256": "d557deb37d6e83fdd4c9f56d1f1de081d707df44808e34021056e0d61927bc87"
     }
   },
   "source_path_set_sha256": "c24ada0f17b1b30d6bd87eac33f7517231eabeb85b17b4fa9b5a62a981d2d014",

@@ -5,14 +5,11 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import platform
 import subprocess
 import sys
 from functools import lru_cache
 from pathlib import Path, PurePosixPath
 from typing import Any, Mapping, Sequence
-
-import typer
 
 from experiments.constitutive_map_3d_proof.artifacts import (
     _RESERVED_TRANSACTION_LEAVES,
@@ -42,6 +39,24 @@ EXPECTED_ARTIFACT_NAMES = frozenset(
 )
 SOURCE_HASH_DOMAIN = "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR"
 RAW_HASH_DOMAIN = "sha256_raw_bytes_v1"
+REVIEWED_DEPENDENCY_POLICY_PATH = "requirements.test.txt"
+DEPENDENCY_POLICY_PATH = REVIEWED_DEPENDENCY_POLICY_PATH
+REVIEWED_DEPENDENCY_POLICY_SHA256 = "11cc1302a3896ed8af355bcfad65bc7aeec70ceeac2cec2c3a70ea456c507539"
+REVIEWED_DEPENDENCY_POLICY_REQUIREMENTS = (
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "networkx>=3.1",
+    "pandas>=2.0",
+    "matplotlib>=3.7",
+    "pytest>=7.4",
+    "pydantic>=2.4",
+    "pyyaml>=6.0",
+    "typer>=0.9",
+    "black==24.10.0",
+    "mypy==1.11.2",
+    "ruff==0.7.3",
+)
+REVIEWED_DEPENDENCY_POLICY_RECORD_SHA256 = "9bb568329235a52d9e9fb0adad92c378c1ea672569633b4269b6992b534b2a7c"
 
 REVIEWED_CLEAN_CLI_LOCAL_MODULE_PATHS = (
     "cwt/__init__.py",
@@ -152,6 +167,116 @@ def strict_json_bytes(payload: Any) -> bytes:
 
 def canonical_text_bytes(payload: bytes) -> bytes:
     return canonical_source_text_bytes(payload)
+
+
+def _dependency_policy_file() -> Path:
+    relative = DEPENDENCY_POLICY_PATH
+    if type(relative) is not str or relative != REVIEWED_DEPENDENCY_POLICY_PATH:
+        raise ArtifactVerificationError("dependency policy path differs from reviewed lexical path")
+    parsed = PurePosixPath(relative)
+    if (
+        parsed.is_absolute()
+        or parsed.as_posix() != relative
+        or "." in parsed.parts
+        or ".." in parsed.parts
+        or len(parsed.parts) != 1
+    ):
+        raise ArtifactVerificationError("dependency policy path is not canonical PurePosixPath")
+    return _checked_path(
+        REPO_ROOT.joinpath(*parsed.parts),
+        REPO_ROOT,
+        expected_kind="file",
+        label="dependency policy",
+    )
+
+
+def validate_dependency_policy_record(record: object) -> None:
+    """Validate a producer result against the independently reviewed policy record."""
+    canonical_source = canonical_text_bytes(_dependency_policy_file().read_bytes())
+    actual_source_sha256 = sha256_bytes(canonical_source)
+    if actual_source_sha256 != REVIEWED_DEPENDENCY_POLICY_SHA256:
+        raise ArtifactVerificationError("dependency-policy source hash differs from reviewed identity")
+    actual_requirements = tuple(
+        line.strip()
+        for line in canonical_source.decode("utf-8").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    )
+    if actual_requirements != REVIEWED_DEPENDENCY_POLICY_REQUIREMENTS:
+        raise ArtifactVerificationError("dependency policy source requirements differ from reviewed values")
+    if type(record) is not dict:
+        raise ArtifactVerificationError("dependency policy record is not an exact dictionary")
+    expected_keys = {
+        "authority",
+        "path",
+        "hash_domain",
+        "sha256",
+        "declared_requirements",
+        "live_python_version_in_acceptance_bytes",
+        "live_typer_version_in_acceptance_bytes",
+    }
+    if any(type(key) is not str for key in record) or set(record) != expected_keys:
+        raise ArtifactVerificationError("dependency policy record keys differ from reviewed schema")
+    for key in ("authority", "path", "hash_domain", "sha256"):
+        if type(record[key]) is not str:
+            raise ArtifactVerificationError(f"dependency policy field {key} has the wrong type")
+    if record["authority"] != "deterministic_source_bound_dependency_declaration":
+        raise ArtifactVerificationError("dependency policy authority differs from reviewed value")
+    if record["path"] != REVIEWED_DEPENDENCY_POLICY_PATH:
+        raise ArtifactVerificationError("dependency policy record path differs from reviewed value")
+    if record["hash_domain"] != SOURCE_HASH_DOMAIN:
+        raise ArtifactVerificationError("dependency policy hash domain differs from reviewed value")
+    if record["sha256"] != actual_source_sha256:
+        raise ArtifactVerificationError("dependency policy source hash differs from reviewed identity")
+    requirements = record["declared_requirements"]
+    if type(requirements) is not list or any(type(item) is not str for item in requirements):
+        raise ArtifactVerificationError("dependency policy requirements have the wrong type")
+    if tuple(requirements) != REVIEWED_DEPENDENCY_POLICY_REQUIREMENTS:
+        raise ArtifactVerificationError("dependency policy requirements differ from reviewed values")
+    for key in (
+        "live_python_version_in_acceptance_bytes",
+        "live_typer_version_in_acceptance_bytes",
+    ):
+        if type(record[key]) is not bool or record[key] is not False:
+            raise ArtifactVerificationError(f"dependency policy field {key} is not exact false")
+    if sha256_bytes(strict_json_bytes(record)) != REVIEWED_DEPENDENCY_POLICY_RECORD_SHA256:
+        raise ArtifactVerificationError("dependency policy record digest differs from reviewed identity")
+
+
+def dependency_policy_record() -> dict[str, object]:
+    """Return the reviewed dependency declaration without live runtime versions."""
+    path = _dependency_policy_file()
+    canonical = canonical_text_bytes(path.read_bytes())
+    digest = sha256_bytes(canonical)
+    if digest != REVIEWED_DEPENDENCY_POLICY_SHA256:
+        raise ArtifactVerificationError("dependency-policy source hash differs from reviewed identity")
+    requirements = tuple(
+        line.strip()
+        for line in canonical.decode("utf-8").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    )
+    record = {
+        "authority": "deterministic_source_bound_dependency_declaration",
+        "path": REVIEWED_DEPENDENCY_POLICY_PATH,
+        "hash_domain": SOURCE_HASH_DOMAIN,
+        "sha256": digest,
+        "declared_requirements": list(requirements),
+        "live_python_version_in_acceptance_bytes": False,
+        "live_typer_version_in_acceptance_bytes": False,
+    }
+    validate_dependency_policy_record(record)
+    return record
+
+
+def _validate_provenance_dependency_policy(payload: bytes) -> None:
+    try:
+        provenance = json.loads(payload.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ArtifactVerificationError("PROVENANCE.json is not valid UTF-8 JSON") from exc
+    if type(provenance) is not dict or "dependency_policy" not in provenance:
+        raise ArtifactVerificationError("PROVENANCE.json lacks the dependency policy record")
+    if provenance.get("dependency_policy_record_sha256") != REVIEWED_DEPENDENCY_POLICY_RECORD_SHA256:
+        raise ArtifactVerificationError("PROVENANCE.json dependency policy digest is not reviewed")
+    validate_dependency_policy_record(provenance["dependency_policy"])
 
 
 def _material_file(relative: str) -> Path:
@@ -387,6 +512,8 @@ def render_report(summary: Mapping[str, Any], records: Sequence[Mapping[str, Any
         "The reviewed callable and exact Fraction result schema are bound independently, and",
         "G8/G9 compare oracle B/F to separately frozen formal values. Independent record digests",
         "prevent a patched runtime certificate producer from redefining its acceptance reference.",
+        "Deterministic provenance binds the canonical `requirements.test.txt` dependency policy;",
+        "installed Python and Typer versions are excluded from artifact acceptance bytes.",
         "",
         "## Gates",
         "",
@@ -417,6 +544,8 @@ def expected_artifact_bytes(
     summary_bytes = strict_json_bytes(summary)
     records_bytes = strict_json_bytes(records)
     report_bytes = render_report(summary, records).encode("utf-8")
+    dependency_policy = dependency_policy_record()
+    validate_dependency_policy_record(dependency_policy)
     predecessor_after = predecessor_inventories()
     if predecessors != predecessor_after:
         raise ArtifactGenerationRefused("predecessor artifacts changed during payload construction")
@@ -464,10 +593,8 @@ def expected_artifact_bytes(
             "records.json": sha256_bytes(records_bytes),
             "summary.json": sha256_bytes(summary_bytes),
         },
-        "runtime": {
-            "python": platform.python_version(),
-            "typer": typer.__version__,
-        },
+        "dependency_policy": dependency_policy,
+        "dependency_policy_record_sha256": REVIEWED_DEPENDENCY_POLICY_RECORD_SHA256,
         "run_command": (
             "cd cwt-sim && .venv/Scripts/python.exe "
             "experiments/shared_generator_counting_curvature_proof/run.py run"
@@ -531,6 +658,7 @@ def _read_generation(output_dir: Path) -> dict[str, bytes]:
 def verify_artifacts(output_dir: Path = ARTIFACTS_DIR) -> dict[str, object]:
     with artifact_access_guard(output_dir):
         actual = _read_generation(output_dir)
+        _validate_provenance_dependency_policy(actual["PROVENANCE.json"])
         expected = expected_artifact_bytes()
         if actual != expected:
             differing = sorted(name for name in expected if actual.get(name) != expected[name])
@@ -557,6 +685,8 @@ __all__ = [
     "artifact_access_guard",
     "artifact_transaction_paths",
     "clean_cli_local_module_paths",
+    "dependency_policy_record",
+    "validate_dependency_policy_record",
     "expected_artifact_bytes",
     "material_source_paths",
     "predecessor_inventories",
