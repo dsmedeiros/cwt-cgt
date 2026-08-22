@@ -1,0 +1,10 @@
+{
+  "files": {
+    "PROVENANCE.json": "75bc4ac0512d1df003f1ddfb80781dff2f453c323fcf90313e8f5936bdbbeaba",
+    "REPORT.md": "0b0bf3b2e198c5dadc7b2c8c0d6a30ba8674fc250f5d37c09f931fa7d3a05760",
+    "records.json": "7eac7b80a094ff9cd6736f36da69b262131971b8278301f045dbc98a62e3ca3f",
+    "summary.json": "c050c2e7c75630f93e0245f951c616a23ddb5c2f8d1629703a3126c2ec69aecc"
+  },
+  "hash_domain": "sha256_raw_bytes_v1",
+  "schema_version": 1
+}

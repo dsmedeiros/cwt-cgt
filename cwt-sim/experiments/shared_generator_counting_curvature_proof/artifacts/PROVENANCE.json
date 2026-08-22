@@ -1,0 +1,658 @@
+{
+  "G2_floor_and_contraction_premises_derived": true,
+  "G2_induced_norm_exponential_series_floor_derived": true,
+  "affine_nonlinear_generator_dependent_map_status": "OPEN",
+  "artifact_kind": "internal_analytic_shared_generator_counting_curvature_proof",
+  "authoritative_certificate_records_bound_by_independent_reviewed_digests": true,
+  "canonical_registry": {
+    "case_dispositions": [
+      {
+        "case_id": "T0",
+        "disposition": "SAME_GENERATOR_CLASSICAL_THREE_CONTROL_ZERO_SET_OBSTRUCTION"
+      },
+      {
+        "case_id": "T1",
+        "disposition": "SAME_GENERATOR_COHERENT_THREE_CONTROL_ZERO_SET_OBSTRUCTION"
+      },
+      {
+        "case_id": "T2",
+        "disposition": "FCS_EXTENDED_EIGENBUNDLE_RESPONSE_IDENTITY_DISTINCT_FROM_STATE_CGT"
+      },
+      {
+        "case_id": "POSITIVE_MAP",
+        "disposition": "SAME_CURVATURE_AND_FROZEN_ZERO_PRESERVING_HOMOGENEOUS_OMEGA_MAPS_REFUSED_OTHERS_OPEN"
+      },
+      {
+        "case_id": "SCOPE",
+        "disposition": "PASS_INTERNAL_ANALYTIC_NO_EMPIRICAL_EVIDENCE_MODEL_SPECIFIC_ONLY"
+      }
+    ],
+    "case_gates": [
+      {
+        "case_id": "T0",
+        "gate_ids": [
+          "G0",
+          "G1",
+          "G2",
+          "G3",
+          "G4",
+          "G5",
+          "G6",
+          "G7",
+          "G8",
+          "G9",
+          "G10",
+          "G11",
+          "G12",
+          "G13"
+        ]
+      },
+      {
+        "case_id": "T1",
+        "gate_ids": [
+          "G0",
+          "G1",
+          "G2",
+          "G3",
+          "G4",
+          "G5",
+          "G6",
+          "G7",
+          "G8",
+          "G9",
+          "G10",
+          "G11",
+          "G12",
+          "G13"
+        ]
+      },
+      {
+        "case_id": "T2",
+        "gate_ids": [
+          "G0",
+          "G1",
+          "G3",
+          "G5",
+          "G6",
+          "G8",
+          "G9",
+          "G10",
+          "G12",
+          "G13"
+        ]
+      },
+      {
+        "case_id": "POSITIVE_MAP",
+        "gate_ids": [
+          "G7",
+          "G9",
+          "G10",
+          "G13"
+        ]
+      },
+      {
+        "case_id": "SCOPE",
+        "gate_ids": [
+          "G13"
+        ]
+      }
+    ],
+    "fingerprints": {
+      "case_dispositions": "8bbd236c48461e4220e3c274aca870ba4fd3f58fe91ac5975604aa21082eccb8",
+      "case_gates": "ed162c5fde53e416b49e41c32a0f1266d2fdf0649dc716d77970d82e31421900",
+      "claims": "8a6b11ad5105a511111811bd24bfec3eec632a4b8a95df735d46a40966bd8d47",
+      "gate_owners": "ad03ea9f49b25138566be2f8963e9277fb601433d61b5de7e679b08e8b592998",
+      "ordered_gates": "e967361c6cb390494408cbd8f5b77241d1f2b9d6bbb79c6bab02f94c98a205a7"
+    },
+    "gate_owners": [
+      {
+        "gate_id": "G0",
+        "owner": "CONFIG"
+      },
+      {
+        "gate_id": "G1",
+        "owner": "SHARED_GENERATOR"
+      },
+      {
+        "gate_id": "G2",
+        "owner": "SHARED_GENERATOR"
+      },
+      {
+        "gate_id": "G3",
+        "owner": "SHARED_GENERATOR"
+      },
+      {
+        "gate_id": "G4",
+        "owner": "GEOMETRY"
+      },
+      {
+        "gate_id": "G5",
+        "owner": "COUNTING"
+      },
+      {
+        "gate_id": "G6",
+        "owner": "COUNTING"
+      },
+      {
+        "gate_id": "G7",
+        "owner": "CLASSIFIER"
+      },
+      {
+        "gate_id": "G8",
+        "owner": "FIREWALL"
+      },
+      {
+        "gate_id": "G9",
+        "owner": "PIPELINE"
+      },
+      {
+        "gate_id": "G10",
+        "owner": "CLASSIFIER"
+      },
+      {
+        "gate_id": "G11",
+        "owner": "NULLS"
+      },
+      {
+        "gate_id": "G12",
+        "owner": "LOOP_SCOPE"
+      },
+      {
+        "gate_id": "G13",
+        "owner": "REGISTRY_CLAIMS"
+      }
+    ],
+    "ordered_gates": [
+      {
+        "gate_id": "G0",
+        "name": "exact_config_control_box_and_no_defaults"
+      },
+      {
+        "gate_id": "G1",
+        "name": "same_generator_source_stationary_geometry_counting_response"
+      },
+      {
+        "gate_id": "G2",
+        "name": "unique_uniformly_full_rank_contracting_stationary_branch"
+      },
+      {
+        "gate_id": "G3",
+        "name": "exact_Drazin_and_branch_derivative_identities"
+      },
+      {
+        "gate_id": "G4",
+        "name": "actual_branch_projective_and_SLD_geometry"
+      },
+      {
+        "gate_id": "G5",
+        "name": "tilted_generator_orientation_TP_and_current_derivative"
+      },
+      {
+        "gate_id": "G6",
+        "name": "exact_response_one_form_and_curvature"
+      },
+      {
+        "gate_id": "G7",
+        "name": "same_curvature_and_zero_preserving_homogeneous_map_refusal_only"
+      },
+      {
+        "gate_id": "G8",
+        "name": "authenticated_geometry_counting_oracle_firewalls"
+      },
+      {
+        "gate_id": "G9",
+        "name": "prediction_lock_and_positive_inference_refusal"
+      },
+      {
+        "gate_id": "G10",
+        "name": "covariance_closure_units_zero_sets_and_obstructions"
+      },
+      {
+        "gate_id": "G11",
+        "name": "reverse_count_identity_h_zero_and_same_model_nulls"
+      },
+      {
+        "gate_id": "G12",
+        "name": "exact_orientation_qanti_factor_two_and_local_curvature_scope"
+      },
+      {
+        "gate_id": "G13",
+        "name": "immutable_registry_and_claim_semantics"
+      }
+    ],
+    "schema_version": 1
+  },
+  "claim_ceiling": "internal exact Benchmark-D D0 shared-generator counting-curvature classifications only; refutes only SAME_CURVATURE and frozen zero-preserving homogeneous Omega-only maps for the declared state geometry; affine, nonlinear, and generator-dependent maps remain open; not universal or full CWT, calibrated physical response, or empirical evidence",
+  "clean_cli_local_module_path_set_sha256": "e708a74edcbdad8aa2b122bd06bdce4b314159ac8364d53416be08f5141c1b7c",
+  "clean_cli_local_module_paths": [
+    "cwt/__init__.py",
+    "cwt/cgt/__init__.py",
+    "cwt/cgt/_geom_compat.py",
+    "cwt/cgt/benchmarks.py",
+    "cwt/cgt/continuation.py",
+    "cwt/cgt/lindblad.py",
+    "cwt/cgt/loop_protocols.py",
+    "cwt/cgt/models.py",
+    "cwt/cgt/open_system.py",
+    "cwt/cgt/runner.py",
+    "cwt/geometry/berry.py",
+    "cwt/geometry/branch_distance.py",
+    "cwt/geometry/coherence.py",
+    "cwt/geometry/mixed_state.py",
+    "cwt/geometry/psi.py",
+    "cwt/geometry/stats.py",
+    "experiments/__init__.py",
+    "experiments/constitutive_map_3d_proof/__init__.py",
+    "experiments/constitutive_map_3d_proof/artifacts.py",
+    "experiments/constitutive_map_3d_proof/bc3_core_regression.py",
+    "experiments/constitutive_map_3d_proof/bc3_interval_model.py",
+    "experiments/constitutive_map_3d_proof/bc3_lattice.py",
+    "experiments/constitutive_map_3d_proof/bc3_midpoint_prediction.py",
+    "experiments/constitutive_map_3d_proof/bc3_primitives.py",
+    "experiments/constitutive_map_3d_proof/bc3_remainder.py",
+    "experiments/constitutive_map_3d_proof/benchmark_c_alpha.py",
+    "experiments/constitutive_map_3d_proof/binary64_interval.py",
+    "experiments/constitutive_map_3d_proof/classifier.py",
+    "experiments/constitutive_map_3d_proof/contract.py",
+    "experiments/constitutive_map_3d_proof/exact.py",
+    "experiments/constitutive_map_3d_proof/firewall.py",
+    "experiments/constitutive_map_3d_proof/pipeline.py",
+    "experiments/constitutive_map_3d_proof/qp1_ambient.py",
+    "experiments/constitutive_map_3d_proof/qp1_geometry.py",
+    "experiments/constitutive_map_3d_proof/qp1_kubo.py",
+    "experiments/constitutive_map_3d_proof/response_oracle.py",
+    "experiments/constitutive_map_3d_proof/theorem.py",
+    "experiments/shared_generator_counting_curvature_proof/__init__.py",
+    "experiments/shared_generator_counting_curvature_proof/artifacts.py",
+    "experiments/shared_generator_counting_curvature_proof/contract.py",
+    "experiments/shared_generator_counting_curvature_proof/core_binding.py",
+    "experiments/shared_generator_counting_curvature_proof/counting_lane.py",
+    "experiments/shared_generator_counting_curvature_proof/exact.py",
+    "experiments/shared_generator_counting_curvature_proof/firewall.py",
+    "experiments/shared_generator_counting_curvature_proof/generator.py",
+    "experiments/shared_generator_counting_curvature_proof/geometry_lane.py",
+    "experiments/shared_generator_counting_curvature_proof/oracle_lane.py",
+    "experiments/shared_generator_counting_curvature_proof/pipeline.py",
+    "experiments/shared_generator_counting_curvature_proof/run.py",
+    "experiments/shared_generator_counting_curvature_proof/theorem.py"
+  ],
+  "dependency_policy": {
+    "authority": "deterministic_source_bound_dependency_declaration",
+    "declared_requirements": [
+      "numpy>=1.24",
+      "scipy>=1.10",
+      "networkx>=3.1",
+      "pandas>=2.0",
+      "matplotlib>=3.7",
+      "pytest>=7.4",
+      "pydantic>=2.4",
+      "pyyaml>=6.0",
+      "typer>=0.9",
+      "black==24.10.0",
+      "mypy==1.11.2",
+      "ruff==0.7.3"
+    ],
+    "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+    "live_python_version_in_acceptance_bytes": false,
+    "live_typer_version_in_acceptance_bytes": false,
+    "path": "requirements.test.txt",
+    "sha256": "11cc1302a3896ed8af355bcfad65bc7aeec70ceeac2cec2c3a70ea456c507539"
+  },
+  "dependency_policy_record_sha256": "9bb568329235a52d9e9fb0adad92c378c1ea672569633b4269b6992b534b2a7c",
+  "disposition": "PASS_INTERNAL_ANALYTIC",
+  "empirical_or_physical_evidence": false,
+  "evidence_status": "NO_EMPIRICAL_EVIDENCE",
+  "exact_theorem_authority": true,
+  "experiment_id": "shared_generator_counting_curvature_proof",
+  "finite_time_loop_or_remainder_claimed": false,
+  "float_or_finite_difference_used_for_acceptance": false,
+  "nested_certificate_types_bound_by_canonical_JSON_bytes": true,
+  "oracle_B_and_F_compared_to_independently_frozen_formal_values": true,
+  "oracle_capability_canonical_payload_authenticated": true,
+  "oracle_exact_Fraction_schema_and_callable_identity_bound": true,
+  "payload_sha256": {
+    "REPORT.md": "0b0bf3b2e198c5dadc7b2c8c0d6a30ba8674fc250f5d37c09f931fa7d3a05760",
+    "records.json": "7eac7b80a094ff9cd6736f36da69b262131971b8278301f045dbc98a62e3ca3f",
+    "summary.json": "c050c2e7c75630f93e0245f951c616a23ddb5c2f8d1629703a3126c2ec69aecc"
+  },
+  "predecessor_artifact_inventories": {
+    "benchmark_d_lindblad_response_proof": {
+      "closure": "recursive_path_and_type_bound_no_symlink_or_reparse",
+      "entries": {
+        "CHECKSUMS.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "546fa95d42a16f2237e75096ae1bd0f6496d347888ae6d634c32d7f0c18ea6ad",
+          "type": "file"
+        },
+        "PROVENANCE.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "02f25fb843553364f08002a385afa97f4645f9fa9c2ce2c47f730540eeed8693",
+          "type": "file"
+        },
+        "REPORT.md": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "3f919959751b8ed9ade37ff2ec2ebb3f0ca907b7e2aea8ccfc1b11a0b56e643a",
+          "type": "file"
+        },
+        "records.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "4b26806e220cbddee1a2049752ea736ac9feb27b274974aa18634fe01f95126e",
+          "type": "file"
+        },
+        "summary.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "2c7400e822807512e6f6d245d27b5823ca8c90db0c2b11ce6dd4a94db3d4df55",
+          "type": "file"
+        }
+      },
+      "entry_count": 5,
+      "inventory_sha256": "504b7ccc0b2f968b92a3b0fc0729684ff45e851aab77603c63a01414d675d0a0"
+    },
+    "constitutive_map_3d_proof": {
+      "closure": "recursive_path_and_type_bound_no_symlink_or_reparse",
+      "entries": {
+        "CHECKSUMS.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "930fc7525e7d84232b8f517a1fdf8f7a434d645c0814e94adb0872e09fdaab5b",
+          "type": "file"
+        },
+        "PROVENANCE.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "014b8931cc75100f73e1e482770c63753cc9456b11ed642b99cfe17fd2510150",
+          "type": "file"
+        },
+        "REPORT.md": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "73874c9d3b86eeaba17bdd51857133bf9695bc7ed22a9b4f10d016814523ae29",
+          "type": "file"
+        },
+        "records.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "d8bc0ca24088fceec15eb438153de891f271ff600cc927ae0040b92cdb154044",
+          "type": "file"
+        },
+        "summary.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "5c13085713fe56cdb11f37baba2786c01c42aa6b247a0e48a9fc0a45445c7bef",
+          "type": "file"
+        }
+      },
+      "entry_count": 5,
+      "inventory_sha256": "c619df9f5eefc2d05b52fc19847a68a0662026ee5050389e94b6cf151a15faa3"
+    },
+    "response_theorem_proof_program": {
+      "closure": "recursive_path_and_type_bound_no_symlink_or_reparse",
+      "entries": {
+        "CHECKSUMS.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "bc9aabe7d75b97675de9fad57e97875bc5261588e640f59364a7a02deecdc6a1",
+          "type": "file"
+        },
+        "PROVENANCE.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "77dfebc8d785b7895b11136c9acf9347c75487b7ddacf9ab0e115e53d8a87ae8",
+          "type": "file"
+        },
+        "REPORT.md": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "ad406ae27d3013ca2e0cb89061cf9d1aec884b47efddec8454b104e1d920373b",
+          "type": "file"
+        },
+        "records.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "646294266b40e43d93fe553b41363ee6693a0913507419ac304a4849ed5f36ad",
+          "type": "file"
+        },
+        "summary.json": {
+          "hash_domain": "sha256_raw_bytes_v1",
+          "sha256": "c064f4f02d7a61de7b53e4e737be5db09e521e176e9e5c3e833575e1d6354022",
+          "type": "file"
+        }
+      },
+      "entry_count": 5,
+      "inventory_sha256": "cf283fc2a1f4e1b1b209f2ff3e3636fc798b211e669a1f96d816a8c5621dfed5"
+    }
+  },
+  "predecessor_nonmutation": {
+    "method": "recursive_raw_inventory_before_and_after_payload_construction_plus_transactional_precommit_publication_check",
+    "unchanged": true
+  },
+  "predecessor_role_paths": [
+    [
+      "benchmark_d_lindblad_response_proof",
+      "experiments/benchmark_d_lindblad_response_proof/artifacts"
+    ],
+    [
+      "constitutive_map_3d_proof",
+      "experiments/constitutive_map_3d_proof/artifacts"
+    ],
+    [
+      "response_theorem_proof_program",
+      "experiments/response_theorem_proof_program/artifacts"
+    ]
+  ],
+  "predecessor_role_paths_sha256": "ca099a38e51199b0649467f362d12b6526b46171aab5771ba8133988807b1d51",
+  "prohibited_positive_criterion_refused_before_lock": true,
+  "relation_scope": "MODEL_SPECIFIC_RELATIONS_ONLY",
+  "reverse_count_B_and_F_recomputed_independently": true,
+  "run_command": "cd cwt-sim && .venv/Scripts/python.exe experiments/shared_generator_counting_curvature_proof/run.py run",
+  "same_curvature_or_frozen_zero_preserving_homogeneous_Omega_map_claimed": false,
+  "schema_version": 1,
+  "source_hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+  "source_hashes": {
+    "cwt/__init__.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "5545ff85f06287efef405b4b063a3f0817efa4e9ef3a51326bba27c720ee722c"
+    },
+    "cwt/cgt/__init__.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "95fa221b50dfb5e7006eb64b95864985fedda01201287df7e3e3c7ebe92049c6"
+    },
+    "cwt/cgt/_geom_compat.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "d2e21872f982bc3890cb7e32cdfe006379cfd0aeab65b14f2b308fa0ea46a3ea"
+    },
+    "cwt/cgt/benchmarks.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "eb713c61cb8b860c7011f823cdd4f531ba6dace5a63c1d306c6c5b7e974ef6d0"
+    },
+    "cwt/cgt/continuation.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "a4fd16111b2dba5f435c902db7b9a35c08be7b2fa276e430d1c8d132f6a6b8fe"
+    },
+    "cwt/cgt/lindblad.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "e5d4ac531ba6a4142c9e27f8e1bbc17abf62419d535359f4168fab6424fbb9eb"
+    },
+    "cwt/cgt/loop_protocols.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "f5f12a169c0107f7da383a9549136360428ce07a8ecd9f091caf5db5caae5fc7"
+    },
+    "cwt/cgt/models.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "850babc5a37d29a002d507a0c38f69065881fb429c9c21e91531f213ae68cb70"
+    },
+    "cwt/cgt/open_system.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "2148d7087965bb7193bbd811a535aadbf4db25d71e0b74571ebe6c64f60f778a"
+    },
+    "cwt/cgt/runner.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "cc75438f84a19b9ad2d93c8309f6bd957b174a1d797a16bc57b1a5d4e614d3dc"
+    },
+    "cwt/geometry/berry.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "9917098d6c539e19d714693dffe1df48696e1cdc1c2502228155afdcb044a7ec"
+    },
+    "cwt/geometry/branch_distance.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "3a87e86f402cb20bad5970eda932ea6fb81888464a55517dd710711faf8f5146"
+    },
+    "cwt/geometry/coherence.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "f217072118a9738a8a1bef70881c6b4fba1721d96f4d0892b5fd1eeb961d483b"
+    },
+    "cwt/geometry/mixed_state.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "7f98152a444e17dda7f36b7b9afc1024fc1e46d57df546d21fb460c3bd5ce9b5"
+    },
+    "cwt/geometry/psi.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "a3c9f06ded36507a881d3127efb102a56d313d51692c62663316fd7276c909fd"
+    },
+    "cwt/geometry/stats.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "071c752ea5f6df9470acebd4af92d4bf3e2de6a4ceffd329f540117e73aa99bf"
+    },
+    "experiments/__init__.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "ebafe75c5944d1ed3e1c904b7b728e8fa465320486564affcc86f7591b0c8635"
+    },
+    "experiments/constitutive_map_3d_proof/__init__.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "7e1b4400e0e6dd649b662ac76859c11772e27a671decbe643606bfdba05760c4"
+    },
+    "experiments/constitutive_map_3d_proof/artifacts.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "259adc7d8103f326d68f2cf2b1514debcd9d271c2ffe80d1cf3238da0d480922"
+    },
+    "experiments/constitutive_map_3d_proof/bc3_core_regression.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "10b9b426e7ad9d69b352dfcc6e2491daeaba12d2d68ea7d579c422c74d3b4381"
+    },
+    "experiments/constitutive_map_3d_proof/bc3_interval_model.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "3457b4a25b22b939948162e9b1cb9bf190d74ab9d762f4d04ca49f80748240d0"
+    },
+    "experiments/constitutive_map_3d_proof/bc3_lattice.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "5304622c9cbd731d97dc3b35d86022d0d2bfb4782cde4174e069e7202b39966a"
+    },
+    "experiments/constitutive_map_3d_proof/bc3_midpoint_prediction.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "c8ada42ba81107a50cade330a541da7f928d10cc7ed598531e27c80ce5edcab8"
+    },
+    "experiments/constitutive_map_3d_proof/bc3_primitives.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "d268526df93719418931688ea28672596329ea697b35d6f5bc34bedd4dab8604"
+    },
+    "experiments/constitutive_map_3d_proof/bc3_remainder.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "a4c1b43b5a04691cf55d4e08c75a78bea35760bc74fe83d7d9ee43959d978b18"
+    },
+    "experiments/constitutive_map_3d_proof/benchmark_c_alpha.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "947403e54ef6ca284dc4da92723ce08c75a723088a02eb1778ecb11f52131214"
+    },
+    "experiments/constitutive_map_3d_proof/binary64_interval.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "17f73afca6be1606c3bfa2e83e01bbb0121e524385f4c4d65608cf25818d2338"
+    },
+    "experiments/constitutive_map_3d_proof/classifier.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "5373e1993d8ed3cfe8a4e7ed80e73d126b0b7c4bcd9f538ff82a8c3f557ad78c"
+    },
+    "experiments/constitutive_map_3d_proof/contract.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "6fb1b4747a410cbffbed026b143226817a0e452d2eaa06f342a486965ec18e00"
+    },
+    "experiments/constitutive_map_3d_proof/exact.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "1ac6f085f4b5c878045235da371f95e35b9e731495f56d8f5593a024d765deaa"
+    },
+    "experiments/constitutive_map_3d_proof/firewall.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "df09e719def07b8b69debaa0e1354461a72ac710bd97edd20462b4003183e88f"
+    },
+    "experiments/constitutive_map_3d_proof/pipeline.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "a7c9ab5a843275fd51f437581447bc2357e5468a244167a4856e3d82a4ad71cc"
+    },
+    "experiments/constitutive_map_3d_proof/qp1_ambient.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "47c187c1e8683f9beb514ee63cb264c058c7a672253686f85dd5d426902f6fb6"
+    },
+    "experiments/constitutive_map_3d_proof/qp1_geometry.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "458951bce3093a3a2f6ae02f909cbed48dbf8293e30d4aa157b51006320ea4bf"
+    },
+    "experiments/constitutive_map_3d_proof/qp1_kubo.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "97333f0f3d44e34d3a2d17fcc1124a5ebf68b98a2df896256fbf30ef44f49884"
+    },
+    "experiments/constitutive_map_3d_proof/response_oracle.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "48305d5a4ffb2187aef69d5baebe1d3609ffce6d820edd172705a59431f22c77"
+    },
+    "experiments/constitutive_map_3d_proof/theorem.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "48e1e8f66bee3ecb5eb4350e3c0661e4b4dcaf113bdc891faae4e6329341481a"
+    },
+    "experiments/response_theorem_proof_program/THEOREM.md": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "67fdbf7098c64f5d4e3f35d93b0b98a7578ef7e08242a7e7325e785a5a55937a"
+    },
+    "experiments/shared_generator_counting_curvature_proof/MODEL_CONTRACT.md": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "89f61b5c963555e44353781bfb5d56deff43549ac9fa039330a14be42446eafc"
+    },
+    "experiments/shared_generator_counting_curvature_proof/__init__.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "a017ecad24b13a9b70d30930d9d5c720fab5a53d68e51077ff748e61df2d3caa"
+    },
+    "experiments/shared_generator_counting_curvature_proof/artifacts.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "c75aa4d8615b3cf2440c363d99d267512274c77cf7d41cff959402ab3489fbad"
+    },
+    "experiments/shared_generator_counting_curvature_proof/contract.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "e5493db3b86b4a0284b066d9bcd6cf356808ffa6a444bb278ec1cb29094f2554"
+    },
+    "experiments/shared_generator_counting_curvature_proof/core_binding.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "364a21cfd405a072ab85af3bf4a786e5c801a1581cd67af8a26ec7bbb74aed86"
+    },
+    "experiments/shared_generator_counting_curvature_proof/counting_lane.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "5ec71278fb0e564e8c1dfe1e2d4bb36803c559d17c8eebeb61c1f8dbc8ad84d0"
+    },
+    "experiments/shared_generator_counting_curvature_proof/exact.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "d6c2f6c682ce1d5fbf65afa7ae2f87aa8fbc32799c4e81f3e8cf54c20b65c232"
+    },
+    "experiments/shared_generator_counting_curvature_proof/firewall.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "f57c2009b6ff24b190fb27091b73769a7b87fe99d2a6bbb9a15c4a0e6cb2fc0f"
+    },
+    "experiments/shared_generator_counting_curvature_proof/generator.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "867f8645235887c8b0331ff1b07d332e93c32a3a883ae29807abfd93830ce922"
+    },
+    "experiments/shared_generator_counting_curvature_proof/geometry_lane.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "366093cf87b5ac67774a92ab5c7ff06817eb23ab6672c411ca33d9e9a6d6a75a"
+    },
+    "experiments/shared_generator_counting_curvature_proof/oracle_lane.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "79f3b1656fad934102916922d81d5540eb61ae21044fa06bf6ccbb92d6194ee2"
+    },
+    "experiments/shared_generator_counting_curvature_proof/pipeline.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "c4ca6370fc6b54b0cca36d593a18cf8322ae042ddf1bca2af9403ae32477c646"
+    },
+    "experiments/shared_generator_counting_curvature_proof/run.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "149510ac376b0713f65ba930e166f0314bef38124773f6ae385a74ded54face8"
+    },
+    "experiments/shared_generator_counting_curvature_proof/theorem.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "e48a6a78f9d0d2aeee5f399572b43f1e475a6be65a69517d23ed07368faa073e"
+    },
+    "tests/experiments/test_shared_generator_counting_curvature_proof.py": {
+      "hash_domain": "sha256_utf8_lf_v1_CRLF_to_LF_only_no_BOM_no_bare_CR",
+      "sha256": "d557deb37d6e83fdd4c9f56d1f1de081d707df44808e34021056e0d61927bc87"
+    }
+  },
+  "source_path_set_sha256": "c24ada0f17b1b30d6bd87eac33f7517231eabeb85b17b4fa9b5a62a981d2d014",
+  "verify_command": "cd cwt-sim && .venv/Scripts/python.exe experiments/shared_generator_counting_curvature_proof/run.py verify"
+}
