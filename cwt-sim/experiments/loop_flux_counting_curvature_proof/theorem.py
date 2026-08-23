@@ -154,7 +154,7 @@ def _scope_record(
     counting: dict[str, object],
 ) -> dict[str, object]:
     omega = geometry["mean_Uhlmann_vector"]
-    response = counting["response_curvature"]
+    response = counting["direct_response_curl"]
     assert type(omega) is tuple and type(response) is tuple
     minor = response[0] * omega[1] - response[1] * omega[0]
     return {
@@ -275,6 +275,56 @@ def natural_gate_results(records: dict[str, object]) -> dict[str, bool]:
     role_sources = pipeline["authenticated_role_sources"]
     oracle = pipeline["oracle"]
     assert type(role_sources) is dict and type(oracle) is dict
+    direct_B = counting.get("direct_response_one_form")
+    direct_F = counting.get("direct_response_curl")
+    fcs_B = fcs.get("fcs_minus_partial_q_connection_one_form")
+    fcs_F = fcs.get("fcs_normal_connection_curl")
+    oracle_B = oracle.get("B")
+    oracle_F = oracle.get("F")
+    direct_order = counting.get("direct_response_curl_order")
+    fcs_order = fcs.get("fcs_normal_connection_curl_order")
+    direct_signs = counting.get("direct_response_curl_signs")
+    fcs_signs = fcs.get("fcs_normal_connection_curl_signs")
+    expected_order = MODEL_CONTRACT.two_form_vector_order
+    expected_signs = (-1, -1, -1)
+    exact_direct_B = (
+        type(direct_B) is tuple and len(direct_B) == 3 and all(type(item) is Fraction for item in direct_B)
+    )
+    exact_direct_F = (
+        type(direct_F) is tuple and len(direct_F) == 3 and all(type(item) is Fraction for item in direct_F)
+    )
+    exact_fcs_B = type(fcs_B) is tuple and len(fcs_B) == 3 and all(type(item) is Fraction for item in fcs_B)
+    exact_fcs_F = type(fcs_F) is tuple and len(fcs_F) == 3 and all(type(item) is Fraction for item in fcs_F)
+    exact_oracle_B = (
+        type(oracle_B) is tuple and len(oracle_B) == 3 and all(type(item) is Fraction for item in oracle_B)
+    )
+    exact_oracle_F = (
+        type(oracle_F) is tuple and len(oracle_F) == 3 and all(type(item) is Fraction for item in oracle_F)
+    )
+    exact_direct_order = (
+        type(direct_order) is tuple
+        and len(direct_order) == 3
+        and all(type(item) is str for item in direct_order)
+        and direct_order == expected_order
+    )
+    exact_fcs_order = (
+        type(fcs_order) is tuple
+        and len(fcs_order) == 3
+        and all(type(item) is str for item in fcs_order)
+        and fcs_order == expected_order
+    )
+    exact_direct_signs = (
+        type(direct_signs) is tuple
+        and len(direct_signs) == 3
+        and all(type(item) is int for item in direct_signs)
+        and direct_signs == expected_signs
+    )
+    exact_fcs_signs = (
+        type(fcs_signs) is tuple
+        and len(fcs_signs) == 3
+        and all(type(item) is int for item in fcs_signs)
+        and fcs_signs == expected_signs
+    )
     results = {
         "G0_exact_config": not contract_issues(),
         "G1_generator_source_identity": (
@@ -345,14 +395,31 @@ def natural_gate_results(records: dict[str, object]) -> dict[str, bool]:
             and counting["first_q_jet_only_counted_gains"] is True
             and counting["losses_unchanged_by_q"] is True
             and counting["current_equals_trace_q_jet"] is True
-            and counting["response_signs"] == (-1, -1, -1)
-            and counting["all_response_components_nonzero"] is True
-            and fcs["left_q_eigenvector_equation"] is True
-            and fcs["right_q_eigenvector_equation"] is True
-            and fcs["B_equals_minus_partial_q_A"] is True
-            and fcs["F_equals_minus_partial_q_dA"] is True
-            and oracle["B"] == counting["response_one_form"]
-            and oracle["F"] == counting["response_curvature"]
+            and exact_direct_order
+            and exact_direct_signs
+            and counting["all_direct_response_curl_components_nonzero"] is True
+            and fcs["fcs_left_q_eigenvector_equation"] is True
+            and fcs["fcs_right_q_eigenvector_equation"] is True
+            and fcs["fcs_left_q_gauge"] is True
+            and fcs["fcs_right_q_gauge"] is True
+            and exact_fcs_order
+            and exact_fcs_signs
+            and exact_direct_B
+            and exact_direct_F
+            and exact_fcs_B
+            and exact_fcs_F
+            and exact_oracle_B
+            and exact_oracle_F
+            and fcs_B == direct_B
+            and fcs_B is not direct_B
+            and fcs_F == direct_F
+            and fcs_F is not direct_F
+            and oracle_B == direct_B
+            and oracle_B is not direct_B
+            and oracle_B is not fcs_B
+            and oracle_F == direct_F
+            and oracle_F is not direct_F
+            and oracle_F is not fcs_F
         ),
         "G7_scalar_noncollinearity_obstruction": (
             scope["both_curvatures_nonzero"] is True

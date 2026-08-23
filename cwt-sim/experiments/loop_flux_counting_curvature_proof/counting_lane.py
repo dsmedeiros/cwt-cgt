@@ -48,7 +48,13 @@ def counted_q_jet(
     return result
 
 
-def _response(bundle: BranchBundle, *, orientation: int = 1) -> dict[str, object]:
+def _direct_response_curl_record(
+    bundle: BranchBundle,
+    *,
+    orientation: int = 1,
+) -> dict[str, object]:
+    """Compute ``B`` and ``dB`` directly from stationary/Drazin derivatives."""
+
     bias, diffusion, _t = bundle.center
     current = current_row(bias, diffusion, orientation=orientation)
     current_first = current_derivatives(orientation=orientation)
@@ -71,12 +77,12 @@ def _response(bundle: BranchBundle, *, orientation: int = 1) -> dict[str, object
         derivatives[1][0] - derivatives[0][1],
     )
     return {
-        "response_one_form": one_form,
-        "response_derivative_matrix": derivatives,
-        "response_curvature_order": MODEL_CONTRACT.two_form_vector_order,
-        "response_curvature": curvature,
-        "response_signs": tuple(1 if item > 0 else -1 for item in curvature),
-        "all_response_components_nonzero": all(item != 0 for item in curvature),
+        "direct_response_one_form": one_form,
+        "direct_response_derivative_matrix": derivatives,
+        "direct_response_curl_order": MODEL_CONTRACT.two_form_vector_order,
+        "direct_response_curl": curvature,
+        "direct_response_curl_signs": tuple(1 if item > 0 else -1 for item in curvature),
+        "all_direct_response_curl_components_nonzero": all(item != 0 for item in curvature),
         "orientation": orientation,
     }
 
@@ -136,7 +142,7 @@ def counting_record() -> dict[str, object]:
     bias, diffusion, _t = bundle.center
     q_jet = counted_q_jet(bias, diffusion)
     current = current_row(bias, diffusion)
-    response = _response(bundle)
+    response = _direct_response_curl_record(bundle)
     cartesian = _cartesian_response_pullback()
     nonzero = [
         (row, column, value)
@@ -157,18 +163,36 @@ def counting_record() -> dict[str, object]:
         **response,
         "cartesian_response": cartesian,
         "cartesian_to_t_response_pullback_equal": cartesian["pullback_to_t_curvature"]
-        == response["response_curvature"],
+        == response["direct_response_curl"],
         "finite_difference_used_for_acceptance": False,
         "counting_received_geometry_or_Omega": False,
     }
 
 
-@lru_cache(maxsize=1)
-def fcs_record() -> dict[str, object]:
-    bundle = branch_bundle()
+def _counted_q_jet_derivatives(*, orientation: int = 1) -> tuple[Matrix, Matrix, Matrix]:
+    """Differentiate the tilted gain jet without using the direct-current lane."""
+
+    bias_derivative = zeros(N * N, N * N)
+    diffusion_derivative = zeros(N * N, N * N)
+    bias_derivative[2 + N * 2][1 + N * 1] = gaussian(orientation * MODEL_CONTRACT.edge_rate)
+    bias_derivative[1 + N * 1][2 + N * 2] = gaussian(orientation * MODEL_CONTRACT.edge_rate)
+    diffusion_derivative[2 + N * 2][1 + N * 1] = gaussian(orientation * MODEL_CONTRACT.edge_rate)
+    diffusion_derivative[1 + N * 1][2 + N * 2] = gaussian(-orientation * MODEL_CONTRACT.edge_rate)
+    return bias_derivative, diffusion_derivative, zeros(N * N, N * N)
+
+
+def _fcs_normal_connection_jet_record(bundle: BranchBundle) -> dict[str, object]:
+    """Compute ``-partial_q A`` and ``-partial_q dA`` from tilted eigendata jets."""
+
     bias, diffusion, _t = bundle.center
+    trace_functional = trace_row()
     q_jet = counted_q_jet(bias, diffusion)
-    current = current_row(bias, diffusion)
+    q_jet_first = _counted_q_jet_derivatives()
+    current = [dot(trace_functional, [q_jet[row][column] for row in range(N * N)]) for column in range(N * N)]
+    current_first = tuple(
+        [dot(trace_functional, [jet[row][column] for row in range(N * N)]) for column in range(N * N)]
+        for jet in q_jet_first
+    )
     stationary_current = dot(current, bundle.stationary)
     centered = vector_add(
         matrix_vector(q_jet, bundle.stationary),
@@ -180,7 +204,6 @@ def fcs_record() -> dict[str, object]:
     minus_partial = tuple(
         real_fraction(-item, label="minus partial q connection") for item in partial_q_connection
     )
-    current_first = current_derivatives()
     left_q_first = []
     for axis in range(3):
         values = []
@@ -208,8 +231,6 @@ def fcs_record() -> dict[str, object]:
         connection_derivatives[2][0] - connection_derivatives[0][2],
         connection_derivatives[0][1] - connection_derivatives[1][0],
     )
-    direct = counting_record()
-    trace_functional = trace_row()
     left_equation = []
     for column in range(N * N):
         left_w = dot(
@@ -219,18 +240,26 @@ def fcs_record() -> dict[str, object]:
         left_equation.append(left_w + current[column] - stationary_current * trace_functional[column])
     right_equation = vector_add(matrix_vector(bundle.generator, right_q), centered)
     return {
+        "fcs_left_q_eigenvector_equation": all(item.is_zero() for item in left_equation),
+        "fcs_right_q_eigenvector_equation": all(item.is_zero() for item in right_equation),
+        "fcs_left_q_gauge": dot(left_q, bundle.stationary).is_zero(),
+        "fcs_right_q_gauge": dot(trace_functional, right_q).is_zero(),
+        "fcs_minus_partial_q_connection_one_form": minus_partial,
+        "fcs_normal_connection_derivative_matrix": connection_derivatives,
+        "fcs_normal_connection_curl_order": MODEL_CONTRACT.two_form_vector_order,
+        "fcs_normal_connection_curl": curvature,
+        "fcs_normal_connection_curl_signs": tuple(1 if item > 0 else -1 for item in curvature),
+    }
+
+
+@lru_cache(maxsize=1)
+def fcs_record() -> dict[str, object]:
+    bundle = branch_bundle()
+    normal_connection = _fcs_normal_connection_jet_record(bundle)
+    return {
         "authority": "independent_exact_first_q_eigenbundle_jet",
         "geometric_cumulant": "minus_closed_integral_A(q)",
-        "left_q_eigenvector_equation": all(item.is_zero() for item in left_equation),
-        "right_q_eigenvector_equation": all(item.is_zero() for item in right_equation),
-        "left_q_gauge": dot(left_q, bundle.stationary).is_zero(),
-        "right_q_gauge": dot(trace_functional, right_q).is_zero(),
-        "minus_partial_q_connection": minus_partial,
-        "direct_Drazin_response": direct["response_one_form"],
-        "B_equals_minus_partial_q_A": minus_partial == direct["response_one_form"],
-        "F_from_normal_connection_curl": curvature,
-        "direct_response_curvature": direct["response_curvature"],
-        "F_equals_minus_partial_q_dA": curvature == direct["response_curvature"],
+        **normal_connection,
         "state_mean_Uhlmann_connection_used": False,
         "extended_eigenbundle_connection_distinct_from_state_geometry": True,
     }
@@ -238,31 +267,31 @@ def fcs_record() -> dict[str, object]:
 
 @lru_cache(maxsize=1)
 def null_record() -> dict[str, object]:
-    canonical = _response(branch_bundle())
-    reverse = _response(branch_bundle(), orientation=-1)
+    canonical = _direct_response_curl_record(branch_bundle())
+    reverse = _direct_response_curl_record(branch_bundle(), orientation=-1)
     zero_bundle = build_branch_bundle(radius=Fraction(0))
-    zero_chord = _response(zero_bundle)
-    zero_current = _response(branch_bundle(), orientation=0)
+    zero_chord = _direct_response_curl_record(zero_bundle)
+    zero_current = _direct_response_curl_record(branch_bundle(), orientation=0)
     bias, diffusion, _t = MODEL_CONTRACT.center
     zero_q_jet = counted_q_jet(bias, diffusion, orientation=0)
     return {
-        "reverse_count_B": reverse["response_one_form"],
-        "reverse_count_F": reverse["response_curvature"],
-        "reverse_count_negates_B": reverse["response_one_form"]
-        == tuple(-item for item in canonical["response_one_form"]),
-        "reverse_count_negates_F": reverse["response_curvature"]
-        == tuple(-item for item in canonical["response_curvature"]),
+        "reverse_count_B": reverse["direct_response_one_form"],
+        "reverse_count_F": reverse["direct_response_curl"],
+        "reverse_count_negates_B": reverse["direct_response_one_form"]
+        == tuple(-item for item in canonical["direct_response_one_form"]),
+        "reverse_count_negates_F": reverse["direct_response_curl"]
+        == tuple(-item for item in canonical["direct_response_curl"]),
         "zero_current": zero_current,
         "zero_current_q_jet": zero_q_jet,
         "zero_current_operator_constructed_independently": all(
             item.is_zero() for row in zero_q_jet for item in row
         ),
         "zero_current_response_recomputed": True,
-        "zero_current_B_and_F_zero": zero_current["response_one_form"] == (0, 0, 0)
-        and zero_current["response_curvature"] == (0, 0, 0),
+        "zero_current_B_and_F_zero": zero_current["direct_response_one_form"] == (0, 0, 0)
+        and zero_current["direct_response_curl"] == (0, 0, 0),
         "zero_chord_t_tangent_zero": all(item.is_zero() for item in zero_bundle.tangents[2]),
-        "zero_chord_t_response_zero": zero_chord["response_one_form"][2] == 0,
-        "zero_chord_t_curvature_components_zero": zero_chord["response_curvature"][:2] == (0, 0),
+        "zero_chord_t_response_zero": zero_chord["direct_response_one_form"][2] == 0,
+        "zero_chord_t_curvature_components_zero": zero_chord["direct_response_curl"][:2] == (0, 0),
         "zero_chord_outside_positive_box": True,
         "qanti_factor": Fraction(1, 2),
         "full_orientation_difference_factor": Fraction(2),

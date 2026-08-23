@@ -155,18 +155,18 @@
     }
   },
   "reviewed_predecessor_inventory_digests_sha256": "3f962f11c5b274cf9e7c65ffb6d5c3c57803d6b021f9469f43f5d3dfd2bcc039",
-  "reviewed_record_aggregate_sha256": "757aeb7c23ea1b7d4be10b88cbf7f352e6b229287e9ad3fac04a6bc1c337f86c",
+  "reviewed_record_aggregate_sha256": "43016768dba2e8f31ae7fefedea9082ff1902ea4936225e7e89828d7cb800709",
   "reviewed_record_digests": {
     "branch": "4f7343cab06633f6c8020a4e05a0b93e8110face94b7e112e25885d5244f4175",
     "contract": "d5500b023825a84b75f1dedac2129f01e02542f131f3060d53f9ec5488e90db6",
-    "counting": "9de8420c375efe638c3e9b20dcc238ed4c4625d7a7ad1bb0bef5053231686874",
-    "fcs": "24a89c6caf1be05d3751efab4781aee543fe94c476b47137f99bcd15afd53f2c",
+    "counting": "6d28a0be1f6fa40040424d5d8ffd58f95e7c5172bc1b83464675c2e1839331be",
+    "fcs": "9f551d3e538a3ba44534dbb45147a4363b1307653a8bb3fc6b6ebadf544ad154",
     "floor": "22d24ad41391889cccb3d707f2db849356f3fee9a2a218f7371fc9bcf1030532",
     "flux": "82271d035f1e09a0f25b1213eb8fb51287877c3dc04b194fe9ab7df2bc8e588f",
     "generator": "0fd74a7b675995f3ad43aa7ce41cea4f288d4dd6e5037986f0b5fe478e5fd950",
     "geometry": "741ec419a18290ab9e8528c9b2441fe8c569db01ccf4045ac3dcf9db499a5f9b",
-    "nulls": "2deac0ef0c1fae058300d44d27db349c8a6d4f3840edfe60681040ae056e7a2c",
-    "pipeline": "ca0f7779b84964b7e353125ac8a39dafc3a33dd8d71f3efeb1b0b6011e30d712",
+    "nulls": "b87b6cb568d59f4c8dad44bc40ffe4f7323ee8630bc4663b9d2ed983df02750d",
+    "pipeline": "e6ed5016a3f51bdd6cef7f454a18f358c37069de02fdeec6beee2a3f31d7915f",
     "scope": "cfa000c77951834a46f2058bd16a71a53501d0e4b9a96e95f03870b17fe2fdab"
   },
   "reviewed_registry_sha256": "5aee5de36a6bea68433f4d208e56dce985ea6beb277a121e774926000b5f37a5",
@@ -183,11 +183,11 @@
       "type": "file"
     },
     "cwt-sim/experiments/loop_flux_counting_curvature_proof/MODEL_CONTRACT.md": {
-      "blob_oid": "6b93c864fc243e4fd94ead98e51afd9c764f3e40",
+      "blob_oid": "2568241fd37f7cbd0a025dc4f99dd7fb858a5a8e",
       "hash_domain": "sha256_raw_git_index_blob_v1",
       "mode": "100644",
-      "sha256": "530abf4a998185ea94211cba0a179955a683b05f87df579f7261b25ab0423c20",
-      "size": 9554,
+      "sha256": "ba4cd8e8bd16353da26c5ea66e1a48807dd04ce41080ef3c8ef05c85bbfc0de1",
+      "size": 9907,
       "type": "file"
     },
     "cwt-sim/experiments/loop_flux_counting_curvature_proof/__init__.py": {
@@ -199,27 +199,27 @@
       "type": "file"
     },
     "cwt-sim/experiments/loop_flux_counting_curvature_proof/artifacts.py": {
-      "blob_oid": "d3232155c8e5595d8e7aac43ed891b8700c81fbb",
+      "blob_oid": "ab04b711aeac1e4f7edd8d36761091874d2842d9",
       "hash_domain": "sha256_raw_git_index_blob_v1",
       "mode": "100644",
-      "sha256": "41c773191208914a3b66d9e3e8d84a11b95241595db12fa2f61b23a0412dfe9e",
-      "size": 45921,
+      "sha256": "6dc0228f1033edce721b0156aa78dfc04ec0576fc2f52510338e7300f18b0cab",
+      "size": 45923,
       "type": "file"
     },
     "cwt-sim/experiments/loop_flux_counting_curvature_proof/contract.py": {
-      "blob_oid": "575151cb5070e4dc3afa3983af682386ea6988c0",
+      "blob_oid": "6db5c7df2a27be375ea3debe7414fa61aed5cce8",
       "hash_domain": "sha256_raw_git_index_blob_v1",
       "mode": "100644",
-      "sha256": "c48f7c7d09ceb2a23a8c23b7ad7117579b13f0aa941b2276c18f39184fe8f3bb",
+      "sha256": "c03579f386ccc13d3514591ef771c1937e48b043a50f49e80c65c85319b6e4bd",
       "size": 9564,
       "type": "file"
     },
     "cwt-sim/experiments/loop_flux_counting_curvature_proof/counting_lane.py": {
-      "blob_oid": "d3d82475d9cf8517c593e05d55eac1dda5b929f7",
+      "blob_oid": "592f69d765814b2a8545f4c0aa081f6cb1a9ea2f",
       "hash_domain": "sha256_raw_git_index_blob_v1",
       "mode": "100644",
-      "sha256": "111207cffb234479ddc83c41ede594ade863e08dacfc77ab5ceafd01165c7847",
-      "size": 11400,
+      "sha256": "02b34cfc3a4e61799d1a850a6e294b549d062aac8f6dffb0395f249f4db64782",
+      "size": 12893,
       "type": "file"
     },
     "cwt-sim/experiments/loop_flux_counting_curvature_proof/exact.py": {
@@ -287,11 +287,11 @@
       "type": "file"
     },
     "cwt-sim/experiments/loop_flux_counting_curvature_proof/theorem.py": {
-      "blob_oid": "8591c8552ba3968b7232b153cf700cf7e484d03c",
+      "blob_oid": "ada5254a1bd679fd6ab674a8915ddc16bc096cf1",
       "hash_domain": "sha256_raw_git_index_blob_v1",
       "mode": "100644",
-      "sha256": "afcee0e96e91eb9eed6cd43fabeb1babda13146f62ac3694498c02e8b80e800a",
-      "size": 23967,
+      "sha256": "7916812d779d1ec0238e025d7cfaa6a9c1669063cba0e9dc6998faf4ccc8cb2c",
+      "size": 26660,
       "type": "file"
     },
     "cwt-sim/experiments/loop_flux_counting_curvature_proof/transaction.py": {
@@ -311,24 +311,24 @@
       "type": "file"
     },
     "cwt-sim/tests/experiments/test_loop_flux_counting_curvature_proof.py": {
-      "blob_oid": "3fbdfa001a36d761745510dbe9695fb878d56bb1",
+      "blob_oid": "c26bd144e2356d39037a8ac8fbcdc4e41b3f86f5",
       "hash_domain": "sha256_raw_git_index_blob_v1",
       "mode": "100644",
-      "sha256": "162a730239c7465df63916d4cdf76dcf37aab1b45b16291ca880018cb6934604",
-      "size": 60589,
+      "sha256": "87b2e73a2e115307cd39de13db5d2eec84303a0a065995546de794fe32feda6a",
+      "size": 67600,
       "type": "file"
     }
   },
   "source_lock": {
-    "bundle_sha256": "846615b7d156b60ac50c7910ed15e5738edc0662df9fb7cb8ccc8f45d3f7d83d",
-    "entries_sha256": "a419e3bac04ccab6cf1886abf83c049dbf6d84b2b4abdc5f920153783e7f3f1c",
+    "bundle_sha256": "42f212e2a08314063e4435b9b85e71a9c9b4666b712810e7cf7105d294168f4a",
+    "entries_sha256": "42bbc1aff79563306ac15a726c86e704dd1e582c47df64a8310e8d0621d76d14",
     "git_object_format": "sha1",
     "hash_domain": "sha256_raw_bytes_v1",
     "parent_commit_oid": "7b0412ea06ff0b61bf6efa1fc1aae57a913ceac1",
     "path": "cwt-sim/experiments/loop_flux_counting_curvature_proof/SOURCE_LOCK.json",
     "path_set_sha256": "03e571326d2d777a00828e917a9f275b047d9b2776e57f9d1f70dd4c2bbc587f",
     "schema": "git_index_source_lock_v1",
-    "sha256_raw": "09056c02588576119f5678f910a3940c7fed0829ffefaee05650e13b4afcd50f"
+    "sha256_raw": "d513614df4f375a756b7cb593cd47ac729b4a702dcea5448be69cdfa9e3da3a9"
   },
   "source_paths": [
     "cwt-sim/experiments/__init__.py",

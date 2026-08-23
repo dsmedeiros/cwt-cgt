@@ -917,7 +917,7 @@ def predecessor_inventories() -> dict[str, dict[str, object]]:
 def render_report(summary: Mapping[str, Any], records: Mapping[str, Any]) -> str:
     require_semantic_pass(summary, records)
     omega = records["geometry"]["mean_Uhlmann_vector"]
-    response = records["counting"]["response_curvature"]
+    response = records["counting"]["direct_response_curl"]
     lines = [
         "# One-Chord Loop-Flux Counting-Curvature Proof",
         "",

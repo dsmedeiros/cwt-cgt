@@ -98,7 +98,8 @@ signs `(-,+,-)` and nonauthoritative decimal regressions approximately
 
 Positive `q` counts the physical jump from zero-based node `1` to node `2`; the reverse jump has `-q`.
 Only the two gain terms are tilted. At the center the forward/reverse rates are `51/1000` and `39/1000`.
-With `J=partial_q W_q|0`, `j=1^T J`, and stationary tangents `X_i`,
+With `J=partial_q W_q|0`, `j=1^T J`, and stationary tangents `X_i`, the direct response lane
+independently differentiates
 
 `B_i=j R X_i`, and `F=dB`.
 
@@ -107,8 +108,11 @@ The exact center vectors have nonauthoritative decimal regressions
 - `B=(.3166985595,-.00666512717,-.0000797604869)`,
 - `F=(-.000286157594,-.00230897659,-1.00272082189)` in `(dt,tb,bd)` order.
 
-An independent first-q left/right eigenvector jet proves the FCS connection identities
-`B=-partial_q A|0` and `F=-partial_q dA|0`. This extended FCS eigenbundle connection is distinct from the
+A separate FCS lane reconstructs `j` from the exact tilted gain jet, solves the first-`q` left/right
+eigenvector equations, differentiates that normal connection, and proves
+`B=-partial_q A|0` and `F=-partial_q dA|0`. Its exact `B` and `(dt,tb,bd)` curl are compared componentwise
+with the direct Drazin-response lane only in the theorem gate. The FCS producer does not call the direct
+response producer or reuse its final tuple. This extended FCS eigenbundle connection is distinct from the
 state mean-Uhlmann connection.
 
 ## Exact obstruction and open maps

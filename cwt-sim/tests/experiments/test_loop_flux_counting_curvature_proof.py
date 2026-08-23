@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import copy
 import inspect
 import json
@@ -19,6 +20,7 @@ from typer.testing import CliRunner
 from experiments.loop_flux_counting_curvature_proof import (
     artifacts as artifact_module,
     contract,
+    counting_lane,
     run as run_module,
     source_lock as source_lock_module,
     theorem,
@@ -410,8 +412,8 @@ def test_counting_exact_response_and_signs() -> None:
     record = counting_record()
     assert record["forward_gain_rate"] == Fraction(51, 1000)
     assert record["reverse_gain_rate"] == Fraction(39, 1000)
-    assert record["response_signs"] == (-1, -1, -1)
-    assert all(item != 0 for item in record["response_curvature"])
+    assert record["direct_response_curl_signs"] == (-1, -1, -1)
+    assert all(item != 0 for item in record["direct_response_curl"])
     assert record["cartesian_to_t_response_pullback_equal"] is True
     assert record["cartesian_response"]["chord_jacobian_dt"] == (
         Fraction(-8, 125),
@@ -421,11 +423,11 @@ def test_counting_exact_response_and_signs() -> None:
 
 def test_counting_float_values_are_regression_only() -> None:
     record = counting_record()
-    assert tuple(float(item) for item in record["response_one_form"]) == pytest.approx(
+    assert tuple(float(item) for item in record["direct_response_one_form"]) == pytest.approx(
         (0.3166985595098677, -0.006665127165702507, -7.976048687028195e-5),
         rel=1e-13,
     )
-    assert tuple(float(item) for item in record["response_curvature"]) == pytest.approx(
+    assert tuple(float(item) for item in record["direct_response_curl"]) == pytest.approx(
         (-2.861575935806458e-4, -2.308976588314011e-3, -1.0027208218898975),
         rel=1e-13,
     )
@@ -443,11 +445,184 @@ def test_q_jet_is_only_the_counted_physical_edge() -> None:
 
 
 def test_fcs_normal_connection_identity() -> None:
-    record = fcs_record()
-    assert record["left_q_eigenvector_equation"] is True
-    assert record["right_q_eigenvector_equation"] is True
-    assert record["B_equals_minus_partial_q_A"] is True
-    assert record["F_equals_minus_partial_q_dA"] is True
+    direct = counting_record()
+    fcs = fcs_record()
+    assert fcs["fcs_left_q_eigenvector_equation"] is True
+    assert fcs["fcs_right_q_eigenvector_equation"] is True
+    assert fcs["fcs_minus_partial_q_connection_one_form"] == direct["direct_response_one_form"]
+    assert fcs["fcs_minus_partial_q_connection_one_form"] is not direct["direct_response_one_form"]
+    assert fcs["fcs_normal_connection_curl"] == direct["direct_response_curl"]
+    assert fcs["fcs_normal_connection_curl"] is not direct["direct_response_curl"]
+    assert all(type(item) is Fraction for item in fcs["fcs_normal_connection_curl"])
+
+
+def test_direct_and_fcs_producers_have_separate_call_graphs() -> None:
+    tree = ast.parse(inspect.getsource(counting_lane))
+    functions = {
+        node.name: node for node in tree.body if type(node) in {ast.FunctionDef, ast.AsyncFunctionDef}
+    }
+
+    def calls(name: str) -> set[str]:
+        return {
+            node.func.id
+            for node in ast.walk(functions[name])
+            if type(node) is ast.Call and type(node.func) is ast.Name
+        }
+
+    direct_calls = calls("_direct_response_curl_record")
+    fcs_jet_calls = calls("_fcs_normal_connection_jet_record")
+    fcs_record_calls = calls("fcs_record")
+    assert "_fcs_normal_connection_jet_record" not in direct_calls
+    assert "_direct_response_curl_record" not in fcs_jet_calls
+    assert "counting_record" not in fcs_jet_calls
+    assert "counting_record" not in fcs_record_calls
+    assert "_direct_response_curl_record" not in fcs_record_calls
+
+
+def test_direct_response_lane_perturbation_fails_G6(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original = counting_lane._direct_response_curl_record
+
+    def perturbed(*args: object, **kwargs: object) -> dict[str, object]:
+        record = dict(original(*args, **kwargs))
+        curl = record["direct_response_curl"]
+        assert type(curl) is tuple
+        record["direct_response_curl"] = (curl[0] + 1, curl[1], curl[2])
+        return record
+
+    monkeypatch.setattr(counting_lane, "_direct_response_curl_record", perturbed)
+    counting_record.cache_clear()
+    null_record.cache_clear()
+    try:
+        records = theorem.build_records()
+        assert theorem.natural_gate_results(records)["G6_counting_and_fcs_identity"] is False
+    finally:
+        counting_record.cache_clear()
+        null_record.cache_clear()
+
+
+def test_fcs_normal_connection_lane_perturbation_fails_G6(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original = counting_lane._fcs_normal_connection_jet_record
+
+    def perturbed(*args: object, **kwargs: object) -> dict[str, object]:
+        record = dict(original(*args, **kwargs))
+        curl = record["fcs_normal_connection_curl"]
+        assert type(curl) is tuple
+        record["fcs_normal_connection_curl"] = (curl[0], curl[1] + 1, curl[2])
+        return record
+
+    monkeypatch.setattr(counting_lane, "_fcs_normal_connection_jet_record", perturbed)
+    fcs_record.cache_clear()
+    try:
+        records = theorem.build_records()
+        assert theorem.natural_gate_results(records)["G6_counting_and_fcs_identity"] is False
+    finally:
+        fcs_record.cache_clear()
+
+
+def test_fcs_one_sided_B_alias_fails_G6(monkeypatch: pytest.MonkeyPatch) -> None:
+    original = counting_lane._fcs_normal_connection_jet_record
+
+    def aliased(*args: object, **kwargs: object) -> dict[str, object]:
+        record = dict(original(*args, **kwargs))
+        record["fcs_minus_partial_q_connection_one_form"] = counting_record()["direct_response_one_form"]
+        return record
+
+    monkeypatch.setattr(counting_lane, "_fcs_normal_connection_jet_record", aliased)
+    counting_record.cache_clear()
+    fcs_record.cache_clear()
+    null_record.cache_clear()
+    try:
+        records = theorem.build_records()
+        assert (
+            records["fcs"]["fcs_minus_partial_q_connection_one_form"]
+            is records["counting"]["direct_response_one_form"]
+        )
+        assert theorem.natural_gate_results(records)["G6_counting_and_fcs_identity"] is False
+        summary, _records = theorem.execute_program()
+        assert summary["disposition"] == "FAIL_INTERNAL_ANALYTIC"
+        assert "G6_counting_and_fcs_identity" in summary["failed_gates"]
+    finally:
+        counting_record.cache_clear()
+        fcs_record.cache_clear()
+        null_record.cache_clear()
+
+
+def test_oracle_producer_aliasing_direct_response_objects_fails_G6(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original = theorem.exact_oracle_record
+
+    def aliased(capability: OracleCapability) -> dict[str, object]:
+        record = dict(original(capability))
+        direct = counting_record()
+        record["B"] = direct["direct_response_one_form"]
+        record["F"] = direct["direct_response_curl"]
+        return record
+
+    monkeypatch.setattr(theorem, "exact_oracle_record", aliased)
+    counting_record.cache_clear()
+    fcs_record.cache_clear()
+    null_record.cache_clear()
+    try:
+        records = theorem.build_records()
+        assert records["pipeline"]["oracle"]["B"] is records["counting"]["direct_response_one_form"]
+        assert records["pipeline"]["oracle"]["F"] is records["counting"]["direct_response_curl"]
+        assert theorem.natural_gate_results(records)["G6_counting_and_fcs_identity"] is False
+        summary, _records = theorem.execute_program()
+        assert summary["disposition"] == "FAIL_INTERNAL_ANALYTIC"
+        assert "G6_counting_and_fcs_identity" in summary["failed_gates"]
+    finally:
+        counting_record.cache_clear()
+        fcs_record.cache_clear()
+        null_record.cache_clear()
+
+
+@pytest.mark.parametrize(
+    ("oracle_field", "owner", "source_field"),
+    (
+        ("B", "counting", "direct_response_one_form"),
+        ("F", "counting", "direct_response_curl"),
+        ("B", "fcs", "fcs_minus_partial_q_connection_one_form"),
+        ("F", "fcs", "fcs_normal_connection_curl"),
+    ),
+)
+def test_record_only_oracle_alias_fails_G6(
+    oracle_field: str,
+    owner: str,
+    source_field: str,
+) -> None:
+    records = theorem.build_records()
+    records["pipeline"]["oracle"][oracle_field] = records[owner][source_field]
+    assert records["pipeline"]["oracle"][oracle_field] is records[owner][source_field]
+    assert theorem.natural_gate_results(records)["G6_counting_and_fcs_identity"] is False
+
+
+def test_G6_refuses_equality_overriding_order_sign_and_oracle_fields() -> None:
+    class EqualAny:
+        def __eq__(self, _other: object) -> bool:
+            return True
+
+        def __ne__(self, _other: object) -> bool:
+            return False
+
+    canonical = theorem.build_records()
+    mutations = (
+        ("counting", "direct_response_curl_order"),
+        ("counting", "direct_response_curl_signs"),
+        ("fcs", "fcs_normal_connection_curl_order"),
+        ("fcs", "fcs_normal_connection_curl_signs"),
+        ("oracle", "B"),
+        ("oracle", "F"),
+    )
+    for owner, field in mutations:
+        records = copy.deepcopy(canonical)
+        target = records["pipeline"]["oracle"] if owner == "oracle" else records[owner]
+        target[field] = EqualAny()
+        assert theorem.natural_gate_results(records)["G6_counting_and_fcs_identity"] is False
 
 
 def test_reverse_count_zero_current_and_zero_chord_controls() -> None:

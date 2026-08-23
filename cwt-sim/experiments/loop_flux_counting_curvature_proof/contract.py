@@ -110,14 +110,14 @@ REVIEWED_RECORD_DIGESTS = MappingProxyType(
         "floor": "22d24ad41391889cccb3d707f2db849356f3fee9a2a218f7371fc9bcf1030532",
         "branch": "4f7343cab06633f6c8020a4e05a0b93e8110face94b7e112e25885d5244f4175",
         "geometry": "741ec419a18290ab9e8528c9b2441fe8c569db01ccf4045ac3dcf9db499a5f9b",
-        "counting": "9de8420c375efe638c3e9b20dcc238ed4c4625d7a7ad1bb0bef5053231686874",
-        "fcs": "24a89c6caf1be05d3751efab4781aee543fe94c476b47137f99bcd15afd53f2c",
-        "nulls": "2deac0ef0c1fae058300d44d27db349c8a6d4f3840edfe60681040ae056e7a2c",
-        "pipeline": "ca0f7779b84964b7e353125ac8a39dafc3a33dd8d71f3efeb1b0b6011e30d712",
+        "counting": "6d28a0be1f6fa40040424d5d8ffd58f95e7c5172bc1b83464675c2e1839331be",
+        "fcs": "9f551d3e538a3ba44534dbb45147a4363b1307653a8bb3fc6b6ebadf544ad154",
+        "nulls": "b87b6cb568d59f4c8dad44bc40ffe4f7323ee8630bc4663b9d2ed983df02750d",
+        "pipeline": "e6ed5016a3f51bdd6cef7f454a18f358c37069de02fdeec6beee2a3f31d7915f",
         "scope": "cfa000c77951834a46f2058bd16a71a53501d0e4b9a96e95f03870b17fe2fdab",
     }
 )
-REVIEWED_RECORD_AGGREGATE_SHA256 = "757aeb7c23ea1b7d4be10b88cbf7f352e6b229287e9ad3fac04a6bc1c337f86c"
+REVIEWED_RECORD_AGGREGATE_SHA256 = "43016768dba2e8f31ae7fefedea9082ff1902ea4936225e7e89828d7cb800709"
 
 
 def _jsonable(value: Any) -> Any:
