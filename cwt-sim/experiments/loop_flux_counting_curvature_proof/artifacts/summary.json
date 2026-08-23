@@ -1,0 +1,110 @@
+{
+  "cases": {
+    "C1_MODEL_AND_SOURCE": {
+      "gates": [
+        "G0_exact_config",
+        "G1_generator_source_identity"
+      ],
+      "natural_status": "PASS",
+      "status": "PASS"
+    },
+    "C2_FLUX_BRANCH_AND_RANK": {
+      "gates": [
+        "G2_flux_and_gauge_covariance",
+        "G3_branch_floor_and_gap",
+        "G4_drazin_derivatives_and_rank"
+      ],
+      "natural_status": "PASS",
+      "status": "PASS"
+    },
+    "C3_STATE_GEOMETRY": {
+      "gates": [
+        "G5_sld_mean_uhlmann_curvature"
+      ],
+      "natural_status": "PASS",
+      "status": "PASS"
+    },
+    "C4_COUNTING_GEOMETRY": {
+      "gates": [
+        "G6_counting_and_fcs_identity"
+      ],
+      "natural_status": "PASS",
+      "status": "PASS"
+    },
+    "C5_RELATION_CLASSIFICATION": {
+      "gates": [
+        "G7_scalar_noncollinearity_obstruction",
+        "G8_covariance_units_and_local_curvature"
+      ],
+      "natural_status": "PASS",
+      "status": "PASS"
+    },
+    "C6_NULLS_AND_FIREWALLS": {
+      "gates": [
+        "G9_reverse_count_and_null_controls",
+        "G10_lane_firewalls_and_lock"
+      ],
+      "natural_status": "PASS",
+      "status": "PASS"
+    },
+    "C7_SCOPE_AND_PUBLICATION": {
+      "gates": [
+        "G11_general_map_refusal",
+        "G12_provenance_registry_and_claim_ceiling"
+      ],
+      "natural_status": "PASS",
+      "status": "PASS"
+    }
+  },
+  "claim_ceiling": "exact internal five-state one-chord Lindblad stationary-branch, mean-Uhlmann, and counted-FCS local-curvature classification only; no full-CWT, universal, physical-pumping, calibrated-clock, empirical, or positive-general-map claim",
+  "classification": "BOTH_CURVATURES_NONZERO / SCALAR_MAP_REFUTED_BY_SIGN_NONCOLLINEARITY / GENERAL_GENERATOR_DEPENDENT_MAP_OPEN",
+  "disposition": "PASS_INTERNAL_ANALYTIC",
+  "evidence_status": "NO_EMPIRICAL_EVIDENCE",
+  "experiment_id": "loop_flux_counting_curvature_proof",
+  "failed_gates": [],
+  "gates": {
+    "G0_exact_config": true,
+    "G10_lane_firewalls_and_lock": true,
+    "G11_general_map_refusal": true,
+    "G12_provenance_registry_and_claim_ceiling": true,
+    "G1_generator_source_identity": true,
+    "G2_flux_and_gauge_covariance": true,
+    "G3_branch_floor_and_gap": true,
+    "G4_drazin_derivatives_and_rank": true,
+    "G5_sld_mean_uhlmann_curvature": true,
+    "G6_counting_and_fcs_identity": true,
+    "G7_scalar_noncollinearity_obstruction": true,
+    "G8_covariance_units_and_local_curvature": true,
+    "G9_reverse_count_and_null_controls": true
+  },
+  "natural_gates": {
+    "G0_exact_config": true,
+    "G10_lane_firewalls_and_lock": true,
+    "G11_general_map_refusal": true,
+    "G12_provenance_registry_and_claim_ceiling": true,
+    "G1_generator_source_identity": true,
+    "G2_flux_and_gauge_covariance": true,
+    "G3_branch_floor_and_gap": true,
+    "G4_drazin_derivatives_and_rank": true,
+    "G5_sld_mean_uhlmann_curvature": true,
+    "G6_counting_and_fcs_identity": true,
+    "G7_scalar_noncollinearity_obstruction": true,
+    "G8_covariance_units_and_local_curvature": true,
+    "G9_reverse_count_and_null_controls": true
+  },
+  "record_sha256": {
+    "branch": "4f7343cab06633f6c8020a4e05a0b93e8110face94b7e112e25885d5244f4175",
+    "contract": "d5500b023825a84b75f1dedac2129f01e02542f131f3060d53f9ec5488e90db6",
+    "counting": "9de8420c375efe638c3e9b20dcc238ed4c4625d7a7ad1bb0bef5053231686874",
+    "fcs": "24a89c6caf1be05d3751efab4781aee543fe94c476b47137f99bcd15afd53f2c",
+    "floor": "22d24ad41391889cccb3d707f2db849356f3fee9a2a218f7371fc9bcf1030532",
+    "flux": "82271d035f1e09a0f25b1213eb8fb51287877c3dc04b194fe9ab7df2bc8e588f",
+    "generator": "0fd74a7b675995f3ad43aa7ce41cea4f288d4dd6e5037986f0b5fe478e5fd950",
+    "geometry": "741ec419a18290ab9e8528c9b2441fe8c569db01ccf4045ac3dcf9db499a5f9b",
+    "nulls": "2deac0ef0c1fae058300d44d27db349c8a6d4f3840edfe60681040ae056e7a2c",
+    "pipeline": "ca0f7779b84964b7e353125ac8a39dafc3a33dd8d71f3efeb1b0b6011e30d712",
+    "scope": "cfa000c77951834a46f2058bd16a71a53501d0e4b9a96e95f03870b17fe2fdab"
+  },
+  "relation_scope": "MODEL_SPECIFIC_RELATIONS_ONLY",
+  "status": "PASS"
+}
