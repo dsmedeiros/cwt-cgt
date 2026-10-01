@@ -128,6 +128,7 @@ Starter configurations under `cwt-sim/configs/` include dense defaults, grid swe
 The `experiments/` namespace mirrors the production calibration phases. Representative entry points:
 
 - `experiments.stage0_analytic.run` – closed-form sanity checks for CGT estimators (figures + tabular exports).
+- `experiments.percolation_finite_size.run` – origin-to-box-boundary connectivity in 2D/3D, with a real square-root state control; see the [frozen benchmark command](baselines.md#finite-size-benchmark-and-scientific-limits).
 - `experiments.wilson_loop_3d.run` – Wilson-loop explorer with handle guards, hot-start logic, and curvature telemetry.
 - `experiments.torus_plateau.run` – torus plateau sweeps across disorder settings and axis pairs.
 - `experiments.inverse_design.run` & `experiments.graph_family.run` – optimisation and comparative studies across graph ensembles.
@@ -173,6 +174,8 @@ The Baselines panel in [`cwt_lab/renderer/components/Baselines.tsx`](cwt_lab/ren
 - Open the **Model tips** drawer for per-model alignment cues distilled in [`cwt_lab/USER_GUIDE.md`](cwt_lab/USER_GUIDE.md).
 
 The panel retains the most recent configuration per model so you can iterate on axes, disorder ranges, and loop thresholds while comparing against the guidance in the user guide.
+
+For percolation, `S_mean` is the mean largest-component fraction and `giant_fraction` is a threshold-event rate. The pure square-lattice bond reference is $p_c=0.5$ at zero node damage; positive damage creates a mixed bond-site model. The runner's observable derivatives are proxies, and axis mapping does not compute CGT. See [`baselines.md`](baselines.md#percolation-definitions-and-theorem-reference) for the critical-continuity theorem, estimator limits, and finite-size benchmark rationale.
 
 Phase 1 mapping now ships with an expanded substrate set—**ring3**, **random regular**, **small-world**, **scale-free**,
 **Erdős–Rényi**, **Barabási–Albert**, the **toroidal lattice** (`periodic_lattice`), plus the
