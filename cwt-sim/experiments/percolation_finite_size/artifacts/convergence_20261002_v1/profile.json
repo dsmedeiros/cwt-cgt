@@ -1,0 +1,23 @@
+{
+  "study_id": "percolation-convergence-20261001-v1",
+  "dimensions": [2, 3],
+  "radii": [2, 4, 6, 8],
+  "probabilities_2d": [0.4, 0.5, 0.6],
+  "probabilities_3d": [0.2, 0.2488, 0.3],
+  "measurement_trials": 2048,
+  "geometry_trials": [512, 2048],
+  "steps": [0.01, 0.02],
+  "geometry_batches": 5,
+  "min_overlap": 0.9,
+  "seed": 20261002,
+  "state_map": "real sqrt of raw origin-cluster maximum-shell histogram; no smoothing",
+  "chart": "u axis-0 bonds; v remaining axes; forward corners; measured u=v=p",
+  "pairing": "keyed geometry seed shared across N/h; N shares uniform prefixes; h shares uniforms; independent batches",
+  "measurement_duplicates": "identical N2048 stream in children; verify equal, report once, never pool",
+  "primary_comparisons": ["N512 versus2048 at h0.01", "h0.02 versus0.01 at N2048"],
+  "relative_tensor_change": "2*Frobenius(B-A)/(Frobenius(A)+Frobenius(B)); zero denominator indeterminate",
+  "required_joint_batches": 5,
+  "median_change_tolerance": 0.25,
+  "maximum_change_tolerance": 0.5,
+  "interpretation": "descriptive limited variation at tested resolutions; unsupported/undefined cases indeterminate; no confidence interval, convergence proof, exponent, theorem, or CWT validation"
+}
