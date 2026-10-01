@@ -133,3 +133,14 @@ def test_wilson_numpy_integer_counts_do_not_overflow(trials):
         interval = wilson95(type(trials)(0), trials)
 
     assert interval == pytest.approx((0, z_squared / (int(trials) + z_squared)), rel=1e-12, abs=1e-20)
+
+
+@pytest.mark.parametrize("hits,trials", [(0, 3), (10, 10), (0, 1), (1, 1), (1, 3), (2, 3)])
+def test_wilson_interval_strictly_contains_rate_and_has_exact_boundary_endpoints(hits, trials):
+    lower, upper = wilson95(hits, trials)
+
+    assert lower <= hits / trials <= upper
+    if hits == 0:
+        assert lower == 0.0
+    if hits == trials:
+        assert upper == 1.0

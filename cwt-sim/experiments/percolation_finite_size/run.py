@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import typer
 
-from experiments.percolation_finite_size import model
+from experiments.percolation_finite_size import artifacts, model
 from experiments.percolation_finite_size.geometry import controls, sample_geometry
 
 ARTIFACT_ROOT = Path(__file__).resolve().parent / "artifacts"
@@ -116,14 +116,15 @@ def main(
         "references": {
             "2D_p_c": 0.5,
             "2D_status": "exact",
-            "3D_p_c": 0.2488118,
-            "3D_status": "numerical estimate",
+            "3D_p_c": 0.2488,
+            "3D_status": "approximate numerical reference (rounded)",
             "doi": "10.1103/PhysRevE.87.052107",
             "proof": PROOF,
         },
         "proof_review": "Release claims kernel verification; human review not claimed; kernel not rerun here",
         "limitations": LIMITATIONS,
     }
+    provenance = artifacts.capture_provenance()
     output = _reserve(run_name)
     records: list[dict[str, object]] = []
     _json(output / "protocol.json", protocol)
@@ -133,7 +134,9 @@ def main(
     _json(output / "STATUS.json", {"state": "incomplete", "error": None})
     _json(output / "records.json", records)
     try:
-        _json(output / "controls.json", controls())
+        _json(output / "provenance.json", provenance)
+        control_results = controls()
+        _json(output / "controls.json", control_results)
         for dimension in ds:
             for radius in ls:
                 box = model.build_box(dimension, radius)
@@ -170,11 +173,14 @@ def main(
                             }
                         )
                         _json(output / "records.json", records)
-        _report(output, records, "complete")
+        artifacts.plot_connectivity(output, records)
+        artifacts.write_report(output, protocol, records, control_results, provenance)
         _json(output / "STATUS.json", {"state": "complete", "error": None})
+        artifacts.write_checksums(output)
     except Exception as exc:
         _json(output / "STATUS.json", {"state": "incomplete", "error": str(exc)})
         _report(output, records, "incomplete")
+        artifacts.write_checksums(output)
         raise
     typer.echo(str(output))
 

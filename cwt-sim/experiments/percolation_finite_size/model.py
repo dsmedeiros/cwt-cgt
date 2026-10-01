@@ -156,4 +156,6 @@ def wilson95(hits: int, trials: int) -> tuple[float, float]:
     center = (rate + adjustment / 2) / (1 + adjustment)
     half = z * np.sqrt(rate * (1 - rate) / trials + z * z / (4 * trials * trials))
     half /= 1 + adjustment
-    return max(0.0, float(center - half)), min(1.0, float(center + half))
+    lower = 0.0 if hits == 0 else max(0.0, float(center - half))
+    upper = 1.0 if hits == trials else min(1.0, float(center + half))
+    return lower, upper
