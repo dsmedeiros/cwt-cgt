@@ -263,6 +263,73 @@ describe('Baselines component', () => {
     expect(screen.getByText(/Aligned with theory/)).toBeInTheDocument();
 
     expect(container).toMatchSnapshot();
+    await act(async () => { await user.selectOptions(screen.getByLabelText('Model'), 'percolation'); });
+    expect(screen.getByLabelText('Model')).toHaveValue('percolation');
+    expect(screen.getByAltText('|Ω| heatmap')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'CWT' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: '|Ω|' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 4, name: 'Loop analysis' })).toBeInTheDocument();
+  });
+
+  it.each([
+    { kind: 'exact_infinite_square_lattice_bond', estimate: 0.5, damage: 0, near: true,
+      reference: '0.5', description: /Exact infinite square lattice bond threshold; not a finite-event threshold/, proximity: 'Yes' },
+    { kind: 'unavailable_site_bond', estimate: null, damage: 0.2, near: false,
+      reference: 'Reference unavailable', description: /Unavailable for mixed bond-site percolation/, proximity: 'Reference unavailable' },
+    { kind: 'approximate_degree_mean_field', estimate: 0.333, damage: 0, near: false,
+      reference: '0.333', description: /Approximate degree mean-field heuristic/, proximity: 'No' },
+    { kind: undefined, estimate: 0.4, damage: 0, near: undefined,
+      reference: '0.4', description: /Legacy \/ unspecified reference assumptions/, proximity: 'Unspecified' },
+  ])('renders percolation hotspot references: $kind', async (fixture) => {
+    const report = {
+      coordinates: { p: 0.5, zeta: fixture.damage }, omega_abs: 0.25, method: 'finite_difference',
+      threshold_estimate: fixture.estimate, threshold_reference_kind: fixture.kind,
+      threshold_reference_valid: fixture.kind ? fixture.estimate !== null : undefined,
+      near_threshold: fixture.near, threshold_distance: fixture.estimate === null ? null : 0.1, tolerance: 0.02,
+    };
+    runMock.mockResolvedValueOnce({
+      runId: 'percolation-1', model: 'percolation', outputDir: '/tmp/percolation', status: 'complete',
+    });
+    artifactsListMock.mockResolvedValue(okEnvelope([
+      { type: 'file', name: 'hotspot.json', path: '/tmp/percolation/loops/hotspot.json' },
+    ]) as IpcEnvelope<unknown>);
+    artifactsReadFileMock.mockImplementation(async ({ path }: ArtifactsReadFilePayload) => {
+      const contents = path.endsWith('top_omega_tiles.json')
+        ? JSON.stringify({ axes: [{ name: 'p' }, { name: 'zeta' }],
+          top_tiles: [{ indices: [0, 0], coordinates: report.coordinates, omega_abs: 0.25, omega_abs_proxy: 0.3 }] })
+        : (path.endsWith('metrics.csv')
+          ? 'p_index,zeta_index,S_mean,giant_fraction\n0,0,0.8,0.6' : JSON.stringify(report));
+      return okEnvelope({ path, contents });
+    });
+    const user = userEvent.setup();
+    render(<Baselines />);
+    await act(async () => {
+      await user.selectOptions(screen.getByLabelText('Model'), 'percolation');
+      await user.click(screen.getByRole('button', { name: /run baseline/i }));
+    });
+    const heading = await screen.findByRole('heading', { level: 5, name: /^Hotspot at p=0.5, zeta=/ });
+    const card = within(heading.closest('article')!);
+    expect(card.getByText('Coordinates')).toBeInTheDocument();
+    expect(card.getByText('0.25')).toBeInTheDocument();
+    expect(card.getByText('finite_difference')).toBeInTheDocument();
+    expect(card.getByText(fixture.description)).toBeInTheDocument();
+    expect(card.getByText('Threshold reference').nextElementSibling).toHaveTextContent(fixture.reference);
+    expect(card.getByText('Within reference tolerance').nextElementSibling).toHaveTextContent(fixture.proximity);
+    expect(card.queryByText('Theory aligned')).not.toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Derivative proxy magnitude' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Combined gradient proxy' })).toBeInTheDocument();
+    expect(within(screen.getByRole('table')).getByText('0.8')).toBeInTheDocument();
+    expect(within(screen.getByRole('table')).getByText('0.6')).toBeInTheDocument();
+    act(() => {
+      exitHandlers.forEach((handler) => handler({ runId: 'percolation-1', code: 0, signal: null }));
+    });
+    await act(async () => { await user.selectOptions(screen.getByLabelText('Model'), 'ising'); });
+    expect(screen.getByLabelText('Model')).toHaveValue('ising');
+    expect(screen.getByAltText('Observable derivative proxy')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Derivative' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Derivative proxy magnitude' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 4, name: 'Hotspot proximity summaries' })).toBeInTheDocument();
+    expect(card.getByText(fixture.description)).toBeInTheDocument();
   });
 
   it('streams logs and reports completion status', async () => {

@@ -20,9 +20,10 @@ The Baselines panel launches curated scans against classic statistical models so
 
 ### Bond percolation
 
-- **What the sweep does** – Sweeps the bond-occupation probability on lattice graphs and, optionally, introduces additional disorder through **Graph params**.
-- **Observable outcomes** – Watch for the giant component fraction to jump above 0.5 while the mean cluster size S̄ peaks before collapsing. Loop summaries that agree with the expected threshold pc (≈0.59 on square lattices) signal good alignment.
-- **Interpreting deviations** – Mushy heatmaps or loop outliers suggest expanding the probability range, upping disorder samples, or increasing lattice dimensions.
+- **What the sweep does** – Sweeps bond-occupation probability p and node damage ζ. The ζ = 0 slice matches undamaged bond percolation; ζ > 0 gives mixed bond-site percolation. The infinite undamaged square lattice has exact bond threshold pc = 0.5. Finite lattices round the transition, and damage changes the threshold.
+- **Observable outcomes** – `S_mean` is the mean largest-component fraction, normalized by the original node count. It is not mean cluster size (susceptibility) and does not have the susceptibility's peak-and-collapse interpretation. `giant_fraction` is the frequency of trials whose largest component meets a chosen size cutoff, rather than giant-component density. Neither observable directly measures infinite-cluster probability.
+- **Heatmaps and summaries** – Both heatmaps use derivatives of cluster observables: the primary map uses a p derivative or mixed finite difference of `S_mean`, while the combined proxy uses gradient magnitudes. Peaks indicate sensitivity; they do not independently validate intrinsic CGT curvature or state-overlap loop holonomy. Reports under `loops/` summarize hotspot proximity to a threshold reference; inspect the distance, tolerance, and reference assumptions in the JSON.
+- **Interpreting deviations** – Compare lattice sizes and realization counts to assess finite-size rounding and sampling noise. At pc, the absence of an infinite cluster is compatible with large connected clusters on finite lattices; a cutoff-event frequency above 0.5 does not establish the infinite-volume transition.
 
 ### SIS (preview)
 
@@ -34,6 +35,6 @@ The Baselines panel launches curated scans against classic statistical models so
 
 - **Heatmap (`metrics.csv` + PNG)** – Hover over the heatmap to inspect exact parameter coordinates, ω̂ values, and observables. Peaks that align with known critical points confirm your scan bounds are reasonable.
 - **Top tile table (`top_omega_tiles.json`)** – Lists the most energetic coordinates. Consistent ordering across repeated runs means your seed/step choices are stabilising.
-- **Loop summaries (`loops/*.json`)** – Trust badges appear when the FS envelope stays within guard limits and φ follows theoretical expectations. Use the diagnostics section to inspect any loop flags that appear.
+- **Loop summaries (`loops/*.json`)** – For percolation these are hotspot proximity summaries, without FS or holonomy measurements. Other models may include FS guards and φ diagnostics; inspect the underlying report before interpreting a badge.
 
 With these cues you can quickly sanity-check the simulator or a new environment configuration before committing to bespoke calibrations.
