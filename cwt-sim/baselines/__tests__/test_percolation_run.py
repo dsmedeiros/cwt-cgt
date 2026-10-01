@@ -8,6 +8,7 @@ from pathlib import Path
 
 import networkx as nx
 import numpy as np
+import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(REPO_ROOT) not in sys.path:
@@ -63,6 +64,41 @@ def test_simulate_percolation_deterministic() -> None:
     assert first == second
 
 
+def test_threshold_references_distinguish_bond_and_site_bond_models() -> None:
+    reference = percolation_run._threshold_reference("lattice_2d", 0.0, 3.5)
+    assert reference == (0.5, "exact_infinite_square_lattice_bond")
+    damaged, kind = percolation_run._threshold_reference("lattice_2d", 0.2, 3.5)
+    assert np.isnan(damaged)
+    assert kind == "unavailable_site_bond"
+    assert percolation_run._threshold_reference("random_regular", 0.0, 4.0) == (
+        1.0 / 3.0,
+        "approximate_degree_mean_field",
+    )
+
+
+def test_scalar_proxies_recover_exact_derivatives() -> None:
+    p = np.array([0.1, 0.4, 0.9])
+    zeta = np.array([0.0, 0.2, 0.5])
+    field = p[:, None] * zeta[None, :]
+    derivative = percolation_run._finite_difference_axis(field, p, 0)
+    np.testing.assert_allclose(derivative, np.broadcast_to(zeta, field.shape))
+    mixed = percolation_run._curvature_from_grid(field, p, zeta)
+    np.testing.assert_allclose(mixed[:-1, :-1], 1.0)
+    assert np.isnan(mixed[-1, :]).all()
+    assert np.isnan(mixed[:, -1]).all()
+
+
+def test_run_schema_and_largest_component_observables() -> None:
+    result = percolation_run.run(nx.path_graph(4), p=0.0, realizations=3, threshold=0.5)
+    assert set(result) == {"steps", "observables", "metadata"}
+    assert result["steps"] == 3
+    assert result["observables"]["S_mean"] == 0.25
+    assert result["observables"]["giant_fraction"] == 0.0
+    connected = percolation_run.run(nx.path_graph(4), p=1.0, realizations=3)
+    assert connected["observables"]["S_mean"] == 1.0
+    assert connected["observables"]["giant_fraction"] == 1.0
+
+
 def test_cli_produces_artifacts(tmp_path: Path) -> None:
     """Running the CLI with a tiny grid writes metrics and artifacts."""
 
@@ -95,9 +131,12 @@ def test_cli_produces_artifacts(tmp_path: Path) -> None:
         "--steps",
         "2",
         "--top-k",
-        "2",
+        "4",
         "--seed",
         "7",
+        "--enable-loops",
+        "--loop-top-k",
+        "4",
     ]
 
     percolation_run.main(argv)
@@ -113,6 +152,21 @@ def test_cli_produces_artifacts(tmp_path: Path) -> None:
     assert "omega_abs" in content
     assert "omega_abs_proxy" in content
     assert "S_mean" in content
+    frame = pd.read_csv(metrics)
+    assert (frame.loc[frame.zeta == 0, "threshold_estimate"] == 0.5).all()
+    assert frame.loc[frame.zeta > 0, "threshold_estimate"].isna().all()
+    assert set(frame.omega_method) == {"probability_derivative_proxy"}
+    metadata = json.loads((run_dir / "metadata.json").read_text(encoding="utf-8"))
+    assert metadata["axis_mapping"] == "labels_only"
+    reports = list((run_dir / "loops").glob("*.json"))
+    assert len(reports) == 4
+    for report_path in reports:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        json.dumps(report, allow_nan=False)
+        if report["coordinates"]["zeta"] > 0:
+            assert report["threshold_estimate"] is None
+            assert report["threshold_distance"] is None
+            assert report["near_threshold"] is False
 
     heatmap = run_dir / "omega_abs_heatmap.png"
     assert heatmap.exists()
