@@ -6,7 +6,7 @@ import argparse
 import json
 import math
 import warnings
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Iterable, List, Mapping, Optional, Sequence
 
@@ -27,7 +27,11 @@ from baselines.io import load_axis_map
 
 @dataclass(slots=True)
 class PercolationSummary:
-    """Aggregate statistics describing a percolation experiment."""
+    """Largest-component fractions, normalized by the original node count.
+
+    ``S_mean`` averages that fraction; ``giant_fraction`` is the frequency of
+    trials meeting the selected size threshold, not infinite-cluster probability.
+    """
 
     S_mean: float
     S_var: float
@@ -50,6 +54,9 @@ def get_parser() -> argparse.ArgumentParser:
     """Construct the argument parser for the percolation driver."""
 
     parser = build_shared_parser("Percolation baseline simulation driver.")
+    for action in parser._actions:
+        if "--map-to-cwt" in action.option_strings:
+            action.help = "Remap displayed axis labels only; does not compute CGT geometry."
     parser.add_argument(
         "--axes",
         nargs=2,
@@ -127,18 +134,21 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--compute-curvature",
         action="store_true",
-        help=("Use a discrete Wilson-loop estimator for Ω; otherwise a |∂S/∂p| proxy " "is used."),
+        help=(
+            "Use a mixed scalar derivative proxy for omega; otherwise use dS_mean/dp. "
+            "Neither computes Berry curvature or a Wilson loop."
+        ),
     )
     parser.add_argument(
         "--top-k",
         type=int,
         default=10,
-        help="Number of tiles retained in the top-|Ω| artifact (default: %(default)s).",
+        help="Number of tiles retained in the top scalar-proxy artifact (default: %(default)s).",
     )
     parser.add_argument(
         "--enable-loops",
         action="store_true",
-        help="Evaluate hotspot reports around the highest-|Ω| tiles and persist JSON summaries.",
+        help="Evaluate hotspot reports at the highest scalar-proxy tiles and persist JSON summaries.",
     )
     parser.add_argument(
         "--loop-top-k",
@@ -152,7 +162,7 @@ def get_parser() -> argparse.ArgumentParser:
         default=1.0,
         help=(
             "Scale factor applied to the grid spacing when checking proximity to the "
-            "theoretical percolation threshold (default: %(default)s)."
+            "available threshold reference (default: %(default)s)."
         ),
     )
     return parser
@@ -316,7 +326,11 @@ def simulate_percolation(
     threshold: float,
     rng: np.random.Generator | None = None,
 ) -> PercolationSummary:
-    """Run repeated bond-site percolation trials and summarise the GCC statistics."""
+    """Sample independent bonds (p) and retained sites (1-zeta).
+
+    Return largest-component fractions and the frequency of threshold events.
+    The undamaged slice zeta=0 is ordinary independent bond percolation.
+    """
 
     rng = rng or np.random.default_rng()
     node_count = substrate.node_count
@@ -369,6 +383,38 @@ def simulate_percolation(
     )
 
 
+def run(
+    graph: nx.Graph,
+    *,
+    p: float,
+    zeta: float = 0.0,
+    realizations: int = 48,
+    threshold: float = 0.4,
+    seed: int | None = 0,
+) -> dict[str, object]:
+    """Return independent percolation statistics in the shared baseline schema."""
+
+    summary = simulate_percolation(
+        _prepare_substrate(graph),
+        p=p,
+        zeta=zeta,
+        realizations=realizations,
+        threshold=threshold,
+        rng=np.random.default_rng(seed),
+    )
+    return {
+        "steps": summary.samples,
+        "observables": asdict(summary),
+        "metadata": {
+            "model": "independent_site_bond_percolation",
+            "p": p,
+            "zeta": zeta,
+            "giant_threshold": threshold,
+            "seed": seed,
+        },
+    }
+
+
 def _adjacency_spectrum(adjacency: np.ndarray) -> tuple[float, float]:
     """Return the base spectral radius and radius gap of ``adjacency``."""
 
@@ -413,12 +459,22 @@ def _graph_features(graph: nx.Graph, adjacency: np.ndarray) -> dict[str, float]:
 
 
 def _estimate_threshold(average_degree: float) -> float:
-    """Return a crude mean-field estimate of the percolation threshold."""
+    """Return a degree mean-field heuristic, not an exact graph threshold."""
 
     if not math.isfinite(average_degree) or average_degree <= 1.0:
         return 1.0
     estimate = 1.0 / max(average_degree - 1.0, 1e-9)
     return float(min(max(estimate, 0.0), 1.0))
+
+
+def _threshold_reference(graph_kind: str, zeta: float, average_degree: float) -> tuple[float, str]:
+    """Supply an infinite-lattice reference or an explicitly approximate heuristic."""
+
+    if zeta != 0.0:
+        return float("nan"), "unavailable_site_bond"
+    if graph_kind == "lattice_2d":
+        return 0.5, "exact_infinite_square_lattice_bond"
+    return _estimate_threshold(average_degree), "approximate_degree_mean_field"
 
 
 def _finite_difference_axis(data: np.ndarray, coords: np.ndarray, axis: int) -> np.ndarray:
@@ -464,7 +520,10 @@ def _curvature_from_grid(
     axis0: np.ndarray,
     axis1: np.ndarray,
 ) -> np.ndarray:
-    """Estimate Wilson-loop curvature from the percolation order parameter grid."""
+    """Return a mixed derivative of S_mean; retained name is CLI compatibility.
+
+    This scalar finite difference contains no state overlaps or holonomy.
+    """
 
     curvature = np.full_like(data, np.nan, dtype=float)
     if data.shape[0] <= 1 or data.shape[1] <= 1:
@@ -527,7 +586,8 @@ def _build_hotspot_report(
             record.get(axis_names[zeta_axis], record.get("zeta", float("nan"))),
         )
     )
-    distance = abs(p_value - threshold_estimate)
+    valid_reference = math.isfinite(threshold_estimate)
+    distance = abs(p_value - threshold_estimate) if valid_reference else None
     return {
         "indices": indices_payload,
         "coordinates": {
@@ -541,9 +601,11 @@ def _build_hotspot_report(
         "giant_fraction": float(record.get("giant_fraction", float("nan"))),
         "omega_abs": float(omega_abs),
         "method": method,
-        "threshold_estimate": float(threshold_estimate),
-        "threshold_distance": float(distance),
-        "near_threshold": bool(distance <= tolerance),
+        "threshold_estimate": float(threshold_estimate) if valid_reference else None,
+        "threshold_reference_kind": record.get("threshold_reference_kind", "unspecified"),
+        "threshold_reference_valid": valid_reference,
+        "threshold_distance": distance,
+        "near_threshold": bool(distance is not None and distance <= tolerance),
         "tolerance": float(tolerance),
     }
 
@@ -569,7 +631,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
     graph, adjacency, graph_id, graph_seed, graph_params = _build_graph(namespace, config)
     substrate = _prepare_substrate(graph)
     features = _graph_features(graph, adjacency)
-    threshold_estimate = _estimate_threshold(features.get("average_degree", float("nan")))
+    method = "mixed_derivative_proxy" if namespace.compute_curvature else "probability_derivative_proxy"
 
     axis_names = tuple(namespace.axes)
     if len(axis_names) != 2:
@@ -672,7 +734,13 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
                     "giant_fraction": summary.giant_fraction,
                 }
                 record.update(features)
+                threshold_estimate, reference_kind = _threshold_reference(
+                    namespace.graph_kind, zeta_value, features["average_degree"]
+                )
                 record["threshold_estimate"] = threshold_estimate
+                record["threshold_reference_kind"] = reference_kind
+                record["threshold_reference_valid"] = math.isfinite(threshold_estimate)
+                record["omega_method"] = method
                 for key, value in graph_params.items():
                     record[f"graph_param_{key}"] = value
                 records.append(record)
@@ -724,6 +792,15 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
     seed_label = base_seed_value
     output_dir = ensure_outdir("percolation", namespace.output_dir, graph_id, seed_label)
     metrics_path = accumulator.to_csv(output_dir / "metrics.csv")
+    metadata = {
+        "omega_method": method,
+        "omega_definition": "Scalar derivative proxy; no state-overlap holonomy.",
+        "S_mean_definition": "Mean largest-component fraction of original nodes.",
+        "giant_fraction_definition": "Frequency of largest-component threshold events.",
+        "axis_mapping": "labels_only" if config.map_to_cwt else "disabled",
+        "threshold_reference_scope": "Infinite-lattice reference or approximate graph heuristic; per row.",
+    }
+    (output_dir / "metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
 
     heatmap_axes = (axis_aliases[0], axis_aliases[1])
     heatmap_path = write_heatmap_png(
@@ -732,6 +809,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         axes=heatmap_axes,
         axis_map=axis_map,
         value_column="omega_abs",
+        colorbar_label="|mixed derivative proxy|" if namespace.compute_curvature else "|dS_mean/dp| proxy",
     )
     write_heatmap_png(
         metrics_path,
@@ -740,7 +818,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         axis_map=axis_map,
         filename="omega_heatmap_proxy.png",
         value_column="omega_abs_proxy",
-        colorbar_label=r"|Ω| proxy",
+        colorbar_label="Observable gradient envelope",
     )
     top_tiles_path = write_top_tiles(
         metrics_path,
@@ -759,7 +837,6 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
         tiles: Iterable[Mapping[str, object]] = payload.get("top_tiles", [])  # type: ignore[assignment]
         spacing = _grid_spacing(probability_values)
         tolerance = float(max(spacing * float(namespace.loop_delta_scale), 1e-6))
-        method = "curvature" if namespace.compute_curvature else "finite_difference"
         for tile_index, tile in enumerate(tiles):
             if tile_index >= namespace.loop_top_k:
                 break
@@ -774,7 +851,7 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
             report = _build_hotspot_report(
                 record,
                 float(omega_abs) if np.isfinite(omega_abs) else float("nan"),
-                threshold_estimate,
+                float(record["threshold_estimate"]),
                 tolerance,
                 method,
                 axis_aliases,
@@ -792,15 +869,12 @@ def main(argv: Optional[List[str]] = None) -> BaselineRunConfig:
             f"Percolation baseline completed {grid_shape[0] * grid_shape[1]} grid points "
             f"on {namespace.graph_kind} in {elapsed:.3f}s; metrics written to {metrics_path}."
         )
-        print(f"|Ω| heatmap stored at {heatmap_path} and top-tile summary at {top_tiles_path}.")
+        print(f"Scalar proxy heatmap stored at {heatmap_path} and top-tile summary at {top_tiles_path}.")
         if budget_notes:
             print(budget_notes[-1])
         if namespace.enable_loops and loop_reports:
             print(f"Hotspot reports written to {loop_reports[0].parent} " f"({len(loop_reports)} tiles).")
-        print(
-            "Mean-field threshold estimate p_c ≈ "
-            f"{threshold_estimate:.3f}; inspect hotspot reports for alignment."
-        )
+        print("Threshold references are recorded per tile; damaged site-bond references are unavailable.")
 
     return config
 

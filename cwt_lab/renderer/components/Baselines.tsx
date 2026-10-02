@@ -170,10 +170,10 @@ const OBSERVABLE_FIELDS: Record<BaselineModel, ObservablesColumn[]> = {
     { key: 'spectral_gap', label: 'Spectral gap' },
   ],
   percolation: [
-    { key: 'S_mean', label: 'S̄' },
+    { key: 'S_mean', label: 'Largest-component fraction (mean)' },
     { key: 'S_var', label: 'Var(S)' },
-    { key: 'giant_fraction', label: 'Giant fraction' },
-    { key: 'threshold_estimate', label: 'Threshold' },
+    { key: 'giant_fraction', label: 'Giant-event frequency' },
+    { key: 'threshold_estimate', label: 'Threshold reference' },
   ],
   sis: [],
 };
@@ -202,9 +202,10 @@ const MODEL_HELP_CONTENT: Record<BaselineModel, { title: string; analogy: string
     title: 'Percolation baseline tips',
     analogy: 'Percolation behaves like dye seeping through porous rock; once enough pores align the flood begins.',
     bullets: [
-      'The ridge traces the percolation threshold: look for giant_fraction jumping above 0.5 while S̄ peaks then collapses.',
-      'If the heatmap is mushy, widen the occupation probability sweep or add disorder samples via graph params to sharpen the transition.',
-      'Loop summaries should echo known pc values (≈0.59 on square lattices); outliers hint that the lattice dimensions need to increase.',
+      'S_mean is the mean largest-component fraction; giant_fraction is the frequency of trials exceeding the chosen size cutoff. Neither is mean cluster size or the infinite-cluster probability.',
+      'The undamaged infinite square lattice has bond threshold pc = 0.5. Finite lattices round the transition, and node damage changes the threshold; compare sizes and increase realization counts.',
+      'Both heatmaps use observable derivative proxies. A hotspot indicates sensitivity and does not establish intrinsic CGT curvature or loop holonomy.',
+      'Reports under loops/ summarize hotspot proximity to a threshold reference. Read their distance, tolerance, and reference assumptions before interpreting alignment.',
     ],
   },
   sis: {
@@ -387,7 +388,7 @@ const describeAlignmentEvent = (event: BaselineAlignmentProgressEvent): string =
   }
 };
 
-const buildLoopSummary = (payload: unknown, filePath: string): LoopSummary => {
+const buildLoopSummary = (payload: unknown, filePath: string, model: BaselineModel): LoopSummary => {
   const base: LoopSummary = {
     id: filePath,
     title: 'Loop report',
@@ -399,6 +400,39 @@ const buildLoopSummary = (payload: unknown, filePath: string): LoopSummary => {
     return base;
   }
   const meta = payload as Record<string, unknown>;
+  if (model === 'percolation') {
+    const coordinates = meta.coordinates && typeof meta.coordinates === 'object'
+      ? meta.coordinates as Record<string, unknown> : {};
+    base.title = `Hotspot at ${formatCoordinates(coordinates)}`;
+    const kind = typeof meta.threshold_reference_kind === 'string' ? meta.threshold_reference_kind : 'unspecified';
+    const reference = parseFiniteNumber(meta.threshold_estimate);
+    const damage = parseFiniteNumber(coordinates.zeta);
+    const available = reference !== null && meta.threshold_reference_valid !== false
+      && !kind.startsWith('unavailable') && !(damage !== null && damage > 0);
+    const kindLabels: Record<string, string> = {
+      exact_infinite_square_lattice_bond: 'Exact infinite square lattice bond threshold; not a finite-event threshold',
+      approximate_degree_mean_field: 'Approximate degree mean-field heuristic',
+      unavailable_site_bond: 'Unavailable for mixed bond-site percolation',
+      unspecified: 'Legacy / unspecified reference assumptions',
+    };
+    base.metrics.push(
+      { label: 'Coordinates', value: formatCoordinates(coordinates) },
+      { label: 'Derivative proxy magnitude', value: formatNumber(meta.omega_abs) },
+      { label: 'Proxy method', value: typeof meta.method === 'string' ? meta.method : 'Unspecified' },
+      { label: 'Reference kind', value: kindLabels[kind] ?? kind },
+      { label: 'Threshold reference', value: available ? formatNumber(reference) : 'Reference unavailable' },
+      { label: 'Within reference tolerance', value: available
+        ? (typeof meta.near_threshold === 'boolean' ? (meta.near_threshold ? 'Yes' : 'No') : 'Unspecified')
+        : 'Reference unavailable' },
+    );
+    for (const [key, label] of [['threshold_distance', 'Reference distance'], ['tolerance', 'Reference tolerance']]) {
+      const value = parseFiniteNumber(meta[key]);
+      if (value !== null && (key === 'tolerance' || available)) {
+        base.metrics.push({ label, value: formatNumber(value) });
+      }
+    }
+    return base;
+  }
   const indices = Array.isArray(meta.indices) ? meta.indices : [];
   if (indices.length === 2) {
     base.title = `Tile [${indices[0]}, ${indices[1]}]`;
@@ -560,7 +594,7 @@ const loadArtifactsForRun = async (
     const key = axes
       .map((axis) => row[`${axis}_index`] ?? row[`${axis}_INDEX`] ?? '')
       .join(',');
-    if (!key.includes('')) {
+    if (axes.length > 0 && key.split(',').every((index) => index.length > 0)) {
       metricsByIndex.set(key, row);
     }
   }
@@ -618,7 +652,7 @@ const loadArtifactsForRun = async (
                 }
                 const fileRaw = fileResponse.data.contents ?? '';
                 const data = fileRaw ? JSON.parse(fileRaw) : null;
-                return buildLoopSummary(data, file.path);
+                return buildLoopSummary(data, file.path, model);
               } catch {
                 return null;
               }
@@ -927,12 +961,14 @@ export default function Baselines() {
     }
     return artifacts.loopSummaries.some((summary) => summary.trustworthy);
   }, [artifacts]);
-  const observablesColumns = artifacts?.observables ?? OBSERVABLE_FIELDS[model];
+  const artifactModel = lastResult?.model ?? model;
+  const observablesColumns = artifacts?.observables ?? OBSERVABLE_FIELDS[artifactModel];
   const proxyAvailable = Boolean(artifacts?.proxyHeatmapPath);
   const activeHeatmapPath =
     heatmapMode === 'proxy' && proxyAvailable ? artifacts?.proxyHeatmapPath : artifacts?.heatmapPath;
-  const heatmapCaption =
-    heatmapMode === 'proxy' && proxyAvailable ? '|Ω| proxy heatmap' : '|Ω| heatmap';
+  const heatmapCaption = artifactModel === 'percolation'
+    ? (heatmapMode === 'proxy' && proxyAvailable ? 'Combined observable-gradient proxy' : 'Observable derivative proxy')
+    : (heatmapMode === 'proxy' && proxyAvailable ? '|Ω| proxy heatmap' : '|Ω| heatmap');
   const stepsValue = parseFiniteNumber(form.steps);
   const seedValue = parseFiniteNumber(form.seed);
 
@@ -1246,7 +1282,7 @@ export default function Baselines() {
                     }
                     onClick={() => setHeatmapMode('cwt')}
                   >
-                    CWT
+                    {artifactModel === 'percolation' ? 'Derivative' : 'CWT'}
                   </button>
                   <button
                     type="button"
@@ -1281,8 +1317,8 @@ export default function Baselines() {
                   <thead>
                     <tr>
                       <th scope="col">Coordinates</th>
-                      <th scope="col">|Ω|</th>
-                      <th scope="col">|Ω| proxy</th>
+                      <th scope="col">{artifactModel === 'percolation' ? 'Derivative proxy magnitude' : '|Ω|'}</th>
+                      <th scope="col">{artifactModel === 'percolation' ? 'Combined gradient proxy' : '|Ω| proxy'}</th>
                       {observablesColumns.map((column) => (
                         <th scope="col" key={column.key}>
                           {column.label}
@@ -1314,10 +1350,10 @@ export default function Baselines() {
 
             <div className="baselines__loops">
               <header>
-                <h4>Loop analysis</h4>
+                <h4>{artifactModel === 'percolation' ? 'Hotspot proximity summaries' : 'Loop analysis'}</h4>
               </header>
               {artifacts.loopSummaries.length === 0 ? (
-                <p>No loop reports generated.</p>
+                <p>{artifactModel === 'percolation' ? 'No hotspot reports generated.' : 'No loop reports generated.'}</p>
               ) : (
                 <div className="baselines__loop-grid">
                   {artifacts.loopSummaries.map((summary) => (

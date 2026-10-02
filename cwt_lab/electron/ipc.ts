@@ -1,6 +1,6 @@
 import { app, ipcMain, dialog, BrowserWindow } from 'electron';
 import { spawn } from 'node:child_process';
-import { promises as fs, existsSync, mkdirSync } from 'node:fs';
+import { promises as fs, existsSync, mkdirSync, type Dirent } from 'node:fs';
 import path from 'node:path';
 import type { FSWatcher } from 'chokidar';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
@@ -539,7 +539,7 @@ const isIgnorableFsError = (error: unknown) => {
 };
 
 const listDirectoryTree = async (root: string, base: string) => {
-  let entries: fs.Dirent[];
+  let entries: Dirent[];
   try {
     entries = await fs.readdir(root, { withFileTypes: true });
   } catch (error) {

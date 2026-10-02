@@ -40,8 +40,6 @@ vi.mock('../runner/runManager', () => {
   class MockRunManager {
     #pythonEnv: unknown = null;
 
-    constructor(_config: unknown) {}
-
     getPythonEnv() {
       return this.#pythonEnv;
     }
@@ -166,7 +164,7 @@ describe("ipcMain.handle('cwt:artifacts:list')", () => {
 
     await fs.mkdir(path.join(tempRoot, 'subdir'), { recursive: true });
 
-    await import('../ipc');
+    await import('../ipc.js');
     const { ipcMain } = await import('electron');
     const handler = (ipcMain as unknown as { __handlers: Map<string, (...args: any[]) => any> }).__handlers.get(
       'cwt:artifacts:list',
@@ -174,7 +172,7 @@ describe("ipcMain.handle('cwt:artifacts:list')", () => {
     expect(handler).toBeTypeOf('function');
 
     const originalReaddir = fs.readdir.bind(fs);
-    const readdirSpy = vi.spyOn(fs, 'readdir').mockImplementation(async (dir: PathLike, options?: any) => {
+    const readdirSpy = vi.spyOn(fs, 'readdir').mockImplementation(async (dir: PathLike, options: Parameters<typeof fs.readdir>[1]) => {
       if (typeof dir === 'string' && path.resolve(dir) === path.resolve(tempRoot)) {
         const error = new Error('not found');
         (error as NodeJS.ErrnoException).code = 'ENOENT';

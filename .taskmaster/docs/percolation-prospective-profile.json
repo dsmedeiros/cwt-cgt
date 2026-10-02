@@ -1,0 +1,21 @@
+{
+  "profile_id": "percolation-reference-20261001-v1",
+  "dimensions": [2, 3],
+  "radii": [2, 4, 6],
+  "probabilities_2d": [0.4, 0.5, 0.6],
+  "probabilities_3d": [0.2, 0.2488, 0.3],
+  "measurement_trials": 512,
+  "geometry_trials": 512,
+  "geometry_batches": 3,
+  "step": 0.02,
+  "min_overlap": 0.9,
+  "seed": 20261001,
+  "confidence": 0.95,
+  "event": "origin connects to the boundary of B_L=[-L,L]^d in Chebyshev distance",
+  "model": "independent nearest-neighbor Bernoulli bonds; no node damage or wrapping",
+  "chart": "u opens axis-0 bonds, v opens remaining-axis bonds; measured cases u=v=p",
+  "state_map": "real square root of raw origin-cluster maximum-shell histogram; no smoothing",
+  "streams": "stable SHA256-keyed PCG64; independent measurement and geometry batches; reused full edge uniforms within each geometry stencil",
+  "exclusions": ["chart outside open (0,1)", "zero histogram bins", "overlap below 0.9"],
+  "interpretation": "finite reference diagnostic; no theorem, CGT transition-ridge, critical-exponent, or empirical CWT validation"
+}
